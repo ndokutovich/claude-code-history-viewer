@@ -1,3 +1,19 @@
+export interface ClaudeMCPResult {
+  server: string;
+  method: string;
+  params: Record<string, unknown>;
+  result: Record<string, unknown>;
+  error: string;
+}
+
+export interface ClaudeToolUseResult {
+  command: string;
+  stream: string;
+  output: string;
+  timestamp: string;
+  exitCode: number;
+}
+
 export interface ClaudeMessage {
   uuid: string;
   parentUuid?: string;
