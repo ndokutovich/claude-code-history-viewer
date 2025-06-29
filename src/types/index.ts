@@ -21,17 +21,31 @@ export interface RawClaudeMessage {
   sessionId: string;
   timestamp: string;
   type: "user" | "assistant" | "system" | "summary";
-  message: {
-    role: "user" | "assistant";
-    content: string | ContentItem[];
-  };
+  message: MessagePayload;
   toolUse?: Record<string, unknown>;
-  toolUseResult?: Record<string, unknown>;
+  toolUseResult?: Record<string, unknown> | string;
   isSidechain?: boolean;
   userType?: string;
   cwd?: string;
   version?: string;
   requestId?: string;
+}
+
+// Nested message object within RawClaudeMessage
+export interface MessagePayload {
+  role: "user" | "assistant";
+  content: string | ContentItem[];
+  // Optional fields for assistant messages
+  id?: string;
+  model?: string;
+  stop_reason?: "tool_use" | "end_turn" | "max_tokens";
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_creation_input_tokens?: number;
+    cache_read_input_tokens?: number;
+    service_tier?: string;
+  };
 }
 
 // Content types based on CLAUDE.md
@@ -77,6 +91,16 @@ export interface ClaudeMessage {
   toolUse?: Record<string, unknown>;
   toolUseResult?: Record<string, unknown>;
   isSidechain?: boolean;
+  // Assistant metadata
+  model?: string;
+  stop_reason?: "tool_use" | "end_turn" | "max_tokens";
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_creation_input_tokens?: number;
+    cache_read_input_tokens?: number;
+    service_tier?: string;
+  };
 }
 
 export interface ClaudeProject {

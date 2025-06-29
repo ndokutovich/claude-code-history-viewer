@@ -70,7 +70,7 @@ function App() {
     if (!path.endsWith(".claude")) {
       claudeFolderPath = `${path}/.claude`;
     }
-    
+
     setClaudePath(claudeFolderPath);
     setShowFolderSelector(false);
     await useAppStore.getState().scanProjects();
@@ -97,7 +97,10 @@ function App() {
   };
 
   // Show folder selector if needed
-  if (showFolderSelector || (error && error.includes("Claude folder not found"))) {
+  if (
+    showFolderSelector ||
+    (error && error.includes("Claude folder not found"))
+  ) {
     return <FolderSelector onFolderSelected={handleFolderSelected} />;
   }
 
@@ -250,11 +253,14 @@ function App() {
                   <h2 className="text-lg font-semibold text-gray-900">
                     {showTokenStats ? "토큰 사용량 통계" : "대화 내용"}
                   </h2>
+                  <span className="text-sm text-gray-800">
+                    {selectedSession?.summary ||
+                      "세션 요약을 찾을 수 없습니다."}
+                  </span>
                   {!showTokenStats && selectedSession && (
                     <p className="text-sm text-gray-500 mt-1">
                       {pagination.totalCount > messages.length &&
-                        ` ${pagination.totalCount}개`}{" "}
-                      •{" "}
+                        ` ${pagination.totalCount || "-"}개 • `}
                       {selectedSession.has_tool_use
                         ? "도구 사용됨"
                         : "일반 대화"}

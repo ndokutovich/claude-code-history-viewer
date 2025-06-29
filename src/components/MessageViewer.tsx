@@ -6,6 +6,7 @@ import {
   ClaudeToolUseDisplay,
   ToolExecutionResultRouter,
   MessageContentDisplay,
+  AssistantMessageDetails,
 } from "./messageRenderer";
 import { formatTime, extractClaudeMessageContent } from "../utils/messageUtils";
 import { cn } from "../utils/cn";
@@ -109,6 +110,9 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
               depth={depth}
             />
           )}
+
+          {/* Assistant Metadata */}
+          <AssistantMessageDetails message={message} />
         </div>
       </div>
     </div>
@@ -253,7 +257,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 
   if (isLoading && messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center h-full">
         <div className="flex items-center space-x-2 text-gray-500">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span>메시지를 불러오는 중...</span>
@@ -264,7 +268,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
+      <div className="flex-1 flex flex-col items-center justify-center text-gray-500 h-full">
         <div className="mb-4">
           <MessageCircle className="w-16 h-16 mx-auto text-gray-400" />
         </div>
@@ -315,7 +319,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   return (
     <div
       ref={scrollContainerRef}
-      className="flex-1 overflow-y-auto scrollbar-thin"
+      className="flex-1 h-full overflow-y-auto scrollbar-thin"
     >
       {/* 디버깅 정보 */}
       {import.meta.env.DEV && (

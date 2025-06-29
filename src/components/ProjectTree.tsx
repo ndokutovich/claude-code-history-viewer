@@ -78,11 +78,13 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       {/* Projects List */}
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         {projects.length === 0 ? (
-          <div className="p-4 text-center text-gray-400">
-            <div className="mb-2">
-              <Folder className="w-12 h-12 mx-auto text-gray-500" />
+          <div className="p-4 text-center text-gray-400 h-full flex items-center">
+            <div className="flex flex-col justify-center w-full">
+              <div className="mb-2">
+                <Folder className="w-8 h-8 mx-auto text-gray-500" />
+              </div>
+              <p className="text-sm">프로젝트를 찾을 수 없습니다</p>
             </div>
-            <p>프로젝트를 찾을 수 없습니다</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -140,14 +142,14 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between">
                                   <h3
-                                    className="font-medium text-gray-800 text-sm truncate"
+                                    className="font-medium text-gray-800 text-xs truncate"
                                     title={
                                       session.summary ||
                                       `세션 ID: ${session.session_id}`
                                     }
                                   >
                                     {session.summary ||
-                                      formatTimeAgo(session.last_message_time)}
+                                      "세션 요약을 찾을 수 없습니다."}
                                   </h3>
                                   <div className="flex items-center space-x-1">
                                     {session.has_tool_use && (
@@ -163,7 +165,11 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                   </div>
                                 </div>
 
-                                <div className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
+                                <div className="flex items-center space-x-1 text-xs text-gray-400 mt-1">
+                                  <span>
+                                    {formatTimeAgo(session.last_message_time)}
+                                  </span>
+                                  <span>•</span>
                                   <span>{session.message_count}개 메시지</span>
                                   <span>•</span>
                                   <span>

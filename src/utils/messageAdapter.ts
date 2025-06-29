@@ -6,17 +6,15 @@ import type { RawClaudeMessage, ClaudeMessage } from "../types";
  * documented in CLAUDE.md and the expected UI structure
  */
 export function adaptRawMessage(raw: RawClaudeMessage): ClaudeMessage {
+  const { message, ...rest } = raw;
+
   return {
-    uuid: raw.uuid,
-    parentUuid: raw.parentUuid,
-    sessionId: raw.sessionId,
-    timestamp: raw.timestamp,
-    type: raw.type,
-    // Extract content from message.content
-    content: raw.message?.content,
-    toolUse: raw.toolUse,
-    toolUseResult: raw.toolUseResult,
-    isSidechain: raw.isSidechain,
+    ...rest,
+    // Extract content and metadata from the nested message object
+    content: message?.content,
+    model: message?.model,
+    stop_reason: message?.stop_reason,
+    usage: message?.usage,
   };
 }
 
