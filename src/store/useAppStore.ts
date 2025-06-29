@@ -1,16 +1,16 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import { load } from "@tauri-apps/plugin-store";
-import type {
-  AppState,
-  ClaudeProject,
-  ClaudeSession,
-  ClaudeMessage,
-  MessagePage,
-  SearchFilters,
-  SessionTokenStats,
-  Theme,
-  AppError,
+import {
+  type AppState,
+  type ClaudeProject,
+  type ClaudeSession,
+  type ClaudeMessage,
+  type MessagePage,
+  type SearchFilters,
+  type SessionTokenStats,
+  type Theme,
+  type AppError,
   AppErrorType,
 } from "../types";
 
@@ -87,14 +87,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const store = await load("settings.json", { autoSave: false });
         const savedPath = await store.get<string>("claudePath");
         const savedTheme = await store.get<Theme>("theme");
-        
+
         if (savedTheme) {
           set({ theme: savedTheme });
         }
-        
+
         if (savedPath) {
           // Validate saved path
-          const isValid = await invoke<boolean>("validate_claude_folder", { path: savedPath });
+          const isValid = await invoke<boolean>("validate_claude_folder", {
+            path: savedPath,
+          });
           if (isValid) {
             set({ claudePath: savedPath });
             await get().scanProjects();
@@ -112,12 +114,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
       await get().scanProjects();
     } catch (error) {
       console.error("Failed to initialize app:", error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
       // Parse error type from message
       let errorType = AppErrorType.UNKNOWN;
       let message = errorMessage;
-      
+
       if (errorMessage.includes("CLAUDE_FOLDER_NOT_FOUND:")) {
         errorType = AppErrorType.CLAUDE_FOLDER_NOT_FOUND;
         message = errorMessage.split(":")[1] || errorMessage;
@@ -127,7 +130,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       } else if (errorMessage.includes("Tauri API")) {
         errorType = AppErrorType.TAURI_NOT_AVAILABLE;
       }
-      
+
       set({ error: { type: errorType, message } });
     } finally {
       set({ isLoading: false });
@@ -218,7 +221,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     } catch (error) {
       console.error("Failed to load session messages:", error);
-      set({ error: { type: AppErrorType.UNKNOWN, message: String(error) }, isLoadingMessages: false });
+      set({
+        error: { type: AppErrorType.UNKNOWN, message: String(error) },
+        isLoadingMessages: false,
+      });
     }
   },
 
@@ -330,7 +336,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setClaudePath: async (path: string) => {
     set({ claudePath: path });
-    
+
     // Save to persistent storage
     try {
       const store = await load("settings.json", { autoSave: false });
@@ -351,7 +357,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } catch (error) {
       console.error("Failed to load session token stats:", error);
       set({
-        error: { type: AppErrorType.UNKNOWN, message: `Failed to load token stats: ${error}` },
+        error: {
+          type: AppErrorType.UNKNOWN,
+          message: `Failed to load token stats: ${error}`,
+        },
         sessionTokenStats: null,
       });
     } finally {
@@ -372,7 +381,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } catch (error) {
       console.error("Failed to load project token stats:", error);
       set({
-        error: { type: AppErrorType.UNKNOWN, message: `Failed to load project token stats: ${error}` },
+        error: {
+          type: AppErrorType.UNKNOWN,
+          message: `Failed to load project token stats: ${error}`,
+        },
         projectTokenStats: [],
       });
     } finally {
@@ -386,7 +398,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setTheme: async (theme: Theme) => {
     set({ theme });
-    
+
     // Save to persistent storage
     try {
       const store = await load("settings.json", { autoSave: false });

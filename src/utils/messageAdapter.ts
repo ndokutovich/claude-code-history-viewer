@@ -6,7 +6,7 @@ import type { RawClaudeMessage, ClaudeMessage } from "../types";
  * documented in CLAUDE.md and the expected UI structure
  */
 export function adaptRawMessage(raw: RawClaudeMessage): ClaudeMessage {
-  const { message, ...rest } = raw;
+  const { message, toolUseResult, ...rest } = raw;
 
   return {
     ...rest,
@@ -15,6 +15,8 @@ export function adaptRawMessage(raw: RawClaudeMessage): ClaudeMessage {
     model: message?.model,
     stop_reason: message?.stop_reason,
     usage: message?.usage,
+    toolUseResult:
+      typeof toolUseResult === "string" ? undefined : toolUseResult,
   };
 }
 
