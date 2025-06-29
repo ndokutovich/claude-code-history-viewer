@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
+import { load } from "@tauri-apps/plugin-store";
 import type {
   AppState,
   ClaudeProject,
@@ -31,6 +32,7 @@ interface AppStore extends AppState {
   searchMessages: (query: string, filters?: SearchFilters) => Promise<void>;
   setSearchFilters: (filters: SearchFilters) => void;
   setError: (error: string | null) => void;
+  setClaudePath: (path: string) => void;
   loadSessionTokenStats: (sessionPath: string) => Promise<void>;
   loadProjectTokenStats: (projectPath: string) => Promise<void>;
   clearTokenStats: () => void;
@@ -74,6 +76,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
           "Tauri API를 사용할 수 없습니다. 데스크톱 앱에서 실행해주세요."
         );
       }
+
+      // Try to load saved claude path first
+      try {
+        const store = await load("settings.json", { autoSave: false });
+        const savedPath = await store.get<string>("claudePath");
+        
+        if (savedPath) {
+          // Validate saved path
+          const isValid = await invoke<boolean>("validate_claude_folder", { path: savedPath });
+          if (isValid) {
+            set({ claudePath: savedPath });
+            await get().scanProjects();
+            return;
+          }
+        }
+      } catch {
+        // Store doesn't exist yet, that's okay
+        console.log("No saved settings found");
+      }
+
+      // Try default path
       const claudePath = await invoke<string>("get_claude_folder_path");
       set({ claudePath });
       await get().scanProjects();
@@ -277,6 +300,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setError: (error: string | null) => {
     set({ error });
+  },
+
+  setClaudePath: async (path: string) => {
+    set({ claudePath: path });
+    
+    // Save to persistent storage
+    try {
+      const store = await load("settings.json", { autoSave: false });
+      await store.set("claudePath", path);
+      await store.save();
+    } catch (error) {
+      console.error("Failed to save claude path:", error);
+    }
   },
 
   loadSessionTokenStats: async (sessionPath: string) => {

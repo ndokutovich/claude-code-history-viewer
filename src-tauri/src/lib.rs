@@ -7,8 +7,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_store::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             get_claude_folder_path,
+            validate_claude_folder,
             scan_projects,
             load_project_sessions,
             load_session_messages,

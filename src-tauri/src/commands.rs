@@ -115,6 +115,32 @@ pub async fn get_claude_folder_path() -> Result<String, String> {
 }
 
 #[tauri::command]
+pub async fn validate_claude_folder(path: String) -> Result<bool, String> {
+    let path_buf = PathBuf::from(&path);
+    
+    // Check if the path exists
+    if !path_buf.exists() {
+        return Ok(false);
+    }
+    
+    // Check if this is already a .claude folder
+    if path_buf.file_name().and_then(|n| n.to_str()) == Some(".claude") {
+        // Check if it has the expected structure (projects folder)
+        let projects_path = path_buf.join("projects");
+        return Ok(projects_path.exists() && projects_path.is_dir());
+    }
+    
+    // Check if the path contains a .claude folder
+    let claude_path = path_buf.join(".claude");
+    if claude_path.exists() && claude_path.is_dir() {
+        let projects_path = claude_path.join("projects");
+        return Ok(projects_path.exists() && projects_path.is_dir());
+    }
+    
+    Ok(false)
+}
+
+#[tauri::command]
 pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, String> {
     let projects_path = PathBuf::from(&claude_path).join("projects");
 

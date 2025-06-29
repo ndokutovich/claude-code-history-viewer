@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
+import { FolderSelector } from "./components/FolderSelector";
 import { useAppStore } from "./store/useAppStore";
 import type { ClaudeSession } from "./types";
 import {
@@ -16,6 +17,7 @@ import "./App.css";
 
 function App() {
   const [showTokenStats, setShowTokenStats] = useState(false);
+  const [showFolderSelector, setShowFolderSelector] = useState(false);
 
   const {
     projects,
@@ -40,6 +42,7 @@ function App() {
     loadSessionTokenStats,
     loadProjectTokenStats,
     clearTokenStats,
+    setClaudePath,
   } = useAppStore();
 
   // 세션 선택 시 토큰 통계 화면에서 채팅 화면으로 자동 전환
@@ -52,8 +55,26 @@ function App() {
   };
 
   useEffect(() => {
-    initializeApp();
+    initializeApp().catch((error) => {
+      // Check if the error is about missing claude folder
+      if (error?.message?.includes("Claude folder not found")) {
+        setShowFolderSelector(true);
+      }
+    });
   }, [initializeApp]);
+
+  const handleFolderSelected = async (path: string) => {
+    // If user selected the .claude folder itself, use it directly
+    // If user selected a parent folder containing .claude, append .claude
+    let claudeFolderPath = path;
+    if (!path.endsWith(".claude")) {
+      claudeFolderPath = `${path}/.claude`;
+    }
+    
+    setClaudePath(claudeFolderPath);
+    setShowFolderSelector(false);
+    await useAppStore.getState().scanProjects();
+  };
 
   // 토큰 통계 로드
   const handleLoadTokenStats = async () => {
@@ -75,7 +96,12 @@ function App() {
     }
   };
 
-  if (error) {
+  // Show folder selector if needed
+  if (showFolderSelector || (error && error.includes("Claude folder not found"))) {
+    return <FolderSelector onFolderSelected={handleFolderSelected} />;
+  }
+
+  if (error && !error.includes("Claude folder not found")) {
     return (
       <div className="h-screen flex items-center justify-center bg-red-50">
         <div className="text-center">
