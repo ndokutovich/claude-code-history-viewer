@@ -22,10 +22,11 @@ interface MessageNodeProps {
 }
 
 const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
+  console.log("ClaudeMessageNode 입력 메시지:", depth, message);
   return (
     <div className="w-full px-4 py-2">
       <div className="max-w-4xl mx-auto">
-        {/* 메시지 헤더 (시간, 사용자 정보) */}
+        {/* 메시지 헤더 */}
         <div
           className={`flex items-center space-x-2 mb-1 text-xs text-gray-500 ${
             message.type === "user" ? "justify-end" : "justify-start"
@@ -105,6 +106,18 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLength = useRef(messages.length);
+
+  // 메시지 변화 감지 및 디버깅
+  useEffect(() => {
+    if (prevMessagesLength.current !== messages.length) {
+      console.log(
+        `메시지 개수 변화: ${prevMessagesLength.current} -> ${messages.length}`
+      );
+      console.log("페이지네이션 상태:", pagination);
+      prevMessagesLength.current = messages.length;
+    }
+  }, [messages.length, pagination]);
 
   // Intersection Observer for infinite scrolling
   const handleIntersection = useCallback(
@@ -118,6 +131,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
         !pagination.isLoadingMore &&
         !isLoading
       ) {
+        console.log("무한 스크롤 트리거됨");
         onLoadMore();
       }
     },
@@ -127,8 +141,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   // Set up intersection observer
   useEffect(() => {
     const observer = new IntersectionObserver(handleIntersection, {
-      root: scrollContainerRef.current,
-      rootMargin: "200px", // 200px 전에 미리 로딩하여 더 부드러운 스크롤
+      root: null,
+      rootMargin: "200px",
       threshold: 0.1,
     });
 
@@ -137,7 +151,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     }
 
     return () => observer.disconnect();
-  }, [handleIntersection]);
+  }, [handleIntersection, pagination.hasMore]); // pagination.hasMore 의존성 추가
 
   // 메시지를 트리 구조로 변환
   const buildMessageTree = (messages: ClaudeMessage[]) => {
@@ -164,7 +178,6 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       messages.length > 0 &&
       pagination.currentOffset === 0
     ) {
-      // 초기 로딩일 때만 스크롤을 맨 위로 이동
       setTimeout(() => {
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollTop = 0;
@@ -172,6 +185,27 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       }, 0);
     }
   }, [messages.length, pagination.currentOffset]);
+
+  // 메시지 로딩 완료 시 스크롤 위치 조정 (새로운 메시지 추가 후)
+  useEffect(() => {
+    if (pagination.isLoadingMore === false && messages.length > 20) {
+      // 로딩이 완료되고 새로운 메시지가 추가되었을 때
+      // 약간의 지연 후 observer를 다시 설정하여 확실히 감지되도록 함
+      setTimeout(() => {
+        if (loadMoreRef.current) {
+          // 강제로 observer 다시 설정
+          const observer = new IntersectionObserver(handleIntersection, {
+            root: null,
+            rootMargin: "200px",
+            threshold: 0.1,
+          });
+          observer.observe(loadMoreRef.current);
+
+          setTimeout(() => observer.disconnect(), 1000);
+        }
+      }, 100);
+    }
+  }, [pagination.isLoadingMore, messages.length, handleIntersection]);
 
   if (isLoading && messages.length === 0) {
     return (
@@ -232,6 +266,16 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       className="flex-1 overflow-y-auto scrollbar-thin"
     >
       <div className="max-w-4xl mx-auto">
+        {/* 디버깅 정보 */}
+        {import.meta.env.DEV && (
+          <div className="bg-yellow-50 p-2 text-xs text-yellow-800 border-b">
+            메시지: {messages.length} / {pagination.totalCount} | 오프셋:{" "}
+            {pagination.currentOffset} | 더 있음:{" "}
+            {pagination.hasMore ? "O" : "X"} | 로딩중:{" "}
+            {pagination.isLoadingMore ? "O" : "X"}
+          </div>
+        )}
+
         {/* 메시지 목록 */}
         {rootMessages.map((message) => renderMessageTree(message))}
 
@@ -240,15 +284,20 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           <div
             ref={loadMoreRef}
             className="flex items-center justify-center py-4"
+            style={{ minHeight: "60px" }} // 최소 높이 보장
           >
             {pagination.isLoadingMore ? (
               <div className="flex items-center space-x-2 text-gray-500">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>더 많은 메시지를 불러오는 중...</span>
+                <span>
+                  더 많은 메시지를 불러오는 중... ({messages.length}/
+                  {pagination.totalCount})
+                </span>
               </div>
             ) : (
               <div className="text-gray-400 text-sm">
-                스크롤하여 더 많은 메시지를 불러오세요
+                스크롤하여 더 많은 메시지를 불러오세요 ({messages.length}/
+                {pagination.totalCount})
               </div>
             )}
           </div>

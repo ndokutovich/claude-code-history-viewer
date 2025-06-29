@@ -15,13 +15,18 @@ export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = ({
 }) => {
   if (!content) return null;
 
-  // Check for command tags in string content
-  if (
-    typeof content === "string" &&
-    content.includes("<command-message>") &&
-    content.includes("</command-message>")
-  ) {
-    return <CommandRenderer text={content} />;
+  // Check for any command-related tags in string content
+  if (typeof content === "string") {
+    const hasCommandTags =
+      content.includes("<command-") ||
+      content.includes("<local-command-") ||
+      content.includes("-command-") ||
+      content.includes("-stdout>") ||
+      content.includes("-stderr>");
+
+    if (hasCommandTags) {
+      return <CommandRenderer text={content} />;
+    }
   }
 
   // 사용자와 어시스턴트 메시지에 따라 다른 렌더링
