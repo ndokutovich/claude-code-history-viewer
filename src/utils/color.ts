@@ -3,7 +3,7 @@ export const getTodoStatusColor = (status: string) => {
     case "completed":
       return "bg-green-500";
     case "in_progress":
-      return "bg-yellow-500";
+      return "bg-yellow-300";
     case "pending":
       return "bg-gray-300";
     default:

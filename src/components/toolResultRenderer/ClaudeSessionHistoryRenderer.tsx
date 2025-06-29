@@ -7,7 +7,7 @@ type Props = {
   content: string;
 };
 
-export const ChatHistoryRenderer = ({ content }: Props) => {
+export const ClaudeSessionHistoryRenderer = ({ content }: Props) => {
   try {
     // Split by lines and filter out empty lines
     const lines = content.split("\n").filter((line) => line.trim());

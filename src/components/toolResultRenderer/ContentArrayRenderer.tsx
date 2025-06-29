@@ -1,11 +1,8 @@
 import { Bot } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import {
-  ThinkingRenderer,
-  ToolResultRenderer,
-  ToolUseRenderer,
-} from "../contentRenderer";
+import { ThinkingRenderer, ToolUseRenderer } from "../contentRenderer";
+import { ClaudeToolResultItem } from "./ClaudeToolResultItem";
 
 type Props = {
   toolResult: Record<string, unknown>;
@@ -163,7 +160,7 @@ export const ContentArrayRenderer = ({ toolResult }: Props) => {
                     <ToolUseRenderer toolUse={itemObj} />
                   )}
                   {itemObj.type === "tool_result" && (
-                    <ToolResultRenderer toolResult={itemObj} index={index} />
+                    <ClaudeToolResultItem toolResult={itemObj} index={index} />
                   )}
                   {!["text", "tool_use", "tool_result"].includes(
                     itemObj.type as string

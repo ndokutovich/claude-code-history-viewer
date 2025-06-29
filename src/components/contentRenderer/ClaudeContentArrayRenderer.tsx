@@ -4,7 +4,7 @@ import { Copy } from "lucide-react";
 import { CommandRenderer } from "./CommandRenderer";
 import { ThinkingRenderer } from "./ThinkingRenderer";
 import { ToolUseRenderer } from "./ToolUseRenderer";
-import { ToolResultRenderer } from "./ToolResultRenderer";
+import { ClaudeToolResultItem } from "../toolResultRenderer";
 
 type Props = {
   content: unknown[];
@@ -88,7 +88,7 @@ export const ClaudeContentArrayRenderer = ({ content, messageType }: Props) => {
           // Handle tool result content
           if (contentItem.type === "tool_result") {
             return (
-              <ToolResultRenderer toolResult={contentItem} index={index} />
+              <ClaudeToolResultItem toolResult={contentItem} index={index} />
             );
           }
 

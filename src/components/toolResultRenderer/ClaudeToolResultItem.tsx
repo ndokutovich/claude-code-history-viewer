@@ -1,16 +1,19 @@
-import { X, Check, FileText, AlertTriangle, Folder, File } from "lucide-react";
+"use client";
+
+import { Check, FileText, AlertTriangle, Folder, File } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useCopyButton } from "../../hooks/useCopyButton";
+import { Renderer } from "../../shared/RendererHeader";
 
 type Props = {
   toolResult: Record<string, unknown>;
   index: number;
 };
 
-export const ToolResultRenderer = ({ toolResult, index }: Props) => {
+export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
   const { renderCopyButton } = useCopyButton();
   const toolUseId = toolResult.tool_use_id || "";
   const content = toolResult.content || "";
@@ -227,67 +230,55 @@ export const ToolResultRenderer = ({ toolResult, index }: Props) => {
       extractCodeFromNumberedLines(codeContent);
 
     return (
-      <div
-        className={`mt-2 p-3 border rounded-lg ${
-          isError ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"
-        }`}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center space-x-2">
-            {isError ? (
-              <X className="w-4 h-4 text-red-500" />
-            ) : (
-              <FileText className="w-4 h-4 text-green-500" />
-            )}
-            <span
-              className={`font-medium ${
-                isError ? "text-red-800" : "text-green-800"
-              }`}
+      <Renderer className="bg-green-50 border-green-200" hasError={isError}>
+        <Renderer.Header
+          title="파일 내용"
+          icon={<FileText className="w-4 h-4 text-green-500" />}
+          titleClassName="text-green-800"
+          rightContent={
+            <div className="flex items-center space-x-2">
+              {renderCopyButton(code, `tool-result-code-${index}`, "코드 복사")}
+              {toolUseId && (
+                <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
+                  Tool ID: {String(toolUseId)}
+                </code>
+              )}
+            </div>
+          }
+        />
+        <Renderer.Content>
+          {/* 설명 텍스트 */}
+          {description && (
+            <div className="mb-3 p-2 bg-gray-100 border border-gray-200 rounded text-sm">
+              <div className="text-gray-800">{description}</div>
+            </div>
+          )}
+          <div className="rounded-lg overflow-hidden">
+            <div className="bg-gray-800 px-3 py-1 text-xs text-gray-300 flex items-center justify-between">
+              <span>{language}</span>
+              <span className="text-gray-400">
+                {code.split("\n").length} 줄
+              </span>
+            </div>
+            <SyntaxHighlighter
+              language={language}
+              style={vscDarkPlus}
+              showLineNumbers={true}
+              customStyle={{
+                margin: 0,
+                fontSize: "0.875rem",
+                lineHeight: "1.25rem",
+                maxHeight: "32rem",
+                overflow: "auto",
+              }}
             >
-              파일 내용
-            </span>
+              {code}
+            </SyntaxHighlighter>
           </div>
-          <div className="flex items-center space-x-2">
-            {renderCopyButton(code, `tool-result-code-${index}`, "코드 복사")}
-            {toolUseId && (
-              <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
-                Tool ID: {String(toolUseId)}
-              </code>
-            )}
-          </div>
-        </div>
-
-        {/* 설명 텍스트 */}
-        {description && (
-          <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
-            <div className="text-blue-800">{description}</div>
-          </div>
-        )}
-
-        <div className="rounded-lg overflow-hidden">
-          <div className="bg-gray-800 px-3 py-1 text-xs text-gray-300 flex items-center justify-between">
-            <span>{language}</span>
-            <span className="text-gray-400">{code.split("\n").length} 줄</span>
-          </div>
-          <SyntaxHighlighter
-            language={language}
-            style={vscDarkPlus}
-            showLineNumbers={true}
-            customStyle={{
-              margin: 0,
-              fontSize: "0.875rem",
-              lineHeight: "1.25rem",
-              maxHeight: "32rem",
-              overflow: "auto",
-            }}
-          >
-            {code}
-          </SyntaxHighlighter>
-        </div>
-
-        {/* 시스템 메시지들 렌더링 */}
-        {renderSystemMessages(systemMessages)}
-      </div>
+          {/* 시스템 메시지들 렌더링 */}
+          {renderSystemMessages(systemMessages)}
+        </Renderer.Content>
+      </Renderer>
     );
   }
 
@@ -297,128 +288,104 @@ export const ToolResultRenderer = ({ toolResult, index }: Props) => {
       separateSystemContent(content);
 
     return (
-      <div
-        className={`mt-2 p-3 border rounded-lg ${
-          isError ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"
-        }`}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center space-x-2">
-            {isError ? (
-              <X className="w-4 h-4 text-red-500" />
-            ) : (
-              <Folder className="w-4 h-4 text-green-500" />
-            )}
-            <span
-              className={`font-medium ${
-                isError ? "text-red-800" : "text-green-800"
-              }`}
-            >
-              파일 검색 결과
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            {renderCopyButton(
-              cleanContent,
-              `file-search-result-${index}`,
-              "결과 복사"
-            )}
-            {toolUseId && (
-              <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
-                Tool ID: {String(toolUseId)}
-              </code>
-            )}
-          </div>
-        </div>
-
-        {renderFileSearchResult(cleanContent)}
-
-        {/* 시스템 메시지들 렌더링 */}
-        {renderSystemMessages(systemMessages)}
-      </div>
+      <Renderer className="bg-green-50 border-green-200" hasError={isError}>
+        <Renderer.Header
+          title="파일 검색 결과"
+          icon={<Folder className="w-4 h-4 text-green-500" />}
+          titleClassName="text-green-800"
+          rightContent={
+            <div className="flex items-center space-x-2">
+              {renderCopyButton(
+                cleanContent,
+                `file-search-result-${index}`,
+                "결과 복사"
+              )}
+              {toolUseId && (
+                <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
+                  Tool ID: {String(toolUseId)}
+                </code>
+              )}
+            </div>
+          }
+        />
+        <Renderer.Content>
+          {renderFileSearchResult(cleanContent)}
+          {renderSystemMessages(systemMessages)}
+        </Renderer.Content>
+      </Renderer>
     );
   }
 
   // 기본 처리 (기존 로직)
   return (
-    <div
-      className={`mt-2 p-3 border rounded-lg ${
-        isError ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"
-      }`}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center space-x-2">
-          {isError ? (
-            <X className="w-4 h-4 text-red-500" />
-          ) : (
-            <Check className="w-4 h-4 text-green-500" />
-          )}
-          <span
-            className={`font-medium ${
-              isError ? "text-red-800" : "text-green-800"
-            }`}
-          >
-            도구 실행 결과
-          </span>
-        </div>
-        {toolUseId && (
-          <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
-            Tool ID: {String(toolUseId)}
-          </code>
-        )}
-      </div>
+    <Renderer className="bg-green-50 border-green-200" hasError={isError}>
+      <Renderer.Header
+        title="도구 실행 결과"
+        icon={<Check className="w-4 h-4 text-green-500" />}
+        titleClassName="text-green-800"
+        rightContent={
+          toolUseId && (
+            <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
+              Tool ID: {String(toolUseId)}
+            </code>
+          )
+        }
+      />
+      <Renderer.Content>
+        <div className="text-sm">
+          {typeof content === "string" ? (
+            <div className="prose prose-sm max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {content}
+              </ReactMarkdown>
+            </div>
+          ) : Array.isArray(content) ? (
+            // 배열 내용을 처리
+            <div className="space-y-2">
+              {content.map((item: unknown, idx: number) => {
+                if (item && typeof item === "object") {
+                  const contentItem = item as Record<string, unknown>;
 
-      <div className="text-sm">
-        {typeof content === "string" ? (
-          <div className="prose prose-sm max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-          </div>
-        ) : Array.isArray(content) ? (
-          // 배열 내용을 처리
-          <div className="space-y-2">
-            {content.map((item: unknown, idx: number) => {
-              if (item && typeof item === "object") {
-                const contentItem = item as Record<string, unknown>;
+                  // text 타입 항목 처리
+                  if (
+                    contentItem.type === "text" &&
+                    typeof contentItem.text === "string"
+                  ) {
+                    return (
+                      <div key={idx} className="prose prose-sm max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {contentItem.text}
+                        </ReactMarkdown>
+                      </div>
+                    );
+                  }
 
-                // text 타입 항목 처리
-                if (
-                  contentItem.type === "text" &&
-                  typeof contentItem.text === "string"
-                ) {
+                  // 기타 객체 항목 처리
                   return (
-                    <div key={idx} className="prose prose-sm max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {contentItem.text}
-                      </ReactMarkdown>
-                    </div>
+                    <pre
+                      key={idx}
+                      className="text-xs text-gray-700 whitespace-pre-wrap bg-white p-2 rounded border"
+                    >
+                      {JSON.stringify(item, null, 2)}
+                    </pre>
                   );
                 }
 
-                // 기타 객체 항목 처리
+                // 단순 값 처리
                 return (
-                  <pre
-                    key={idx}
-                    className="text-xs text-gray-700 whitespace-pre-wrap bg-white p-2 rounded border"
-                  >
-                    {JSON.stringify(item, null, 2)}
-                  </pre>
+                  <div key={idx} className="text-gray-700">
+                    {String(item)}
+                  </div>
                 );
-              }
-
-              // 단순 값 처리
-              return (
-                <div key={idx} className="text-gray-700">
-                  {String(item)}
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <pre className="text-xs text-gray-700 whitespace-pre-wrap bg-white p-2 rounded border">
-            {JSON.stringify(content, null, 2)}
-          </pre>
-        )}
-      </div>
-    </div>
+              })}
+            </div>
+          ) : (
+            <pre className="text-xs text-gray-700 whitespace-pre-wrap bg-white p-2 rounded border">
+              {JSON.stringify(content, null, 2)}
+            </pre>
+          )}
+        </div>
+      </Renderer.Content>
+    </Renderer>
   );
 };

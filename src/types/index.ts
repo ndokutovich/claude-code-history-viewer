@@ -14,6 +14,59 @@ export interface ClaudeToolUseResult {
   exitCode: number;
 }
 
+// Raw message structure from JSONL files
+export interface RawClaudeMessage {
+  uuid: string;
+  parentUuid?: string;
+  sessionId: string;
+  timestamp: string;
+  type: 'user' | 'assistant' | 'system' | 'summary';
+  message: {
+    role: 'user' | 'assistant';
+    content: string | ContentItem[];
+  };
+  toolUse?: Record<string, unknown>;
+  toolUseResult?: Record<string, unknown>;
+  isSidechain?: boolean;
+  userType?: string;
+  cwd?: string;
+  version?: string;
+  requestId?: string;
+}
+
+// Content types based on CLAUDE.md
+export type ContentItem = 
+  | TextContent
+  | ToolUseContent
+  | ToolResultContent
+  | ThinkingContent;
+
+export interface TextContent {
+  type: 'text';
+  text: string;
+}
+
+export interface ToolUseContent {
+  type: 'tool_use';
+  id: string;
+  name: string;
+  input: Record<string, unknown>;
+}
+
+export interface ToolResultContent {
+  type: 'tool_result';
+  tool_use_id: string;
+  content: string;
+  is_error?: boolean;
+}
+
+export interface ThinkingContent {
+  type: 'thinking';
+  thinking: string;
+  signature?: string;
+}
+
+// Processed message for UI
 export interface ClaudeMessage {
   uuid: string;
   parentUuid?: string;
