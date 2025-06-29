@@ -100,6 +100,7 @@ export const StructuredPatchRenderer = ({ toolResult }: Props) => {
             업데이트된 파일:
           </div>
           <FileContent
+            title="업데이트된 파일 내용"
             fileData={{
               content: content,
               filePath: filePath,

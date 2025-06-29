@@ -191,7 +191,7 @@ export const ToolExecutionResultRouter: React.FC<
       return <ClaudeSessionHistoryRenderer content={fileData.content} />;
     }
 
-    return <FileContent fileData={fileData} />;
+    return <FileContent fileData={fileData} title="파일 내용" />;
   }
 
   // Handle file edit results

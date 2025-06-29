@@ -7,8 +7,10 @@ import {
   ChevronDown,
   ChevronRight,
   MessageCircle,
+  Loader2,
 } from "lucide-react";
 import type { ClaudeProject, ClaudeSession } from "../types";
+import { cn } from "../utils/cn";
 
 interface ProjectTreeProps {
   projects: ClaudeProject[];
@@ -57,7 +59,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   };
 
   const toggleProject = (projectPath: string) => {
-    setExpandedProject(projectPath);
+    setExpandedProject((prev) => (prev === projectPath ? "" : projectPath));
   };
 
   const truncatePath = (path: string) => {
@@ -74,7 +76,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     return (
       <div className="w-80 bg-white border-r border-gray-200 flex items-center justify-center">
         <div className="flex items-center space-x-2 text-gray-500">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-claude-orange"></div>
+          <Loader2 className="w-4 h-4 animate-spin" />
           <span>로딩 중...</span>
         </div>
       </div>
@@ -82,7 +84,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   }
 
   return (
-    <div className="w-80 bg-gray-900 text-white flex flex-col h-full">
+    <div className="w-80 bg-gray-100 text-gray-800 flex flex-col h-full">
       {/* Projects List */}
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         {projects.length === 0 ? (
@@ -105,7 +107,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                       onProjectSelect(project);
                       toggleProject(project.path);
                     }}
-                    className="w-full text-left p-3 hover:bg-gray-800 transition-colors flex items-center justify-between"
+                    className="w-full text-left p-3 hover:bg-gray-200 transition-colors flex items-center justify-between"
                   >
                     <div className="flex items-center space-x-2">
                       {isExpanded ? (
@@ -115,7 +117,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                       )}
                       <Folder className="w-4 h-4 text-blue-400" />
                       <div className="min-w-0 flex-1">
-                        <span className="font-medium text-white truncate block">
+                        <span className="font-medium text-gray-800 truncate block text-sm">
                           {truncatePath(project.path)}
                         </span>
                       </div>
@@ -133,17 +135,18 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                           <button
                             key={session.session_id}
                             onClick={() => onSessionSelect(session)}
-                            className={`w-full text-left p-3 rounded-lg transition-colors ${
+                            className={cn(
+                              "w-full text-left p-3 rounded-lg transition-colors",
                               isSessionSelected
-                                ? "bg-blue-600 border-l-4 border-blue-400"
-                                : "hover:bg-gray-800"
-                            }`}
+                                ? "bg-blue-100 border-l-4 border-blue-400"
+                                : "hover:bg-gray-200"
+                            )}
                           >
                             <div className="flex items-start space-x-3">
-                              <MessageCircle className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                              <MessageCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between">
-                                  <h3 className="font-medium text-white text-sm truncate">
+                                  <h3 className="font-medium text-gray-800 text-sm truncate">
                                     세션 {session.session_id}
                                   </h3>
                                   <div className="flex items-center space-x-1">

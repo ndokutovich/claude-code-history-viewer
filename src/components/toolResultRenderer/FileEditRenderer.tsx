@@ -95,6 +95,7 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
         {originalFile && (
           <div>
             <FileContent
+              title="원본 파일 내용"
               fileData={{
                 content: originalFile,
                 filePath: filePath,

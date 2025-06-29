@@ -11,8 +11,10 @@ import { Renderer } from "../shared/RendererHeader";
 
 export const FileContent = ({
   fileData,
+  title,
 }: {
   fileData: Record<string, unknown>;
+  title: string;
 }) => {
   const { renderCopyButton } = useCopyButton();
   const content = typeof fileData.content === "string" ? fileData.content : "";
@@ -132,7 +134,7 @@ export const FileContent = ({
   return (
     <Renderer className="bg-blue-50 border-blue-200">
       <Renderer.Header
-        title="변경 이전 파일 내용"
+        title={title}
         icon={<FileText className="w-4 h-4 text-blue-500" />}
         titleClassName="text-blue-800"
         rightContent={

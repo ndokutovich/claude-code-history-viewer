@@ -8,6 +8,7 @@ import {
   Settings,
   Upload,
   Search,
+  Loader2,
 } from "lucide-react";
 import "./App.css";
 
@@ -149,7 +150,7 @@ function App() {
           <div className="flex items-center space-x-2">
             {isLoading && (
               <>
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-claude-orange"></div>
+                <Loader2 className="w-4 h-4 animate-spin" />
                 <span>로딩 중...</span>
               </>
             )}

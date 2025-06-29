@@ -87,7 +87,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessions: [],
       selectedSession: null,
       messages: [],
-      isLoading: true,
+      isLoading: false,
     });
     try {
       const sessions = await invoke<ClaudeSession[]>("load_project_sessions", {
@@ -103,7 +103,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   selectSession: async (session: ClaudeSession) => {
-    set({ selectedSession: session, messages: [], isLoading: true });
+    set({ selectedSession: session, messages: [], isLoading: false });
     try {
       const sessionPath = `${get().selectedProject?.path}/${
         session.session_id
