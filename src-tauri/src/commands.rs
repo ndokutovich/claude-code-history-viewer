@@ -684,6 +684,10 @@ pub async fn get_session_token_stats(session_path: String) -> Result<SessionToke
         }
     }
 
+    if messages.is_empty() {
+        return Err("No valid messages found to calculate stats.".to_string());
+    }
+
     let total_tokens = total_input_tokens + total_output_tokens + total_cache_creation_tokens + total_cache_read_tokens;
 
     Ok(SessionTokenStats {
