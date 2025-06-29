@@ -5,7 +5,7 @@ import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { FolderSelector } from "./components/FolderSelector";
 import { useAppStore } from "./store/useAppStore";
 import { useTheme } from "./hooks/useTheme";
-import type { ClaudeSession, Theme } from "./types";
+import { AppErrorType, type ClaudeSession, type Theme } from "./types";
 import {
   AlertTriangle,
   Settings,
@@ -74,13 +74,15 @@ function App() {
   };
 
   useEffect(() => {
-    initializeApp().catch((error) => {
-      // Check if the error is about missing claude folder
-      if (error?.message?.includes("Claude folder not found")) {
-        setShowFolderSelector(true);
-      }
-    });
+    initializeApp();
   }, [initializeApp]);
+
+  // Handle errors
+  useEffect(() => {
+    if (error?.type === AppErrorType.CLAUDE_FOLDER_NOT_FOUND) {
+      setShowFolderSelector(true);
+    }
+  }, [error]);
 
   const handleFolderSelected = async (path: string) => {
     // If user selected the .claude folder itself, use it directly
@@ -116,14 +118,11 @@ function App() {
   };
 
   // Show folder selector if needed
-  if (
-    showFolderSelector ||
-    (error && error.includes("Claude folder not found"))
-  ) {
+  if (showFolderSelector) {
     return <FolderSelector onFolderSelected={handleFolderSelected} />;
   }
 
-  if (error && !error.includes("Claude folder not found")) {
+  if (error && error.type !== AppErrorType.CLAUDE_FOLDER_NOT_FOUND) {
     return (
       <div
         className={cn(
@@ -145,7 +144,9 @@ function App() {
           >
             오류가 발생했습니다
           </h1>
-          <p className={cn("mb-4", COLORS.semantic.error.text)}>{error}</p>
+          <p className={cn("mb-4", COLORS.semantic.error.text)}>
+            {error.message}
+          </p>
           <button
             onClick={() => window.location.reload()}
             className={cn(

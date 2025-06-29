@@ -114,6 +114,7 @@ export const COLORS = {
       dark: "bg-gray-800 dark:bg-gray-200",
       darker: "bg-gray-900 dark:bg-gray-100",
       darkest: "bg-gray-950 dark:bg-gray-50",
+      error: "bg-red-50 dark:bg-red-950",
     },
 
     // Border colors
@@ -121,6 +122,7 @@ export const COLORS = {
       light: "border-gray-200 dark:border-gray-700",
       medium: "border-gray-300 dark:border-gray-600",
       dark: "border-gray-700 dark:border-gray-300",
+      error: "border-red-200 dark:border-red-800",
     },
 
     // Text colors
@@ -132,6 +134,7 @@ export const COLORS = {
       disabled: "text-gray-400 dark:text-gray-600",
       disabledDark: "text-gray-300 dark:text-gray-600",
       inverse: "text-gray-100 dark:text-gray-900",
+      error: "text-red-600 dark:text-red-400",
     },
 
     // Interactive states

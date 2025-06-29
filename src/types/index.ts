@@ -157,6 +157,20 @@ export interface PaginationState {
 
 export type Theme = "light" | "dark" | "system";
 
+// Error types
+export enum AppErrorType {
+  CLAUDE_FOLDER_NOT_FOUND = "CLAUDE_FOLDER_NOT_FOUND",
+  TAURI_NOT_AVAILABLE = "TAURI_NOT_AVAILABLE",
+  PERMISSION_DENIED = "PERMISSION_DENIED",
+  INVALID_PATH = "INVALID_PATH",
+  UNKNOWN = "UNKNOWN",
+}
+
+export interface AppError {
+  type: AppErrorType;
+  message: string;
+}
+
 export interface AppState {
   claudePath: string;
   projects: ClaudeProject[];
@@ -173,7 +187,7 @@ export interface AppState {
   isLoadingSessions: boolean;
   isLoadingMessages: boolean;
   isLoadingTokenStats: boolean;
-  error: string | null;
+  error: AppError | null;
   sessionTokenStats: SessionTokenStats | null;
   projectTokenStats: SessionTokenStats[];
   theme: Theme;

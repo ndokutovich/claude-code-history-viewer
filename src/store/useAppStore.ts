@@ -10,6 +10,8 @@ import type {
   SearchFilters,
   SessionTokenStats,
   Theme,
+  AppError,
+  AppErrorType,
 } from "../types";
 
 // Tauri API가 사용 가능한지 확인하는 함수
@@ -32,7 +34,7 @@ interface AppStore extends AppState {
   refreshCurrentSession: () => Promise<void>;
   searchMessages: (query: string, filters?: SearchFilters) => Promise<void>;
   setSearchFilters: (filters: SearchFilters) => void;
-  setError: (error: string | null) => void;
+  setError: (error: AppError | null) => void;
   setClaudePath: (path: string) => void;
   loadSessionTokenStats: (sessionPath: string) => Promise<void>;
   loadProjectTokenStats: (projectPath: string) => Promise<void>;
@@ -110,7 +112,23 @@ export const useAppStore = create<AppStore>((set, get) => ({
       await get().scanProjects();
     } catch (error) {
       console.error("Failed to initialize app:", error);
-      set({ error: error instanceof Error ? error.message : String(error) });
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Parse error type from message
+      let errorType = AppErrorType.UNKNOWN;
+      let message = errorMessage;
+      
+      if (errorMessage.includes("CLAUDE_FOLDER_NOT_FOUND:")) {
+        errorType = AppErrorType.CLAUDE_FOLDER_NOT_FOUND;
+        message = errorMessage.split(":")[1] || errorMessage;
+      } else if (errorMessage.includes("PERMISSION_DENIED:")) {
+        errorType = AppErrorType.PERMISSION_DENIED;
+        message = errorMessage.split(":")[1] || errorMessage;
+      } else if (errorMessage.includes("Tauri API")) {
+        errorType = AppErrorType.TAURI_NOT_AVAILABLE;
+      }
+      
+      set({ error: { type: errorType, message } });
     } finally {
       set({ isLoading: false });
     }
@@ -128,7 +146,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set({ projects });
     } catch (error) {
       console.error("Failed to scan projects:", error);
-      set({ error: error as string });
+      set({ error: { type: AppErrorType.UNKNOWN, message: String(error) } });
     } finally {
       set({ isLoadingProjects: false });
     }
@@ -149,7 +167,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set({ sessions });
     } catch (error) {
       console.error("Failed to load project sessions:", error);
-      set({ error: error as string });
+      set({ error: { type: AppErrorType.UNKNOWN, message: String(error) } });
     } finally {
       set({ isLoadingSessions: false });
     }
@@ -200,7 +218,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     } catch (error) {
       console.error("Failed to load session messages:", error);
-      set({ error: error as string, isLoadingMessages: false });
+      set({ error: { type: AppErrorType.UNKNOWN, message: String(error) }, isLoadingMessages: false });
     }
   },
 
@@ -247,7 +265,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } catch (error) {
       console.error("Failed to load more messages:", error);
       set({
-        error: error as string,
+        error: { type: AppErrorType.UNKNOWN, message: String(error) },
         pagination: {
           ...pagination,
           isLoadingMore: false,
@@ -273,7 +291,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set({ searchResults: results });
     } catch (error) {
       console.error("Failed to search messages:", error);
-      set({ error: error as string });
+      set({ error: { type: AppErrorType.UNKNOWN, message: String(error) } });
     } finally {
       set({ isLoadingMessages: false });
     }
@@ -298,7 +316,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       console.log("새로고침 완료");
     } catch (error) {
       console.error("새로고침 실패:", error);
-      set({ error: error as string });
+      set({ error: { type: AppErrorType.UNKNOWN, message: String(error) } });
     }
   },
 
@@ -306,7 +324,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({ searchFilters: filters });
   },
 
-  setError: (error: string | null) => {
+  setError: (error: AppError | null) => {
     set({ error });
   },
 
@@ -333,7 +351,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } catch (error) {
       console.error("Failed to load session token stats:", error);
       set({
-        error: `Failed to load token stats: ${error}`,
+        error: { type: AppErrorType.UNKNOWN, message: `Failed to load token stats: ${error}` },
         sessionTokenStats: null,
       });
     } finally {
@@ -354,7 +372,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     } catch (error) {
       console.error("Failed to load project token stats:", error);
       set({
-        error: `Failed to load project token stats: ${error}`,
+        error: { type: AppErrorType.UNKNOWN, message: `Failed to load project token stats: ${error}` },
         projectTokenStats: [],
       });
     } finally {

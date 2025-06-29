@@ -116,13 +116,28 @@ pub struct SessionTokenStats {
 
 #[tauri::command]
 pub async fn get_claude_folder_path() -> Result<String, String> {
-    let home_dir = std::env::var("HOME")
-        .map_err(|_| "Could not determine home directory".to_string())?;
+    // Cross-platform home directory handling
+    let home_dir = if cfg!(windows) {
+        std::env::var("USERPROFILE")
+            .or_else(|_| std::env::var("HOMEDRIVE").and_then(|drive| {
+                std::env::var("HOMEPATH").map(|path| format!("{}{}", drive, path))
+            }))
+            .map_err(|_| "CLAUDE_FOLDER_NOT_FOUND:Could not determine home directory on Windows".to_string())?
+    } else {
+        // Unix-like systems (macOS, Linux)
+        std::env::var("HOME")
+            .map_err(|_| "CLAUDE_FOLDER_NOT_FOUND:Could not determine home directory".to_string())?
+    };
 
-    let claude_path = PathBuf::from(home_dir).join(".claude");
+    let claude_path = PathBuf::from(&home_dir).join(".claude");
 
     if !claude_path.exists() {
-        return Err("Claude folder not found in home directory".to_string());
+        return Err(format!("CLAUDE_FOLDER_NOT_FOUND:Claude folder not found at {}", claude_path.display()));
+    }
+
+    // Verify it's accessible
+    if let Err(_) = fs::read_dir(&claude_path) {
+        return Err("PERMISSION_DENIED:Cannot access Claude folder. Please check permissions.".to_string());
     }
 
     Ok(claude_path.to_string_lossy().to_string())
