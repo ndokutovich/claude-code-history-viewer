@@ -1,6 +1,5 @@
 import { Check } from "lucide-react";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Highlight, themes } from "prism-react-renderer";
 import { Renderer } from "../../shared/RendererHeader";
 import { cn } from "../../utils/cn";
 import { COLORS } from "../../constants/colors";
@@ -21,17 +20,31 @@ export const FallbackRenderer = ({ toolResult }: Props) => {
       />
       <Renderer.Content>
         <div className="text-sm">
-          <SyntaxHighlighter
+          <Highlight
+            theme={themes.vsDark}
+            code={JSON.stringify(toolResult, null, 2)}
             language="json"
-            style={vscDarkPlus}
-            customStyle={{
-              margin: 0,
-              fontSize: "0.75rem",
-              padding: "0.5rem",
-            }}
           >
-            {JSON.stringify(toolResult, null, 2)}
-          </SyntaxHighlighter>
+            {({ className, style, tokens, getLineProps, getTokenProps }) => (
+              <pre
+                className={className}
+                style={{
+                  ...style,
+                  margin: 0,
+                  fontSize: "0.75rem",
+                  padding: "0.5rem",
+                }}
+              >
+                {tokens.map((line, i) => (
+                  <div key={i} {...getLineProps({ line, key: i })}>
+                    {line.map((token, key) => (
+                      <span key={key} {...getTokenProps({ token, key })} />
+                    ))}
+                  </div>
+                ))}
+              </pre>
+            )}
+          </Highlight>
         </div>
       </Renderer.Content>
     </Renderer>

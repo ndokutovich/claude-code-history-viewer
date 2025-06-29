@@ -1,10 +1,6 @@
 "use client";
 
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import {
-  oneLight,
-  vscDarkPlus,
-} from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Highlight, themes } from "prism-react-renderer";
 import {
   FileText,
   Edit3,
@@ -166,18 +162,33 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
               COLORS.semantic.success.border
             )}
           >
-            <SyntaxHighlighter
+            <Highlight
+              theme={themes.vsLight}
+              code={content}
               language={language}
-              style={oneLight}
-              customStyle={{
-                margin: 0,
-                fontSize: "0.75rem",
-                backgroundColor: "#f0fdf4",
-                border: "1px solid #bbf7d0",
-              }}
             >
-              {content}
-            </SyntaxHighlighter>
+              {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                <pre
+                  className={className}
+                  style={{
+                    ...style,
+                    margin: 0,
+                    fontSize: "0.75rem",
+                    backgroundColor: "#f0fdf4",
+                    border: "1px solid #bbf7d0",
+                    padding: "0.5rem",
+                  }}
+                >
+                  {tokens.map((line, i) => (
+                    <div key={i} {...getLineProps({ line, key: i })}>
+                      {line.map((token, key) => (
+                        <span key={key} {...getTokenProps({ token, key })} />
+                      ))}
+                    </div>
+                  ))}
+                </pre>
+              )}
+            </Highlight>
           </div>
         </div>
       </div>
@@ -371,18 +382,33 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
                 COLORS.semantic.error.border
               )}
             >
-              <SyntaxHighlighter
+              <Highlight
+                theme={themes.vsLight}
+                code={oldString}
                 language={language}
-                style={oneLight}
-                customStyle={{
-                  margin: 0,
-                  fontSize: "0.75rem",
-                  backgroundColor: "#fef2f2",
-                  border: "1px solid #fecaca",
-                }}
               >
-                {oldString}
-              </SyntaxHighlighter>
+                {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                  <pre
+                    className={className}
+                    style={{
+                      ...style,
+                      margin: 0,
+                      fontSize: "0.75rem",
+                      backgroundColor: "#fef2f2",
+                      border: "1px solid #fecaca",
+                      padding: "0.5rem",
+                    }}
+                  >
+                    {tokens.map((line, i) => (
+                      <div key={i} {...getLineProps({ line, key: i })}>
+                        {line.map((token, key) => (
+                          <span key={key} {...getTokenProps({ token, key })} />
+                        ))}
+                      </div>
+                    ))}
+                  </pre>
+                )}
+              </Highlight>
             </div>
           </div>
 
@@ -406,18 +432,33 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
                 COLORS.semantic.success.border
               )}
             >
-              <SyntaxHighlighter
+              <Highlight
+                theme={themes.vsLight}
+                code={newString}
                 language={language}
-                style={oneLight}
-                customStyle={{
-                  margin: 0,
-                  fontSize: "0.75rem",
-                  backgroundColor: "#f0fdf4",
-                  border: "1px solid #bbf7d0",
-                }}
               >
-                {newString}
-              </SyntaxHighlighter>
+                {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                  <pre
+                    className={className}
+                    style={{
+                      ...style,
+                      margin: 0,
+                      fontSize: "0.75rem",
+                      backgroundColor: "#f0fdf4",
+                      border: "1px solid #bbf7d0",
+                      padding: "0.5rem",
+                    }}
+                  >
+                    {tokens.map((line, i) => (
+                      <div key={i} {...getLineProps({ line, key: i })}>
+                        {line.map((token, key) => (
+                          <span key={key} {...getTokenProps({ token, key })} />
+                        ))}
+                      </div>
+                    ))}
+                  </pre>
+                )}
+              </Highlight>
             </div>
           </div>
         </div>
@@ -465,17 +506,31 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
           >
             도구 입력 매개변수
           </div>
-          <SyntaxHighlighter
+          <Highlight
+            theme={themes.vsDark}
+            code={JSON.stringify(toolInput, null, 2)}
             language="json"
-            style={vscDarkPlus}
-            customStyle={{
-              margin: 0,
-              fontSize: "0.75rem",
-              padding: "0.5rem",
-            }}
           >
-            {JSON.stringify(toolInput, null, 2)}
-          </SyntaxHighlighter>
+            {({ className, style, tokens, getLineProps, getTokenProps }) => (
+              <pre
+                className={className}
+                style={{
+                  ...style,
+                  margin: 0,
+                  fontSize: "0.75rem",
+                  padding: "0.5rem",
+                }}
+              >
+                {tokens.map((line, i) => (
+                  <div key={i} {...getLineProps({ line, key: i })}>
+                    {line.map((token, key) => (
+                      <span key={key} {...getTokenProps({ token, key })} />
+                    ))}
+                  </div>
+                ))}
+              </pre>
+            )}
+          </Highlight>
         </div>
       </Renderer.Content>
     </Renderer>

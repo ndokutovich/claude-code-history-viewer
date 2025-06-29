@@ -248,10 +248,19 @@ Claude Code History Viewer 사용 중 다음과 같은 에러가 발생했습니
                 문제 해결 방법
               </h4>
               <ul className={cn("space-y-1", COLORS.ui.text.secondary)}>
-                <li>• 페이지를 새로고침해보세요 (Cmd/Ctrl + R)</li>
-                <li>• 브라우저 캐시를 삭제해보세요</li>
-                <li>• 다른 프로젝트나 세션을 선택해보세요</li>
-                <li>• Claude Desktop 앱을 재시작해보세요</li>
+                <li>• 앱을 완전히 종료한 뒤 다시 실행해보세요</li>
+                {/* <li>
+                  • [설정] 또는 [도움말] 메뉴에서 캐시/설정을 초기화해보세요
+                </li> */}
+                <li>
+                  • Claude Code History Viewer의 최신 버전이 설치되어 있는지
+                  확인하세요
+                </li>
+                <li>• 다른 프로젝트를 열어 문제가 반복되는지 확인해보세요</li>
+                <li>
+                  • 문제가 지속된다면 에러 정보를 복사해 개발자에게 제보해
+                  주세요
+                </li>
               </ul>
             </div>
           </div>

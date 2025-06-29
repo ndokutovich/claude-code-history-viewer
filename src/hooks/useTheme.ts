@@ -5,6 +5,10 @@ export const useTheme = () => {
   const theme = useAppStore((state) => state.theme);
   const setTheme = useAppStore((state) => state.setTheme);
 
+  // Calculate if dark mode is active
+  const isDarkMode = theme === 'dark' || 
+    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
   useEffect(() => {
     const root = window.document.documentElement;
     
@@ -33,5 +37,5 @@ export const useTheme = () => {
     }
   }, [theme]);
 
-  return { theme, setTheme };
+  return { theme, setTheme, isDarkMode };
 };

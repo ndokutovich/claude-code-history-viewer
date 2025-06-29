@@ -4,9 +4,9 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Highlight, themes } from "prism-react-renderer";
 import { useCopyButton } from "../hooks/useCopyButton";
+import { useTheme } from "../hooks/useTheme";
 import { Renderer } from "../shared/RendererHeader";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
@@ -19,6 +19,7 @@ export const FileContent = ({
   title: string;
 }) => {
   const { renderCopyButton } = useCopyButton();
+  const { isDarkMode } = useTheme();
   const content = typeof fileData.content === "string" ? fileData.content : "";
   const filePath =
     typeof fileData.filePath === "string" ? fileData.filePath : "";
@@ -263,7 +264,9 @@ export const FileContent = ({
                   </pre>
                 </div>
               ) : (
-                <SyntaxHighlighter
+                <Highlight
+                  theme={isDarkMode ? themes.vsDark : themes.vsLight}
+                  code={displayContent}
                   language={
                     language === "tsx"
                       ? "typescript"
@@ -271,19 +274,47 @@ export const FileContent = ({
                       ? "javascript"
                       : language
                   }
-                  style={vscDarkPlus}
-                  showLineNumbers={true}
-                  startingLineNumber={startLine}
-                  customStyle={{
-                    margin: 0,
-                    fontSize: "0.875rem",
-                    lineHeight: "1.25rem",
-                    maxHeight: "24rem",
-                    overflow: "auto",
-                  }}
                 >
-                  {displayContent}
-                </SyntaxHighlighter>
+                  {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                    <pre
+                      className={className}
+                      style={{
+                        ...style,
+                        margin: 0,
+                        fontSize: "0.875rem",
+                        lineHeight: "1.25rem",
+                        maxHeight: "24rem",
+                        overflow: "auto",
+                        padding: "1rem",
+                      }}
+                    >
+                      {tokens.map((line, i) => (
+                        <div
+                          key={i}
+                          {...getLineProps({ line, key: i })}
+                          style={{ display: "table-row" }}
+                        >
+                          <span
+                            style={{
+                              display: "table-cell",
+                              textAlign: "right",
+                              paddingRight: "1em",
+                              userSelect: "none",
+                              opacity: 0.5,
+                            }}
+                          >
+                            {startLine + i}
+                          </span>
+                          <span style={{ display: "table-cell" }}>
+                            {line.map((token, key) => (
+                              <span key={key} {...getTokenProps({ token, key })} />
+                            ))}
+                          </span>
+                        </div>
+                      ))}
+                    </pre>
+                  )}
+                </Highlight>
               )}
               {shouldCollapse &&
                 !isExpanded &&

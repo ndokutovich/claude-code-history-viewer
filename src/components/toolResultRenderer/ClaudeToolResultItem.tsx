@@ -3,8 +3,7 @@
 import { Check, FileText, AlertTriangle, Folder, File } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Highlight, themes } from "prism-react-renderer";
 import { useCopyButton } from "../../hooks/useCopyButton";
 import { Renderer } from "../../shared/RendererHeader";
 import { cn } from "../../utils/cn";
@@ -308,20 +307,45 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
                 {code.split("\n").length} 줄
               </span>
             </div>
-            <SyntaxHighlighter
+            <Highlight
+              theme={themes.vsDark}
+              code={code}
               language={language}
-              style={vscDarkPlus}
-              showLineNumbers={true}
-              customStyle={{
-                margin: 0,
-                fontSize: "0.875rem",
-                lineHeight: "1.25rem",
-                maxHeight: "32rem",
-                overflow: "auto",
-              }}
             >
-              {code}
-            </SyntaxHighlighter>
+              {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                <pre
+                  className={className}
+                  style={{
+                    ...style,
+                    margin: 0,
+                    fontSize: "0.875rem",
+                    lineHeight: "1.25rem",
+                    maxHeight: "32rem",
+                    overflow: "auto",
+                    padding: "1rem",
+                  }}
+                >
+                  {tokens.map((line, i) => (
+                    <div key={i} {...getLineProps({ line })}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          width: "2em",
+                          userSelect: "none",
+                          opacity: 0.5,
+                          marginRight: "1em",
+                        }}
+                      >
+                        {i + 1}
+                      </span>
+                      {line.map((token, key) => (
+                        <span key={key} {...getTokenProps({ token })} />
+                      ))}
+                    </div>
+                  ))}
+                </pre>
+              )}
+            </Highlight>
           </div>
           {/* 시스템 메시지들 렌더링 */}
           {renderSystemMessages(systemMessages)}

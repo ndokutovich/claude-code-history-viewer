@@ -1,6 +1,5 @@
 import React from "react";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Highlight, themes } from "prism-react-renderer";
 import { ToolIcon } from "../ToolIcon";
 import { COLORS } from "../../constants/colors";
 import { cn } from "../../utils/cn";
@@ -34,17 +33,31 @@ export const ClaudeToolUseDisplay: React.FC<ClaudeToolUseDisplayProps> = ({
         </span>
       </div>
       <div className="rounded overflow-hidden max-h-96 overflow-y-auto">
-        <SyntaxHighlighter
+        <Highlight
+          theme={themes.vsDark}
+          code={JSON.stringify(toolUse.parameters || toolUse, null, 2)}
           language="json"
-          style={vscDarkPlus}
-          customStyle={{
-            margin: 0,
-            fontSize: "0.75rem",
-            padding: "0.5rem",
-          }}
         >
-          {JSON.stringify(toolUse.parameters || toolUse, null, 2)}
-        </SyntaxHighlighter>
+          {({ className, style, tokens, getLineProps, getTokenProps }) => (
+            <pre
+              className={className}
+              style={{
+                ...style,
+                margin: 0,
+                fontSize: "0.75rem",
+                padding: "0.5rem",
+              }}
+            >
+              {tokens.map((line, i) => (
+                <div key={i} {...getLineProps({ line, key: i })}>
+                  {line.map((token, key) => (
+                    <span key={key} {...getTokenProps({ token, key })} />
+                  ))}
+                </div>
+              ))}
+            </pre>
+          )}
+        </Highlight>
       </div>
     </div>
   );

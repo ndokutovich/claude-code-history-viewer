@@ -7,12 +7,20 @@ import { COLORS } from "../constants/colors";
 
 interface FolderSelectorProps {
   onFolderSelected: (path: string) => void;
+  mode?: "notFound" | "change";
+  onClose?: () => void;
 }
 
-export function FolderSelector({ onFolderSelected }: FolderSelectorProps) {
+export function FolderSelector({
+  onFolderSelected,
+  mode = "notFound",
+  onClose,
+}: FolderSelectorProps) {
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState<string>("");
+
+  const isChangeMode = mode === "change";
 
   const handleSelectFolder = async () => {
     try {
@@ -29,7 +37,9 @@ export function FolderSelector({ onFolderSelected }: FolderSelectorProps) {
       }
     } catch (err) {
       console.error("폴더 선택 실패:", err);
-      setValidationError("폴더를 선택하는 중 오류가 발생했습니다.");
+      setValidationError(
+        "폴더를 선택하는 중 오류가 발생했습니다.\n- 폴더 접근 권한을 확인해보세요.\n- Claude 앱이 실행 중인지 확인하거나, 앱을 재시작해보세요.\n- 시스템에서 폴더 경로가 올바른지 확인해보세요."
+      );
     }
   };
 
@@ -64,11 +74,23 @@ export function FolderSelector({ onFolderSelected }: FolderSelectorProps) {
     >
       <div
         className={cn(
-          "max-w-md w-full mx-auto p-8 rounded-lg shadow-lg",
+          "max-w-md w-full mx-auto p-8 rounded-lg shadow-lg relative",
           COLORS.ui.background.secondary,
           COLORS.ui.border.medium
         )}
       >
+        {isChangeMode && onClose && (
+          <button
+            onClick={onClose}
+            className={cn(
+              "absolute left-4 top-4 flex items-center text-sm font-medium px-3 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors",
+              COLORS.ui.text.secondary
+            )}
+            type="button"
+          >
+            <span className="mr-1">←</span>뒤로 가기
+          </button>
+        )}
         <div className="text-center">
           <div className="mb-6">
             <Folder
@@ -77,12 +99,15 @@ export function FolderSelector({ onFolderSelected }: FolderSelectorProps) {
           </div>
 
           <h1 className={cn("text-2xl font-bold mb-2", COLORS.ui.text.primary)}>
-            Claude 폴더를 찾을 수 없습니다
+            {isChangeMode
+              ? "Claude 폴더 변경"
+              : "Claude 폴더를 찾을 수 없습니다"}
           </h1>
 
           <p className={cn("mb-8", COLORS.ui.text.secondary)}>
-            홈 디렉토리에서 .claude 폴더를 찾을 수 없습니다. .claude 폴더 또는
-            이를 포함하는 상위 폴더를 선택해주세요.
+            {isChangeMode
+              ? "새로운 Claude 폴더 또는 상위 폴더를 선택해주세요."
+              : "홈 디렉토리에서 .claude 폴더를 찾을 수 없습니다. .claude 폴더 또는 이를 포함하는 상위 폴더를 선택해주세요."}
           </p>
 
           <button

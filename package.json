@@ -30,6 +30,7 @@
     "diff": "^8.0.2",
     "lucide-react": "^0.300.0",
     "minisearch": "^7.1.2",
+    "prism-react-renderer": "^2.4.1",
     "prismjs": "^1.30.0",
     "react": "^19.1.0",
     "react-diff-viewer-continued": "^3.4.0",

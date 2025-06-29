@@ -1,6 +1,5 @@
 import React from "react";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { Highlight, themes } from "prism-react-renderer";
 import { Terminal, Package, TestTube, Hammer, BarChart3 } from "lucide-react";
 
 interface CommandOutputDisplayProps {
@@ -39,16 +38,31 @@ export const CommandOutputDisplay: React.FC<CommandOutputDisplayProps> = ({
           <div className="bg-gray-800 px-3 py-1 text-xs text-gray-300">
             JSON 출력
           </div>
-          <SyntaxHighlighter
+          <Highlight
+            theme={themes.vsDark}
+            code={JSON.stringify(parsed, null, 2)}
             language="json"
-            style={vscDarkPlus}
-            customStyle={{
-              margin: 0,
-              fontSize: "0.75rem",
-            }}
           >
-            {JSON.stringify(parsed, null, 2)}
-          </SyntaxHighlighter>
+            {({ className, style, tokens, getLineProps, getTokenProps }) => (
+              <pre
+                className={className}
+                style={{
+                  ...style,
+                  margin: 0,
+                  fontSize: "0.75rem",
+                  padding: "1rem",
+                }}
+              >
+                {tokens.map((line, i) => (
+                  <div key={i} {...getLineProps({ line, key: i })}>
+                    {line.map((token, key) => (
+                      <span key={key} {...getTokenProps({ token, key })} />
+                    ))}
+                  </div>
+                ))}
+              </pre>
+            )}
+          </Highlight>
         </div>
       );
     } catch {

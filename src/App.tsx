@@ -119,7 +119,17 @@ function App() {
 
   // Show folder selector if needed
   if (showFolderSelector) {
-    return <FolderSelector onFolderSelected={handleFolderSelected} />;
+    return (
+      <FolderSelector
+        onFolderSelected={handleFolderSelected}
+        mode={
+          error?.type === AppErrorType.CLAUDE_FOLDER_NOT_FOUND
+            ? "notFound"
+            : "change"
+        }
+        onClose={() => setShowFolderSelector(false)}
+      />
+    );
   }
 
   if (error && error.type !== AppErrorType.CLAUDE_FOLDER_NOT_FOUND) {
