@@ -58,7 +58,11 @@ function App() {
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <FolderOpen className="w-8 h-8 text-gray-700" />
+            <img
+              src="/app-icon.png"
+              alt="Claude Code History Viewer"
+              className="w-10 h-10"
+            />
             <div>
               <h1 className="text-xl font-semibold text-gray-900">
                 Claude Code History Viewer
@@ -103,7 +107,7 @@ function App() {
         />
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="w-full flex flex-col relative">
           {/* Content Header */}
           {selectedSession && (
             <div className="bg-white border-b border-gray-200 p-4">

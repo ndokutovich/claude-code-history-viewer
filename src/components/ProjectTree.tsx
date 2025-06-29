@@ -116,10 +116,10 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                         <ChevronRight className="w-4 h-4 text-gray-400" />
                       )}
                       <Folder className="w-4 h-4 text-blue-400" />
-                      <div className="min-w-0 flex-1">
-                        <span className="font-medium text-gray-800 truncate block text-sm">
+                      <div className="min-w-0 flex-1 flex items-center">
+                        <p className="font-medium text-gray-800 truncate text-sm">
                           {truncatePath(project.path)}
-                        </span>
+                        </p>
                       </div>
                     </div>
                   </button>
