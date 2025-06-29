@@ -4,7 +4,8 @@ import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { FolderSelector } from "./components/FolderSelector";
 import { useAppStore } from "./store/useAppStore";
-import type { ClaudeSession } from "./types";
+import { useTheme } from "./hooks/useTheme";
+import type { ClaudeSession, Theme } from "./types";
 import {
   AlertTriangle,
   Settings,
@@ -12,8 +13,24 @@ import {
   RefreshCw,
   BarChart3,
   MessageSquare,
+  Sun,
+  Moon,
+  Laptop,
+  Folder,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./components/ui/dropdown-menu";
 import "./App.css";
+import { cn } from "./utils/cn";
+import { COLORS } from "./constants/colors";
 
 function App() {
   const [showTokenStats, setShowTokenStats] = useState(false);
@@ -44,6 +61,8 @@ function App() {
     clearTokenStats,
     setClaudePath,
   } = useAppStore();
+
+  const { theme, setTheme } = useTheme();
 
   // 세션 선택 시 토큰 통계 화면에서 채팅 화면으로 자동 전환
   const handleSessionSelect = async (session: ClaudeSession) => {
@@ -106,18 +125,34 @@ function App() {
 
   if (error && !error.includes("Claude folder not found")) {
     return (
-      <div className="h-screen flex items-center justify-center bg-red-50">
+      <div
+        className={cn(
+          "h-screen flex items-center justify-center",
+          COLORS.semantic.error.bg
+        )}
+      >
         <div className="text-center">
           <div className="mb-4">
-            <AlertTriangle className="w-12 h-12 mx-auto text-red-500" />
+            <AlertTriangle
+              className={cn("w-12 h-12 mx-auto", COLORS.semantic.error.icon)}
+            />
           </div>
-          <h1 className="text-xl font-semibold text-red-800 mb-2">
+          <h1
+            className={cn(
+              "text-xl font-semibold mb-2",
+              COLORS.semantic.error.text
+            )}
+          >
             오류가 발생했습니다
           </h1>
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className={cn("mb-4", COLORS.semantic.error.text)}>{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className={cn(
+              "px-4 py-2 rounded-lg transition-colors",
+              COLORS.semantic.error.bg,
+              COLORS.semantic.error.text
+            )}
           >
             다시 시도
           </button>
@@ -127,9 +162,15 @@ function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className={cn("h-screen flex flex-col", COLORS.ui.background.primary)}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
+      <header
+        className={cn(
+          "px-6 py-4 border-b",
+          COLORS.ui.background.secondary,
+          COLORS.ui.border.light
+        )}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img
@@ -138,10 +179,12 @@ function App() {
               className="w-10 h-10"
             />
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1
+                className={cn("text-xl font-semibold", COLORS.ui.text.primary)}
+              >
                 Claude Code History Viewer
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className={cn("text-sm", COLORS.ui.text.muted)}>
                 Claude Code 대화 기록을 탐색하고 분석하세요
               </p>
             </div>
@@ -149,7 +192,7 @@ function App() {
 
           <div className="flex items-center space-x-4">
             {selectedProject && (
-              <div className="text-sm text-gray-600">
+              <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
                 <span className="font-medium">{selectedProject.name}</span>
                 {selectedSession && (
                   <>
@@ -172,17 +215,25 @@ function App() {
                     }
                   }}
                   disabled={isLoadingTokenStats}
-                  className={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  className={cn(
+                    "p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
                     showTokenStats
-                      ? "bg-blue-100 text-blue-600"
-                      : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                  }`}
+                      ? COLORS.semantic.info.bgDark
+                      : COLORS.ui.interactive.hover
+                  )}
                   title="토큰 사용량 통계"
                 >
                   {isLoadingTokenStats ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2
+                      className={cn(
+                        "w-5 h-5 animate-spin",
+                        COLORS.ui.text.primary
+                      )}
+                    />
                   ) : (
-                    <BarChart3 className="w-5 h-5" />
+                    <BarChart3
+                      className={cn("w-5 h-5", COLORS.ui.text.primary)}
+                    />
                   )}
                 </button>
               )}
@@ -197,34 +248,99 @@ function App() {
                       }
                     }}
                     disabled={!showTokenStats}
-                    className={`p-2 rounded-lg transition-colors ${
+                    className={cn(
+                      "p-2 rounded-lg transition-colors",
                       !showTokenStats
-                        ? "bg-green-100 text-green-600"
-                        : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                    }`}
+                        ? cn(
+                            COLORS.semantic.success.bgDark,
+                            COLORS.semantic.success.text
+                          )
+                        : cn(
+                            COLORS.ui.text.disabled,
+                            "hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700"
+                          )
+                    )}
                     title="메시지 보기"
                   >
-                    <MessageSquare className="w-5 h-5" />
+                    <MessageSquare
+                      className={cn("w-5 h-5", COLORS.ui.text.primary)}
+                    />
                   </button>
 
                   <button
                     onClick={() => refreshCurrentSession()}
                     disabled={isLoadingMessages}
-                    className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={cn(
+                      "p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      COLORS.ui.text.disabled,
+                      "hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700"
+                    )}
                     title="세션 새로고침"
                   >
                     <RefreshCw
-                      className={`w-5 h-5 ${
-                        isLoadingMessages ? "animate-spin" : ""
-                      }`}
+                      className={cn(
+                        "w-5 h-5",
+                        isLoadingMessages ? "animate-spin" : "",
+                        COLORS.ui.text.primary
+                      )}
                     />
                   </button>
                 </>
               )}
 
-              <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
-                <Settings className="w-5 h-5" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={cn(
+                      "p-2 rounded-lg transition-colors",
+                      COLORS.ui.text.disabled,
+                      "hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-800"
+                    )}
+                  >
+                    <Settings
+                      className={cn("w-5 h-5", COLORS.ui.text.primary)}
+                    />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>설정</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem onClick={() => setShowFolderSelector(true)}>
+                    <Folder
+                      className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                    />
+                    <span>폴더 변경</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuLabel>테마</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={theme}
+                    onValueChange={(value) => setTheme(value as Theme)}
+                  >
+                    <DropdownMenuRadioItem value="light">
+                      <Sun
+                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                      />
+                      <span>라이트</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="dark">
+                      <Moon
+                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                      />
+                      <span>다크</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="system">
+                      <Laptop
+                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                      />
+                      <span>시스템</span>
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -247,18 +363,29 @@ function App() {
         <div className="w-full flex flex-col relative">
           {/* Content Header */}
           {(selectedSession || showTokenStats) && (
-            <div className="bg-white border-b border-gray-200 p-4">
+            <div
+              className={cn(
+                "p-4 border-b",
+                COLORS.ui.background.secondary,
+                COLORS.ui.border.light
+              )}
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2
+                    className={cn(
+                      "text-lg font-semibold",
+                      COLORS.ui.text.primary
+                    )}
+                  >
                     {showTokenStats ? "토큰 사용량 통계" : "대화 내용"}
                   </h2>
-                  <span className="text-sm text-gray-800">
+                  <span className={cn("text-sm", COLORS.ui.text.secondary)}>
                     {selectedSession?.summary ||
                       "세션 요약을 찾을 수 없습니다."}
                   </span>
                   {!showTokenStats && selectedSession && (
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
                       {pagination.totalCount > messages.length &&
                         ` ${pagination.totalCount || "-"}개 • `}
                       {selectedSession.has_tool_use
@@ -268,7 +395,7 @@ function App() {
                     </p>
                   )}
                   {showTokenStats && (
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
                       프로젝트별 토큰 사용량 분석 및 세션별 상세 통계
                     </p>
                   )}
@@ -296,8 +423,13 @@ function App() {
               />
             ) : (
               <div className="h-full flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <div className={cn("text-center", COLORS.ui.text.muted)}>
+                  <MessageSquare
+                    className={cn(
+                      "w-16 h-16 mx-auto mb-4",
+                      COLORS.ui.text.disabledDark
+                    )}
+                  />
                   <p className="text-lg mb-2">세션을 선택해주세요</p>
                   <p className="text-sm">
                     좌측에서 프로젝트와 세션을 선택하면 대화 내용을 볼 수
@@ -311,8 +443,19 @@ function App() {
       </div>
 
       {/* Status Bar */}
-      <div className="bg-white border-t border-gray-200 px-6 py-2">
-        <div className="flex items-center justify-between text-xs text-gray-500">
+      <div
+        className={cn(
+          "px-6 py-2 border-t",
+          COLORS.ui.background.secondary,
+          COLORS.ui.border.light
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center justify-between text-xs",
+            COLORS.ui.text.muted
+          )}
+        >
           <div className="flex items-center space-x-4">
             <span>프로젝트: {projects.length}개</span>
             <span>세션: {sessions.length}개</span>

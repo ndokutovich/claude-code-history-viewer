@@ -7,6 +7,8 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useCopyButton } from "../../hooks/useCopyButton";
 import { Renderer } from "../../shared/RendererHeader";
+import { cn } from "../../utils/cn";
+import { COLORS } from "../../constants/colors";
 
 type Props = {
   toolResult: Record<string, unknown>;
@@ -128,15 +130,20 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
         {messages.map((msg, idx) => (
           <div
             key={idx}
-            className="p-2 bg-yellow-50 border border-yellow-200 rounded text-sm"
+            className={cn(
+              COLORS.semantic.warning.bg,
+              COLORS.semantic.warning.border
+            )}
           >
             <div className="flex items-center space-x-2 mb-1">
-              <AlertTriangle className="w-3 h-3 text-yellow-600" />
-              <span className="font-medium text-yellow-800 capitalize">
+              <AlertTriangle className={cn(COLORS.semantic.warning.icon)} />
+              <span className={cn(COLORS.semantic.warning.text)}>
                 {msg.type?.replace("-", " ") || "System Message"}
               </span>
             </div>
-            <div className="text-yellow-700 text-xs">{msg.content}</div>
+            <div className={cn(COLORS.semantic.warning.text)}>
+              {msg.content}
+            </div>
           </div>
         ))}
       </div>
@@ -184,9 +191,15 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
     return (
       <div className="space-y-2">
         {/* 헤더 */}
-        <div className="flex items-center space-x-2 p-2 bg-blue-100 rounded">
-          <Folder className="w-4 h-4 text-blue-600" />
-          <span className="font-medium text-blue-800">{headerLine}</span>
+        <div
+          className={cn(
+            "flex items-center space-x-2 mb-1 p-2 rounded",
+            COLORS.semantic.info.bg,
+            COLORS.semantic.info.border
+          )}
+        >
+          <Folder className={cn("w-4 h-4", COLORS.semantic.info.icon)} />
+          <span className={cn(COLORS.semantic.info.text)}>{headerLine}</span>
         </div>
 
         {/* 파일 목록 */}
@@ -200,15 +213,26 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
             return (
               <div
                 key={idx}
-                className="flex items-center space-x-2 p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
+                className={cn(
+                  "flex items-center space-x-2 p-2 rounded",
+                  COLORS.ui.background.primary,
+                  COLORS.ui.border.medium
+                )}
               >
-                <File className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                <File className={cn("w-4 h-4", COLORS.ui.text.muted)} />
                 <div className="flex-1 min-w-0">
-                  <div className="font-mono text-sm text-gray-900 truncate">
+                  <div
+                    className={cn(
+                      "font-mono text-sm",
+                      COLORS.ui.text.secondary
+                    )}
+                  >
                     {fileName}
                   </div>
                   {directory && (
-                    <div className="font-mono text-xs text-gray-500 truncate">
+                    <div
+                      className={cn("font-mono text-xs", COLORS.ui.text.muted)}
+                    >
                       {directory}
                     </div>
                   )}
@@ -230,16 +254,30 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
       extractCodeFromNumberedLines(codeContent);
 
     return (
-      <Renderer className="bg-green-50 border-green-200" hasError={isError}>
+      <Renderer
+        className={cn(
+          COLORS.semantic.success.bg,
+          COLORS.semantic.success.border
+        )}
+        hasError={isError}
+      >
         <Renderer.Header
           title="파일 내용"
-          icon={<FileText className="w-4 h-4 text-green-500" />}
-          titleClassName="text-green-800"
+          icon={
+            <FileText className={cn("w-4 h-4", COLORS.semantic.success.icon)} />
+          }
+          titleClassName={cn(COLORS.semantic.success.text)}
           rightContent={
             <div className="flex items-center space-x-2">
               {renderCopyButton(code, `tool-result-code-${index}`, "코드 복사")}
               {toolUseId && (
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
+                <code
+                  className={cn(
+                    "text-xs",
+                    COLORS.ui.background.secondary,
+                    COLORS.ui.text.secondary
+                  )}
+                >
                   Tool ID: {String(toolUseId)}
                 </code>
               )}
@@ -249,14 +287,24 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
         <Renderer.Content>
           {/* 설명 텍스트 */}
           {description && (
-            <div className="mb-3 p-2 bg-gray-100 border border-gray-200 rounded text-sm">
-              <div className="text-gray-800">{description}</div>
+            <div
+              className={cn(
+                COLORS.ui.background.secondary,
+                COLORS.ui.border.medium
+              )}
+            >
+              <div className={cn(COLORS.ui.text.secondary)}>{description}</div>
             </div>
           )}
           <div className="rounded-lg overflow-hidden">
-            <div className="bg-gray-800 px-3 py-1 text-xs text-gray-300 flex items-center justify-between">
+            <div
+              className={cn(
+                COLORS.ui.background.secondary,
+                COLORS.ui.border.medium
+              )}
+            >
               <span>{language}</span>
-              <span className="text-gray-400">
+              <span className={cn(COLORS.ui.text.muted)}>
                 {code.split("\n").length} 줄
               </span>
             </div>
@@ -288,11 +336,19 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
       separateSystemContent(content);
 
     return (
-      <Renderer className="bg-green-50 border-green-200" hasError={isError}>
+      <Renderer
+        className={cn(
+          COLORS.semantic.success.bg,
+          COLORS.semantic.success.border
+        )}
+        hasError={isError}
+      >
         <Renderer.Header
           title="파일 검색 결과"
-          icon={<Folder className="w-4 h-4 text-green-500" />}
-          titleClassName="text-green-800"
+          icon={
+            <Folder className={cn("w-4 h-4", COLORS.semantic.success.icon)} />
+          }
+          titleClassName={cn(COLORS.semantic.success.text)}
           rightContent={
             <div className="flex items-center space-x-2">
               {renderCopyButton(
@@ -301,7 +357,13 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
                 "결과 복사"
               )}
               {toolUseId && (
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
+                <code
+                  className={cn(
+                    "text-xs",
+                    COLORS.ui.background.secondary,
+                    COLORS.ui.text.secondary
+                  )}
+                >
                   Tool ID: {String(toolUseId)}
                 </code>
               )}
@@ -318,14 +380,24 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
 
   // 기본 처리 (기존 로직)
   return (
-    <Renderer className="bg-green-50 border-green-200" hasError={isError}>
+    <Renderer
+      className={cn(COLORS.semantic.success.bg, COLORS.semantic.success.border)}
+      hasError={isError}
+    >
       <Renderer.Header
         title="도구 실행 결과"
-        icon={<Check className="w-4 h-4 text-green-500" />}
-        titleClassName="text-green-800"
+        icon={<Check className={cn("w-4 h-4", COLORS.semantic.success.icon)} />}
+        titleClassName={cn(COLORS.semantic.success.text)}
         rightContent={
           toolUseId && (
-            <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
+            <code
+              className={cn(
+                "text-xs",
+                isError
+                  ? COLORS.semantic.error.text
+                  : COLORS.semantic.success.text
+              )}
+            >
               Tool ID: {String(toolUseId)}
             </code>
           )
@@ -364,7 +436,10 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
                   return (
                     <pre
                       key={idx}
-                      className="text-xs text-gray-700 whitespace-pre-wrap bg-white p-2 rounded border"
+                      className={cn(
+                        COLORS.ui.background.secondary,
+                        COLORS.ui.border.medium
+                      )}
                     >
                       {JSON.stringify(item, null, 2)}
                     </pre>
@@ -373,14 +448,19 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
 
                 // 단순 값 처리
                 return (
-                  <div key={idx} className="text-gray-700">
+                  <div key={idx} className={cn(COLORS.ui.text.secondary)}>
                     {String(item)}
                   </div>
                 );
               })}
             </div>
           ) : (
-            <pre className="text-xs text-gray-700 whitespace-pre-wrap bg-white p-2 rounded border">
+            <pre
+              className={cn(
+                COLORS.ui.background.secondary,
+                COLORS.ui.border.medium
+              )}
+            >
               {JSON.stringify(content, null, 2)}
             </pre>
           )}

@@ -8,6 +8,8 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useCopyButton } from "../hooks/useCopyButton";
 import { Renderer } from "../shared/RendererHeader";
+import { cn } from "../utils/cn";
+import { COLORS } from "../constants/colors";
 
 export const FileContent = ({
   fileData,
@@ -132,11 +134,14 @@ export const FileContent = ({
       : content;
 
   return (
-    <Renderer className="bg-blue-50 border-blue-200">
+    // <Renderer className="bg-blue-50 border-blue-200">
+    <Renderer
+      className={cn(COLORS.semantic.info.bg, COLORS.semantic.info.border)}
+    >
       <Renderer.Header
         title={title}
-        icon={<FileText className="w-4 h-4 text-blue-500" />}
-        titleClassName="text-blue-800"
+        icon={<FileText className={cn("w-4 h-4", COLORS.semantic.info.icon)} />}
+        titleClassName={cn(COLORS.semantic.info.text)}
         rightContent={
           <div className="flex items-center space-x-2">
             {/* 파일 내용 복사 버튼 */}
@@ -147,7 +152,7 @@ export const FileContent = ({
                 "파일 내용 복사"
               )}
 
-            <div className="text-xs text-gray-600">
+            <div className={cn("text-xs", COLORS.semantic.info.text)}>
               {numLines > 0 && totalLines > 0 && (
                 <span>
                   {startLine}-{startLine + numLines - 1} / {totalLines} 줄
@@ -161,10 +166,17 @@ export const FileContent = ({
       <Renderer.Content>
         {filePath && (
           <div className="mb-2">
-            <div className="text-xs font-medium text-gray-600 mb-1">
+            <div
+              className={cn("text-xs font-medium", COLORS.semantic.info.text)}
+            >
               파일 경로:
             </div>
-            <code className="text-sm bg-gray-100 px-2 py-1 rounded text-gray-800 block">
+            <code
+              className={cn(
+                "text-sm bg-gray-100 px-2 py-1 rounded",
+                COLORS.semantic.info.text
+              )}
+            >
               {filePath}
             </code>
           </div>
@@ -173,11 +185,19 @@ export const FileContent = ({
         {content && (
           <div className="mb-2">
             <div className="flex items-center justify-between mb-1">
-              <div className="text-xs font-medium text-gray-600">내용:</div>
+              <div
+                className={cn("text-xs font-medium", COLORS.semantic.info.text)}
+              >
+                내용:
+              </div>
               {shouldCollapse && (
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-xs px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors"
+                  className={cn(
+                    "text-xs px-2 py-1 rounded transition-colors",
+                    COLORS.semantic.info.bg,
+                    COLORS.semantic.info.text
+                  )}
                 >
                   {isExpanded ? (
                     <>
@@ -192,28 +212,53 @@ export const FileContent = ({
               )}
             </div>
             <div className="rounded-lg overflow-hidden">
-              <div className="bg-gray-800 px-3 py-1 text-xs text-gray-300 flex items-center justify-between">
+              <div
+                className={cn(
+                  "px-3 py-1 text-xs flex items-center justify-between",
+                  COLORS.semantic.info.bg,
+                  COLORS.semantic.info.text
+                )}
+              >
                 <span>{language}</span>
                 <div className="flex items-center space-x-2">
                   {startLine > 1 && (
-                    <span className="text-gray-400">시작 줄: {startLine}</span>
+                    <span className={cn(COLORS.semantic.info.text)}>
+                      시작 줄: {startLine}
+                    </span>
                   )}
                   {shouldCollapse && !isExpanded && (
-                    <span className="text-yellow-400">
+                    <span className={cn(COLORS.semantic.warning.text)}>
                       {MAX_LINES}/{contentLines.length} 줄 표시 중
                     </span>
                   )}
                 </div>
               </div>
               {language === "markdown" ? (
-                <div className="bg-white p-4 prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-code:text-red-600 prose-code:bg-gray-100 prose-pre:bg-gray-900 prose-pre:text-gray-100">
+                <div
+                  className={cn(
+                    "p-4 prose prose-sm max-w-none",
+                    COLORS.semantic.info.bg,
+                    COLORS.semantic.info.text
+                  )}
+                >
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {displayContent}
                   </ReactMarkdown>
                 </div>
               ) : language === "text" ? (
-                <div className="bg-white p-4">
-                  <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
+                <div
+                  className={cn(
+                    "p-4",
+                    COLORS.semantic.info.bg,
+                    COLORS.semantic.info.text
+                  )}
+                >
+                  <pre
+                    className={cn(
+                      "text-sm whitespace-pre-wrap font-mono",
+                      COLORS.semantic.info.text
+                    )}
+                  >
                     {displayContent}
                   </pre>
                 </div>
@@ -243,10 +288,19 @@ export const FileContent = ({
               {shouldCollapse &&
                 !isExpanded &&
                 (language === "markdown" || language === "text") && (
-                  <div className="bg-gradient-to-t from-white to-transparent px-4 py-3 border-t border-gray-200">
+                  <div
+                    className={cn(
+                      "px-4 py-3 border-t",
+                      COLORS.semantic.info.bg,
+                      COLORS.semantic.info.border
+                    )}
+                  >
                     <button
                       onClick={() => setIsExpanded(true)}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                      className={cn(
+                        "text-xs font-medium transition-colors",
+                        COLORS.semantic.info.text
+                      )}
                     >
                       <FileText className="w-3 h-3 inline mr-1" />
                       {contentLines.length - MAX_LINES}줄 더 보기
@@ -257,10 +311,19 @@ export const FileContent = ({
                 !isExpanded &&
                 language !== "markdown" &&
                 language !== "text" && (
-                  <div className="bg-gray-800 px-3 py-2 border-t border-gray-700">
+                  <div
+                    className={cn(
+                      "px-3 py-2 border-t",
+                      COLORS.semantic.info.bg,
+                      COLORS.semantic.info.border
+                    )}
+                  >
                     <button
                       onClick={() => setIsExpanded(true)}
-                      className="text-xs text-blue-300 hover:text-blue-100 transition-colors"
+                      className={cn(
+                        "text-xs transition-colors",
+                        COLORS.semantic.info.text
+                      )}
                     >
                       <FileText className="w-3 h-3 inline mr-1" />
                       {contentLines.length - MAX_LINES}줄 더 보기

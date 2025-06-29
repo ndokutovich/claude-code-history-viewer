@@ -5,6 +5,8 @@ import { Folder, Check, FileText } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Renderer } from "../../shared/RendererHeader";
+import { cn } from "../../utils/cn";
+import { COLORS } from "../../constants/colors";
 
 type Props = {
   result: string;
@@ -27,22 +29,26 @@ export const StringRenderer = ({ result }: Props) => {
       : result;
 
   return (
-    <Renderer className="bg-green-50 border-green-200">
+    <Renderer className={cn(COLORS.tools.file.bg, COLORS.tools.file.border)}>
       <Renderer.Header
         title={isFileTree ? "파일 구조" : "도구 실행 결과"}
         icon={
           isFileTree ? (
-            <Folder className="w-4 h-4 text-green-500" />
+            <Folder className={cn(COLORS.tools.file.icon)} />
           ) : (
-            <Check className="w-4 h-4 text-green-500" />
+            <Check className={cn(COLORS.tools.file.icon)} />
           )
         }
-        titleClassName="text-green-800"
+        titleClassName={COLORS.tools.file.text}
         rightContent={
           shouldCollapse && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-xs px-2 py-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors"
+              className={cn(
+                "text-xs px-2 py-1 rounded transition-colors",
+                COLORS.ui.background.secondary,
+                COLORS.ui.text.primary
+              )}
             >
               {isExpanded ? (
                 <>
@@ -58,11 +64,11 @@ export const StringRenderer = ({ result }: Props) => {
         }
       />
       <Renderer.Content>
-        <div className="bg-white rounded border">
+        <div
+          className={cn(COLORS.ui.background.primary, COLORS.ui.border.medium)}
+        >
           {isFileTree ? (
-            <div className="p-3 font-mono text-sm text-gray-800 whitespace-pre-wrap">
-              {displayResult}
-            </div>
+            <div className={cn(COLORS.ui.text.primary)}>{displayResult}</div>
           ) : (
             <div className="p-3 prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-code:text-red-600 prose-code:bg-gray-100 prose-pre:bg-gray-900 prose-pre:text-gray-100">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -71,10 +77,19 @@ export const StringRenderer = ({ result }: Props) => {
             </div>
           )}
           {shouldCollapse && !isExpanded && (
-            <div className="bg-gray-50 px-3 py-2 border-t border-gray-200">
+            <div
+              className={cn(
+                COLORS.ui.background.primary,
+                COLORS.ui.border.medium
+              )}
+            >
               <button
                 onClick={() => setIsExpanded(true)}
-                className="text-xs text-green-600 hover:text-green-800 font-medium transition-colors"
+                className={cn(
+                  "text-xs",
+                  COLORS.ui.text.primary,
+                  COLORS.ui.interactive.hover
+                )}
               >
                 <FileText className="w-3 h-3 inline mr-1" />
                 {resultLines.length - MAX_LINES}줄 더 보기

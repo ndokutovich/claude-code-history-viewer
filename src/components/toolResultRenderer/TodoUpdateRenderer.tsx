@@ -1,5 +1,7 @@
 import { Clipboard, Circle, CheckCircle, MinusCircle, X } from "lucide-react";
 import { Renderer } from "../../shared/RendererHeader";
+import { COLORS } from "../../constants/colors";
+import { cn } from "../../utils/cn";
 
 type Props = {
   todoData: Record<string, unknown>;
@@ -11,30 +13,47 @@ export const TodoUpdateRenderer = ({ todoData }: Props) => {
   const getTodoStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return (
+          <CheckCircle
+            className={cn("w-4 h-4", COLORS.semantic.success.icon)}
+          />
+        );
       case "in_progress":
-        return <MinusCircle className="w-4 h-4 text-yellow-500" />;
+        return (
+          <MinusCircle
+            className={cn("w-4 h-4", COLORS.semantic.warning.icon)}
+          />
+        );
       case "pending":
-        return <Circle className="w-4 h-4 text-gray-500" />;
+        return <Circle className={cn("w-4 h-4", COLORS.ui.text.muted)} />;
       default:
-        return <X className="w-4 h-4 text-gray-500" />;
+        return <X className={cn("w-4 h-4", COLORS.ui.text.muted)} />;
     }
   };
 
   return (
     <Renderer
-      className="bg-purple-50 border border-purple-200"
+      className={cn(
+        COLORS.tools.search.bg,
+        "border",
+        COLORS.tools.search.border
+      )}
       enableToggle={false}
     >
       <Renderer.Header
         title="할 일 목록 업데이트"
-        icon={<Clipboard className="w-4 h-4 text-purple-600" />}
-        titleClassName="text-purple-800"
+        icon={<Clipboard className={cn("w-4 h-4", COLORS.tools.search.icon)} />}
+        titleClassName={COLORS.tools.search.text}
       />
       <Renderer.Content>
         {newTodos.length > 0 && (
           <div>
-            <div className="text-xs font-medium text-gray-600 mb-1">
+            <div
+              className={cn(
+                "text-xs font-medium mb-1",
+                COLORS.ui.text.tertiary
+              )}
+            >
               현재 상태:
             </div>
             <div className="space-y-1">
@@ -49,15 +68,15 @@ export const TodoUpdateRenderer = ({ todoData }: Props) => {
                   >
                     {getTodoStatusIcon(todo.status)}
                     <span
-                      className={
+                      className={cn(
                         todo.status === "completed"
-                          ? "line-through text-gray-500"
-                          : ""
-                      }
+                          ? "line-through"
+                          : COLORS.ui.text.disabledDark
+                      )}
                     >
                       {todo.content}
                     </span>
-                    <span className="text-xs text-gray-500">
+                    <span className={cn("text-xs", COLORS.ui.text.muted)}>
                       ({todo.priority})
                     </span>
                   </div>

@@ -2,6 +2,8 @@ import React from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { ToolIcon } from "../ToolIcon";
+import { COLORS } from "../../constants/colors";
+import { cn } from "../../utils/cn";
 
 interface ClaudeToolUseDisplayProps {
   toolUse: Record<string, unknown>;
@@ -13,10 +15,19 @@ export const ClaudeToolUseDisplay: React.FC<ClaudeToolUseDisplayProps> = ({
   const toolName = toolUse.name || toolUse.tool || "Unknown Tool";
 
   return (
-    <div className={`mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg`}>
+    <div
+      className={cn(
+        "mt-2 p-3 rounded-lg",
+        COLORS.message.system.bg,
+        COLORS.ui.border.medium
+      )}
+    >
       <div className="flex items-center space-x-2 mb-2">
-        <ToolIcon toolName={toolName as string} />
-        <span className="font-medium text-blue-800">
+        <ToolIcon
+          toolName={toolName as string}
+          className={COLORS.message.system.text}
+        />
+        <span className={cn("font-medium", COLORS.message.system.text)}>
           {String(toolName)}{" "}
           {typeof toolUse.description === "string" &&
             `- ${toolUse.description}`}

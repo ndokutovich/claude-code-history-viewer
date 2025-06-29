@@ -74,14 +74,14 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   }
 
   return (
-    <div className="w-80 bg-gray-100 text-gray-800 flex flex-col h-full">
+    <div className="w-80 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col h-full">
       {/* Projects List */}
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         {projects.length === 0 ? (
-          <div className="p-4 text-center text-gray-400 h-full flex items-center">
+          <div className="p-4 text-center text-gray-400 dark:text-gray-600 h-full flex items-center">
             <div className="flex flex-col justify-center w-full">
               <div className="mb-2">
-                <Folder className="w-8 h-8 mx-auto text-gray-500" />
+                <Folder className="w-8 h-8 mx-auto text-gray-500 dark:text-gray-400" />
               </div>
               <p className="text-sm">프로젝트를 찾을 수 없습니다</p>
             </div>
@@ -99,17 +99,17 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                       onProjectSelect(project);
                       toggleProject(project.path);
                     }}
-                    className="w-full text-left p-3 hover:bg-gray-200 transition-colors flex items-center justify-between"
+                    className="w-full text-left p-3 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
                   >
                     <div className="flex items-center space-x-2">
                       {isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                        <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                       ) : (
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                        <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                       )}
                       <Folder className="w-4 h-4 text-blue-400" />
                       <div className="min-w-0 flex-1 flex items-center">
-                        <p className="font-medium text-gray-800 truncate text-sm">
+                        <p className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm">
                           {project.name}
                         </p>
                       </div>
@@ -133,8 +133,8 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                             className={cn(
                               "w-full text-left p-3 rounded-lg transition-colors",
                               isSessionSelected
-                                ? "bg-blue-100 border-l-4 border-blue-400"
-                                : "hover:bg-gray-200"
+                                ? "bg-blue-100 dark:bg-blue-900 border-l-4 border-blue-400 dark:border-blue-500"
+                                : "hover:bg-gray-200 dark:hover:bg-gray-700"
                             )}
                           >
                             <div className="flex items-start space-x-3">
@@ -142,7 +142,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between">
                                   <h3
-                                    className="font-medium text-gray-800 text-xs truncate"
+                                    className="font-medium text-gray-800 dark:text-gray-200 text-xs truncate"
                                     title={
                                       session.summary ||
                                       `세션 ID: ${session.session_id}`

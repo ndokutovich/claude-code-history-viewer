@@ -20,6 +20,8 @@ import { FileContent } from "../FileContent";
 import { CommandOutputDisplay } from "./CommandOutputDisplay";
 import { formatClaudeErrorOutput } from "../../utils/messageUtils";
 import { Renderer } from "../../shared/RendererHeader";
+import { COLORS } from "../../constants/colors";
+import { cn } from "../../utils/cn";
 
 interface ToolExecutionResultRouterProps {
   toolResult: Record<string, unknown> | string;
@@ -263,37 +265,51 @@ export const ToolExecutionResultRouter: React.FC<
 
   return (
     <Renderer
-      className="bg-green-50 border-green-200"
+      className={cn(COLORS.semantic.success.bg, COLORS.semantic.success.border)}
       hasError={hasError as boolean}
     >
       <Renderer.Header
         title="도구 실행 결과"
-        titleClassName="text-green-800"
-        icon={<Check className="w-4 h-4 text-green-500" />}
+        titleClassName={cn(COLORS.semantic.success.text)}
+        icon={<Check className={cn("w-4 h-4", COLORS.semantic.success.icon)} />}
       />
       <Renderer.Content>
         {/* 메타데이터 정보 */}
         {hasMetadata && (
           <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
             {interrupted !== null && (
-              <div className="bg-white p-2 rounded border">
-                <div className="text-gray-600">실행 상태</div>
+              <div
+                className={cn(
+                  COLORS.ui.background.primary,
+                  COLORS.ui.border.medium
+                )}
+              >
+                <div className={cn(COLORS.ui.text.muted)}>실행 상태</div>
                 <div
-                  className={`font-medium ${
-                    interrupted ? "text-orange-600" : "text-green-600"
-                  }`}
+                  className={cn(
+                    "font-medium",
+                    interrupted
+                      ? COLORS.semantic.warning.text
+                      : COLORS.semantic.success.text
+                  )}
                 >
                   {interrupted ? "중단됨" : "완료"}
                 </div>
               </div>
             )}
             {isImage !== null && (
-              <div className="bg-white p-2 rounded border">
-                <div className="text-gray-600">이미지 결과</div>
+              <div
+                className={cn(
+                  COLORS.ui.background.primary,
+                  COLORS.ui.border.medium
+                )}
+              >
+                <div className={cn(COLORS.ui.text.muted)}>이미지 결과</div>
                 <div
-                  className={`font-medium ${
-                    isImage ? "text-blue-600" : "text-gray-600"
-                  }`}
+                  className={cn(
+                    "font-medium",
+                    isImage ? COLORS.semantic.info.text : COLORS.ui.text.muted
+                  )}
                 >
                   {isImage ? "포함" : "없음"}
                 </div>
@@ -304,36 +320,49 @@ export const ToolExecutionResultRouter: React.FC<
 
         {stdout.length > 0 && (
           <div className="mb-2">
-            <div className="text-xs font-medium text-gray-600 mb-1">출력:</div>
+            <div className={cn(COLORS.ui.text.muted)}>출력:</div>
             <CommandOutputDisplay stdout={stdout} />
           </div>
         )}
 
         {stderr.length > 0 && (
           <div className="mb-2">
-            <div className="text-xs font-medium text-red-600 mb-1">에러:</div>
-            <pre className="text-sm text-red-700 whitespace-pre-wrap bg-white p-2 rounded border max-h-96 overflow-y-auto">
+            <div className={cn(COLORS.semantic.error.text)}>에러:</div>
+            <pre
+              className={cn(
+                "text-sm whitespace-pre-wrap bg-white p-2 rounded border max-h-96 overflow-y-auto",
+                COLORS.semantic.error.bg,
+                COLORS.semantic.error.border
+              )}
+            >
               {formatClaudeErrorOutput(stderr)}
             </pre>
           </div>
         )}
 
         {filePath.length > 0 && (
-          <div className="text-xs text-gray-600">
-            파일: <code className="bg-gray-100 px-1 rounded">{filePath}</code>
+          <div className={cn(COLORS.ui.text.muted)}>
+            파일:{" "}
+            <code
+              className={cn(
+                "px-1 rounded",
+                COLORS.ui.background.secondary,
+                COLORS.ui.text.secondary
+              )}
+            >
+              {filePath}
+            </code>
           </div>
         )}
 
         {/* 출력이 없을 때 상태 표시 */}
         {!hasOutput && hasMetadata && (
-          <div className="text-sm text-gray-500 italic">출력 없음</div>
+          <div className={cn(COLORS.ui.text.muted)}>출력 없음</div>
         )}
 
         {/* 완전히 빈 결과일 때 */}
         {!hasOutput && !hasMetadata && (
-          <div className="text-sm text-gray-500 italic">
-            실행 완료 (출력 없음)
-          </div>
+          <div className={cn(COLORS.ui.text.muted)}>실행 완료 (출력 없음)</div>
         )}
       </Renderer.Content>
     </Renderer>

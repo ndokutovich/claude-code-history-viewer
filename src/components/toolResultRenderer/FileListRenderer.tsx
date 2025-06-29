@@ -1,5 +1,7 @@
 import { FileText } from "lucide-react";
 import { Renderer } from "../../shared/RendererHeader";
+import { cn } from "../../utils/cn";
+import { COLORS } from "../../constants/colors";
 
 type Props = {
   toolResult: Record<string, unknown>;
@@ -7,11 +9,11 @@ type Props = {
 
 export const FileListRenderer = ({ toolResult }: Props) => {
   return (
-    <Renderer className="bg-blue-50 border-blue-200">
+    <Renderer className={cn(COLORS.tools.file.bg, COLORS.tools.file.border)}>
       <Renderer.Header
         title={`파일 목록 (${toolResult.numFiles}개)`}
-        icon={<FileText className="w-4 h-4 text-blue-600" />}
-        titleClassName="text-blue-800"
+        icon={<FileText className={cn("w-4 h-4", COLORS.tools.file.icon)} />}
+        titleClassName={COLORS.tools.file.text}
       />
 
       <Renderer.Content>
@@ -28,15 +30,29 @@ export const FileListRenderer = ({ toolResult }: Props) => {
               return (
                 <div
                   key={idx}
-                  className="flex items-center space-x-2 p-2 bg-white rounded hover:bg-gray-50 transition-colors border"
+                  className={cn(
+                    "flex items-center space-x-2 p-2 rounded border",
+                    COLORS.ui.background.primary,
+                    COLORS.ui.border.medium
+                  )}
                 >
-                  <FileText className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                  <FileText className={cn("w-4 h-4", COLORS.ui.text.muted)} />
                   <div className="flex-1 min-w-0">
-                    <div className="font-mono text-sm text-gray-900 truncate">
+                    <div
+                      className={cn(
+                        "font-mono text-sm",
+                        COLORS.ui.text.primary
+                      )}
+                    >
                       {fileName}
                     </div>
                     {directory && (
-                      <div className="font-mono text-xs text-gray-500 truncate">
+                      <div
+                        className={cn(
+                          "font-mono text-xs",
+                          COLORS.ui.text.muted
+                        )}
+                      >
                         {directory}
                       </div>
                     )}

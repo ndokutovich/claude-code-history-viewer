@@ -18,6 +18,8 @@ import {
 import { ToolIcon } from "../ToolIcon";
 import { useState } from "react";
 import { Renderer } from "../../shared/RendererHeader";
+import { cn } from "../../utils/cn";
+import { COLORS } from "../../constants/colors";
 
 type Props = {
   toolUse: Record<string, unknown>;
@@ -99,34 +101,71 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     const language = getLanguageFromPath(filePath);
 
     return (
-      <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+      <div
+        className={cn(
+          "mt-2 p-3 rounded-lg",
+          COLORS.semantic.success.bg,
+          COLORS.semantic.success.border
+        )}
+      >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
-            <FilePlus className="w-4 h-4 text-green-600" />
-            <span className="font-medium text-green-800">파일 작성</span>
+            <FilePlus className={cn("w-4 h-4", COLORS.semantic.success.icon)} />
+            <span className={cn("font-medium", COLORS.semantic.success.text)}>
+              파일 작성
+            </span>
           </div>
           {toolId && (
-            <code className="text-xs bg-green-100 px-2 py-1 rounded text-green-700">
+            <code
+              className={cn(
+                "text-xs px-2 py-1 rounded",
+                COLORS.semantic.success.bg,
+                COLORS.semantic.success.text
+              )}
+            >
               ID: {String(toolId)}
             </code>
           )}
         </div>
 
         {/* 파일 경로 */}
-        <div className="mb-3 p-2 bg-gray-50 rounded border">
+        <div
+          className={cn(
+            "mb-3 p-2 rounded border",
+            COLORS.semantic.info.bg,
+            COLORS.semantic.info.border
+          )}
+        >
           <div className="flex items-center space-x-2">
-            <FileText className="w-3 h-3 text-gray-500" />
-            <code className="text-sm font-mono text-gray-700">{filePath}</code>
+            <FileText className={cn("w-3 h-3", COLORS.semantic.info.icon)} />
+            <code
+              className={cn("text-sm font-mono", COLORS.semantic.info.text)}
+            >
+              {filePath}
+            </code>
           </div>
         </div>
 
         {/* 파일 내용 */}
         <div>
-          <div className="text-xs font-medium text-green-700 mb-2 flex items-center space-x-1">
-            <CheckCircle className="w-4 h-4 text-green-700" />
+          <div
+            className={cn(
+              "text-xs font-medium mb-2 flex items-center space-x-1",
+              COLORS.semantic.success.text
+            )}
+          >
+            <CheckCircle
+              className={cn("w-4 h-4", COLORS.semantic.success.icon)}
+            />
             <span>작성된 내용</span>
           </div>
-          <div className="rounded overflow-hidden border border-green-200 max-h-96 overflow-y-auto">
+          <div
+            className={cn(
+              "rounded overflow-hidden max-h-96 overflow-y-auto",
+              COLORS.semantic.success.bg,
+              COLORS.semantic.success.border
+            )}
+          >
             <SyntaxHighlighter
               language={language}
               style={oneLight}
@@ -150,50 +189,104 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     const promptInput = toolInput as { description: string; prompt: string };
 
     return (
-      <div className="mt-2 p-3 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg">
+      <div
+        className={cn(
+          "mt-2 p-3 rounded-lg",
+          COLORS.semantic.info.bg,
+          COLORS.semantic.info.border
+        )}
+      >
         {/* 헤더 */}
         <div
-          className={`flex items-center justify-between ${
-            openRender ? "mb-4" : ""
-          }`}
+          className={cn(
+            "flex items-center justify-between",
+            openRender && "mb-4"
+          )}
         >
           <div
-            className="flex items-center space-x-2 cursor-pointer"
+            className={cn(
+              "flex items-center space-x-2 cursor-pointer",
+              COLORS.semantic.info.text
+            )}
             onClick={toggleOpenRender}
           >
             <ChevronRight
-              className={`w-4 h-4 text-purple-800 ${
-                openRender ? "rotate-90" : ""
-              }`}
+              className={cn(
+                "w-4 h-4",
+                COLORS.semantic.info.text,
+                openRender && "rotate-90"
+              )}
             />
-            <MessageSquare className="w-4 h-4 text-purple-600" />
-            <span className="font-bold text-purple-800 text-medium">Task</span>
+            <MessageSquare
+              className={cn("w-4 h-4", COLORS.semantic.info.icon)}
+            />
+            <span
+              className={cn("font-bold text-medium", COLORS.semantic.info.text)}
+            >
+              Task
+            </span>
           </div>
           {toolId && (
-            <div className="flex items-center space-x-2 text-sm text-purple-700">
-              <Hash className="w-3 h-3" />
-              <span className="font-mono">ID: {String(toolId)}</span>
+            <div
+              className={cn(
+                "flex items-center space-x-2 text-sm",
+                COLORS.semantic.info.text
+              )}
+            >
+              <Hash className={cn("w-3 h-3", COLORS.semantic.info.icon)} />
+              <span className={cn("font-mono", COLORS.semantic.info.text)}>
+                ID: {String(toolId)}
+              </span>
             </div>
           )}
         </div>
         {openRender ? (
           <>
             <div className="mb-4">
-              <div className="text-sm font-semibold text-purple-800 mb-2">
+              <div
+                className={cn(
+                  "text-sm font-semibold mb-2",
+                  COLORS.semantic.info.text
+                )}
+              >
                 📋 작업 설명
               </div>
-              <div className="p-3 bg-white rounded-lg border border-purple-100 text-gray-700">
+              <div
+                className={cn(
+                  "p-3 rounded-lg",
+                  COLORS.semantic.info.bg,
+                  COLORS.semantic.info.border,
+                  COLORS.semantic.info.text
+                )}
+              >
                 {promptInput.description}
               </div>
             </div>
 
             {/* 프롬프트 섹션 */}
             <div>
-              <div className="text-sm font-semibold text-purple-800 mb-2">
+              <div
+                className={cn(
+                  "text-sm font-semibold mb-2",
+                  COLORS.semantic.info.text
+                )}
+              >
                 💬 상세 지시사항
               </div>
-              <div className="p-3 bg-white rounded-lg border border-purple-100">
-                <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
+              <div
+                className={cn(
+                  "p-3 rounded-lg",
+                  COLORS.semantic.info.bg,
+                  COLORS.semantic.info.border,
+                  COLORS.semantic.info.text
+                )}
+              >
+                <div
+                  className={cn(
+                    "whitespace-pre-wrap text-sm leading-relaxed",
+                    COLORS.semantic.info.text
+                  )}
+                >
                   {promptInput.prompt}
                 </div>
               </div>
@@ -213,24 +306,48 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     const language = getLanguageFromPath(filePath);
 
     return (
-      <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+      <div
+        className={cn(
+          "mt-2 p-3 rounded-lg",
+          COLORS.semantic.info.bg,
+          COLORS.semantic.info.border
+        )}
+      >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
-            <Edit3 className="w-4 h-4 text-blue-600" />
-            <span className="font-medium text-blue-800">파일 편집</span>
+            <Edit3 className={cn("w-4 h-4", COLORS.semantic.info.icon)} />
+            <span className={cn("font-medium", COLORS.semantic.info.text)}>
+              파일 편집
+            </span>
           </div>
           {toolId && (
-            <code className="text-xs bg-blue-100 px-2 py-1 rounded text-blue-700">
+            <code
+              className={cn(
+                "text-xs px-2 py-1 rounded",
+                COLORS.semantic.info.bg,
+                COLORS.semantic.info.text
+              )}
+            >
               ID: {String(toolId)}
             </code>
           )}
         </div>
 
         {/* 파일 경로 */}
-        <div className="mb-3 p-2 bg-gray-50 rounded border">
+        <div
+          className={cn(
+            "mb-3 p-2 rounded border",
+            COLORS.semantic.info.bg,
+            COLORS.semantic.info.border
+          )}
+        >
           <div className="flex items-center space-x-2">
-            <FileText className="w-3 h-3 text-gray-500" />
-            <code className="text-sm font-mono text-gray-700">{filePath}</code>
+            <FileText className={cn("w-3 h-3", COLORS.semantic.info.icon)} />
+            <code
+              className={cn("text-sm font-mono", COLORS.semantic.info.text)}
+            >
+              {filePath}
+            </code>
           </div>
         </div>
 
@@ -238,11 +355,22 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
         <div className="space-y-3">
           {/* 기존 코드 */}
           <div>
-            <div className="text-xs font-medium text-red-700 mb-1 flex items-center space-x-1">
-              <X className="w-5 h-5 text-red-700" />
+            <div
+              className={cn(
+                "text-xs font-medium mb-1 flex items-center space-x-1",
+                COLORS.semantic.error.text
+              )}
+            >
+              <X className={cn("w-5 h-5", COLORS.semantic.error.icon)} />
               <span>제거된 코드</span>
             </div>
-            <div className="rounded overflow-hidden border border-red-200">
+            <div
+              className={cn(
+                "rounded overflow-hidden border",
+                COLORS.semantic.error.bg,
+                COLORS.semantic.error.border
+              )}
+            >
               <SyntaxHighlighter
                 language={language}
                 style={oneLight}
@@ -260,11 +388,24 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
 
           {/* 새로운 코드 */}
           <div>
-            <div className="text-xs font-medium text-green-700 mb-1 flex items-center space-x-1">
-              <CheckCircle className="w-4 h-4 text-green-700" />
+            <div
+              className={cn(
+                "text-xs font-medium mb-1 flex items-center space-x-1",
+                COLORS.semantic.success.text
+              )}
+            >
+              <CheckCircle
+                className={cn("w-4 h-4", COLORS.semantic.success.icon)}
+              />
               <span>추가된 코드</span>
             </div>
-            <div className="rounded overflow-hidden border border-green-200">
+            <div
+              className={cn(
+                "rounded overflow-hidden border",
+                COLORS.semantic.success.bg,
+                COLORS.semantic.success.border
+              )}
+            >
               <SyntaxHighlighter
                 language={language}
                 style={oneLight}
@@ -286,14 +427,27 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
 
   // 기본 도구 렌더링
   return (
-    <Renderer className="bg-blue-50 border-blue-200 ">
+    <Renderer
+      className={cn(COLORS.semantic.info.bg, COLORS.semantic.info.border)}
+    >
       <Renderer.Header
         title={toolName as string}
-        icon={<ToolIcon toolName={toolName as string} />}
-        titleClassName="text-blue-800"
+        icon={
+          <ToolIcon
+            toolName={toolName as string}
+            className={COLORS.semantic.info.icon}
+          />
+        }
+        titleClassName={cn(COLORS.semantic.info.text)}
         rightContent={
           toolId && (
-            <code className="text-xs bg-blue-100 px-2 py-1 rounded text-blue-700">
+            <code
+              className={cn(
+                "text-xs px-2 py-1 rounded",
+                COLORS.semantic.info.bg,
+                COLORS.semantic.info.text
+              )}
+            >
               ID: {String(toolId)}
             </code>
           )
@@ -302,7 +456,13 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
 
       <Renderer.Content>
         <div className="rounded overflow-hidden max-h-96 overflow-y-auto">
-          <div className="bg-gray-800 px-3 py-1 text-xs text-gray-300">
+          <div
+            className={cn(
+              "px-3 py-1 text-xs",
+              COLORS.ui.background.dark,
+              COLORS.ui.text.inverse
+            )}
+          >
             도구 입력 매개변수
           </div>
           <SyntaxHighlighter

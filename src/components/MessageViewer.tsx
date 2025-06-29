@@ -10,6 +10,7 @@ import {
 } from "./messageRenderer";
 import { formatTime, extractClaudeMessageContent } from "../utils/messageUtils";
 import { cn } from "../utils/cn";
+import { COLORS } from "../constants/colors";
 
 interface MessageViewerProps {
   messages: ClaudeMessage[];
@@ -33,24 +34,26 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
       className={cn(
         "w-full px-4 py-2",
         leftMargin,
-        message.isSidechain && "bg-gray-100"
+        message.isSidechain && "bg-gray-100 dark:bg-gray-800"
       )}
     >
       <div className="max-w-4xl mx-auto">
         {/* depth 표시 (개발 모드에서만) */}
         {import.meta.env.DEV && depth > 0 && (
-          <div className="text-xs text-gray-400 mb-1">
+          <div className="text-xs text-gray-400 dark:text-gray-600 mb-1">
             └─ 답글 (depth: {depth})
           </div>
         )}
 
         {/* 메시지 헤더 */}
         <div
-          className={`flex items-center space-x-2 mb-1 text-md text-gray-500 ${
+          className={`flex items-center space-x-2 mb-1 text-md text-gray-500 dark:text-gray-400 ${
             message.type === "user" ? "justify-end" : "justify-start"
           }`}
         >
-          <div className="w-full h-0.5 bg-gray-100 rounded-full" />
+          {message.type === "user" && (
+            <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
+          )}
           <span className="font-medium whitespace-nowrap">
             {message.type === "user"
               ? "사용자"
@@ -62,9 +65,12 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
             {formatTime(message.timestamp)}
           </span>
           {message.isSidechain && (
-            <span className="px-2 py-1 whitespace-nowrap text-xs bg-orange-100 text-orange-800 rounded-full">
+            <span className="px-2 py-1 whitespace-nowrap text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 rounded-full">
               분기
             </span>
+          )}
+          {message.type === "assistant" && (
+            <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
           )}
         </div>
 
@@ -93,7 +99,7 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
             message.toolUseResult &&
             typeof message.toolUseResult === "object" &&
             Array.isArray(message.toolUseResult.content) && (
-              <div className="text-sm text-gray-600 mb-2">
+              <div className={cn("text-sm mb-2", COLORS.ui.text.tertiary)}>
                 <span className="italic">도구 실행 결과:</span>
               </div>
             )}

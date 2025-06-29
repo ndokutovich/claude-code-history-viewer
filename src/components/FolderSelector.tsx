@@ -54,18 +54,18 @@ export function FolderSelector({ onFolderSelected }: FolderSelectorProps) {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full mx-auto p-8 bg-white rounded-lg shadow-lg">
+    <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-md w-full mx-auto p-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
         <div className="text-center">
           <div className="mb-6">
             <Folder className="w-16 h-16 mx-auto text-blue-500" />
           </div>
           
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             Claude 폴더를 찾을 수 없습니다
           </h1>
           
-          <p className="text-gray-600 mb-8">
+          <p className="text-gray-600 dark:text-gray-400 mb-8">
             홈 디렉토리에서 .claude 폴더를 찾을 수 없습니다. 
             직접 폴더를 선택해주세요.
           </p>
@@ -73,29 +73,29 @@ export function FolderSelector({ onFolderSelected }: FolderSelectorProps) {
           <button
             onClick={handleSelectFolder}
             disabled={isValidating}
-            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            className="w-full px-6 py-3 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
             {isValidating ? "확인 중..." : ".claude 폴더 선택"}
           </button>
 
           {selectedPath && (
-            <div className="mt-4 p-3 bg-gray-100 rounded-lg text-sm text-gray-700">
+            <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300">
               <p className="truncate">선택한 경로: {selectedPath}</p>
             </div>
           )}
 
           {validationError && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mt-4 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
               <div className="flex items-start space-x-2">
                 <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700">{validationError}</p>
+                <p className="text-sm text-red-700 dark:text-red-300">{validationError}</p>
               </div>
             </div>
           )}
 
-          <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-semibold text-blue-900 mb-2">도움말</h3>
-            <ul className="text-sm text-blue-800 space-y-1 text-left">
+          <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">도움말</h3>
+            <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 text-left">
               <li>• .claude 폴더는 일반적으로 홈 디렉토리에 있습니다</li>
               <li>• macOS: /Users/[사용자명]/.claude</li>
               <li>• Windows: C:\Users\[사용자명]\.claude</li>

@@ -2,6 +2,8 @@ import { Check } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Renderer } from "../../shared/RendererHeader";
+import { cn } from "../../utils/cn";
+import { COLORS } from "../../constants/colors";
 
 type Props = {
   toolResult: Record<string, unknown>;
@@ -9,11 +11,13 @@ type Props = {
 
 export const FallbackRenderer = ({ toolResult }: Props) => {
   return (
-    <Renderer className="bg-gray-50 border border-gray-200">
+    <Renderer
+      className={cn(COLORS.ui.background.primary, COLORS.ui.border.light)}
+    >
       <Renderer.Header
         title="도구 실행 결과"
-        icon={<Check className="w-4 h-4 text-gray-500" />}
-        titleClassName="text-gray-800"
+        icon={<Check className={cn(COLORS.ui.text.muted)} />}
+        titleClassName={cn(COLORS.ui.text.secondary)}
       />
       <Renderer.Content>
         <div className="text-sm">

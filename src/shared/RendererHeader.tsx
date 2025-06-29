@@ -2,6 +2,7 @@ import { ChevronRight, X } from "lucide-react";
 import { useToggle } from "../hooks";
 import { createContext, useContext } from "react";
 import { cn } from "../utils/cn";
+import { COLORS } from "../constants/colors";
 
 const ContentContext = createContext<{
   isOpen: boolean;
@@ -54,7 +55,8 @@ const RendererWrapper = ({
         className={cn(
           "mt-2 p-3 border rounded-lg",
           className,
-          hasError && "bg-red-50 border-red-200"
+          hasError &&
+            `${COLORS.semantic.error.bg} ${COLORS.semantic.error.border}`
         )}
       >
         {children}
@@ -83,12 +85,16 @@ const RendererHeader = ({
       <div className={cn("flex items-center justify-between mb-2")}>
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-2">
-            {hasError ? <X className="w-4 h-4 text-red-500" /> : icon}
+            {hasError ? (
+              <X className={`w-4 h-4 ${COLORS.semantic.error.icon}`} />
+            ) : (
+              icon
+            )}
             <span
               className={cn(
                 "font-medium",
                 titleClassName,
-                hasError && "text-red-800"
+                hasError && COLORS.semantic.error.textDark
               )}
             >
               {`${title} ${hasError ? "오류" : ""}`}
@@ -107,17 +113,21 @@ const RendererHeader = ({
       >
         <ChevronRight
           className={cn(
-            "p-1 rounded-full hover:bg-gray-200 transition-all duration-200",
+            `p-1 rounded-full ${COLORS.ui.interactive.hover} transition-all duration-200 ${COLORS.ui.text.primary}`,
             isOpen && "rotate-90"
           )}
         />
         <div className="flex items-center space-x-2">
-          {hasError ? <X className="w-4 h-4 text-red-500" /> : icon}
+          {hasError ? (
+            <X className={`w-4 h-4 ${COLORS.semantic.error.icon}`} />
+          ) : (
+            icon
+          )}
           <span
             className={cn(
               "font-medium",
               titleClassName,
-              hasError && "text-red-800"
+              hasError && COLORS.semantic.error.textDark
             )}
           >
             {`${title} ${hasError ? "오류" : ""}`}

@@ -9,6 +9,7 @@ import type {
   MessagePage,
   SearchFilters,
   SessionTokenStats,
+  Theme,
 } from "../types";
 
 // Tauri API가 사용 가능한지 확인하는 함수
@@ -36,6 +37,7 @@ interface AppStore extends AppState {
   loadSessionTokenStats: (sessionPath: string) => Promise<void>;
   loadProjectTokenStats: (projectPath: string) => Promise<void>;
   clearTokenStats: () => void;
+  setTheme: (theme: Theme) => Promise<void>;
 }
 
 const DEFAULT_PAGE_SIZE = 20; // 초기 로딩 시 20개 메시지만 로드하여 빠른 로딩
@@ -66,6 +68,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   error: null,
   sessionTokenStats: null,
   projectTokenStats: [],
+  theme: "system" as Theme,
 
   // Actions
   initializeApp: async () => {
@@ -77,10 +80,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         );
       }
 
-      // Try to load saved claude path first
+      // Try to load saved settings first
       try {
         const store = await load("settings.json", { autoSave: false });
         const savedPath = await store.get<string>("claudePath");
+        const savedTheme = await store.get<Theme>("theme");
+        
+        if (savedTheme) {
+          set({ theme: savedTheme });
+        }
         
         if (savedPath) {
           // Validate saved path
@@ -356,5 +364,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   clearTokenStats: () => {
     set({ sessionTokenStats: null, projectTokenStats: [] });
+  },
+
+  setTheme: async (theme: Theme) => {
+    set({ theme });
+    
+    // Save to persistent storage
+    try {
+      const store = await load("settings.json", { autoSave: false });
+      await store.set("theme", theme);
+      await store.save();
+    } catch (error) {
+      console.error("Failed to save theme:", error);
+    }
   },
 }));

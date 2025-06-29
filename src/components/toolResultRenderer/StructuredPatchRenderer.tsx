@@ -1,6 +1,8 @@
 import { RefreshCw } from "lucide-react";
 import { EnhancedDiffViewer } from "../EnhancedDiffViewer";
 import { FileContent } from "../FileContent";
+import { cn } from "../../utils/cn";
+import { COLORS } from "../../constants/colors";
 
 type Props = {
   toolResult: Record<string, unknown>;
@@ -52,18 +54,34 @@ export const StructuredPatchRenderer = ({ toolResult }: Props) => {
   const { oldStr, newStr } = reconstructDiff();
 
   return (
-    <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+    <div
+      className={cn(
+        "mt-2 p-3 rounded-lg",
+        COLORS.tools.task.bg,
+        COLORS.tools.task.border
+      )}
+    >
       <div className="flex items-center space-x-2 mb-2">
-        <RefreshCw className="w-4 h-4" />
-        <span className="font-medium text-orange-800">
+        <RefreshCw className={cn("w-4 h-4", COLORS.tools.task.icon)} />
+        <span className={cn("font-medium", COLORS.tools.task.text)}>
           파일 변경 사항 (Patch)
         </span>
       </div>
 
       {/* 파일 정보 */}
       <div className="mb-3">
-        <div className="text-xs font-medium text-gray-600 mb-1">파일 경로:</div>
-        <code className="text-sm bg-gray-100 px-2 py-1 rounded text-gray-800 block">
+        <div
+          className={cn("text-xs font-medium mb-1", COLORS.ui.text.tertiary)}
+        >
+          파일 경로:
+        </div>
+        <code
+          className={cn(
+            "text-sm block",
+            COLORS.message.assistant.bg,
+            COLORS.message.assistant.text
+          )}
+        >
           {filePath}
         </code>
       </div>
@@ -71,11 +89,19 @@ export const StructuredPatchRenderer = ({ toolResult }: Props) => {
       {/* 변경 통계 */}
       {patches.length > 0 && (
         <div className="mb-3">
-          <div className="text-xs font-medium text-gray-600 mb-1">
+          <div
+            className={cn("text-xs font-medium mb-1", COLORS.ui.text.tertiary)}
+          >
             변경 통계:
           </div>
-          <div className="bg-white p-2 rounded border text-xs">
-            <span className="text-orange-600 font-medium">
+          <div
+            className={cn(
+              "p-2 rounded border text-xs",
+              COLORS.ui.background.primary,
+              COLORS.ui.border.medium
+            )}
+          >
+            <span className={cn("font-medium", COLORS.tools.task.icon)}>
               {patches.length}개 영역
             </span>
             에서 변경사항 발견
@@ -96,7 +122,9 @@ export const StructuredPatchRenderer = ({ toolResult }: Props) => {
       {/* 전체 파일 내용 */}
       {content && (
         <div>
-          <div className="text-xs font-medium text-gray-600 mb-2">
+          <div
+            className={cn("text-xs font-medium mb-2", COLORS.ui.text.tertiary)}
+          >
             업데이트된 파일:
           </div>
           <FileContent

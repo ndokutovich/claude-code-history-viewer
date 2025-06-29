@@ -155,6 +155,8 @@ export interface PaginationState {
   isLoadingMore: boolean;
 }
 
+export type Theme = "light" | "dark" | "system";
+
 export interface AppState {
   claudePath: string;
   projects: ClaudeProject[];
@@ -174,6 +176,7 @@ export interface AppState {
   error: string | null;
   sessionTokenStats: SessionTokenStats | null;
   projectTokenStats: SessionTokenStats[];
+  theme: Theme;
 }
 
 export interface SessionTokenStats {
