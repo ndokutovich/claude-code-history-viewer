@@ -7,6 +7,7 @@ import type {
   ClaudeMessage,
   MessagePage,
   SearchFilters,
+  SessionTokenStats,
 } from "../types";
 
 // Tauri API가 사용 가능한지 확인하는 함수
@@ -30,6 +31,9 @@ interface AppStore extends AppState {
   searchMessages: (query: string, filters?: SearchFilters) => Promise<void>;
   setSearchFilters: (filters: SearchFilters) => void;
   setError: (error: string | null) => void;
+  loadSessionTokenStats: (sessionPath: string) => Promise<void>;
+  loadProjectTokenStats: (projectPath: string) => Promise<void>;
+  clearTokenStats: () => void;
 }
 
 const DEFAULT_PAGE_SIZE = 20; // 초기 로딩 시 20개 메시지만 로드하여 빠른 로딩
@@ -53,7 +57,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
   searchResults: [],
   searchFilters: {},
   isLoading: false,
+  isLoadingProjects: false,
+  isLoadingSessions: false,
+  isLoadingMessages: false,
+  isLoadingTokenStats: false,
   error: null,
+  sessionTokenStats: null,
+  projectTokenStats: [],
 
   // Actions
   initializeApp: async () => {
@@ -79,7 +89,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const { claudePath } = get();
     if (!claudePath) return;
 
-    set({ isLoading: true, error: null });
+    set({ isLoadingProjects: true, error: null });
     try {
       const projects = await invoke<ClaudeProject[]>("scan_projects", {
         claudePath,
@@ -89,7 +99,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       console.error("Failed to scan projects:", error);
       set({ error: error as string });
     } finally {
-      set({ isLoading: false });
+      set({ isLoadingProjects: false });
     }
   },
 
@@ -99,7 +109,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       sessions: [],
       selectedSession: null,
       messages: [],
-      isLoading: false,
+      isLoadingSessions: true,
     });
     try {
       const sessions = await invoke<ClaudeSession[]>("load_project_sessions", {
@@ -110,7 +120,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       console.error("Failed to load project sessions:", error);
       set({ error: error as string });
     } finally {
-      set({ isLoading: false });
+      set({ isLoadingSessions: false });
     }
   },
 
@@ -128,7 +138,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         hasMore: false,
         isLoadingMore: false,
       },
-      isLoading: false,
+      isLoadingMessages: true,
     });
 
     try {
@@ -155,11 +165,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
           hasMore: messagePage.has_more,
           isLoadingMore: false,
         },
-        isLoading: false,
+        isLoadingMessages: false,
       });
     } catch (error) {
       console.error("Failed to load session messages:", error);
-      set({ error: error as string, isLoading: false });
+      set({ error: error as string, isLoadingMessages: false });
     }
   },
 
@@ -222,7 +232,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return;
     }
 
-    set({ isLoading: true, searchQuery: query });
+    set({ isLoadingMessages: true, searchQuery: query });
     try {
       const results = await invoke<ClaudeMessage[]>("search_messages", {
         claudePath,
@@ -234,7 +244,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       console.error("Failed to search messages:", error);
       set({ error: error as string });
     } finally {
-      set({ isLoading: false });
+      set({ isLoadingMessages: false });
     }
   },
 
@@ -248,8 +258,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     console.log("새로고침 시작:", selectedSession.session_id);
 
-    // 로딩 상태 설정
-    set({ isLoading: true, error: null });
+    // 로딩 상태 설정 (selectSession이 내부적으로 isLoadingMessages를 관리함)
+    set({ error: null });
 
     try {
       // 현재 세션을 다시 로드 (첫 페이지부터)
@@ -267,5 +277,48 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setError: (error: string | null) => {
     set({ error });
+  },
+
+  loadSessionTokenStats: async (sessionPath: string) => {
+    try {
+      set({ isLoadingTokenStats: true, error: null });
+      const stats = await invoke<SessionTokenStats>("get_session_token_stats", {
+        sessionPath,
+      });
+      set({ sessionTokenStats: stats });
+    } catch (error) {
+      console.error("Failed to load session token stats:", error);
+      set({
+        error: `Failed to load token stats: ${error}`,
+        sessionTokenStats: null,
+      });
+    } finally {
+      set({ isLoadingTokenStats: false });
+    }
+  },
+
+  loadProjectTokenStats: async (projectPath: string) => {
+    try {
+      set({ isLoadingTokenStats: true, error: null });
+      const stats = await invoke<SessionTokenStats[]>(
+        "get_project_token_stats",
+        {
+          projectPath,
+        }
+      );
+      set({ projectTokenStats: stats });
+    } catch (error) {
+      console.error("Failed to load project token stats:", error);
+      set({
+        error: `Failed to load project token stats: ${error}`,
+        projectTokenStats: [],
+      });
+    } finally {
+      set({ isLoadingTokenStats: false });
+    }
+  },
+
+  clearTokenStats: () => {
+    set({ sessionTokenStats: null, projectTokenStats: [] });
   },
 }));

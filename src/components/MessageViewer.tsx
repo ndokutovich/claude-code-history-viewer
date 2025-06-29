@@ -24,8 +24,6 @@ interface MessageNodeProps {
 }
 
 const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
-  console.log("ClaudeMessageNode 입력 메시지:", depth, message);
-
   // depth에 따른 왼쪽 margin 적용
   const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, 16)}` : "";
 
@@ -198,7 +196,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   useEffect(() => {
     // 세션이 실제로 변경되었고, 메시지가 로드된 경우에만 실행
     if (
-      selectedSession && 
+      selectedSession &&
       prevSessionIdRef.current !== selectedSession.session_id &&
       messages.length > 0 &&
       !isLoading
@@ -207,10 +205,10 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
         "새로운 세션 선택됨, 스크롤을 맨 위로 이동:",
         selectedSession.session_id
       );
-      
+
       // 이전 세션 ID 업데이트
       prevSessionIdRef.current = selectedSession.session_id;
-      
+
       // DOM이 업데이트된 후 스크롤 실행
       requestAnimationFrame(() => {
         if (scrollContainerRef.current) {

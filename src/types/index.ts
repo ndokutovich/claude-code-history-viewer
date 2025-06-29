@@ -95,6 +95,7 @@ export interface ClaudeSession {
   last_message_time: string;
   has_tool_use: boolean;
   has_errors: boolean;
+  summary?: string;
 }
 
 export interface SearchFilters {
@@ -141,6 +142,25 @@ export interface AppState {
   searchQuery: string;
   searchResults: ClaudeMessage[];
   searchFilters: SearchFilters;
-  isLoading: boolean;
+  isLoading: boolean; // 전체 앱 초기화용
+  isLoadingProjects: boolean;
+  isLoadingSessions: boolean;
+  isLoadingMessages: boolean;
+  isLoadingTokenStats: boolean;
   error: string | null;
+  sessionTokenStats: SessionTokenStats | null;
+  projectTokenStats: SessionTokenStats[];
+}
+
+export interface SessionTokenStats {
+  session_id: string;
+  project_name: string;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  total_cache_creation_tokens: number;
+  total_cache_read_tokens: number;
+  total_tokens: number;
+  message_count: number;
+  first_message_time: string;
+  last_message_time: string;
 }

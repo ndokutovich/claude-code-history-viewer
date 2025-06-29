@@ -81,6 +81,8 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     );
   }
 
+  console.log(sessions);
+
   return (
     <div className="w-80 bg-gray-100 text-gray-800 flex flex-col h-full">
       {/* Projects List */}
@@ -147,8 +149,15 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                               <MessageCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between">
-                                  <h3 className="font-medium text-gray-800 text-sm truncate">
-                                    {formatTimeAgo(session.last_message_time)}
+                                  <h3
+                                    className="font-medium text-gray-800 text-sm truncate"
+                                    title={
+                                      session.summary ||
+                                      `세션 ID: ${session.session_id}`
+                                    }
+                                  >
+                                    {session.summary ||
+                                      formatTimeAgo(session.last_message_time)}
                                   </h3>
                                   <div className="flex items-center space-x-1">
                                     {session.has_tool_use && (
@@ -167,7 +176,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                 <div className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
                                   <span>{session.message_count}개 메시지</span>
                                   <span>•</span>
-                                  <span>ID: {session.session_id.slice(-8)}</span>
+                                  <span>
+                                    ID: {session.session_id.slice(-8)}
+                                  </span>
                                 </div>
                               </div>
                             </div>

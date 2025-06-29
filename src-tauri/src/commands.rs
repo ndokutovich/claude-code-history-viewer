@@ -67,6 +67,7 @@ pub struct ClaudeSession {
     pub last_message_time: String,
     pub has_tool_use: bool,
     pub has_errors: bool,
+    pub summary: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,6 +76,28 @@ pub struct MessagePage {
     pub total_count: usize,
     pub has_more: bool,
     pub next_offset: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TokenUsage {
+    pub input_tokens: Option<u32>,
+    pub output_tokens: Option<u32>,
+    pub cache_creation_input_tokens: Option<u32>,
+    pub cache_read_input_tokens: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionTokenStats {
+    pub session_id: String,
+    pub project_name: String,
+    pub total_input_tokens: u32,
+    pub total_output_tokens: u32,
+    pub total_cache_creation_tokens: u32,
+    pub total_cache_read_tokens: u32,
+    pub total_tokens: u32,
+    pub message_count: usize,
+    pub first_message_time: String,
+    pub last_message_time: String,
 }
 
 #[tauri::command]
@@ -113,6 +136,8 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
 
         // Extract just the repo name from the full path
         // e.g., "-Users-jack-client-ai-code-tracker" -> "ai-code-tracker"
+        // rust log
+        println!("entry: {:?}", entry);
         let project_name = if raw_project_name.contains('-') {
             raw_project_name
                 .split('-')
@@ -176,6 +201,7 @@ pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSes
             let mut messages: Vec<ClaudeMessage> = Vec::new();
 
             for line in content.lines() {
+                // First try to parse as RawClaudeMessage
                 if let Ok(raw_message) = serde_json::from_str::<RawClaudeMessage>(line) {
                     // Skip messages that don't have essential fields
                     if raw_message.session_id.is_none() && raw_message.timestamp.is_none() {
@@ -194,9 +220,27 @@ pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSes
                         is_sidechain: raw_message.is_sidechain,
                     };
                     messages.push(claude_message);
-                } else {
-                    // Silently skip unparseable lines to reduce noise
-                    continue;
+                } else if let Ok(json_value) = serde_json::from_str::<serde_json::Value>(line) {
+                    // Check if it's a summary message
+                    if let Some(msg_type) = json_value.get("type").and_then(|v| v.as_str()) {
+                        if msg_type == "summary" {
+                            if let Some(summary_text) = json_value.get("summary").and_then(|v| v.as_str()) {
+                                // Create a special message for summary
+                                let claude_message = ClaudeMessage {
+                                    uuid: json_value.get("uuid").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                    parent_uuid: None,
+                                    session_id: json_value.get("sessionId").and_then(|v| v.as_str()).unwrap_or("unknown-session").to_string(),
+                                    timestamp: json_value.get("timestamp").and_then(|v| v.as_str()).unwrap_or(&chrono::Utc::now().to_rfc3339()).to_string(),
+                                    message_type: "summary".to_string(),
+                                    content: Some(serde_json::Value::String(summary_text.to_string())),
+                                    tool_use: None,
+                                    tool_use_result: None,
+                                    is_sidechain: None,
+                                };
+                                messages.push(claude_message);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -234,6 +278,14 @@ pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSes
                     false
                 });
 
+                // Find summary from messages
+                let summary = messages.iter()
+                    .find(|m| m.message_type == "summary")
+                    .and_then(|m| {
+                        // Extract summary from content - it's stored as a string
+                        m.content.as_ref()?.as_str().map(|s| s.to_string())
+                    });
+
                 sessions.push(ClaudeSession {
                     session_id,
                     project_name,
@@ -242,6 +294,7 @@ pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSes
                     last_message_time,
                     has_tool_use,
                     has_errors,
+                    summary,
                 });
             }
         }
@@ -265,29 +318,45 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
             continue;
         }
 
-        match serde_json::from_str::<RawClaudeMessage>(line) {
-            Ok(raw_message) => {
-                // Skip messages that don't have essential fields
-                if raw_message.session_id.is_none() && raw_message.timestamp.is_none() {
-                    continue;
-                }
-
-                let claude_message = ClaudeMessage {
-                    uuid: raw_message.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
-                    parent_uuid: raw_message.parent_uuid,
-                    session_id: raw_message.session_id.unwrap_or_else(|| "unknown-session".to_string()),
-                    timestamp: raw_message.timestamp.unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
-                    message_type: raw_message.message_type.unwrap_or_else(|| "unknown".to_string()),
-                    content: raw_message.message.map(|m| m.content),
-                    tool_use: raw_message.tool_use,
-                    tool_use_result: raw_message.tool_use_result,
-                    is_sidechain: raw_message.is_sidechain,
-                };
-                messages.push(claude_message);
-            },
-            Err(_) => {
-                // Silently skip unparseable lines
+        // First try to parse as RawClaudeMessage
+        if let Ok(raw_message) = serde_json::from_str::<RawClaudeMessage>(line) {
+            // Skip messages that don't have essential fields
+            if raw_message.session_id.is_none() && raw_message.timestamp.is_none() {
                 continue;
+            }
+
+            let claude_message = ClaudeMessage {
+                uuid: raw_message.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
+                parent_uuid: raw_message.parent_uuid,
+                session_id: raw_message.session_id.unwrap_or_else(|| "unknown-session".to_string()),
+                timestamp: raw_message.timestamp.unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+                message_type: raw_message.message_type.unwrap_or_else(|| "unknown".to_string()),
+                content: raw_message.message.map(|m| m.content),
+                tool_use: raw_message.tool_use,
+                tool_use_result: raw_message.tool_use_result,
+                is_sidechain: raw_message.is_sidechain,
+            };
+            messages.push(claude_message);
+        } else if let Ok(json_value) = serde_json::from_str::<serde_json::Value>(line) {
+            // Check if it's a summary message
+            if let Some(msg_type) = json_value.get("type").and_then(|v| v.as_str()) {
+                if msg_type == "summary" {
+                    if let Some(summary_text) = json_value.get("summary").and_then(|v| v.as_str()) {
+                        // Create a special message for summary
+                        let claude_message = ClaudeMessage {
+                            uuid: json_value.get("leafUuid").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                            parent_uuid: None,
+                            session_id: "summary".to_string(),
+                            timestamp: chrono::Utc::now().to_rfc3339(),
+                            message_type: "summary".to_string(),
+                            content: Some(serde_json::Value::String(summary_text.to_string())),
+                            tool_use: None,
+                            tool_use_result: None,
+                            is_sidechain: None,
+                        };
+                        messages.push(claude_message);
+                    }
+                }
             }
         }
     }
@@ -323,29 +392,45 @@ pub async fn load_session_messages_paginated(
     let mut messages = Vec::new();
 
     for line in valid_lines.iter().skip(start).take(limit) {
-        match serde_json::from_str::<RawClaudeMessage>(line) {
-            Ok(raw_message) => {
-                // Skip messages that don't have essential fields
-                if raw_message.session_id.is_none() && raw_message.timestamp.is_none() {
-                    continue;
-                }
-
-                let claude_message = ClaudeMessage {
-                    uuid: raw_message.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
-                    parent_uuid: raw_message.parent_uuid,
-                    session_id: raw_message.session_id.unwrap_or_else(|| "unknown-session".to_string()),
-                    timestamp: raw_message.timestamp.unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
-                    message_type: raw_message.message_type.unwrap_or_else(|| "unknown".to_string()),
-                    content: raw_message.message.map(|m| m.content),
-                    tool_use: raw_message.tool_use,
-                    tool_use_result: raw_message.tool_use_result,
-                    is_sidechain: raw_message.is_sidechain,
-                };
-                messages.push(claude_message);
-            },
-            Err(_) => {
-                // Silently skip unparseable lines
+        // First try to parse as RawClaudeMessage
+        if let Ok(raw_message) = serde_json::from_str::<RawClaudeMessage>(line) {
+            // Skip messages that don't have essential fields
+            if raw_message.session_id.is_none() && raw_message.timestamp.is_none() {
                 continue;
+            }
+
+            let claude_message = ClaudeMessage {
+                uuid: raw_message.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
+                parent_uuid: raw_message.parent_uuid,
+                session_id: raw_message.session_id.unwrap_or_else(|| "unknown-session".to_string()),
+                timestamp: raw_message.timestamp.unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+                message_type: raw_message.message_type.unwrap_or_else(|| "unknown".to_string()),
+                content: raw_message.message.map(|m| m.content),
+                tool_use: raw_message.tool_use,
+                tool_use_result: raw_message.tool_use_result,
+                is_sidechain: raw_message.is_sidechain,
+            };
+            messages.push(claude_message);
+        } else if let Ok(json_value) = serde_json::from_str::<serde_json::Value>(line) {
+            // Check if it's a summary message
+            if let Some(msg_type) = json_value.get("type").and_then(|v| v.as_str()) {
+                if msg_type == "summary" {
+                    if let Some(summary_text) = json_value.get("summary").and_then(|v| v.as_str()) {
+                        // Create a special message for summary
+                        let claude_message = ClaudeMessage {
+                            uuid: json_value.get("leafUuid").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                            parent_uuid: None,
+                            session_id: "summary".to_string(),
+                            timestamp: chrono::Utc::now().to_rfc3339(),
+                            message_type: "summary".to_string(),
+                            content: Some(serde_json::Value::String(summary_text.to_string())),
+                            tool_use: None,
+                            tool_use_result: None,
+                            is_sidechain: None,
+                        };
+                        messages.push(claude_message);
+                    }
+                }
             }
         }
     }
@@ -422,4 +507,166 @@ pub async fn search_messages(
     }
 
     Ok(all_messages)
+}
+
+// Helper function to extract token usage from a message
+fn extract_token_usage(message: &ClaudeMessage) -> TokenUsage {
+    let mut usage = TokenUsage {
+        input_tokens: None,
+        output_tokens: None,
+        cache_creation_input_tokens: None,
+        cache_read_input_tokens: None,
+    };
+
+    // Check content field for usage information
+    if let Some(content) = &message.content {
+        if let Some(usage_obj) = content.get("usage") {
+            if let Some(input) = usage_obj.get("input_tokens").and_then(|v| v.as_u64()) {
+                usage.input_tokens = Some(input as u32);
+            }
+            if let Some(output) = usage_obj.get("output_tokens").and_then(|v| v.as_u64()) {
+                usage.output_tokens = Some(output as u32);
+            }
+            if let Some(cache_creation) = usage_obj.get("cache_creation_input_tokens").and_then(|v| v.as_u64()) {
+                usage.cache_creation_input_tokens = Some(cache_creation as u32);
+            }
+            if let Some(cache_read) = usage_obj.get("cache_read_input_tokens").and_then(|v| v.as_u64()) {
+                usage.cache_read_input_tokens = Some(cache_read as u32);
+            }
+        }
+    }
+
+    // Check tool_use_result field for usage information
+    if let Some(tool_result) = &message.tool_use_result {
+        if let Some(usage_obj) = tool_result.get("usage") {
+            if let Some(input) = usage_obj.get("input_tokens").and_then(|v| v.as_u64()) {
+                usage.input_tokens = Some(input as u32);
+            }
+            if let Some(output) = usage_obj.get("output_tokens").and_then(|v| v.as_u64()) {
+                usage.output_tokens = Some(output as u32);
+            }
+            if let Some(cache_creation) = usage_obj.get("cache_creation_input_tokens").and_then(|v| v.as_u64()) {
+                usage.cache_creation_input_tokens = Some(cache_creation as u32);
+            }
+            if let Some(cache_read) = usage_obj.get("cache_read_input_tokens").and_then(|v| v.as_u64()) {
+                usage.cache_read_input_tokens = Some(cache_read as u32);
+            }
+        }
+
+        // Also check for totalTokens field in tool results
+        if let Some(total_tokens) = tool_result.get("totalTokens").and_then(|v| v.as_u64()) {
+            // If we don't have specific input/output breakdown, estimate based on message type
+            if usage.input_tokens.is_none() && usage.output_tokens.is_none() {
+                if message.message_type == "assistant" {
+                    usage.output_tokens = Some(total_tokens as u32);
+                } else {
+                    usage.input_tokens = Some(total_tokens as u32);
+                }
+            }
+        }
+    }
+
+    usage
+}
+
+#[tauri::command]
+pub async fn get_session_token_stats(session_path: String) -> Result<SessionTokenStats, String> {
+    let content = fs::read_to_string(&session_path)
+        .map_err(|e| format!("Failed to read session file: {}", e))?;
+
+    let mut messages: Vec<ClaudeMessage> = Vec::new();
+
+    for line in content.lines() {
+        if let Ok(raw_message) = serde_json::from_str::<RawClaudeMessage>(line) {
+            if raw_message.session_id.is_none() && raw_message.timestamp.is_none() {
+                continue;
+            }
+
+            let claude_message = ClaudeMessage {
+                uuid: raw_message.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
+                parent_uuid: raw_message.parent_uuid,
+                session_id: raw_message.session_id.unwrap_or_else(|| "unknown-session".to_string()),
+                timestamp: raw_message.timestamp.unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+                message_type: raw_message.message_type.unwrap_or_else(|| "unknown".to_string()),
+                content: raw_message.message.map(|m| m.content),
+                tool_use: raw_message.tool_use,
+                tool_use_result: raw_message.tool_use_result,
+                is_sidechain: raw_message.is_sidechain,
+            };
+            messages.push(claude_message);
+        }
+    }
+
+    if messages.is_empty() {
+        return Err("No valid messages found in session".to_string());
+    }
+
+    let session_id = messages[0].session_id.clone();
+    let project_name = PathBuf::from(&session_path)
+        .parent()
+        .and_then(|p| p.file_name())
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+
+    let mut total_input_tokens = 0u32;
+    let mut total_output_tokens = 0u32;
+    let mut total_cache_creation_tokens = 0u32;
+    let mut total_cache_read_tokens = 0u32;
+
+    let mut first_time: Option<String> = None;
+    let mut last_time: Option<String> = None;
+
+    for message in &messages {
+        let usage = extract_token_usage(message);
+
+        total_input_tokens += usage.input_tokens.unwrap_or(0);
+        total_output_tokens += usage.output_tokens.unwrap_or(0);
+        total_cache_creation_tokens += usage.cache_creation_input_tokens.unwrap_or(0);
+        total_cache_read_tokens += usage.cache_read_input_tokens.unwrap_or(0);
+
+        if first_time.is_none() || message.timestamp < first_time.as_ref().unwrap().clone() {
+            first_time = Some(message.timestamp.clone());
+        }
+        if last_time.is_none() || message.timestamp > last_time.as_ref().unwrap().clone() {
+            last_time = Some(message.timestamp.clone());
+        }
+    }
+
+    let total_tokens = total_input_tokens + total_output_tokens + total_cache_creation_tokens + total_cache_read_tokens;
+
+    Ok(SessionTokenStats {
+        session_id,
+        project_name,
+        total_input_tokens,
+        total_output_tokens,
+        total_cache_creation_tokens,
+        total_cache_read_tokens,
+        total_tokens,
+        message_count: messages.len(),
+        first_message_time: first_time.unwrap_or_else(|| "unknown".to_string()),
+        last_message_time: last_time.unwrap_or_else(|| "unknown".to_string()),
+    })
+}
+
+#[tauri::command]
+pub async fn get_project_token_stats(project_path: String) -> Result<Vec<SessionTokenStats>, String> {
+    let mut session_stats = Vec::new();
+
+    for entry in WalkDir::new(&project_path)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
+    {
+        let session_path = entry.path().to_string_lossy().to_string();
+
+        match get_session_token_stats(session_path).await {
+            Ok(stats) => session_stats.push(stats),
+            Err(_) => continue, // Skip sessions with errors
+        }
+    }
+
+    // Sort by total tokens in descending order
+    session_stats.sort_by(|a, b| b.total_tokens.cmp(&a.total_tokens));
+
+    Ok(session_stats)
 }

@@ -14,7 +14,9 @@ pub fn run() {
             load_session_messages,
             load_session_messages_paginated,
             get_session_message_count,
-            search_messages
+            search_messages,
+            get_session_token_stats,
+            get_project_token_stats
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
