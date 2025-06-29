@@ -1,5 +1,5 @@
-import React from "react";
-import { MessageCircle } from "lucide-react";
+import React, { useEffect, useRef } from "react";
+import { Loader2, MessageCircle } from "lucide-react";
 import type { ClaudeMessage } from "../types";
 import { ClaudeContentArrayRenderer } from "./contentRenderer";
 import {
@@ -99,6 +99,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   messages,
   isLoading,
 }) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   // 메시지를 트리 구조로 변환
   const buildMessageTree = (messages: ClaudeMessage[]) => {
     const messageMap = new Map<string, ClaudeMessage>();
@@ -117,11 +119,23 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     return roots;
   };
 
+  // 새로운 메시지가 올 때마다 스크롤을 맨 위로 이동
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      // 렌더링이 완료된 후 스크롤 실행
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = 0;
+        }
+      }, 0);
+    }
+  }, [messages]);
+
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="flex items-center space-x-2 text-gray-500">
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-claude-orange"></div>
+          <Loader2 className="w-4 h-4 animate-spin" />
           <span>메시지를 불러오는 중...</span>
         </div>
       </div>
@@ -171,7 +185,10 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   const rootMessages = buildMessageTree(messages);
 
   return (
-    <div className="flex-1 overflow-y-auto scrollbar-thin">
+    <div
+      ref={scrollContainerRef}
+      className="flex-1 overflow-y-auto scrollbar-thin"
+    >
       <div className="max-w-4xl mx-auto">
         {rootMessages.map((message) => renderMessageTree(message))}
       </div>
