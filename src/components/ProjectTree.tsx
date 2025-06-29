@@ -62,14 +62,6 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     setExpandedProject((prev) => (prev === projectPath ? "" : projectPath));
   };
 
-  const matchedPath = (path: string) => {
-    const match = path.split("/");
-    if (match) {
-      return match.at(-1);
-    }
-    return path.split("/").slice(0, 3).join("/");
-  };
-
   if (isLoading) {
     return (
       <div className="w-80 bg-white border-r border-gray-200 flex items-center justify-center">
@@ -80,8 +72,6 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       </div>
     );
   }
-
-  console.log(sessions);
 
   return (
     <div className="w-80 bg-gray-100 text-gray-800 flex flex-col h-full">
@@ -118,7 +108,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                       <Folder className="w-4 h-4 text-blue-400" />
                       <div className="min-w-0 flex-1 flex items-center">
                         <p className="font-medium text-gray-800 truncate text-sm">
-                          {matchedPath(project.path)}
+                          {project.name}
                         </p>
                       </div>
                     </div>

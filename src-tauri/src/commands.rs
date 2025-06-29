@@ -135,19 +135,31 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
         let project_path = entry.path().to_string_lossy().to_string();
 
         // Extract just the repo name from the full path
-        // e.g., "-Users-jack-client-ai-code-tracker" -> "ai-code-tracker"
-        // rust log
-        println!("entry: {:?}", entry);
-        let project_name = if raw_project_name.contains('-') {
-            raw_project_name
-                .split('-')
-                .last()
-                .unwrap_or(&raw_project_name)
-                .to_string()
-        } else {
-            raw_project_name
-        };
+        // The folder name format is like: "-Users-jack-client-ai-code-tracker"
+        // We want to extract everything after the third hyphen
+        let project_name = if raw_project_name.starts_with('-') {
+            // Count hyphens to find where the project name starts
+            let mut hyphen_count = 0;
+            let mut start_index = 0;
 
+            for (i, ch) in raw_project_name.char_indices() {
+                if ch == '-' {
+                    hyphen_count += 1;
+                    if hyphen_count == 3 {
+                        start_index = i + 1;
+                        break;
+                    }
+                }
+            }
+
+            if start_index > 0 && start_index < raw_project_name.len() {
+                raw_project_name[start_index..].to_string()
+            } else {
+                raw_project_name.clone()
+            }
+        } else {
+            raw_project_name.clone()
+        };
         let mut session_count = 0;
         let mut message_count = 0;
         let mut last_modified = std::time::SystemTime::now();
@@ -254,14 +266,30 @@ pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSes
                     .to_string();
 
                 // Extract just the repo name from the full path
-                let project_name = if raw_project_name.contains('-') {
-                    raw_project_name
-                        .split('-')
-                        .last()
-                        .unwrap_or(&raw_project_name)
-                        .to_string()
+                // The folder name format is like: "-Users-jack-client-ai-code-tracker"
+                // We want to extract everything after the third hyphen
+                let project_name = if raw_project_name.starts_with('-') {
+                    // Count hyphens to find where the project name starts
+                    let mut hyphen_count = 0;
+                    let mut start_index = 0;
+
+                    for (i, ch) in raw_project_name.char_indices() {
+                        if ch == '-' {
+                            hyphen_count += 1;
+                            if hyphen_count == 3 {
+                                start_index = i + 1;
+                                break;
+                            }
+                        }
+                    }
+
+                    if start_index > 0 && start_index < raw_project_name.len() {
+                        raw_project_name[start_index..].to_string()
+                    } else {
+                        raw_project_name.clone()
+                    }
                 } else {
-                    raw_project_name
+                    raw_project_name.clone()
                 };
 
                 let message_count = messages.len();
