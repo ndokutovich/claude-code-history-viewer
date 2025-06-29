@@ -12,6 +12,8 @@ pub fn run() {
             scan_projects,
             load_project_sessions,
             load_session_messages,
+            load_session_messages_paginated,
+            get_session_message_count,
             search_messages
         ])
         .run(tauri::generate_context!())

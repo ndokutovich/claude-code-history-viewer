@@ -20,9 +20,9 @@ export interface RawClaudeMessage {
   parentUuid?: string;
   sessionId: string;
   timestamp: string;
-  type: 'user' | 'assistant' | 'system' | 'summary';
+  type: "user" | "assistant" | "system" | "summary";
   message: {
-    role: 'user' | 'assistant';
+    role: "user" | "assistant";
     content: string | ContentItem[];
   };
   toolUse?: Record<string, unknown>;
@@ -35,33 +35,33 @@ export interface RawClaudeMessage {
 }
 
 // Content types based on CLAUDE.md
-export type ContentItem = 
+export type ContentItem =
   | TextContent
   | ToolUseContent
   | ToolResultContent
   | ThinkingContent;
 
 export interface TextContent {
-  type: 'text';
+  type: "text";
   text: string;
 }
 
 export interface ToolUseContent {
-  type: 'tool_use';
+  type: "tool_use";
   id: string;
   name: string;
   input: Record<string, unknown>;
 }
 
 export interface ToolResultContent {
-  type: 'tool_result';
+  type: "tool_result";
   tool_use_id: string;
   content: string;
   is_error?: boolean;
 }
 
 export interface ThinkingContent {
-  type: 'thinking';
+  type: "thinking";
   thinking: string;
   signature?: string;
 }
@@ -115,6 +115,21 @@ export interface MessageNode {
   branchDepth: number;
 }
 
+export interface MessagePage {
+  messages: ClaudeMessage[];
+  total_count: number;
+  has_more: boolean;
+  next_offset: number;
+}
+
+export interface PaginationState {
+  currentOffset: number;
+  pageSize: number;
+  totalCount: number;
+  hasMore: boolean;
+  isLoadingMore: boolean;
+}
+
 export interface AppState {
   claudePath: string;
   projects: ClaudeProject[];
@@ -122,6 +137,7 @@ export interface AppState {
   sessions: ClaudeSession[];
   selectedSession: ClaudeSession | null;
   messages: ClaudeMessage[];
+  pagination: PaginationState;
   searchQuery: string;
   searchResults: ClaudeMessage[];
   searchFilters: SearchFilters;

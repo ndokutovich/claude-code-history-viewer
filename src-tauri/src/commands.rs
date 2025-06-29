@@ -68,6 +68,14 @@ pub struct ClaudeSession {
     pub has_errors: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MessagePage {
+    pub messages: Vec<ClaudeMessage>,
+    pub total_count: usize,
+    pub has_more: bool,
+    pub next_offset: usize,
+}
+
 #[tauri::command]
 pub async fn get_claude_folder_path() -> Result<String, String> {
     let home_dir = std::env::var("HOME")
@@ -101,7 +109,7 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
     {
         let raw_project_name = entry.file_name().to_string_lossy().to_string();
         let project_path = entry.path().to_string_lossy().to_string();
-        
+
         // Extract just the repo name from the full path
         // e.g., "-Users-jack-client-ai-code-tracker" -> "ai-code-tracker"
         let project_name = if raw_project_name.contains('-') {
@@ -188,7 +196,7 @@ pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSes
                     .and_then(|n| n.to_str())
                     .unwrap_or("Unknown")
                     .to_string();
-                
+
                 // Extract just the repo name from the full path
                 let project_name = if raw_project_name.contains('-') {
                     raw_project_name
@@ -268,6 +276,76 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
 }
 
 #[tauri::command]
+pub async fn load_session_messages_paginated(
+    session_path: String,
+    offset: usize,
+    limit: usize,
+) -> Result<MessagePage, String> {
+    let content = fs::read_to_string(&session_path)
+        .map_err(|e| format!("Failed to read session file: {}", e))?;
+
+    let lines: Vec<&str> = content.lines().collect();
+    let total_count = lines.len();
+
+    // 빈 라인들 제거
+    let valid_lines: Vec<&str> = lines.into_iter()
+        .filter(|line| !line.trim().is_empty())
+        .collect();
+
+    let actual_total = valid_lines.len();
+
+    // 페이지네이션 적용
+    let start = offset;
+    let end = std::cmp::min(start + limit, actual_total);
+    let has_more = end < actual_total;
+    let next_offset = if has_more { end } else { actual_total };
+
+    let mut messages = Vec::new();
+
+    for line in valid_lines.iter().skip(start).take(limit) {
+        match serde_json::from_str::<RawClaudeMessage>(line) {
+            Ok(raw_message) => {
+                let claude_message = ClaudeMessage {
+                    uuid: raw_message.uuid,
+                    parent_uuid: raw_message.parent_uuid,
+                    session_id: raw_message.session_id,
+                    timestamp: raw_message.timestamp,
+                    message_type: raw_message.message_type,
+                    content: raw_message.message.map(|m| m.content),
+                    tool_use: raw_message.tool_use,
+                    tool_use_result: raw_message.tool_use_result,
+                    is_sidechain: raw_message.is_sidechain,
+                };
+                messages.push(claude_message);
+            },
+            Err(e) => {
+                eprintln!("Failed to parse message: {}", e);
+                continue;
+            }
+        }
+    }
+
+    Ok(MessagePage {
+        messages,
+        total_count: actual_total,
+        has_more,
+        next_offset,
+    })
+}
+
+#[tauri::command]
+pub async fn get_session_message_count(session_path: String) -> Result<usize, String> {
+    let content = fs::read_to_string(&session_path)
+        .map_err(|e| format!("Failed to read session file: {}", e))?;
+
+    let count = content.lines()
+        .filter(|line| !line.trim().is_empty())
+        .count();
+
+    Ok(count)
+}
+
+#[tauri::command]
 pub async fn search_messages(
     claude_path: String,
     query: String,
@@ -299,7 +377,7 @@ pub async fn search_messages(
                         tool_use_result: raw_message.tool_use_result.clone(),
                         is_sidechain: raw_message.is_sidechain,
                     };
-                    
+
                     let content_str = claude_message.content
                         .as_ref()
                         .and_then(|c| c.as_str())

@@ -2,14 +2,7 @@ import { useEffect } from "react";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { useAppStore } from "./store/useAppStore";
-import {
-  AlertTriangle,
-  FolderOpen,
-  Settings,
-  Upload,
-  Search,
-  Loader2,
-} from "lucide-react";
+import { AlertTriangle, Settings, Upload, Search, Loader2 } from "lucide-react";
 import "./App.css";
 
 function App() {
@@ -19,11 +12,13 @@ function App() {
     selectedProject,
     selectedSession,
     messages,
+    pagination,
     isLoading,
     error,
     initializeApp,
     selectProject,
     selectSession,
+    loadMoreMessages,
   } = useAppStore();
 
   useEffect(() => {
@@ -117,7 +112,9 @@ function App() {
                     대화 내용
                   </h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    {messages.length}개 메시지 •{" "}
+                    {pagination.totalCount > messages.length &&
+                      ` ${pagination.totalCount}개`}{" "}
+                    •{" "}
                     {selectedSession.has_tool_use ? "도구 사용됨" : "일반 대화"}
                     {selectedSession.has_errors && " • 에러 발생"}
                   </p>
@@ -138,7 +135,12 @@ function App() {
           )}
 
           {/* Message Viewer */}
-          <MessageViewer messages={messages} isLoading={isLoading} />
+          <MessageViewer
+            messages={messages}
+            pagination={pagination}
+            isLoading={isLoading}
+            onLoadMore={loadMoreMessages}
+          />
         </div>
       </div>
 
@@ -148,7 +150,13 @@ function App() {
           <div className="flex items-center space-x-4">
             <span>프로젝트: {projects.length}개</span>
             <span>세션: {sessions.length}개</span>
-            {selectedSession && <span>메시지: {messages.length}개</span>}
+            {selectedSession && (
+              <span>
+                메시지: {messages.length}개
+                {pagination.totalCount > messages.length &&
+                  ` / ${pagination.totalCount}개`}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center space-x-2">

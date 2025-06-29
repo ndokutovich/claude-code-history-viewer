@@ -5,6 +5,7 @@ import type {
   ClaudeProject,
   ClaudeSession,
   ClaudeMessage,
+  MessagePage,
   SearchFilters,
 } from "../types";
 
@@ -23,11 +24,14 @@ interface AppStore extends AppState {
   initializeApp: () => Promise<void>;
   scanProjects: () => Promise<void>;
   selectProject: (project: ClaudeProject) => Promise<void>;
-  selectSession: (session: ClaudeSession) => Promise<void>;
+  selectSession: (session: ClaudeSession, pageSize?: number) => Promise<void>;
+  loadMoreMessages: () => Promise<void>;
   searchMessages: (query: string, filters?: SearchFilters) => Promise<void>;
   setSearchFilters: (filters: SearchFilters) => void;
   setError: (error: string | null) => void;
 }
+
+const DEFAULT_PAGE_SIZE = 20; // 초기 로딩 시 20개 메시지만 로드하여 빠른 로딩
 
 export const useAppStore = create<AppStore>((set, get) => ({
   // Initial state
@@ -37,6 +41,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
   sessions: [],
   selectedSession: null,
   messages: [],
+  pagination: {
+    currentOffset: 0,
+    pageSize: DEFAULT_PAGE_SIZE,
+    totalCount: 0,
+    hasMore: false,
+    isLoadingMore: false,
+  },
   searchQuery: "",
   searchResults: [],
   searchFilters: {},
@@ -102,21 +113,104 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
-  selectSession: async (session: ClaudeSession) => {
-    set({ selectedSession: session, messages: [], isLoading: false });
+  selectSession: async (
+    session: ClaudeSession,
+    pageSize = DEFAULT_PAGE_SIZE
+  ) => {
+    set({
+      selectedSession: session,
+      messages: [],
+      pagination: {
+        currentOffset: 0,
+        pageSize,
+        totalCount: 0,
+        hasMore: false,
+        isLoadingMore: false,
+      },
+      isLoading: true,
+    });
+
     try {
       const sessionPath = `${get().selectedProject?.path}/${
         session.session_id
       }.jsonl`;
-      const messages = await invoke<ClaudeMessage[]>("load_session_messages", {
-        sessionPath,
+
+      // 첫 페이지 로드
+      const messagePage = await invoke<MessagePage>(
+        "load_session_messages_paginated",
+        {
+          sessionPath,
+          offset: 0,
+          limit: pageSize,
+        }
+      );
+
+      set({
+        messages: messagePage.messages,
+        pagination: {
+          currentOffset: messagePage.next_offset,
+          pageSize,
+          totalCount: messagePage.total_count,
+          hasMore: messagePage.has_more,
+          isLoadingMore: false,
+        },
+        isLoading: false,
       });
-      set({ messages });
     } catch (error) {
       console.error("Failed to load session messages:", error);
-      set({ error: error as string });
-    } finally {
-      set({ isLoading: false });
+      set({ error: error as string, isLoading: false });
+    }
+  },
+
+  loadMoreMessages: async () => {
+    const { selectedProject, selectedSession, pagination, messages } = get();
+
+    if (
+      !selectedProject ||
+      !selectedSession ||
+      !pagination.hasMore ||
+      pagination.isLoadingMore
+    ) {
+      return;
+    }
+
+    set({
+      pagination: {
+        ...pagination,
+        isLoadingMore: true,
+      },
+    });
+
+    try {
+      const sessionPath = `${selectedProject.path}/${selectedSession.session_id}.jsonl`;
+
+      const messagePage = await invoke<MessagePage>(
+        "load_session_messages_paginated",
+        {
+          sessionPath,
+          offset: pagination.currentOffset,
+          limit: pagination.pageSize,
+        }
+      );
+
+      set({
+        messages: [...messages, ...messagePage.messages],
+        pagination: {
+          ...pagination,
+          currentOffset: messagePage.next_offset,
+          hasMore: messagePage.has_more,
+          isLoadingMore: false,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to load more messages:", error);
+      set({
+        error: error as string,
+        pagination: {
+          ...pagination,
+          isLoadingMore: false,
+        },
+      });
     }
   },
 

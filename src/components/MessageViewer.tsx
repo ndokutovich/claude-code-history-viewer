@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { Loader2, MessageCircle } from "lucide-react";
-import type { ClaudeMessage } from "../types";
+import type { ClaudeMessage, PaginationState } from "../types";
 import { ClaudeContentArrayRenderer } from "./contentRenderer";
 import {
   ClaudeToolUseDisplay,
@@ -11,7 +11,9 @@ import { formatTime, extractClaudeMessageContent } from "../utils/messageUtils";
 
 interface MessageViewerProps {
   messages: ClaudeMessage[];
+  pagination: PaginationState;
   isLoading: boolean;
+  onLoadMore: () => void;
 }
 
 interface MessageNodeProps {
@@ -97,9 +99,45 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
 
 export const MessageViewer: React.FC<MessageViewerProps> = ({
   messages,
+  pagination,
   isLoading,
+  onLoadMore,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer for infinite scrolling
+  const handleIntersection = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const [entry] = entries;
+
+      if (
+        entry &&
+        entry.isIntersecting &&
+        pagination.hasMore &&
+        !pagination.isLoadingMore &&
+        !isLoading
+      ) {
+        onLoadMore();
+      }
+    },
+    [pagination.hasMore, pagination.isLoadingMore, isLoading, onLoadMore]
+  );
+
+  // Set up intersection observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(handleIntersection, {
+      root: scrollContainerRef.current,
+      rootMargin: "200px", // 200px 전에 미리 로딩하여 더 부드러운 스크롤
+      threshold: 0.1,
+    });
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [handleIntersection]);
 
   // 메시지를 트리 구조로 변환
   const buildMessageTree = (messages: ClaudeMessage[]) => {
@@ -119,19 +157,23 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     return roots;
   };
 
-  // 새로운 메시지가 올 때마다 스크롤을 맨 위로 이동
+  // 새로운 세션 선택 시 스크롤을 맨 위로 이동
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      // 렌더링이 완료된 후 스크롤 실행
+    if (
+      scrollContainerRef.current &&
+      messages.length > 0 &&
+      pagination.currentOffset === 0
+    ) {
+      // 초기 로딩일 때만 스크롤을 맨 위로 이동
       setTimeout(() => {
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollTop = 0;
         }
       }, 0);
     }
-  }, [messages]);
+  }, [messages.length, pagination.currentOffset]);
 
-  if (isLoading) {
+  if (isLoading && messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="flex items-center space-x-2 text-gray-500">
@@ -190,7 +232,36 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       className="flex-1 overflow-y-auto scrollbar-thin"
     >
       <div className="max-w-4xl mx-auto">
+        {/* 메시지 목록 */}
         {rootMessages.map((message) => renderMessageTree(message))}
+
+        {/* 무한 스크롤 트리거 */}
+        {pagination.hasMore && (
+          <div
+            ref={loadMoreRef}
+            className="flex items-center justify-center py-4"
+          >
+            {pagination.isLoadingMore ? (
+              <div className="flex items-center space-x-2 text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>더 많은 메시지를 불러오는 중...</span>
+              </div>
+            ) : (
+              <div className="text-gray-400 text-sm">
+                스크롤하여 더 많은 메시지를 불러오세요
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 로딩 완료 메시지 */}
+        {!pagination.hasMore && messages.length > 0 && (
+          <div className="flex items-center justify-center py-4">
+            <div className="text-gray-400 text-sm">
+              모든 메시지를 불러왔습니다 ({pagination.totalCount}개)
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
