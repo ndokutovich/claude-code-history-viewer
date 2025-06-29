@@ -17,10 +17,10 @@ pub struct RawClaudeMessage {
     #[serde(rename = "parentUuid")]
     pub parent_uuid: Option<String>,
     #[serde(rename = "sessionId")]
-    pub session_id: String,
-    pub timestamp: String,
+    pub session_id: Option<String>,
+    pub timestamp: Option<String>,
     #[serde(rename = "type")]
-    pub message_type: String,
+    pub message_type: Option<String>,
     pub message: Option<MessageContent>,
     #[serde(rename = "toolUse")]
     pub tool_use: Option<serde_json::Value>,
@@ -157,6 +157,9 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
         });
     }
 
+    // Sort projects by last_modified in descending order (newest first)
+    projects.sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
+
     Ok(projects)
 }
 
@@ -174,12 +177,17 @@ pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSes
 
             for line in content.lines() {
                 if let Ok(raw_message) = serde_json::from_str::<RawClaudeMessage>(line) {
+                    // Skip messages that don't have essential fields
+                    if raw_message.session_id.is_none() && raw_message.timestamp.is_none() {
+                        continue;
+                    }
+
                     let claude_message = ClaudeMessage {
                         uuid: raw_message.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
                         parent_uuid: raw_message.parent_uuid,
-                        session_id: raw_message.session_id,
-                        timestamp: raw_message.timestamp,
-                        message_type: raw_message.message_type,
+                        session_id: raw_message.session_id.unwrap_or_else(|| "unknown-session".to_string()),
+                        timestamp: raw_message.timestamp.unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+                        message_type: raw_message.message_type.unwrap_or_else(|| "unknown".to_string()),
                         content: raw_message.message.map(|m| m.content),
                         tool_use: raw_message.tool_use,
                         tool_use_result: raw_message.tool_use_result,
@@ -187,7 +195,8 @@ pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSes
                     };
                     messages.push(claude_message);
                 } else {
-                    eprintln!("Failed to parse message in load_project_sessions: skipping line");
+                    // Silently skip unparseable lines to reduce noise
+                    continue;
                 }
             }
 
@@ -238,6 +247,9 @@ pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSes
         }
     }
 
+    // Sort sessions by last_message_time in descending order (newest first)
+    sessions.sort_by(|a, b| b.last_message_time.cmp(&a.last_message_time));
+
     Ok(sessions)
 }
 
@@ -255,12 +267,17 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
 
         match serde_json::from_str::<RawClaudeMessage>(line) {
             Ok(raw_message) => {
+                // Skip messages that don't have essential fields
+                if raw_message.session_id.is_none() && raw_message.timestamp.is_none() {
+                    continue;
+                }
+
                 let claude_message = ClaudeMessage {
                     uuid: raw_message.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
                     parent_uuid: raw_message.parent_uuid,
-                    session_id: raw_message.session_id,
-                    timestamp: raw_message.timestamp,
-                    message_type: raw_message.message_type,
+                    session_id: raw_message.session_id.unwrap_or_else(|| "unknown-session".to_string()),
+                    timestamp: raw_message.timestamp.unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+                    message_type: raw_message.message_type.unwrap_or_else(|| "unknown".to_string()),
                     content: raw_message.message.map(|m| m.content),
                     tool_use: raw_message.tool_use,
                     tool_use_result: raw_message.tool_use_result,
@@ -268,8 +285,8 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                 };
                 messages.push(claude_message);
             },
-            Err(e) => {
-                eprintln!("Failed to parse message in load_session_messages: {}", e);
+            Err(_) => {
+                // Silently skip unparseable lines
                 continue;
             }
         }
@@ -308,12 +325,17 @@ pub async fn load_session_messages_paginated(
     for line in valid_lines.iter().skip(start).take(limit) {
         match serde_json::from_str::<RawClaudeMessage>(line) {
             Ok(raw_message) => {
+                // Skip messages that don't have essential fields
+                if raw_message.session_id.is_none() && raw_message.timestamp.is_none() {
+                    continue;
+                }
+
                 let claude_message = ClaudeMessage {
                     uuid: raw_message.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
                     parent_uuid: raw_message.parent_uuid,
-                    session_id: raw_message.session_id,
-                    timestamp: raw_message.timestamp,
-                    message_type: raw_message.message_type,
+                    session_id: raw_message.session_id.unwrap_or_else(|| "unknown-session".to_string()),
+                    timestamp: raw_message.timestamp.unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+                    message_type: raw_message.message_type.unwrap_or_else(|| "unknown".to_string()),
                     content: raw_message.message.map(|m| m.content),
                     tool_use: raw_message.tool_use,
                     tool_use_result: raw_message.tool_use_result,
@@ -321,8 +343,8 @@ pub async fn load_session_messages_paginated(
                 };
                 messages.push(claude_message);
             },
-            Err(e) => {
-                eprintln!("Failed to parse message in load_session_messages_paginated: {}", e);
+            Err(_) => {
+                // Silently skip unparseable lines
                 continue;
             }
         }
@@ -369,12 +391,17 @@ pub async fn search_messages(
         if let Ok(content) = fs::read_to_string(entry.path()) {
             for line in content.lines() {
                 if let Ok(raw_message) = serde_json::from_str::<RawClaudeMessage>(line) {
+                    // Skip messages that don't have essential fields
+                    if raw_message.session_id.is_none() && raw_message.timestamp.is_none() {
+                        continue;
+                    }
+
                     let claude_message = ClaudeMessage {
                         uuid: raw_message.uuid.clone().unwrap_or_else(|| Uuid::new_v4().to_string()),
                         parent_uuid: raw_message.parent_uuid.clone(),
-                        session_id: raw_message.session_id.clone(),
-                        timestamp: raw_message.timestamp.clone(),
-                        message_type: raw_message.message_type.clone(),
+                        session_id: raw_message.session_id.clone().unwrap_or_else(|| "unknown-session".to_string()),
+                        timestamp: raw_message.timestamp.clone().unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+                        message_type: raw_message.message_type.clone().unwrap_or_else(|| "unknown".to_string()),
                         content: raw_message.message.as_ref().map(|m| m.content.clone()),
                         tool_use: raw_message.tool_use.clone(),
                         tool_use_result: raw_message.tool_use_result.clone(),

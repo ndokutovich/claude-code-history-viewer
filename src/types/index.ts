@@ -73,7 +73,7 @@ export interface ClaudeMessage {
   sessionId: string;
   timestamp: string;
   type: string;
-  content?: string | Record<string, unknown>;
+  content?: string | ContentItem[] | Record<string, unknown>;
   toolUse?: Record<string, unknown>;
   toolUseResult?: Record<string, unknown>;
   isSidechain?: boolean;

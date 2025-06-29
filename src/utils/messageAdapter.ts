@@ -1,4 +1,4 @@
-import { RawClaudeMessage, ClaudeMessage } from "../types";
+import type { RawClaudeMessage, ClaudeMessage } from "../types";
 
 /**
  * Converts raw JSONL message format to UI-friendly format

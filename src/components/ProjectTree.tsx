@@ -148,7 +148,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between">
                                   <h3 className="font-medium text-gray-800 text-sm truncate">
-                                    세션 {session.session_id}
+                                    {formatTimeAgo(session.last_message_time)}
                                   </h3>
                                   <div className="flex items-center space-x-1">
                                     {session.has_tool_use && (
@@ -165,11 +165,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                 </div>
 
                                 <div className="flex items-center space-x-2 text-xs text-gray-400 mt-1">
-                                  <span>
-                                    {formatTimeAgo(session.last_message_time)}
-                                  </span>
+                                  <span>{session.message_count}개 메시지</span>
                                   <span>•</span>
-                                  <span>{session.message_count} messages</span>
+                                  <span>ID: {session.session_id.slice(-8)}</span>
                                 </div>
                               </div>
                             </div>

@@ -23,7 +23,7 @@ export const extractClaudeMessageContent = (
   // Array content - extract text from first text block
   if (Array.isArray(message.content)) {
     const textBlock = message.content.find(
-      (block: { type: string; text?: string }) => block.type === "text"
+      (block): block is { type: "text"; text: string } => block.type === "text"
     );
     return textBlock?.text || null;
   }
