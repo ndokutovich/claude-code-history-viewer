@@ -2,7 +2,8 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Copy } from "lucide-react";
-import { CommandRenderer } from "../contentRenderer";
+import { CommandRenderer, ImageRenderer } from "../contentRenderer";
+import { isImageUrl, isBase64Image } from "../../utils/messageUtils";
 
 interface MessageContentDisplayProps {
   content: string | null;
@@ -26,6 +27,34 @@ export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = ({
 
     if (hasCommandTags) {
       return <CommandRenderer text={content} />;
+    }
+
+    // Check for image content
+    if (isImageUrl(content) || isBase64Image(content)) {
+      return <ImageRenderer imageUrl={content} />;
+    }
+
+    // Check for image URLs in text
+    const imageMatch = content.match(
+      /(data:image\/[^;\s]+;base64,[A-Za-z0-9+/=]+|https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|svg|webp))/i
+    );
+    if (imageMatch && imageMatch[1]) {
+      const imageUrl = imageMatch[1];
+      const textWithoutImage = content.replace(imageMatch[0], "").trim();
+
+      return (
+        <>
+          <ImageRenderer imageUrl={imageUrl} />
+          {textWithoutImage && textWithoutImage.length > 0 && (
+            <div className="mt-2">
+              <MessageContentDisplay
+                content={textWithoutImage}
+                messageType={messageType}
+              />
+            </div>
+          )}
+        </>
+      );
     }
   }
 

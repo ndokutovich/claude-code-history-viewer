@@ -134,7 +134,10 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                         return (
                           <button
                             key={session.session_id}
-                            onClick={() => onSessionSelect(session)}
+                            onClick={() => {
+                              if (isSessionSelected) return;
+                              onSessionSelect(session);
+                            }}
                             className={cn(
                               "w-full text-left p-3 rounded-lg transition-colors",
                               isSessionSelected

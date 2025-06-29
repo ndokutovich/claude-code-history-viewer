@@ -8,6 +8,7 @@ import {
   MessageContentDisplay,
 } from "./messageRenderer";
 import { formatTime, extractClaudeMessageContent } from "../utils/messageUtils";
+import { cn } from "../utils/cn";
 
 interface MessageViewerProps {
   messages: ClaudeMessage[];
@@ -23,25 +24,45 @@ interface MessageNodeProps {
 
 const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
   console.log("ClaudeMessageNode 입력 메시지:", depth, message);
+
+  // depth에 따른 왼쪽 margin 적용
+  const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, 16)}` : "";
+
   return (
-    <div className="w-full px-4 py-2">
+    <div
+      className={cn(
+        "w-full px-4 py-2",
+        leftMargin,
+        message.isSidechain && "bg-gray-100"
+      )}
+    >
       <div className="max-w-4xl mx-auto">
+        {/* depth 표시 (개발 모드에서만) */}
+        {import.meta.env.DEV && depth > 0 && (
+          <div className="text-xs text-gray-400 mb-1">
+            └─ 답글 (depth: {depth})
+          </div>
+        )}
+
         {/* 메시지 헤더 */}
         <div
-          className={`flex items-center space-x-2 mb-1 text-xs text-gray-500 ${
+          className={`flex items-center space-x-2 mb-1 text-md text-gray-500 ${
             message.type === "user" ? "justify-end" : "justify-start"
           }`}
         >
-          <span className="font-medium">
+          <div className="w-full h-0.5 bg-gray-100 rounded-full" />
+          <span className="font-medium whitespace-nowrap">
             {message.type === "user"
               ? "사용자"
               : message.type === "assistant"
               ? "Claude"
               : "시스템"}
           </span>
-          <span>{formatTime(message.timestamp)}</span>
+          <span className="whitespace-nowrap">
+            {formatTime(message.timestamp)}
+          </span>
           {message.isSidechain && (
-            <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full">
+            <span className="px-2 py-1 whitespace-nowrap text-xs bg-orange-100 text-orange-800 rounded-full">
               분기
             </span>
           )}
@@ -63,10 +84,7 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
               (message.type === "assistant" &&
                 !extractClaudeMessageContent(message))) && (
               <div className="mb-2">
-                <ClaudeContentArrayRenderer
-                  content={message.content}
-                  messageType={message.type}
-                />
+                <ClaudeContentArrayRenderer content={message.content} />
               </div>
             )}
 
@@ -238,24 +256,32 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     message: ClaudeMessage,
     depth = 0,
     visitedIds = new Set<string>()
-  ): React.ReactNode => {
+  ): React.ReactNode[] => {
     // 순환 참조 방지
     if (visitedIds.has(message.uuid)) {
       console.warn(`Circular reference detected for message: ${message.uuid}`);
-      return null;
+      return [];
     }
 
     visitedIds.add(message.uuid);
     const children = messages.filter((m) => m.parentUuid === message.uuid);
 
-    return (
-      <div key={message.uuid}>
-        <ClaudeMessageNode message={message} depth={depth} />
-        {children.map((child) =>
-          renderMessageTree(child, depth + 1, new Set(visitedIds))
-        )}
-      </div>
-    );
+    // 현재 메시지를 먼저 추가하고, 자식 메시지들을 이어서 추가
+    const result: React.ReactNode[] = [
+      <ClaudeMessageNode key={message.uuid} message={message} depth={depth} />,
+    ];
+
+    // 자식 메시지들을 재귀적으로 추가 (depth 증가)
+    children.forEach((child) => {
+      const childNodes = renderMessageTree(
+        child,
+        depth + 1,
+        new Set(visitedIds)
+      );
+      result.push(...childNodes);
+    });
+
+    return result;
   };
 
   const rootMessages = buildMessageTree(messages);
@@ -265,19 +291,17 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       ref={scrollContainerRef}
       className="flex-1 overflow-y-auto scrollbar-thin"
     >
+      {/* 디버깅 정보 */}
+      {import.meta.env.DEV && (
+        <div className="bg-yellow-50 p-2 text-xs text-yellow-800 border-b">
+          메시지: {messages.length} / {pagination.totalCount} | 오프셋:{" "}
+          {pagination.currentOffset} | 더 있음: {pagination.hasMore ? "O" : "X"}{" "}
+          | 로딩중: {pagination.isLoadingMore ? "O" : "X"}
+        </div>
+      )}
       <div className="max-w-4xl mx-auto">
-        {/* 디버깅 정보 */}
-        {import.meta.env.DEV && (
-          <div className="bg-yellow-50 p-2 text-xs text-yellow-800 border-b">
-            메시지: {messages.length} / {pagination.totalCount} | 오프셋:{" "}
-            {pagination.currentOffset} | 더 있음:{" "}
-            {pagination.hasMore ? "O" : "X"} | 로딩중:{" "}
-            {pagination.isLoadingMore ? "O" : "X"}
-          </div>
-        )}
-
         {/* 메시지 목록 */}
-        {rootMessages.map((message) => renderMessageTree(message))}
+        {rootMessages.map((message) => renderMessageTree(message)).flat()}
 
         {/* 무한 스크롤 트리거 */}
         {pagination.hasMore && (

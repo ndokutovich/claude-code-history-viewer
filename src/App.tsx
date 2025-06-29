@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { useAppStore } from "./store/useAppStore";
-import { AlertTriangle, Settings, Upload, Search, Loader2 } from "lucide-react";
+import { AlertTriangle, Settings, Loader2 } from "lucide-react";
 import "./App.css";
 
 function App() {
@@ -118,17 +118,6 @@ function App() {
                     {selectedSession.has_tool_use ? "도구 사용됨" : "일반 대화"}
                     {selectedSession.has_errors && " • 에러 발생"}
                   </p>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <button className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-1">
-                    <Upload className="w-4 h-4" />
-                    내보내기
-                  </button>
-                  <button className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-1">
-                    <Search className="w-4 h-4" />
-                    검색
-                  </button>
                 </div>
               </div>
             </div>

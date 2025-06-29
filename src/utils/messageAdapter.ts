@@ -23,6 +23,8 @@ export function adaptRawMessage(raw: RawClaudeMessage): ClaudeMessage {
 /**
  * Process messages array from backend
  */
-export function processMessages(rawMessages: RawClaudeMessage[]): ClaudeMessage[] {
+export function processMessages(
+  rawMessages: RawClaudeMessage[]
+): ClaudeMessage[] {
   return rawMessages.map(adaptRawMessage);
 }

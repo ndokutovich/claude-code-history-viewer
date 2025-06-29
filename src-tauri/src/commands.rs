@@ -285,7 +285,7 @@ pub async fn load_session_messages_paginated(
         .map_err(|e| format!("Failed to read session file: {}", e))?;
 
     let lines: Vec<&str> = content.lines().collect();
-    let total_count = lines.len();
+    let _total_count = lines.len();
 
     // 빈 라인들 제거
     let valid_lines: Vec<&str> = lines.into_iter()

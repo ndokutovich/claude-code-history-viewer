@@ -3,14 +3,17 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 type Props = {
-  text: string;
+  text?: string;
+  content?: string;
 };
 
-export const ThinkingRenderer = ({ text }: Props) => {
+export const ThinkingRenderer = ({ text, content }: Props) => {
+  const textContent = text || content || "";
+  if (!textContent) return null;
   // Extract thinking content and regular content
   const thinkingRegex = /<thinking>(.*?)<\/thinking>/gs;
-  const matches = text.match(thinkingRegex);
-  const withoutThinking = text.replace(thinkingRegex, "").trim();
+  const matches = textContent.match(thinkingRegex);
+  const withoutThinking = textContent.replace(thinkingRegex, "").trim();
 
   return (
     <div className="space-y-2">

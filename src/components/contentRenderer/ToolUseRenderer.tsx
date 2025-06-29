@@ -13,6 +13,7 @@ import {
   ChevronRight,
   X,
   CheckCircle,
+  FilePlus,
 } from "lucide-react";
 import { ToolIcon } from "../ToolIcon";
 import { useState } from "react";
@@ -32,6 +33,35 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     setOpenRender(!openRender);
   };
 
+  // 파일 확장자로 언어 감지
+  const getLanguageFromPath = (path: string): string => {
+    const ext = path.split(".").pop()?.toLowerCase();
+    switch (ext) {
+      case "ts":
+        return "typescript";
+      case "tsx":
+        return "typescript";
+      case "js":
+        return "javascript";
+      case "jsx":
+        return "javascript";
+      case "py":
+        return "python";
+      case "java":
+        return "java";
+      case "rs":
+        return "rust";
+      case "go":
+        return "go";
+      case "php":
+        return "php";
+      case "rb":
+        return "ruby";
+      default:
+        return "text";
+    }
+  };
+
   // Claude Assistant 프롬프트 형태인지 확인
   const isAssistantPrompt = (input: unknown): boolean => {
     if (typeof input !== "object" || input === null) return false;
@@ -43,6 +73,77 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
       typeof obj.prompt === "string"
     );
   };
+
+  // Write 도구인지 확인
+  const isWriteTool =
+    toolName === "Write" ||
+    (typeof toolInput === "object" &&
+      toolInput !== null &&
+      "file_path" in toolInput &&
+      "content" in toolInput);
+
+  // Edit 도구인지 확인
+  const isEditTool =
+    toolName === "Edit" ||
+    (typeof toolInput === "object" &&
+      toolInput !== null &&
+      "file_path" in toolInput &&
+      "old_string" in toolInput &&
+      "new_string" in toolInput);
+
+  // Write 도구 전용 렌더링
+  if (isWriteTool && typeof toolInput === "object" && toolInput !== null) {
+    const writeToolInput = toolInput as Record<string, unknown>;
+    const filePath = (writeToolInput.file_path as string) || "";
+    const content = (writeToolInput.content as string) || "";
+    const language = getLanguageFromPath(filePath);
+
+    return (
+      <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-2">
+            <FilePlus className="w-4 h-4 text-green-600" />
+            <span className="font-medium text-green-800">파일 작성</span>
+          </div>
+          {toolId && (
+            <code className="text-xs bg-green-100 px-2 py-1 rounded text-green-700">
+              ID: {String(toolId)}
+            </code>
+          )}
+        </div>
+
+        {/* 파일 경로 */}
+        <div className="mb-3 p-2 bg-gray-50 rounded border">
+          <div className="flex items-center space-x-2">
+            <FileText className="w-3 h-3 text-gray-500" />
+            <code className="text-sm font-mono text-gray-700">{filePath}</code>
+          </div>
+        </div>
+
+        {/* 파일 내용 */}
+        <div>
+          <div className="text-xs font-medium text-green-700 mb-2 flex items-center space-x-1">
+            <CheckCircle className="w-4 h-4 text-green-700" />
+            <span>작성된 내용</span>
+          </div>
+          <div className="rounded overflow-hidden border border-green-200 max-h-96 overflow-y-auto">
+            <SyntaxHighlighter
+              language={language}
+              style={oneLight}
+              customStyle={{
+                margin: 0,
+                fontSize: "0.75rem",
+                backgroundColor: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+              }}
+            >
+              {content}
+            </SyntaxHighlighter>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Claude Assistant 프롬프트 전용 렌더링
   if (isAssistantPrompt(toolInput)) {
@@ -99,19 +200,9 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
             </div>
           </>
         ) : null}
-        {/* 설명 섹션 */}
       </div>
     );
   }
-
-  // Edit 도구인지 확인
-  const isEditTool =
-    toolName === "Edit" ||
-    (typeof toolInput === "object" &&
-      toolInput !== null &&
-      "file_path" in toolInput &&
-      "old_string" in toolInput &&
-      "new_string" in toolInput);
 
   // Edit 도구 전용 렌더링
   if (isEditTool && typeof toolInput === "object" && toolInput !== null) {
@@ -119,36 +210,6 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     const filePath = (editToolInput.file_path as string) || "";
     const oldString = (editToolInput.old_string as string) || "";
     const newString = (editToolInput.new_string as string) || "";
-
-    // 파일 확장자로 언어 감지
-    const getLanguageFromPath = (path: string): string => {
-      const ext = path.split(".").pop()?.toLowerCase();
-      switch (ext) {
-        case "ts":
-          return "typescript";
-        case "tsx":
-          return "typescript";
-        case "js":
-          return "javascript";
-        case "jsx":
-          return "javascript";
-        case "py":
-          return "python";
-        case "java":
-          return "java";
-        case "rs":
-          return "rust";
-        case "go":
-          return "go";
-        case "php":
-          return "php";
-        case "rb":
-          return "ruby";
-        default:
-          return "text";
-      }
-    };
-
     const language = getLanguageFromPath(filePath);
 
     return (
