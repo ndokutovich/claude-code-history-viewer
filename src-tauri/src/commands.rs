@@ -3,6 +3,7 @@ use std::fs;
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageContent {
@@ -12,7 +13,7 @@ pub struct MessageContent {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RawClaudeMessage {
-    pub uuid: String,
+    pub uuid: Option<String>,
     #[serde(rename = "parentUuid")]
     pub parent_uuid: Option<String>,
     #[serde(rename = "sessionId")]
@@ -174,7 +175,7 @@ pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSes
             for line in content.lines() {
                 if let Ok(raw_message) = serde_json::from_str::<RawClaudeMessage>(line) {
                     let claude_message = ClaudeMessage {
-                        uuid: raw_message.uuid,
+                        uuid: raw_message.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
                         parent_uuid: raw_message.parent_uuid,
                         session_id: raw_message.session_id,
                         timestamp: raw_message.timestamp,
@@ -185,6 +186,8 @@ pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSes
                         is_sidechain: raw_message.is_sidechain,
                     };
                     messages.push(claude_message);
+                } else {
+                    eprintln!("Failed to parse message in load_project_sessions: skipping line");
                 }
             }
 
@@ -253,7 +256,7 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
         match serde_json::from_str::<RawClaudeMessage>(line) {
             Ok(raw_message) => {
                 let claude_message = ClaudeMessage {
-                    uuid: raw_message.uuid,
+                    uuid: raw_message.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
                     parent_uuid: raw_message.parent_uuid,
                     session_id: raw_message.session_id,
                     timestamp: raw_message.timestamp,
@@ -266,7 +269,7 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                 messages.push(claude_message);
             },
             Err(e) => {
-                eprintln!("Failed to parse message: {}", e);
+                eprintln!("Failed to parse message in load_session_messages: {}", e);
                 continue;
             }
         }
@@ -306,7 +309,7 @@ pub async fn load_session_messages_paginated(
         match serde_json::from_str::<RawClaudeMessage>(line) {
             Ok(raw_message) => {
                 let claude_message = ClaudeMessage {
-                    uuid: raw_message.uuid,
+                    uuid: raw_message.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
                     parent_uuid: raw_message.parent_uuid,
                     session_id: raw_message.session_id,
                     timestamp: raw_message.timestamp,
@@ -319,7 +322,7 @@ pub async fn load_session_messages_paginated(
                 messages.push(claude_message);
             },
             Err(e) => {
-                eprintln!("Failed to parse message: {}", e);
+                eprintln!("Failed to parse message in load_session_messages_paginated: {}", e);
                 continue;
             }
         }
@@ -367,7 +370,7 @@ pub async fn search_messages(
             for line in content.lines() {
                 if let Ok(raw_message) = serde_json::from_str::<RawClaudeMessage>(line) {
                     let claude_message = ClaudeMessage {
-                        uuid: raw_message.uuid.clone(),
+                        uuid: raw_message.uuid.clone().unwrap_or_else(|| Uuid::new_v4().to_string()),
                         parent_uuid: raw_message.parent_uuid.clone(),
                         session_id: raw_message.session_id.clone(),
                         timestamp: raw_message.timestamp.clone(),

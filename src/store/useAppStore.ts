@@ -26,6 +26,7 @@ interface AppStore extends AppState {
   selectProject: (project: ClaudeProject) => Promise<void>;
   selectSession: (session: ClaudeSession, pageSize?: number) => Promise<void>;
   loadMoreMessages: () => Promise<void>;
+  refreshCurrentSession: () => Promise<void>;
   searchMessages: (query: string, filters?: SearchFilters) => Promise<void>;
   setSearchFilters: (filters: SearchFilters) => void;
   setError: (error: string | null) => void;
@@ -127,7 +128,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         hasMore: false,
         isLoadingMore: false,
       },
-      isLoading: true,
+      isLoading: false,
     });
 
     try {
@@ -234,6 +235,29 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set({ error: error as string });
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  refreshCurrentSession: async () => {
+    const { selectedSession, pagination } = get();
+
+    if (!selectedSession) {
+      console.warn("No session selected for refresh");
+      return;
+    }
+
+    console.log("새로고침 시작:", selectedSession.session_id);
+
+    // 로딩 상태 설정
+    set({ isLoading: true, error: null });
+
+    try {
+      // 현재 세션을 다시 로드 (첫 페이지부터)
+      await get().selectSession(selectedSession, pagination.pageSize);
+      console.log("새로고침 완료");
+    } catch (error) {
+      console.error("새로고침 실패:", error);
+      set({ error: error as string });
     }
   },
 

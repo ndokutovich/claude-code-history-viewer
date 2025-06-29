@@ -62,13 +62,11 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     setExpandedProject((prev) => (prev === projectPath ? "" : projectPath));
   };
 
-  const truncatePath = (path: string) => {
-    // Find "Users/" pattern and extract up to the next directory
+  const matchedPath = (path: string) => {
     const match = path.split("/");
     if (match) {
       return match.at(-1);
     }
-    // If no match, return the original path truncated
     return path.split("/").slice(0, 3).join("/");
   };
 
@@ -118,7 +116,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                       <Folder className="w-4 h-4 text-blue-400" />
                       <div className="min-w-0 flex-1 flex items-center">
                         <p className="font-medium text-gray-800 truncate text-sm">
-                          {truncatePath(project.path)}
+                          {matchedPath(project.path)}
                         </p>
                       </div>
                     </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { Loader2, MessageCircle } from "lucide-react";
-import type { ClaudeMessage, PaginationState } from "../types";
+import type { ClaudeMessage, ClaudeSession, PaginationState } from "../types";
 import { ClaudeContentArrayRenderer } from "./contentRenderer";
 import {
   ClaudeToolUseDisplay,
@@ -14,6 +14,7 @@ interface MessageViewerProps {
   messages: ClaudeMessage[];
   pagination: PaginationState;
   isLoading: boolean;
+  selectedSession: ClaudeSession | null;
   onLoadMore: () => void;
 }
 
@@ -120,6 +121,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   messages,
   pagination,
   isLoading,
+  selectedSession,
   onLoadMore,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -191,18 +193,18 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 
   // 새로운 세션 선택 시 스크롤을 맨 위로 이동
   useEffect(() => {
-    if (
-      scrollContainerRef.current &&
-      messages.length > 0 &&
-      pagination.currentOffset === 0
-    ) {
+    if (scrollContainerRef.current && selectedSession) {
+      console.log(
+        "새로운 세션 선택됨, 스크롤을 맨 위로 이동:",
+        selectedSession.session_id
+      );
       setTimeout(() => {
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollTop = 0;
         }
-      }, 0);
+      }, 100); // 약간의 지연으로 DOM 렌더링 완료 후 실행
     }
-  }, [messages.length, pagination.currentOffset]);
+  }, [selectedSession, selectedSession?.session_id]);
 
   // 메시지 로딩 완료 시 스크롤 위치 조정 (새로운 메시지 추가 후)
   useEffect(() => {
