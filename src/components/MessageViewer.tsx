@@ -191,20 +191,46 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     return roots;
   };
 
+  // 이전 세션 ID를 추적
+  const prevSessionIdRef = useRef<string | null>(null);
+
   // 새로운 세션 선택 시 스크롤을 맨 위로 이동
   useEffect(() => {
-    if (scrollContainerRef.current && selectedSession) {
+    // 세션이 실제로 변경되었고, 메시지가 로드된 경우에만 실행
+    if (
+      selectedSession && 
+      prevSessionIdRef.current !== selectedSession.session_id &&
+      messages.length > 0 &&
+      !isLoading
+    ) {
       console.log(
         "새로운 세션 선택됨, 스크롤을 맨 위로 이동:",
         selectedSession.session_id
       );
-      setTimeout(() => {
+      
+      // 이전 세션 ID 업데이트
+      prevSessionIdRef.current = selectedSession.session_id;
+      
+      // DOM이 업데이트된 후 스크롤 실행
+      requestAnimationFrame(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = 0;
+          console.log("스크롤 위치 리셋 완료");
+        }
+      });
+    }
+  }, [selectedSession, messages.length, isLoading]);
+
+  // 페이지네이션이 리셋될 때 (새 세션 or 새로고침) 스크롤 위로
+  useEffect(() => {
+    if (pagination.currentOffset === 0 && messages.length > 0 && !isLoading) {
+      requestAnimationFrame(() => {
         if (scrollContainerRef.current) {
           scrollContainerRef.current.scrollTop = 0;
         }
-      }, 100); // 약간의 지연으로 DOM 렌더링 완료 후 실행
+      });
     }
-  }, [selectedSession, selectedSession?.session_id]);
+  }, [pagination.currentOffset, messages.length, isLoading]);
 
   // 메시지 로딩 완료 시 스크롤 위치 조정 (새로운 메시지 추가 후)
   useEffect(() => {
