@@ -1,6 +1,7 @@
 # Claude Code History Viewer
 
 <p style="center">
+  <img src="https://img.shields.io/badge/Version-1.0.0-brightgreen.svg" alt="Version 1.0.0" />
   <img src="https://img.shields.io/badge/Built%20with-Tauri%20+%20React-blue.svg" alt="Built with Tauri and React" />
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License" />
   <img src="https://img.shields.io/badge/Platform-macOS%20|%20Windows%20|%20Linux-lightgrey.svg" alt="Platform" />
@@ -20,6 +21,10 @@ A desktop application to browse and analyze your Claude Code conversation histor
 - 📃 **Pagination & Virtual Scrolling** - Handle large conversation histories efficiently
 - 🔄 **Session Refresh** - Refresh sessions to see new messages without restarting
 - 🖼️ **Image Support** - View images embedded in conversations
+- 📝 **Enhanced Diff Viewer** - Improved line-by-line file change comparison
+- 🎯 **Advanced Message Filtering** - Sidechain messages are filtered for cleaner view
+- 🚀 **Optimized Rendering** - FileEditRenderer for efficient file edit displays
+- 🔧 **Session Management** - Direct path usage and last modified time tracking
 
 ## Screenshots
 
