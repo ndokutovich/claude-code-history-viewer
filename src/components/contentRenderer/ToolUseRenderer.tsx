@@ -3,11 +3,9 @@
 import { Highlight, themes } from "prism-react-renderer";
 import {
   FileText,
-  Edit3,
   MessageSquare,
   Hash,
   ChevronRight,
-  X,
   CheckCircle,
   FilePlus,
 } from "lucide-react";
@@ -16,6 +14,7 @@ import { useState } from "react";
 import { Renderer } from "../../shared/RendererHeader";
 import { cn } from "../../utils/cn";
 import { COLORS } from "../../constants/colors";
+import { FileEditRenderer } from "../toolResultRenderer/FileEditRenderer";
 
 type Props = {
   toolUse: Record<string, unknown>;
@@ -31,7 +30,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     setOpenRender(!openRender);
   };
 
-  // 파일 확장자로 언어 감지
+  // 파일 확장자로 언어 감지 - Write 도구에서만 사용
   const getLanguageFromPath = (path: string): string => {
     const ext = path.split(".").pop()?.toLowerCase();
     switch (ext) {
@@ -308,162 +307,25 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     );
   }
 
-  // Edit 도구 전용 렌더링
+  // Edit 도구 전용 렌더링 - FileEditRenderer 사용
   if (isEditTool && typeof toolInput === "object" && toolInput !== null) {
     const editToolInput = toolInput as Record<string, unknown>;
     const filePath = (editToolInput.file_path as string) || "";
     const oldString = (editToolInput.old_string as string) || "";
     const newString = (editToolInput.new_string as string) || "";
-    const language = getLanguageFromPath(filePath);
-
-    return (
-      <div
-        className={cn(
-          "mt-2 p-3 rounded-lg",
-          COLORS.semantic.info.bg,
-          COLORS.semantic.info.border
-        )}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <Edit3 className={cn("w-4 h-4", COLORS.semantic.info.icon)} />
-            <span className={cn("font-medium", COLORS.semantic.info.text)}>
-              파일 편집
-            </span>
-          </div>
-          {toolId && (
-            <code
-              className={cn(
-                "text-xs px-2 py-1 rounded",
-                COLORS.semantic.info.bg,
-                COLORS.semantic.info.text
-              )}
-            >
-              ID: {String(toolId)}
-            </code>
-          )}
-        </div>
-
-        {/* 파일 경로 */}
-        <div
-          className={cn(
-            "mb-3 p-2 rounded border",
-            COLORS.semantic.info.bg,
-            COLORS.semantic.info.border
-          )}
-        >
-          <div className="flex items-center space-x-2">
-            <FileText className={cn("w-3 h-3", COLORS.semantic.info.icon)} />
-            <code
-              className={cn("text-sm font-mono", COLORS.semantic.info.text)}
-            >
-              {filePath}
-            </code>
-          </div>
-        </div>
-
-        {/* 변경 내용 */}
-        <div className="space-y-3">
-          {/* 기존 코드 */}
-          <div>
-            <div
-              className={cn(
-                "text-xs font-medium mb-1 flex items-center space-x-1",
-                COLORS.semantic.error.text
-              )}
-            >
-              <X className={cn("w-5 h-5", COLORS.semantic.error.icon)} />
-              <span>제거된 코드</span>
-            </div>
-            <div
-              className={cn(
-                "rounded overflow-hidden border",
-                COLORS.semantic.error.bg,
-                COLORS.semantic.error.border
-              )}
-            >
-              <Highlight
-                theme={themes.vsLight}
-                code={oldString}
-                language={language}
-              >
-                {({ className, style, tokens, getLineProps, getTokenProps }) => (
-                  <pre
-                    className={className}
-                    style={{
-                      ...style,
-                      margin: 0,
-                      fontSize: "0.75rem",
-                      backgroundColor: "#fef2f2",
-                      border: "1px solid #fecaca",
-                      padding: "0.5rem",
-                    }}
-                  >
-                    {tokens.map((line, i) => (
-                      <div key={i} {...getLineProps({ line, key: i })}>
-                        {line.map((token, key) => (
-                          <span key={key} {...getTokenProps({ token, key })} />
-                        ))}
-                      </div>
-                    ))}
-                  </pre>
-                )}
-              </Highlight>
-            </div>
-          </div>
-
-          {/* 새로운 코드 */}
-          <div>
-            <div
-              className={cn(
-                "text-xs font-medium mb-1 flex items-center space-x-1",
-                COLORS.semantic.success.text
-              )}
-            >
-              <CheckCircle
-                className={cn("w-4 h-4", COLORS.semantic.success.icon)}
-              />
-              <span>추가된 코드</span>
-            </div>
-            <div
-              className={cn(
-                "rounded overflow-hidden border",
-                COLORS.semantic.success.bg,
-                COLORS.semantic.success.border
-              )}
-            >
-              <Highlight
-                theme={themes.vsLight}
-                code={newString}
-                language={language}
-              >
-                {({ className, style, tokens, getLineProps, getTokenProps }) => (
-                  <pre
-                    className={className}
-                    style={{
-                      ...style,
-                      margin: 0,
-                      fontSize: "0.75rem",
-                      backgroundColor: "#f0fdf4",
-                      border: "1px solid #bbf7d0",
-                      padding: "0.5rem",
-                    }}
-                  >
-                    {tokens.map((line, i) => (
-                      <div key={i} {...getLineProps({ line, key: i })}>
-                        {line.map((token, key) => (
-                          <span key={key} {...getTokenProps({ token, key })} />
-                        ))}
-                      </div>
-                    ))}
-                  </pre>
-                )}
-              </Highlight>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    const replaceAll = (editToolInput.replace_all as boolean) || false;
+    
+    // FileEditRenderer가 기대하는 형식으로 데이터 변환
+    const toolResult = {
+      filePath,
+      oldString,
+      newString,
+      replaceAll,
+      originalFile: "", // 원본 파일 내용은 tool use에서는 제공되지 않음
+      userModified: false, // tool use 단계에서는 아직 사용자 수정이 없음
+    };
+    
+    return <FileEditRenderer toolResult={toolResult} />;
   }
 
   // 기본 도구 렌더링

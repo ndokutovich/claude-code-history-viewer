@@ -55,7 +55,7 @@ export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = ({
     }
   }
 
-  if (typeof content !== 'string') {
+  if (typeof content !== "string") {
     return null; // Or some other fallback for non-string content
   }
 
@@ -63,7 +63,9 @@ export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = ({
     return (
       <div className="mb-3 flex justify-end">
         <div className="max-w-xs sm:max-w-md lg:max-w-lg bg-blue-500 text-white rounded-2xl px-4 py-3 relative group shadow-sm">
-          <div className="whitespace-pre-wrap break-words text-sm">{content}</div>
+          <div className="whitespace-pre-wrap break-words text-sm">
+            {content}
+          </div>
           <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={() => navigator.clipboard.writeText(content)}
@@ -95,12 +97,12 @@ export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = ({
         </div>
       </div>
     );
-  } 
+  }
 
   // Fallback for other message types like 'system'
   return (
     <div className="prose prose-sm max-w-none">
-       <div className="whitespace-pre-wrap text-gray-800">{content}</div>
+      <div className="whitespace-pre-wrap text-gray-800">{content}</div>
     </div>
   );
 };

@@ -22,7 +22,7 @@ type Props = {
 export const AdvancedTextDiff = ({
   oldText,
   newText,
-  diffMode = "words",
+  diffMode = "lines",
   title = "텍스트 변경 사항",
 }: Props) => {
   const [currentMode, setCurrentMode] = useState<DiffMode>(diffMode);
@@ -30,16 +30,16 @@ export const AdvancedTextDiff = ({
 
   const getDiffResults = () => {
     switch (currentMode) {
+      case "lines":
+        return Diff.diffLines(oldText, newText);
+      case "trimmedLines":
+        return Diff.diffTrimmedLines(oldText, newText);
       case "chars":
         return Diff.diffChars(oldText, newText);
       case "words":
         return Diff.diffWords(oldText, newText);
       case "wordsWithSpace":
         return Diff.diffWordsWithSpace(oldText, newText);
-      case "lines":
-        return Diff.diffLines(oldText, newText);
-      case "trimmedLines":
-        return Diff.diffTrimmedLines(oldText, newText);
       case "sentences":
         return Diff.diffSentences(oldText, newText);
       default:
@@ -100,11 +100,11 @@ export const AdvancedTextDiff = ({
 
   const getModeLabel = (mode: string) => {
     const labels = {
+      lines: "라인 단위",
+      trimmedLines: "라인 단위 (공백 무시)",
       chars: "문자 단위",
       words: "단어 단위",
       wordsWithSpace: "단어+공백 단위",
-      lines: "라인 단위",
-      trimmedLines: "라인 단위 (공백 무시)",
       sentences: "문장 단위",
     };
     return labels[mode as keyof typeof labels] || mode;
@@ -136,11 +136,11 @@ export const AdvancedTextDiff = ({
         <div className="flex flex-wrap gap-1">
           {(
             [
+              "lines",
+              "trimmedLines",
               "chars",
               "words",
               "wordsWithSpace",
-              "lines",
-              "trimmedLines",
               "sentences",
             ] as const
           ).map((mode) => (

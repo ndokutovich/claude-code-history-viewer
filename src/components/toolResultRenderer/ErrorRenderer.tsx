@@ -13,14 +13,19 @@ export const ErrorRenderer = ({ error }: Props) => {
   const errorMessage = error.replace("Error: ", "");
 
   return (
-    <Renderer className={`${COLORS.semantic.error.bg} ${COLORS.semantic.error.border}`}>
+    <Renderer
+      enableToggle={false}
+      className={`${COLORS.semantic.error.bg} ${COLORS.semantic.error.border}`}
+    >
       <Renderer.Header
         title="도구 실행 오류"
         icon={<X className={`w-4 h-4 ${COLORS.semantic.error.icon}`} />}
         titleClassName={COLORS.semantic.error.textDark}
       />
       <Renderer.Content>
-        <div className={`text-sm ${COLORS.semantic.error.text} ${COLORS.semantic.error.bgDark} border ${COLORS.semantic.error.border} rounded-lg p-3 whitespace-pre-wrap max-h-80 overflow-y-scroll`}>
+        <div
+          className={`text-sm max-h-80 overflow-y-scroll ${COLORS.semantic.error.text} ${COLORS.semantic.error.bgDark} border ${COLORS.semantic.error.border} rounded-lg p-3 whitespace-pre-wrap`}
+        >
           <Markdown remarkPlugins={[remarkGfm]}>{errorMessage}</Markdown>
         </div>
       </Renderer.Content>

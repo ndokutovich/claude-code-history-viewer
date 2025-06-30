@@ -30,7 +30,7 @@ export const EnhancedDiffViewer = ({
   filePath = "",
   showAdvancedDiff = false,
 }: Props) => {
-  const [viewMode, setViewMode] = useState<"visual" | "advanced">("visual");
+  const [viewMode, setViewMode] = useState<"visual" | "advanced">("advanced");
   const [splitView, setSplitView] = useState(true);
   const { renderCopyButton } = useCopyButton();
 

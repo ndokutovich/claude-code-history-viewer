@@ -70,7 +70,7 @@ export const TodoUpdateRenderer = ({ todoData }: Props) => {
                     <span
                       className={cn(
                         todo.status === "completed"
-                          ? "line-through"
+                          ? `line-through ${COLORS.ui.text.primary}`
                           : COLORS.ui.text.disabledDark
                       )}
                     >

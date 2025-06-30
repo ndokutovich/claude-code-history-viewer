@@ -1,6 +1,8 @@
 import { Terminal, CheckCircle, AlertCircle } from "lucide-react";
+import Markdown from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { cn } from "../../utils/cn";
 
 type Props = {
   text: string;
@@ -175,12 +177,14 @@ export const CommandRenderer = ({ text }: Props) => {
               </span>
             </div>
 
-            <div className={`${contentBg} p-2 rounded`}>
-              <pre
-                className={`text-sm ${contentText} font-mono whitespace-pre-wrap`}
-              >
-                {output.content}
-              </pre>
+            <div
+              className={cn(
+                `p-2 rounded max-h-80 overflow-y-auto text-sm`,
+                contentBg,
+                contentText
+              )}
+            >
+              <Markdown remarkPlugins={[remarkGfm]}>{output.content}</Markdown>
             </div>
           </div>
         );

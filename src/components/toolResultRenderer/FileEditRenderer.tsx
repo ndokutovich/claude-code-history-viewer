@@ -30,10 +30,13 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
       : false;
 
   return (
-    <Renderer className={cn(COLORS.tools.code.bg, COLORS.tools.code.border)}>
+    <Renderer
+      className={cn(COLORS.tools.code.bg, COLORS.tools.code.border)}
+      enableToggle={false}
+    >
       <Renderer.Header
         title="파일 편집 결과"
-        icon={<Edit className={cn(COLORS.tools.code.icon)} />}
+        icon={<Edit className={cn("w-4 h-4", COLORS.tools.code.icon)} />}
         titleClassName={COLORS.tools.code.text}
         rightContent={
           <div className="flex items-center space-x-2">
@@ -75,6 +78,7 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
         <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
           <div
             className={cn(
+              "p-2 rounded border",
               COLORS.ui.background.primary,
               COLORS.ui.border.medium
             )}
@@ -86,6 +90,7 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
           </div>
           <div
             className={cn(
+              "p-2 rounded border",
               COLORS.ui.background.primary,
               COLORS.ui.border.medium
             )}
