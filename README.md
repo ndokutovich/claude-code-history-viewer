@@ -12,10 +12,14 @@ A desktop application to browse and analyze your Claude Code conversation histor
 
 - 📁 **Browse Projects and Sessions** - Navigate through all your Claude Code projects and conversation sessions
 - 🔍 **Search Across Messages** - Full-text search functionality across all conversations
-- 🎨 **Syntax Highlighting** - Code blocks are beautifully highlighted for better readability
+- 🎨 **Syntax Highlighting** - Code blocks are beautifully highlighted for better readability with prism-react-renderer
 - 🌲 **Tree View Navigation** - Intuitive project/session hierarchy with expandable tree structure
 - ⚡ **Fast Performance** - Built with Rust backend for efficient file parsing and searching
 - 🖥️ **Cross-Platform** - Works on macOS, Windows, and Linux thanks to Tauri
+- 📊 **Token Usage Statistics** - View token usage analytics per project and session
+- 📃 **Pagination & Virtual Scrolling** - Handle large conversation histories efficiently
+- 🔄 **Session Refresh** - Refresh sessions to see new messages without restarting
+- 🖼️ **Image Support** - View images embedded in conversations
 
 ## Screenshots
 
@@ -36,9 +40,9 @@ Visit the [Releases](https://github.com/[username]/claude-code-history-viewer/re
 
 #### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [pnpm](https://pnpm.io/) package manager
-- [Rust](https://www.rust-lang.org/) toolchain
+- [Node.js](https://nodejs.org/) (v18 or higher) 
+- [pnpm](https://pnpm.io/) package manager (v8+)
+- [Rust](https://www.rust-lang.org/) toolchain (latest stable)
 - Platform-specific dependencies:
   - **macOS**: Xcode Command Line Tools
   - **Linux**: `libwebkit2gtk-4.0-dev`, `build-essential`, `curl`, `wget`, `libssl-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`
@@ -75,10 +79,12 @@ The built application will be in `src-tauri/target/release/bundle/`.
 
 ### Tech Stack
 
-- **Frontend**: React, TypeScript, Tailwind CSS, Zustand
-- **Backend**: Rust, Tauri
-- **UI Components**: HeadlessUI, Heroicons, Lucide React
-- **Code Highlighting**: PrismJS, React Syntax Highlighter
+- **Frontend**: React 19.1.0, TypeScript, Tailwind CSS, Zustand
+- **Backend**: Rust, Tauri 2.6.1
+- **UI Components**: HeadlessUI, Radix UI, Heroicons, Lucide React
+- **Code Highlighting**: prism-react-renderer
+- **Data Fetching**: @tanstack/react-query
+- **Virtualization**: @tanstack/react-virtual
 
 ### Project Structure
 
@@ -86,13 +92,23 @@ The built application will be in `src-tauri/target/release/bundle/`.
 claude-code-history-viewer/
 ├── src/                    # React frontend source
 │   ├── components/         # React components
-│   ├── store/             # Zustand state management
-│   └── lib/               # Utility functions
-├── src-tauri/             # Rust backend source
-│   ├── src/               # Rust source files
-│   └── Cargo.toml         # Rust dependencies
-├── public/                # Static assets
-└── package.json           # Node dependencies
+│   │   ├── contentRenderer/    # Content rendering components
+│   │   ├── messageRenderer/    # Message rendering components
+│   │   ├── toolResultRenderer/ # Tool result rendering components
+│   │   └── ui/                 # UI components
+│   ├── constants/         # Constants (colors, etc)
+│   ├── hooks/            # Custom React hooks
+│   ├── shared/           # Shared components
+│   ├── store/            # Zustand state management
+│   ├── types/            # TypeScript type definitions
+│   └── utils/            # Utility functions
+├── src-tauri/            # Rust backend source
+│   ├── src/              # Rust source files
+│   ├── icons/            # App icons
+│   └── capabilities/     # Tauri permissions
+├── public/               # Static assets
+├── scripts/              # Build/migration scripts
+└── package.json          # Node dependencies
 ```
 
 ### Available Scripts
@@ -119,10 +135,15 @@ pnpm lint
 The Tauri backend exposes these commands:
 
 - `get_claude_folder_path` - Get the Claude data directory path
+- `validate_claude_folder` - Validate Claude folder exists and is valid
 - `scan_projects` - Scan for all Claude projects
 - `load_project_sessions` - Load sessions for a specific project
 - `load_session_messages` - Load messages from a JSONL file
+- `load_session_messages_paginated` - Load messages with pagination support
+- `get_session_message_count` - Get total message count for a session
 - `search_messages` - Search across all messages
+- `get_session_token_stats` - Get token usage statistics for a session
+- `get_project_token_stats` - Get token usage statistics for a project
 
 ## Contributing
 
@@ -185,8 +206,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - Built with [Tauri](https://tauri.app/) - A framework for building tiny, blazing fast binaries
-- UI components from [Headless UI](https://headlessui.com/) and [Tailwind CSS](https://tailwindcss.com/)
-- Code highlighting powered by [PrismJS](https://prismjs.com/)
+- UI components from [Headless UI](https://headlessui.com/), [Radix UI](https://www.radix-ui.com/), and [Tailwind CSS](https://tailwindcss.com/)
+- Code highlighting powered by [prism-react-renderer](https://github.com/FormidableLabs/prism-react-renderer)
+- Data fetching with [@tanstack/react-query](https://tanstack.com/query)
+- Virtual scrolling with [@tanstack/react-virtual](https://tanstack.com/virtual)
 
 ## Support
 
