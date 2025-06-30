@@ -166,14 +166,20 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                 </div>
 
                                 <div className="flex items-center space-x-1 text-xs text-gray-400 mt-1">
-                                  <span>
-                                    {formatTimeAgo(session.last_message_time)}
+                                  <span className="whitespace-nowrap">
+                                    {formatTimeAgo(session.last_modified)}
                                   </span>
                                   <span>•</span>
-                                  <span>{session.message_count}개 메시지</span>
+                                  <span className="whitespace-nowrap">
+                                    {session.message_count}개 메시지
+                                  </span>
                                   <span>•</span>
-                                  <span>
-                                    ID: {session.session_id.slice(-8)}
+                                  <span className="truncate">
+                                    {session.file_path
+                                      .split("/")
+                                      .pop()
+                                      ?.slice(0, 16)}
+                                    ...
                                   </span>
                                 </div>
                               </div>

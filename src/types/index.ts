@@ -113,10 +113,12 @@ export interface ClaudeProject {
 
 export interface ClaudeSession {
   session_id: string;
+  file_path: string;  // 추가: JSONL 파일의 전체 경로
   project_name: string;
   message_count: number;
   first_message_time: string;
   last_message_time: string;
+  last_modified: string;  // 추가: 파일의 마지막 수정 시간
   has_tool_use: boolean;
   has_errors: boolean;
   summary?: string;

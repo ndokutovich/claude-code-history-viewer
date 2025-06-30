@@ -82,10 +82,12 @@ pub struct ClaudeProject {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClaudeSession {
     pub session_id: String,
+    pub file_path: String,
     pub project_name: String,
     pub message_count: usize,
     pub first_message_time: String,
     pub last_message_time: String,
+    pub last_modified: String,
     pub has_tool_use: bool,
     pub has_errors: bool,
     pub summary: Option<String>,
@@ -267,9 +269,24 @@ pub async fn load_project_sessions(
         .filter_map(|e| e.ok())
         .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
     {
+        let file_path = entry.path().to_string_lossy().to_string();
+        
+        // Get file metadata for last modified time
+        let last_modified = if let Ok(metadata) = entry.metadata() {
+            if let Ok(modified) = metadata.modified() {
+                let dt: DateTime<Utc> = modified.into();
+                dt.to_rfc3339()
+            } else {
+                chrono::Utc::now().to_rfc3339()
+            }
+        } else {
+            chrono::Utc::now().to_rfc3339()
+        };
+        
         if let Ok(content) = fs::read_to_string(entry.path()) {
             let mut messages: Vec<ClaudeMessage> = Vec::new();
             let mut session_summary: Option<String> = None;
+            let mut original_session_id: Option<String> = None;
 
             for line in content.lines() {
                 if line.trim().is_empty() { continue; }
@@ -283,6 +300,11 @@ pub async fn load_project_sessions(
                         // Regular message processing
                         if log_entry.session_id.is_none() && log_entry.timestamp.is_none() {
                             continue;
+                        }
+
+                        // Store original session_id if not already set
+                        if original_session_id.is_none() && log_entry.session_id.is_some() {
+                            original_session_id = log_entry.session_id.clone();
                         }
 
                         let claude_message = ClaudeMessage {
@@ -302,7 +324,9 @@ pub async fn load_project_sessions(
             }
 
             if !messages.is_empty() {
-                let session_id = messages[0].session_id.clone();
+                // Use file path as unique session ID to distinguish between files
+                let session_id = file_path.clone();
+                
                 let raw_project_name = entry.path()
                     .parent()
                     .and_then(|p| p.file_name())
@@ -366,10 +390,12 @@ pub async fn load_project_sessions(
 
                 sessions.push(ClaudeSession {
                     session_id,
+                    file_path,
                     project_name,
                     message_count,
                     first_message_time,
                     last_message_time,
+                    last_modified,
                     has_tool_use,
                     has_errors,
                     summary,
@@ -378,8 +404,8 @@ pub async fn load_project_sessions(
         }
     }
 
-    // Sort sessions by last_message_time in descending order (newest first)
-    sessions.sort_by(|a, b| b.last_message_time.cmp(&a.last_message_time));
+    // Sort sessions by last_modified in descending order (newest first)
+    sessions.sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
 
     Ok(sessions)
 }

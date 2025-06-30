@@ -200,9 +200,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
 
     try {
-      const sessionPath = `${get().selectedProject?.path}/${
-        session.session_id
-      }.jsonl`;
+      // Use file_path from session directly
+      const sessionPath = session.file_path;
 
       // 첫 페이지 로드
       const messagePage = await invoke<MessagePage>(
@@ -255,7 +254,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
 
     try {
-      const sessionPath = `${selectedProject.path}/${selectedSession.session_id}.jsonl`;
+      // Use file_path from session directly
+      const sessionPath = selectedSession.file_path;
 
       const messagePage = await invoke<MessagePage>(
         "load_session_messages_paginated",

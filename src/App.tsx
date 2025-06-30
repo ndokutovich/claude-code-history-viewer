@@ -51,7 +51,6 @@ function App() {
     error,
     sessionTokenStats,
     projectTokenStats,
-    excludeSidechain,
     initializeApp,
     selectProject,
     selectSession,
@@ -61,7 +60,6 @@ function App() {
     loadProjectTokenStats,
     clearTokenStats,
     setClaudePath,
-    setExcludeSidechain,
   } = useAppStore();
 
   const { theme, setTheme } = useTheme();
@@ -109,7 +107,8 @@ function App() {
 
       // 현재 세션 통계 로드 (선택된 경우)
       if (selectedSession) {
-        const sessionPath = `${selectedProject.path}/${selectedSession.session_id}.jsonl`;
+        // Use file_path from session directly
+        const sessionPath = selectedSession.file_path;
         await loadSessionTokenStats(sessionPath);
       }
 
