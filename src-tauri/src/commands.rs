@@ -256,7 +256,10 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
 }
 
 #[tauri::command]
-pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSession>, String> {
+pub async fn load_project_sessions(
+    project_path: String,
+    exclude_sidechain: Option<bool>,
+) -> Result<Vec<ClaudeSession>, String> {
     let mut sessions = Vec::new();
 
     for entry in WalkDir::new(&project_path)
@@ -334,7 +337,18 @@ pub async fn load_project_sessions(project_path: String) -> Result<Vec<ClaudeSes
                     raw_project_name.clone()
                 };
 
-                let message_count = messages.len();
+                // Apply sidechain filter if specified
+                let filtered_messages: Vec<&ClaudeMessage> = if let Some(exclude) = exclude_sidechain {
+                    if exclude {
+                        messages.iter().filter(|m| !m.is_sidechain.unwrap_or(false)).collect()
+                    } else {
+                        messages.iter().collect()
+                    }
+                } else {
+                    messages.iter().collect()
+                };
+
+                let message_count = filtered_messages.len();
                 let first_message_time = messages[0].timestamp.clone();
                 let last_message_time = messages.last().unwrap().timestamp.clone();
 
@@ -429,6 +443,7 @@ pub async fn load_session_messages_paginated(
     session_path: String,
     offset: usize,
     limit: usize,
+    exclude_sidechain: Option<bool>,
 ) -> Result<MessagePage, String> {
     let content = fs::read_to_string(&session_path)
         .map_err(|e| format!("Failed to read session file: {}", e))?;
@@ -436,27 +451,25 @@ pub async fn load_session_messages_paginated(
     let lines: Vec<&str> = content.lines().collect();
     let _total_count = lines.len();
 
-    // 빈 라인들 제거
-    let valid_lines: Vec<&str> = lines.into_iter()
-        .filter(|line| !line.trim().is_empty())
-        .collect();
-
-    let actual_total = valid_lines.len();
-
-    // 페이지네이션 적용
-    let start = offset;
-    let end = std::cmp::min(start + limit, actual_total);
-    let has_more = end < actual_total;
-    let next_offset = if has_more { end } else { actual_total };
-
-    let mut messages = Vec::new();
-
-    for line in valid_lines.iter().skip(start).take(limit) {
-        // First try to parse as RawClaudeMessage
+    // Parse all messages first to apply filtering
+    let mut all_messages: Vec<ClaudeMessage> = Vec::new();
+    
+    for line in lines.iter() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        
         if let Ok(log_entry) = serde_json::from_str::<RawLogEntry>(line) {
             if log_entry.message_type != "summary" {
                 if log_entry.session_id.is_none() && log_entry.timestamp.is_none() {
                     continue;
+                }
+                
+                // Apply sidechain filter if specified
+                if let Some(exclude) = exclude_sidechain {
+                    if exclude && log_entry.is_sidechain.unwrap_or(false) {
+                        continue;
+                    }
                 }
 
                 let claude_message = ClaudeMessage {
@@ -470,7 +483,7 @@ pub async fn load_session_messages_paginated(
                     tool_use_result: log_entry.tool_use_result,
                     is_sidechain: log_entry.is_sidechain,
                 };
-                messages.push(claude_message);
+                all_messages.push(claude_message);
             }
         } else if let Ok(json_value) = serde_json::from_str::<serde_json::Value>(line) {
             // Check if it's a summary message
@@ -489,12 +502,26 @@ pub async fn load_session_messages_paginated(
                             tool_use_result: None,
                             is_sidechain: None,
                         };
-                        messages.push(claude_message);
+                        all_messages.push(claude_message);
                     }
                 }
             }
         }
     }
+
+    let actual_total = all_messages.len();
+
+    // 페이지네이션 적용
+    let start = offset;
+    let end = std::cmp::min(start + limit, actual_total);
+    let has_more = end < actual_total;
+    let next_offset = if has_more { end } else { actual_total };
+
+    // Get the paginated messages
+    let messages: Vec<ClaudeMessage> = all_messages.into_iter()
+        .skip(start)
+        .take(limit)
+        .collect();
 
     Ok(MessagePage {
         messages,
@@ -505,13 +532,32 @@ pub async fn load_session_messages_paginated(
 }
 
 #[tauri::command]
-pub async fn get_session_message_count(session_path: String) -> Result<usize, String> {
+pub async fn get_session_message_count(
+    session_path: String,
+    exclude_sidechain: Option<bool>,
+) -> Result<usize, String> {
     let content = fs::read_to_string(&session_path)
         .map_err(|e| format!("Failed to read session file: {}", e))?;
 
-    let count = content.lines()
-        .filter(|line| !line.trim().is_empty())
-        .count();
+    let mut count = 0;
+    
+    for line in content.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        
+        if let Ok(log_entry) = serde_json::from_str::<RawLogEntry>(line) {
+            if log_entry.message_type != "summary" {
+                // Apply sidechain filter if specified
+                if let Some(exclude) = exclude_sidechain {
+                    if exclude && log_entry.is_sidechain.unwrap_or(false) {
+                        continue;
+                    }
+                }
+                count += 1;
+            }
+        }
+    }
 
     Ok(count)
 }

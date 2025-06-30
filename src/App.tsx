@@ -51,6 +51,7 @@ function App() {
     error,
     sessionTokenStats,
     projectTokenStats,
+    excludeSidechain,
     initializeApp,
     selectProject,
     selectSession,
@@ -60,6 +61,7 @@ function App() {
     loadProjectTokenStats,
     clearTokenStats,
     setClaudePath,
+    setExcludeSidechain,
   } = useAppStore();
 
   const { theme, setTheme } = useTheme();
@@ -396,14 +398,16 @@ function App() {
                       "세션 요약을 찾을 수 없습니다."}
                   </span>
                   {!showTokenStats && selectedSession && (
-                    <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
-                      {pagination.totalCount > messages.length &&
-                        ` ${pagination.totalCount || "-"}개 • `}
-                      {selectedSession.has_tool_use
-                        ? "도구 사용됨"
-                        : "일반 대화"}
-                      {selectedSession.has_errors && " • 에러 발생"}
-                    </p>
+                    <div>
+                      <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
+                        {pagination.totalCount >= messages.length &&
+                          ` ${pagination.totalCount || "-"}개 • `}
+                        {selectedSession.has_tool_use
+                          ? "도구 사용됨"
+                          : "일반 대화"}
+                        {selectedSession.has_errors && " • 에러 발생"}
+                      </p>
+                    </div>
                   )}
                   {showTokenStats && (
                     <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>

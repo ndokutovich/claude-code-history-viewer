@@ -26,6 +26,9 @@ interface MessageNodeProps {
 }
 
 const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
+  if (message.isSidechain) {
+    return null;
+  }
   // depth에 따른 왼쪽 margin 적용
   const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, 16)}` : "";
 

@@ -25,6 +25,9 @@ const isTauriAvailable = () => {
 };
 
 interface AppStore extends AppState {
+  // Filter state
+  excludeSidechain: boolean;
+
   // Actions
   initializeApp: () => Promise<void>;
   scanProjects: () => Promise<void>;
@@ -40,6 +43,7 @@ interface AppStore extends AppState {
   loadProjectTokenStats: (projectPath: string) => Promise<void>;
   clearTokenStats: () => void;
   setTheme: (theme: Theme) => Promise<void>;
+  setExcludeSidechain: (exclude: boolean) => void;
 }
 
 const DEFAULT_PAGE_SIZE = 20; // 초기 로딩 시 20개 메시지만 로드하여 빠른 로딩
@@ -71,6 +75,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   sessionTokenStats: null,
   projectTokenStats: [],
   theme: "system" as Theme,
+  excludeSidechain: true,
 
   // Actions
   initializeApp: async () => {
@@ -166,6 +171,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       const sessions = await invoke<ClaudeSession[]>("load_project_sessions", {
         projectPath: project.path,
+        excludeSidechain: get().excludeSidechain,
       });
       set({ sessions });
     } catch (error) {
@@ -205,6 +211,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           sessionPath,
           offset: 0,
           limit: pageSize,
+          excludeSidechain: get().excludeSidechain,
         }
       );
 
@@ -256,6 +263,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           sessionPath,
           offset: pagination.currentOffset,
           limit: pagination.pageSize,
+          excludeSidechain: get().excludeSidechain,
         }
       );
 
@@ -304,7 +312,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   refreshCurrentSession: async () => {
-    const { selectedSession, pagination } = get();
+    const { selectedProject, selectedSession, pagination } = get();
 
     if (!selectedSession) {
       console.warn("No session selected for refresh");
@@ -317,6 +325,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({ error: null });
 
     try {
+      // 프로젝트 세션 목록도 새로고침하여 message_count 업데이트
+      if (selectedProject) {
+        const sessions = await invoke<ClaudeSession[]>("load_project_sessions", {
+          projectPath: selectedProject.path,
+          excludeSidechain: get().excludeSidechain,
+        });
+        set({ sessions });
+      }
+      
       // 현재 세션을 다시 로드 (첫 페이지부터)
       await get().selectSession(selectedSession, pagination.pageSize);
       console.log("새로고침 완료");
@@ -406,6 +423,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
       await store.save();
     } catch (error) {
       console.error("Failed to save theme:", error);
+    }
+  },
+
+  setExcludeSidechain: (exclude: boolean) => {
+    set({ excludeSidechain: exclude });
+    // 필터 변경 시 현재 프로젝트와 세션 새로고침
+    const { selectedProject, selectedSession } = get();
+    if (selectedProject) {
+      // 프로젝트 다시 로드하여 세션 목록의 message_count 업데이트
+      get().selectProject(selectedProject);
+    }
+    if (selectedSession) {
+      get().selectSession(selectedSession);
     }
   },
 }));
