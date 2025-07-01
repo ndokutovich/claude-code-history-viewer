@@ -164,6 +164,54 @@ pub async fn load_project_sessions(
                     false
                 });
 
+                // summary가 없을 때만 첫 번째 사용자 메시지에서 텍스트 추출
+                let final_summary = if session_summary.is_none() {
+                    messages.iter()
+                        .find(|m| m.message_type == "user")
+                        .and_then(|m| {
+                            if let Some(content) = &m.content {
+                                match content {
+                                    // 단순 문자열인 경우
+                                    serde_json::Value::String(text) => {
+                                        if text.trim().is_empty() {
+                                            None
+                                        } else if text.chars().count() > 100 {
+                                            let truncated: String = text.chars().take(100).collect();
+                                            Some(format!("{}...", truncated))
+                                        } else {
+                                            Some(text.clone())
+                                        }
+                                    },
+                                    // 배열인 경우 type="text" 찾기
+                                    serde_json::Value::Array(arr) => {
+                                        for item in arr {
+                                            if let Some(item_type) = item.get("type").and_then(|v| v.as_str()) {
+                                                if item_type == "text" {
+                                                    if let Some(text) = item.get("text").and_then(|v| v.as_str()) {
+                                                        if !text.trim().is_empty() {
+                                                            return if text.chars().count() > 100 {
+                                                                let truncated: String = text.chars().take(100).collect();
+                                                                Some(format!("{}...", truncated))
+                                                            } else {
+                                                                Some(text.to_string())
+                                                            };
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        None
+                                    },
+                                    _ => None
+                                }
+                            } else {
+                                None
+                            }
+                        })
+                } else {
+                    session_summary
+                };
+
                 sessions.push(ClaudeSession {
                     session_id,
                     actual_session_id,
@@ -175,7 +223,7 @@ pub async fn load_project_sessions(
                     last_modified: last_modified.clone(),
                     has_tool_use,
                     has_errors,
-                    summary: session_summary,
+                    summary: final_summary,
                 });
             }
         }
