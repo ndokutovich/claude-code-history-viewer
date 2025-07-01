@@ -183,6 +183,14 @@ pub async fn load_project_sessions(
 
     sessions.sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
 
+    // Summary propagation logic:
+    // Multiple JSONL files can share the same actual_session_id (from the messages inside),
+    // but only some files contain a summary message. This two-pass approach ensures all
+    // sessions with the same actual_session_id display consistent summaries:
+    // 1. First pass: Collect all existing summaries mapped by actual_session_id
+    // 2. Second pass: Apply collected summaries to any session that's missing one
+    // This provides a better user experience by showing the same summary for related sessions.
+    
     // Create a map of actual_session_id to summary
     let mut summary_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
     
