@@ -49,23 +49,58 @@ pub async fn load_project_sessions(
                                 continue;
                             }
 
+                            let uuid = log_entry.uuid.unwrap_or_else(|| {
+                                let new_uuid = Uuid::new_v4().to_string();
+                                eprintln!("Warning: Missing UUID in line {} of {}, generated: {}", line_num + 1, file_path, new_uuid);
+                                new_uuid
+                            });
+                            
+                            let (role, message_id, model, stop_reason, usage) = if let Some(ref msg) = log_entry.message {
+                                (
+                                    Some(msg.role.clone()),
+                                    msg.id.clone(),
+                                    msg.model.clone(),
+                                    msg.stop_reason.clone(),
+                                    msg.usage.clone()
+                                )
+                            } else {
+                                (None, None, None, None, None)
+                            };
+                            
                             let claude_message = ClaudeMessage {
-                                uuid: log_entry.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
+                                uuid,
                                 parent_uuid: log_entry.parent_uuid,
-                                session_id: log_entry.session_id.unwrap_or_else(|| "unknown-session".to_string()),
-                                timestamp: log_entry.timestamp.unwrap_or_else(|| Utc::now().to_rfc3339()),
+                                session_id: log_entry.session_id.unwrap_or_else(|| {
+                                    eprintln!("Warning: Missing session_id in line {} of {}", line_num + 1, file_path);
+                                    "unknown-session".to_string()
+                                }),
+                                timestamp: log_entry.timestamp.unwrap_or_else(|| {
+                                    let now = Utc::now().to_rfc3339();
+                                    eprintln!("Warning: Missing timestamp in line {} of {}, using current time: {}", line_num + 1, file_path, now);
+                                    now
+                                }),
                                 message_type: log_entry.message_type,
                                 content: log_entry.message.map(|m| m.content),
                                 tool_use: log_entry.tool_use,
                                 tool_use_result: log_entry.tool_use_result,
                                 is_sidechain: log_entry.is_sidechain,
-                                usage: None,
+                                usage,
+                                role,
+                                message_id,
+                                model,
+                                stop_reason,
                             };
                             messages.push(claude_message);
                         }
                     },
                     Err(e) => {
-                        eprintln!("Failed to parse line {} in {}: {}. Line: {}", line_num + 1, file_path, e, line);
+                        eprintln!("Error: Failed to parse JSONL at line {} in {}", line_num + 1, file_path);
+                        eprintln!("  Parse error: {}", e);
+                        if line.len() > 200 {
+                            eprintln!("  Line content (truncated): {}...", &line[..200]);
+                        } else {
+                            eprintln!("  Line content: {}", line);
+                        }
                     }
                 }
             }
@@ -154,11 +189,24 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
             Ok(log_entry) => {
                 if log_entry.message_type == "summary" {
                     if let Some(summary_text) = log_entry.summary {
+                        let uuid = log_entry.uuid.unwrap_or_else(|| {
+                            let new_uuid = Uuid::new_v4().to_string();
+                            eprintln!("Warning: Missing UUID for summary in line {} of {}, generated: {}", line_num + 1, session_path, new_uuid);
+                            new_uuid
+                        });
+                        
                         let summary_message = ClaudeMessage {
-                            uuid: log_entry.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
+                            uuid,
                             parent_uuid: None,
-                            session_id: log_entry.session_id.unwrap_or_else(|| "unknown-session".to_string()),
-                            timestamp: log_entry.timestamp.unwrap_or_else(|| Utc::now().to_rfc3339()),
+                            session_id: log_entry.session_id.unwrap_or_else(|| {
+                                eprintln!("Warning: Missing session_id for summary in line {} of {}", line_num + 1, session_path);
+                                "unknown-session".to_string()
+                            }),
+                            timestamp: log_entry.timestamp.unwrap_or_else(|| {
+                                let now = Utc::now().to_rfc3339();
+                                eprintln!("Warning: Missing timestamp for summary in line {} of {}, using current time: {}", line_num + 1, session_path, now);
+                                now
+                            }),
                             message_type: "summary".to_string(),
                             content: Some(serde_json::Value::String(summary_text)),
                             tool_use: None,
@@ -173,11 +221,24 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                         continue;
                     }
 
+                    let uuid = log_entry.uuid.unwrap_or_else(|| {
+                        let new_uuid = Uuid::new_v4().to_string();
+                        eprintln!("Warning: Missing UUID in line {} of {}, generated: {}", line_num + 1, session_path, new_uuid);
+                        new_uuid
+                    });
+                    
                     let claude_message = ClaudeMessage {
-                        uuid: log_entry.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
+                        uuid,
                         parent_uuid: log_entry.parent_uuid,
-                        session_id: log_entry.session_id.unwrap_or_else(|| "unknown-session".to_string()),
-                        timestamp: log_entry.timestamp.unwrap_or_else(|| Utc::now().to_rfc3339()),
+                        session_id: log_entry.session_id.unwrap_or_else(|| {
+                            eprintln!("Warning: Missing session_id in line {} of {}", line_num + 1, session_path);
+                            "unknown-session".to_string()
+                        }),
+                        timestamp: log_entry.timestamp.unwrap_or_else(|| {
+                            let now = Utc::now().to_rfc3339();
+                            eprintln!("Warning: Missing timestamp in line {} of {}, using current time: {}", line_num + 1, session_path, now);
+                            now
+                        }),
                         message_type: log_entry.message_type.clone(),
                         content: log_entry.message.as_ref().map(|m| m.content.clone()),
                         tool_use: log_entry.tool_use,
@@ -204,19 +265,25 @@ pub async fn load_session_messages_paginated(
     limit: usize,
     exclude_sidechain: Option<bool>,
 ) -> Result<MessagePage, String> {
-    let content = fs::read_to_string(&session_path)
-        .map_err(|e| format!("Failed to read session file: {}", e))?;
-
-    let lines: Vec<&str> = content.lines().collect();
-
-    let mut all_messages: Vec<ClaudeMessage> = Vec::new();
+    use std::io::{BufRead, BufReader};
+    use std::fs::File;
     
-    for (line_num, line) in lines.iter().enumerate() {
+    let file = File::open(&session_path)
+        .map_err(|e| format!("Failed to open session file: {}", e))?;
+    let reader = BufReader::new(file);
+    
+    let mut messages: Vec<ClaudeMessage> = Vec::new();
+    let mut total_count = 0;
+    let mut current_index = 0;
+    
+    for (line_num, line_result) in reader.lines().enumerate() {
+        let line = line_result.map_err(|e| format!("Failed to read line: {}", e))?;
+        
         if line.trim().is_empty() {
             continue;
         }
         
-        match serde_json::from_str::<RawLogEntry>(line) {
+        match serde_json::from_str::<RawLogEntry>(&line) {
             Ok(log_entry) => {
                 if log_entry.message_type != "summary" {
                     if log_entry.session_id.is_none() && log_entry.timestamp.is_none() {
@@ -226,43 +293,39 @@ pub async fn load_session_messages_paginated(
                     if exclude_sidechain.unwrap_or(false) && log_entry.is_sidechain.unwrap_or(false) {
                         continue;
                     }
-
-                    let claude_message = ClaudeMessage {
-                        uuid: log_entry.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
-                        parent_uuid: log_entry.parent_uuid,
-                        session_id: log_entry.session_id.unwrap_or_else(|| "unknown-session".to_string()),
-                        timestamp: log_entry.timestamp.unwrap_or_else(|| Utc::now().to_rfc3339()),
-                        message_type: log_entry.message_type.clone(),
-                        content: log_entry.message.as_ref().map(|m| m.content.clone()),
-                        tool_use: log_entry.tool_use,
-                        tool_use_result: log_entry.tool_use_result,
-                        is_sidechain: log_entry.is_sidechain,
-                        usage: log_entry.message.as_ref().and_then(|m| m.usage.clone()),
-                    };
-                    all_messages.push(claude_message);
+                    
+                    if current_index >= offset && messages.len() < limit {
+                        let claude_message = ClaudeMessage {
+                            uuid: log_entry.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
+                            parent_uuid: log_entry.parent_uuid,
+                            session_id: log_entry.session_id.unwrap_or_else(|| "unknown-session".to_string()),
+                            timestamp: log_entry.timestamp.unwrap_or_else(|| Utc::now().to_rfc3339()),
+                            message_type: log_entry.message_type.clone(),
+                            content: log_entry.message.as_ref().map(|m| m.content.clone()),
+                            tool_use: log_entry.tool_use,
+                            tool_use_result: log_entry.tool_use_result,
+                            is_sidechain: log_entry.is_sidechain,
+                            usage: log_entry.message.as_ref().and_then(|m| m.usage.clone()),
+                        };
+                        messages.push(claude_message);
+                    }
+                    
+                    current_index += 1;
+                    total_count += 1;
                 }
             },
             Err(e) => {
-                 eprintln!("Failed to parse line {} in {}: {}. Line: {}", line_num + 1, session_path, e, line);
+                eprintln!("Failed to parse line {} in {}: {}. Line: {}", line_num + 1, session_path, e, line);
             }
         }
     }
-
-    let actual_total = all_messages.len();
-
-    let start = offset;
-    let end = std::cmp::min(start + limit, actual_total);
-    let has_more = end < actual_total;
-    let next_offset = if has_more { end } else { actual_total };
-
-    let messages: Vec<ClaudeMessage> = all_messages.into_iter()
-        .skip(start)
-        .take(limit)
-        .collect();
-
+    
+    let has_more = offset + limit < total_count;
+    let next_offset = if has_more { offset + limit } else { total_count };
+    
     Ok(MessagePage {
         messages,
-        total_count: actual_total,
+        total_count,
         has_more,
         next_offset,
     })
@@ -336,7 +399,7 @@ pub async fn search_messages(
                                     tool_use: log_entry.tool_use,
                                     tool_use_result: log_entry.tool_use_result,
                                     is_sidechain: log_entry.is_sidechain,
-                                    usage: log_entry.message.and_then(|m| m.usage),
+                                    usage: message_content.usage.clone(),
                                 };
                                 all_messages.push(claude_message);
                             }
