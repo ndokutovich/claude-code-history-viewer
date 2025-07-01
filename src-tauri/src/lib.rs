@@ -2,7 +2,7 @@ mod models;
 mod commands;
 mod utils;
 
-use crate::commands::{project::*, session::*, stats::*};
+use crate::commands::{project::*, session::*, stats::*, update::*};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -22,7 +22,8 @@ pub fn run() {
             get_session_token_stats,
             get_project_token_stats,
             get_project_stats_summary,
-            get_session_comparison
+            get_session_comparison,
+            check_for_updates
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

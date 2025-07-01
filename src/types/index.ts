@@ -112,14 +112,14 @@ export interface ClaudeProject {
 }
 
 export interface ClaudeSession {
-  session_id: string;  // Unique ID based on file path
-  actual_session_id: string;  // Actual session ID from the messages
-  file_path: string;  // 추가: JSONL 파일의 전체 경로
+  session_id: string; // Unique ID based on file path
+  actual_session_id: string; // Actual session ID from the messages
+  file_path: string; // 추가: JSONL 파일의 전체 경로
   project_name: string;
   message_count: number;
   first_message_time: string;
   last_message_time: string;
-  last_modified: string;  // 추가: 파일의 마지막 수정 시간
+  last_modified: string; // 추가: 파일의 마지막 수정 시간
   has_tool_use: boolean;
   has_errors: boolean;
   summary?: string;
@@ -260,4 +260,34 @@ export interface SessionComparison {
   rank_by_tokens: number;
   rank_by_duration: number;
   is_above_average: boolean;
+}
+
+// 업데이트 관련 타입 정의
+export type UpdatePriority = "critical" | "recommended" | "optional";
+export type UpdateType = "hotfix" | "feature" | "patch" | "major";
+
+export interface UpdateMessage {
+  title: string;
+  description: string;
+  features: string[];
+}
+
+export interface UpdateMetadata {
+  priority: UpdatePriority;
+  type: UpdateType;
+  force_update: boolean;
+  minimum_version?: string;
+  deadline?: string;
+  message: UpdateMessage;
+}
+
+export interface UpdateInfo {
+  has_update: boolean;
+  latest_version?: string;
+  current_version: string;
+  download_url?: string;
+  release_url?: string;
+  metadata?: UpdateMetadata;
+  is_forced: boolean;
+  days_until_deadline?: number;
 }

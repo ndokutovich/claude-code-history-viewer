@@ -1,17 +1,17 @@
 [package]
-name = "app"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
-license = ""
-repository = ""
+name = "claude-code-history-viewer"
+version = "1.0.0-beta.1"
+description = "Claude Code 대화 기록을 탐색하고 분석하는 데스크톱 애플리케이션"
+authors = ["JaeHyeok Lee"]
+license = "MIT"
+repository = "https://github.com/jhlee0409/claude-code-history-viewer"
 edition = "2021"
 rust-version = "1.77.2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "app_lib"
+name = "claude_code_history_viewer_lib"
 crate-type = ["cdylib", "rlib"]
 
 [build-dependencies]
@@ -32,6 +32,8 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 walkdir = "2.3"
 tokio = { version = "1.0", features = ["full"] }
 anyhow = "1.0"
+reqwest = { version = "0.11", features = ["json"] }
+regex = "1.0"
 
 [dev-dependencies]
 tempfile = "3.10.1"

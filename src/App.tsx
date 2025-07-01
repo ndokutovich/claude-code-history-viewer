@@ -4,8 +4,11 @@ import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { FolderSelector } from "./components/FolderSelector";
+import { UpdateModal } from "./components/UpdateModal";
+import { UpToDateNotification } from "./components/UpToDateNotification";
 import { useAppStore } from "./store/useAppStore";
 import { useTheme } from "./hooks/useTheme";
+import { useUpdateChecker } from "./hooks/useUpdateChecker";
 import {
   AppErrorType,
   type ClaudeSession,
@@ -79,6 +82,7 @@ function App() {
   } = useAppStore();
 
   const { theme, setTheme } = useTheme();
+  const updateChecker = useUpdateChecker();
 
   // 세션 선택 시 토큰 통계 화면에서 채팅 화면으로 자동 전환
   const handleSessionSelect = async (session: ClaudeSession) => {
@@ -477,6 +481,15 @@ function App() {
                       <span>시스템</span>
                     </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => updateChecker.checkForUpdates(true)}
+                  >
+                    <RefreshCw
+                      className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                    />
+                    업데이트 확인
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -661,6 +674,27 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* Update Modal */}
+      {updateChecker.updateInfo && (
+        <UpdateModal
+          updateInfo={updateChecker.updateInfo}
+          onDownload={updateChecker.downloadUpdate}
+          onPostpone={updateChecker.postponeUpdate}
+          onSkip={updateChecker.skipVersion}
+          onClose={updateChecker.closeModal}
+          isVisible={updateChecker.showModal}
+        />
+      )}
+
+      {/* Up to Date Notification */}
+      {updateChecker.updateInfo && (
+        <UpToDateNotification
+          updateInfo={updateChecker.updateInfo}
+          onClose={updateChecker.closeUpToDateNotification}
+          isVisible={updateChecker.showUpToDateNotification}
+        />
+      )}
     </div>
   );
 }
