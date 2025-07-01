@@ -207,3 +207,56 @@ export interface SessionTokenStats {
   first_message_time: string;
   last_message_time: string;
 }
+
+// Enhanced statistics types
+export interface DailyStats {
+  date: string;
+  total_tokens: number;
+  input_tokens: number;
+  output_tokens: number;
+  message_count: number;
+  session_count: number;
+  active_hours: number;
+}
+
+export interface ToolUsageStats {
+  tool_name: string;
+  usage_count: number;
+  success_rate: number;
+  avg_execution_time?: number;
+}
+
+export interface ActivityHeatmap {
+  hour: number; // 0-23
+  day: number; // 0-6 (Sunday-Saturday)
+  activity_count: number;
+  tokens_used: number;
+}
+
+export interface ProjectStatsSummary {
+  project_name: string;
+  total_sessions: number;
+  total_messages: number;
+  total_tokens: number;
+  avg_tokens_per_session: number;
+  avg_session_duration: number; // in minutes
+  most_active_hour: number;
+  most_used_tools: ToolUsageStats[];
+  daily_stats: DailyStats[];
+  activity_heatmap: ActivityHeatmap[];
+  token_distribution: {
+    input: number;
+    output: number;
+    cache_creation: number;
+    cache_read: number;
+  };
+}
+
+export interface SessionComparison {
+  session_id: string;
+  percentage_of_project_tokens: number;
+  percentage_of_project_messages: number;
+  rank_by_tokens: number;
+  rank_by_duration: number;
+  is_above_average: boolean;
+}

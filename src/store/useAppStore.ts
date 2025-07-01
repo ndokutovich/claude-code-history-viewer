@@ -41,6 +41,8 @@ interface AppStore extends AppState {
   setClaudePath: (path: string) => void;
   loadSessionTokenStats: (sessionPath: string) => Promise<void>;
   loadProjectTokenStats: (projectPath: string) => Promise<void>;
+  loadProjectStatsSummary: (projectPath: string) => Promise<any>;
+  loadSessionComparison: (sessionId: string, projectPath: string) => Promise<any>;
   clearTokenStats: () => void;
   setTheme: (theme: Theme) => Promise<void>;
   setExcludeSidechain: (exclude: boolean) => void;
@@ -406,6 +408,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     } finally {
       set({ isLoadingTokenStats: false });
+    }
+  },
+
+  loadProjectStatsSummary: async (projectPath: string) => {
+    try {
+      const summary = await invoke("get_project_stats_summary", {
+        projectPath,
+      });
+      return summary;
+    } catch (error) {
+      console.error("Failed to load project stats summary:", error);
+      throw error;
+    }
+  },
+
+  loadSessionComparison: async (sessionId: string, projectPath: string) => {
+    try {
+      const comparison = await invoke("get_session_comparison", {
+        sessionId,
+        projectPath,
+      });
+      return comparison;
+    } catch (error) {
+      console.error("Failed to load session comparison:", error);
+      throw error;
     }
   },
 

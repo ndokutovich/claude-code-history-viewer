@@ -238,12 +238,7 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
                 COLORS.ui.border.medium
               )}
             >
-              <div
-                className={cn(
-                  "text-2xl font-bold",
-                  COLORS.semantic.success.textDark
-                )}
-              >
+              <div className={cn("text-2xl font-bold", COLORS.ui.text.primary)}>
                 {totalStats.total_tokens.toLocaleString()}
               </div>
               <div className={cn("text-xs", COLORS.ui.text.tertiary)}>
@@ -260,7 +255,7 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
               <div
                 className={cn(
                   "text-lg font-bold",
-                  COLORS.semantic.info.textDark
+                  COLORS.semantic.success.textDark
                 )}
               >
                 {totalStats.total_input_tokens.toLocaleString()}
@@ -277,7 +272,11 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
               )}
             >
               <div
-                className={cn("text-lg font-bold", COLORS.tools.search.text)}
+                className={cn(
+                  "text-lg font-bold",
+
+                  COLORS.semantic.info.textDark
+                )}
               >
                 {totalStats.total_output_tokens.toLocaleString()}
               </div>
@@ -292,7 +291,9 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
                 COLORS.ui.border.medium
               )}
             >
-              <div className={cn("text-lg font-bold", COLORS.tools.task.text)}>
+              <div
+                className={cn("text-lg font-bold", COLORS.tools.search.text)}
+              >
                 {totalStats.total_cache_creation_tokens.toLocaleString()}
               </div>
               <div className={cn("text-xs", COLORS.ui.text.tertiary)}>

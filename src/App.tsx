@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
+import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
+import { ModelCostAnalyzer } from "./components/ModelCostAnalyzer";
 import { FolderSelector } from "./components/FolderSelector";
 import { useAppStore } from "./store/useAppStore";
 import { useTheme } from "./hooks/useTheme";
-import { AppErrorType, type ClaudeSession, type Theme } from "./types";
+import { AppErrorType, type ClaudeSession, type Theme, type ProjectStatsSummary, type SessionComparison } from "./types";
 import {
   AlertTriangle,
   Settings,
@@ -17,6 +19,7 @@ import {
   Moon,
   Laptop,
   Folder,
+  Activity,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -34,7 +37,10 @@ import { COLORS } from "./constants/colors";
 
 function App() {
   const [showTokenStats, setShowTokenStats] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [showFolderSelector, setShowFolderSelector] = useState(false);
+  const [projectSummary, setProjectSummary] = useState<ProjectStatsSummary | null>(null);
+  const [sessionComparison, setSessionComparison] = useState<SessionComparison | null>(null);
 
   const {
     projects,
@@ -58,6 +64,8 @@ function App() {
     refreshCurrentSession,
     loadSessionTokenStats,
     loadProjectTokenStats,
+    loadProjectStatsSummary,
+    loadSessionComparison,
     clearTokenStats,
     setClaudePath,
   } = useAppStore();
@@ -66,11 +74,22 @@ function App() {
 
   // 세션 선택 시 토큰 통계 화면에서 채팅 화면으로 자동 전환
   const handleSessionSelect = async (session: ClaudeSession) => {
-    if (showTokenStats) {
+    if (showTokenStats || showAnalytics) {
       setShowTokenStats(false);
+      setShowAnalytics(false);
       clearTokenStats();
     }
     await selectSession(session);
+    
+    // Load session comparison if analytics was open
+    if (selectedProject && showAnalytics) {
+      try {
+        const comparison = await loadSessionComparison(session.session_id, selectedProject.path);
+        setSessionComparison(comparison);
+      } catch (error) {
+        console.error('Failed to load session comparison:', error);
+      }
+    }
   };
 
   useEffect(() => {
@@ -113,8 +132,70 @@ function App() {
       }
 
       setShowTokenStats(true);
+      setShowAnalytics(false);
     } catch (error) {
       console.error("Failed to load token stats:", error);
+    }
+  };
+
+  // 분석 대시보드 로드
+  const handleLoadAnalytics = async () => {
+    if (!selectedProject) return;
+
+    try {
+      setShowAnalytics(true);
+      setShowTokenStats(false);
+      
+      // Load project summary
+      const summary = await loadProjectStatsSummary(selectedProject.path);
+      setProjectSummary(summary);
+      
+      // Load session comparison if session is selected
+      if (selectedSession) {
+        const comparison = await loadSessionComparison(selectedSession.session_id, selectedProject.path);
+        setSessionComparison(comparison);
+      }
+    } catch (error) {
+      console.error("Failed to load analytics:", error);
+    }
+  };
+
+  // 프로젝트 선택 핸들러 (분석 상태 초기화 포함)
+  const handleProjectSelect = async (project: ClaudeProject) => {
+    const wasAnalyticsOpen = showAnalytics;
+    const wasTokenStatsOpen = showTokenStats;
+    
+    // 기존 분석 데이터 초기화
+    if (showAnalytics || showTokenStats) {
+      setShowAnalytics(false);
+      setShowTokenStats(false);
+      setProjectSummary(null);
+      setSessionComparison(null);
+      clearTokenStats();
+    }
+    
+    // 프로젝트 선택
+    await selectProject(project);
+    
+    // 분석 탭이 열려있었다면 새 프로젝트의 분석 데이터 자동 로드
+    if (wasAnalyticsOpen) {
+      try {
+        setShowAnalytics(true);
+        const summary = await loadProjectStatsSummary(project.path);
+        setProjectSummary(summary);
+      } catch (error) {
+        console.error("Failed to auto-load analytics for new project:", error);
+      }
+    }
+    
+    // 토큰 통계 탭이 열려있었다면 새 프로젝트의 토큰 통계 자동 로드
+    if (wasTokenStatsOpen) {
+      try {
+        setShowTokenStats(true);
+        await loadProjectTokenStats(project.path);
+      } catch (error) {
+        console.error("Failed to auto-load token stats for new project:", error);
+      }
     }
   };
 
@@ -217,52 +298,80 @@ function App() {
 
             <div className="flex items-center space-x-2">
               {selectedProject && (
-                <button
-                  onClick={() => {
-                    if (showTokenStats) {
-                      setShowTokenStats(false);
-                      clearTokenStats();
-                    } else {
-                      handleLoadTokenStats();
-                    }
-                  }}
-                  disabled={isLoadingTokenStats}
-                  className={cn(
-                    "p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                    showTokenStats
-                      ? COLORS.semantic.info.bgDark
-                      : COLORS.ui.interactive.hover
-                  )}
-                  title="토큰 사용량 통계"
-                >
-                  {isLoadingTokenStats ? (
-                    <Loader2
-                      className={cn(
-                        "w-5 h-5 animate-spin",
-                        COLORS.ui.text.primary
-                      )}
-                    />
-                  ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      if (showAnalytics) {
+                        setShowAnalytics(false);
+                        setProjectSummary(null);
+                        setSessionComparison(null);
+                      } else {
+                        handleLoadAnalytics();
+                      }
+                    }}
+                    className={cn(
+                      "p-2 rounded-lg transition-colors",
+                      showAnalytics
+                        ? COLORS.semantic.info.bgDark
+                        : COLORS.ui.interactive.hover
+                    )}
+                    title="분석 대시보드"
+                  >
                     <BarChart3
                       className={cn("w-5 h-5", COLORS.ui.text.primary)}
                     />
-                  )}
-                </button>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      if (showTokenStats) {
+                        setShowTokenStats(false);
+                        clearTokenStats();
+                      } else {
+                        handleLoadTokenStats();
+                      }
+                    }}
+                    disabled={isLoadingTokenStats}
+                    className={cn(
+                      "p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      showTokenStats
+                        ? COLORS.semantic.success.bgDark
+                        : COLORS.ui.interactive.hover
+                    )}
+                    title="토큰 통계 (기존)"
+                  >
+                    {isLoadingTokenStats ? (
+                      <Loader2
+                        className={cn(
+                          "w-5 h-5 animate-spin",
+                          COLORS.ui.text.primary
+                        )}
+                      />
+                    ) : (
+                      <Activity
+                        className={cn("w-5 h-5", COLORS.ui.text.primary)}
+                      />
+                    )}
+                  </button>
+                </>
               )}
 
               {selectedSession && (
                 <>
                   <button
                     onClick={() => {
-                      if (showTokenStats) {
+                      if (showTokenStats || showAnalytics) {
                         setShowTokenStats(false);
+                        setShowAnalytics(false);
                         clearTokenStats();
+                        setProjectSummary(null);
+                        setSessionComparison(null);
                       }
                     }}
-                    disabled={!showTokenStats}
+                    disabled={!showTokenStats && !showAnalytics}
                     className={cn(
                       "p-2 rounded-lg transition-colors",
-                      !showTokenStats
+                      !showTokenStats && !showAnalytics
                         ? cn(
                             COLORS.semantic.success.bgDark,
                             COLORS.semantic.success.text
@@ -366,7 +475,7 @@ function App() {
           sessions={sessions}
           selectedProject={selectedProject}
           selectedSession={selectedSession}
-          onProjectSelect={selectProject}
+          onProjectSelect={handleProjectSelect}
           onSessionSelect={handleSessionSelect}
           isLoading={isLoadingProjects || isLoadingSessions}
         />
@@ -374,7 +483,7 @@ function App() {
         {/* Main Content Area */}
         <div className="w-full flex flex-col relative">
           {/* Content Header */}
-          {(selectedSession || showTokenStats) && (
+          {(selectedSession || showTokenStats || showAnalytics) && (
             <div
               className={cn(
                 "p-4 border-b",
@@ -390,13 +499,13 @@ function App() {
                       COLORS.ui.text.primary
                     )}
                   >
-                    {showTokenStats ? "토큰 사용량 통계" : "대화 내용"}
+                    {showAnalytics ? "분석 대시보드" : showTokenStats ? "토큰 사용량 통계" : "대화 내용"}
                   </h2>
                   <span className={cn("text-sm", COLORS.ui.text.secondary)}>
                     {selectedSession?.summary ||
                       "세션 요약을 찾을 수 없습니다."}
                   </span>
-                  {!showTokenStats && selectedSession && (
+                  {!showTokenStats && !showAnalytics && selectedSession && (
                     <div>
                       <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
                         {pagination.totalCount >= messages.length &&
@@ -413,6 +522,13 @@ function App() {
                       프로젝트별 토큰 사용량 분석 및 세션별 상세 통계
                     </p>
                   )}
+                  {showAnalytics && (
+                    <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
+                      {selectedSession 
+                        ? "프로젝트 및 세션 상세 분석"
+                        : "프로젝트 전체 통계 및 활동 분석"}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -420,9 +536,25 @@ function App() {
 
           {/* Content */}
           <div className="flex-1 overflow-hidden">
-            {showTokenStats ? (
-              <div className="h-full overflow-y-auto p-6">
+            {showAnalytics ? (
+              <div className="h-full overflow-y-auto">
+                <AnalyticsDashboard
+                  selectedProject={selectedProject?.name}
+                  selectedSession={selectedSession?.session_id}
+                  sessionStats={sessionTokenStats}
+                  projectStats={projectTokenStats}
+                  projectSummary={projectSummary}
+                  sessionComparison={sessionComparison}
+                />
+              </div>
+            ) : showTokenStats ? (
+              <div className="h-full overflow-y-auto p-6 space-y-8">
                 <TokenStatsViewer
+                  sessionStats={sessionTokenStats}
+                  projectStats={projectTokenStats}
+                />
+                <ModelCostAnalyzer
+                  messages={messages}
                   sessionStats={sessionTokenStats}
                   projectStats={projectTokenStats}
                 />
@@ -473,7 +605,7 @@ function App() {
           <div className="flex items-center space-x-4">
             <span>프로젝트: {projects.length}개</span>
             <span>세션: {sessions.length}개</span>
-            {selectedSession && !showTokenStats && (
+            {selectedSession && !showTokenStats && !showAnalytics && (
               <span>
                 메시지: {messages.length}개
                 {pagination.totalCount > messages.length &&
@@ -484,6 +616,12 @@ function App() {
               <span>
                 현재 세션 토큰:{" "}
                 {sessionTokenStats.total_tokens.toLocaleString()}개
+              </span>
+            )}
+            {showAnalytics && projectSummary && (
+              <span>
+                프로젝트 토큰:{" "}
+                {projectSummary.total_tokens.toLocaleString()}개
               </span>
             )}
           </div>
