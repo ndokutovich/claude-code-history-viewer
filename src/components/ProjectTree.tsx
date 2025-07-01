@@ -145,7 +145,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                     className="font-medium text-gray-800 dark:text-gray-200 text-xs truncate"
                                     title={
                                       session.summary ||
-                                      `세션 ID: ${session.session_id}`
+                                      `세션 ID: ${session.actual_session_id}`
                                     }
                                   >
                                     {session.summary ||
@@ -174,12 +174,8 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                     {session.message_count}개 메시지
                                   </span>
                                   <span>•</span>
-                                  <span className="truncate">
-                                    {session.file_path
-                                      .split("/")
-                                      .pop()
-                                      ?.slice(0, 16)}
-                                    ...
+                                  <span className="truncate" title={`실제 세션 ID: ${session.actual_session_id}`}>
+                                    ID: {session.actual_session_id.slice(0, 8)}...
                                   </span>
                                 </div>
                               </div>

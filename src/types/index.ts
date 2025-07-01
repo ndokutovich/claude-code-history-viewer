@@ -112,7 +112,8 @@ export interface ClaudeProject {
 }
 
 export interface ClaudeSession {
-  session_id: string;
+  session_id: string;  // Unique ID based on file path
+  actual_session_id: string;  // Actual session ID from the messages
   file_path: string;  // 추가: JSONL 파일의 전체 경로
   project_name: string;
   message_count: number;

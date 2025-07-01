@@ -412,17 +412,33 @@ impl TryFrom<RawLogEntry> for ClaudeMessage {
             return Err("Missing session_id and timestamp".to_string());
         }
 
+        let (role, message_id, model, stop_reason, usage) = if let Some(ref msg) = log_entry.message {
+            (
+                Some(msg.role.clone()),
+                msg.id.clone(),
+                msg.model.clone(),
+                msg.stop_reason.clone(),
+                msg.usage.clone()
+            )
+        } else {
+            (None, None, None, None, None)
+        };
+
         Ok(ClaudeMessage {
             uuid: log_entry.uuid.unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
             parent_uuid: log_entry.parent_uuid,
             session_id: log_entry.session_id.unwrap_or_else(|| "unknown-session".to_string()),
             timestamp: log_entry.timestamp.unwrap_or_else(|| Utc::now().to_rfc3339()),
             message_type: log_entry.message_type.clone(),
-            content: log_entry.message.as_ref().map(|m| m.content.clone()),
+            content: log_entry.message.map(|m| m.content),
             tool_use: log_entry.tool_use,
             tool_use_result: log_entry.tool_use_result,
             is_sidechain: log_entry.is_sidechain,
-            usage: log_entry.message.as_ref().and_then(|m| m.usage.clone()),
+            usage,
+            role,
+            message_id,
+            model,
+            stop_reason,
         })
     }
 }

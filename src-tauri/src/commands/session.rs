@@ -106,6 +106,18 @@ pub async fn load_project_sessions(
             }
 
             if !messages.is_empty() {
+                // Extract actual session ID from messages
+                let actual_session_id = messages.iter()
+                    .find_map(|m| {
+                        if m.session_id != "unknown-session" {
+                            Some(m.session_id.clone())
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or_else(|| "unknown-session".to_string());
+                
+                // Create unique session ID based on file path
                 let session_id = file_path.clone();
                 
                 let raw_project_name = entry.path()
@@ -154,6 +166,7 @@ pub async fn load_project_sessions(
 
                 sessions.push(ClaudeSession {
                     session_id,
+                    actual_session_id,
                     file_path,
                     project_name,
                     message_count,
@@ -213,6 +226,10 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                             tool_use_result: None,
                             is_sidechain: None,
                             usage: None,
+                            role: None,
+                            message_id: None,
+                            model: None,
+                            stop_reason: None,
                         };
                         messages.push(summary_message);
                     }
@@ -227,6 +244,18 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                         new_uuid
                     });
                     
+                    let (role, message_id, model, stop_reason, usage) = if let Some(ref msg) = log_entry.message {
+                        (
+                            Some(msg.role.clone()),
+                            msg.id.clone(),
+                            msg.model.clone(),
+                            msg.stop_reason.clone(),
+                            msg.usage.clone()
+                        )
+                    } else {
+                        (None, None, None, None, None)
+                    };
+                    
                     let claude_message = ClaudeMessage {
                         uuid,
                         parent_uuid: log_entry.parent_uuid,
@@ -240,11 +269,15 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                             now
                         }),
                         message_type: log_entry.message_type.clone(),
-                        content: log_entry.message.as_ref().map(|m| m.content.clone()),
+                        content: log_entry.message.map(|m| m.content),
                         tool_use: log_entry.tool_use,
                         tool_use_result: log_entry.tool_use_result,
                         is_sidechain: log_entry.is_sidechain,
-                        usage: log_entry.message.as_ref().and_then(|m| m.usage.clone()),
+                        usage,
+                        role,
+                        message_id,
+                        model,
+                        stop_reason,
                     };
                     messages.push(claude_message);
                 }
@@ -295,17 +328,33 @@ pub async fn load_session_messages_paginated(
                     }
                     
                     if current_index >= offset && messages.len() < limit {
+                        let (role, message_id, model, stop_reason, usage) = if let Some(ref msg) = log_entry.message {
+                            (
+                                Some(msg.role.clone()),
+                                msg.id.clone(),
+                                msg.model.clone(),
+                                msg.stop_reason.clone(),
+                                msg.usage.clone()
+                            )
+                        } else {
+                            (None, None, None, None, None)
+                        };
+                        
                         let claude_message = ClaudeMessage {
                             uuid: log_entry.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
                             parent_uuid: log_entry.parent_uuid,
                             session_id: log_entry.session_id.unwrap_or_else(|| "unknown-session".to_string()),
                             timestamp: log_entry.timestamp.unwrap_or_else(|| Utc::now().to_rfc3339()),
                             message_type: log_entry.message_type.clone(),
-                            content: log_entry.message.as_ref().map(|m| m.content.clone()),
+                            content: log_entry.message.map(|m| m.content),
                             tool_use: log_entry.tool_use,
                             tool_use_result: log_entry.tool_use_result,
                             is_sidechain: log_entry.is_sidechain,
-                            usage: log_entry.message.as_ref().and_then(|m| m.usage.clone()),
+                            usage,
+                            role,
+                            message_id,
+                            model,
+                            stop_reason,
                         };
                         messages.push(claude_message);
                     }
@@ -400,6 +449,10 @@ pub async fn search_messages(
                                     tool_use_result: log_entry.tool_use_result,
                                     is_sidechain: log_entry.is_sidechain,
                                     usage: message_content.usage.clone(),
+                                    role: Some(message_content.role.clone()),
+                                    message_id: message_content.id.clone(),
+                                    model: message_content.model.clone(),
+                                    stop_reason: message_content.stop_reason.clone(),
                                 };
                                 all_messages.push(claude_message);
                             }
