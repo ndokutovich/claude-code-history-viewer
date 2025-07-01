@@ -183,6 +183,27 @@ pub async fn load_project_sessions(
 
     sessions.sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
 
+    // Create a map of actual_session_id to summary
+    let mut summary_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    
+    // First pass: collect all summaries
+    for session in &sessions {
+        if let Some(ref summary) = session.summary {
+            if !summary.is_empty() {
+                summary_map.insert(session.actual_session_id.clone(), summary.clone());
+            }
+        }
+    }
+    
+    // Second pass: apply summaries to sessions that don't have them
+    for session in &mut sessions {
+        if session.summary.is_none() || session.summary.as_ref().map(|s| s.is_empty()).unwrap_or(false) {
+            if let Some(summary) = summary_map.get(&session.actual_session_id) {
+                session.summary = Some(summary.clone());
+            }
+        }
+    }
+
     Ok(sessions)
 }
 
