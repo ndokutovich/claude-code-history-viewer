@@ -1,5 +1,3 @@
-use crate::models::*;
-use std::path::{Path, PathBuf};
 
 pub fn extract_project_name(raw_project_name: &str) -> String {
     if raw_project_name.starts_with('-') {

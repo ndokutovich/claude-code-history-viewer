@@ -3,7 +3,6 @@ mod commands;
 mod utils;
 
 use crate::commands::{project::*, session::*, stats::*};
-use crate::models::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
