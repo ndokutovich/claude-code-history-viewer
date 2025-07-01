@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "build": "npm run sync-version && tsc -b && vite build",
     "tauri:build": "npm run sync-version && tauri build",
-    "sync-version": "node scripts/sync-version.js",
+    "sync-version": "node scripts/sync-version.cjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev"
   },
