@@ -4,5 +4,5 @@
 )]
 
 fn main() {
-    app_lib::run();
+    claude_code_history_viewer_lib::run();
 }
