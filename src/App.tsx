@@ -3,11 +3,17 @@ import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
-import { ModelCostAnalyzer } from "./components/ModelCostAnalyzer";
 import { FolderSelector } from "./components/FolderSelector";
 import { useAppStore } from "./store/useAppStore";
 import { useTheme } from "./hooks/useTheme";
-import { AppErrorType, type ClaudeSession, type ClaudeProject, type Theme, type ProjectStatsSummary, type SessionComparison } from "./types";
+import {
+  AppErrorType,
+  type ClaudeSession,
+  type ClaudeProject,
+  type Theme,
+  type ProjectStatsSummary,
+  type SessionComparison,
+} from "./types";
 import {
   AlertTriangle,
   Settings,
@@ -39,8 +45,10 @@ function App() {
   const [showTokenStats, setShowTokenStats] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showFolderSelector, setShowFolderSelector] = useState(false);
-  const [projectSummary, setProjectSummary] = useState<ProjectStatsSummary | null>(null);
-  const [sessionComparison, setSessionComparison] = useState<SessionComparison | null>(null);
+  const [projectSummary, setProjectSummary] =
+    useState<ProjectStatsSummary | null>(null);
+  const [sessionComparison, setSessionComparison] =
+    useState<SessionComparison | null>(null);
 
   const {
     projects,
@@ -80,14 +88,17 @@ function App() {
       clearTokenStats();
     }
     await selectSession(session);
-    
+
     // Load session comparison if analytics was open
     if (selectedProject && showAnalytics) {
       try {
-        const comparison = await loadSessionComparison(session.session_id, selectedProject.path);
+        const comparison = await loadSessionComparison(
+          session.session_id,
+          selectedProject.path
+        );
         setSessionComparison(comparison);
       } catch (error) {
-        console.error('Failed to load session comparison:', error);
+        console.error("Failed to load session comparison:", error);
       }
     }
   };
@@ -145,14 +156,17 @@ function App() {
     try {
       setShowAnalytics(true);
       setShowTokenStats(false);
-      
+
       // Load project summary
       const summary = await loadProjectStatsSummary(selectedProject.path);
       setProjectSummary(summary);
-      
+
       // Load session comparison if session is selected
       if (selectedSession) {
-        const comparison = await loadSessionComparison(selectedSession.session_id, selectedProject.path);
+        const comparison = await loadSessionComparison(
+          selectedSession.session_id,
+          selectedProject.path
+        );
         setSessionComparison(comparison);
       }
     } catch (error) {
@@ -164,7 +178,7 @@ function App() {
   const handleProjectSelect = async (project: ClaudeProject) => {
     const wasAnalyticsOpen = showAnalytics;
     const wasTokenStatsOpen = showTokenStats;
-    
+
     // 기존 분석 데이터 초기화
     if (showAnalytics || showTokenStats) {
       setShowAnalytics(false);
@@ -173,10 +187,10 @@ function App() {
       setSessionComparison(null);
       clearTokenStats();
     }
-    
+
     // 프로젝트 선택
     await selectProject(project);
-    
+
     // 분석 탭이 열려있었다면 새 프로젝트의 분석 데이터 자동 로드
     if (wasAnalyticsOpen) {
       try {
@@ -187,14 +201,17 @@ function App() {
         console.error("Failed to auto-load analytics for new project:", error);
       }
     }
-    
+
     // 토큰 통계 탭이 열려있었다면 새 프로젝트의 토큰 통계 자동 로드
     if (wasTokenStatsOpen) {
       try {
         setShowTokenStats(true);
         await loadProjectTokenStats(project.path);
       } catch (error) {
-        console.error("Failed to auto-load token stats for new project:", error);
+        console.error(
+          "Failed to auto-load token stats for new project:",
+          error
+        );
       }
     }
   };
@@ -321,7 +338,7 @@ function App() {
                       className={cn("w-5 h-5", COLORS.ui.text.primary)}
                     />
                   </button>
-                  
+
                   <button
                     onClick={() => {
                       if (showTokenStats) {
@@ -499,7 +516,11 @@ function App() {
                       COLORS.ui.text.primary
                     )}
                   >
-                    {showAnalytics ? "분석 대시보드" : showTokenStats ? "토큰 사용량 통계" : "대화 내용"}
+                    {showAnalytics
+                      ? "분석 대시보드"
+                      : showTokenStats
+                      ? "토큰 사용량 통계"
+                      : "대화 내용"}
                   </h2>
                   <span className={cn("text-sm", COLORS.ui.text.secondary)}>
                     {selectedSession?.summary ||
@@ -524,7 +545,7 @@ function App() {
                   )}
                   {showAnalytics && (
                     <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
-                      {selectedSession 
+                      {selectedSession
                         ? "프로젝트 및 세션 상세 분석"
                         : "프로젝트 전체 통계 및 활동 분석"}
                     </p>
@@ -550,11 +571,6 @@ function App() {
             ) : showTokenStats ? (
               <div className="h-full overflow-y-auto p-6 space-y-8">
                 <TokenStatsViewer
-                  sessionStats={sessionTokenStats}
-                  projectStats={projectTokenStats}
-                />
-                <ModelCostAnalyzer
-                  messages={messages}
                   sessionStats={sessionTokenStats}
                   projectStats={projectTokenStats}
                 />
@@ -620,8 +636,7 @@ function App() {
             )}
             {showAnalytics && projectSummary && (
               <span>
-                프로젝트 토큰:{" "}
-                {projectSummary.total_tokens.toLocaleString()}개
+                프로젝트 토큰: {projectSummary.total_tokens.toLocaleString()}개
               </span>
             )}
           </div>
