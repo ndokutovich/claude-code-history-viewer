@@ -326,7 +326,7 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
           </h4>
           {projectStats.slice(0, 10).map((stats, index) => (
             <div
-              key={stats.session_id}
+              key={`session-${stats.session_id}-${index}`}
               className={cn(
                 "border-l-4 pl-3",
                 "border-blue-300 dark:border-blue-600"

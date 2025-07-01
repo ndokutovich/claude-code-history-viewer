@@ -1,5 +1,11 @@
-import React, { useEffect, useRef, useCallback } from "react";
-import { Loader2, MessageCircle } from "lucide-react";
+import React, {
+  useEffect,
+  useRef,
+  useCallback,
+  useState,
+  useMemo,
+} from "react";
+import { Loader2, MessageCircle, ChevronDown } from "lucide-react";
 import type { ClaudeMessage, ClaudeSession, PaginationState } from "../types";
 import { ClaudeContentArrayRenderer } from "./contentRenderer";
 import {
@@ -128,6 +134,15 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
   );
 };
 
+// 타입 안전한 parent UUID 추출 함수
+const getParentUuid = (message: ClaudeMessage): string | null | undefined => {
+  const msgWithParent = message as ClaudeMessage & {
+    parentUuid?: string;
+    parent_uuid?: string;
+  };
+  return msgWithParent.parentUuid || msgWithParent.parent_uuid;
+};
+
 export const MessageViewer: React.FC<MessageViewerProps> = ({
   messages,
   pagination,
@@ -136,76 +151,97 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   onLoadMore,
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
   const prevMessagesLength = useRef(messages.length);
 
-  // 메시지 변화 감지 및 디버깅
+  // 무한 렌더링 방지를 위한 ref
+  const isProcessingLoadMore = useRef(false);
+  const lastPaginationCall = useRef<number>(0);
+
+  // 메시지 변화 감지 및 스크롤 위치 조정 (최적화됨)
   useEffect(() => {
-    if (prevMessagesLength.current !== messages.length) {
-      console.log(
-        `메시지 개수 변화: ${prevMessagesLength.current} -> ${messages.length}`
-      );
-      console.log("페이지네이션 상태:", pagination);
-      prevMessagesLength.current = messages.length;
-    }
-  }, [messages.length, pagination]);
+    const prevLength = prevMessagesLength.current;
+    const currentLength = messages.length;
 
-  // Intersection Observer for infinite scrolling
-  const handleIntersection = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      const [entry] = entries;
+    // 메시지 길이가 변했고, 처리 중이 아닐 때만 실행
+    if (prevLength !== currentLength && !isProcessingLoadMore.current) {
+      // 더보기로 인한 메시지 추가인 경우만 스크롤 조정
+      if (prevLength > 0 && currentLength > prevLength) {
+        isProcessingLoadMore.current = true;
 
-      if (
-        entry &&
-        entry.isIntersecting &&
-        pagination.hasMore &&
-        !pagination.isLoadingMore &&
-        !isLoading
-      ) {
-        console.log("무한 스크롤 트리거됨");
-        onLoadMore();
+        if (scrollContainerRef.current) {
+          const scrollElement = scrollContainerRef.current;
+          const currentScrollHeight = scrollElement.scrollHeight;
+          const heightDifference =
+            currentScrollHeight - prevScrollHeight.current;
+
+          if (heightDifference > 0 && prevScrollTop.current >= 0) {
+            const newScrollTop = prevScrollTop.current + heightDifference;
+            scrollElement.scrollTop = newScrollTop;
+          }
+
+          prevScrollHeight.current = currentScrollHeight;
+
+          // 처리 완료
+          requestAnimationFrame(() => {
+            if (scrollElement.style.overflow === "hidden") {
+              scrollElement.style.overflow = "auto";
+            }
+            isProcessingLoadMore.current = false;
+          });
+        } else {
+          isProcessingLoadMore.current = false;
+        }
       }
-    },
-    [pagination.hasMore, pagination.isLoadingMore, isLoading, onLoadMore]
-  );
 
-  // Set up intersection observer
-  useEffect(() => {
-    const observer = new IntersectionObserver(handleIntersection, {
-      root: null,
-      rootMargin: "200px",
-      threshold: 0.1,
-    });
+      prevMessagesLength.current = currentLength;
+    }
+  }, [messages.length]);
 
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current);
+  // 메시지 트리 구조 메모이제이션 (성능 최적화)
+  const { rootMessages, uniqueMessages } = useMemo(() => {
+    if (messages.length === 0) {
+      return { rootMessages: [], uniqueMessages: [] };
     }
 
-    return () => observer.disconnect();
-  }, [handleIntersection, pagination.hasMore]); // pagination.hasMore 의존성 추가
+    // 중복 제거
+    const uniqueMessages = Array.from(
+      new Map(messages.map((msg) => [msg.uuid, msg])).values()
+    );
 
-  // 메시지를 트리 구조로 변환
-  const buildMessageTree = (messages: ClaudeMessage[]) => {
-    const messageMap = new Map<string, ClaudeMessage>();
+    // 루트 메시지 찾기
     const roots: ClaudeMessage[] = [];
-
-    // 모든 메시지를 맵에 저장
-    messages.forEach((msg) => messageMap.set(msg.uuid, msg));
-
-    // 루트 메시지들과 자식 메시지들 구분
-    messages.forEach((msg) => {
-      if (!msg.parentUuid || msg.parentUuid === null) {
+    uniqueMessages.forEach((msg) => {
+      const parentUuid = getParentUuid(msg);
+      if (!parentUuid) {
         roots.push(msg);
       }
     });
 
-    return roots;
-  };
+    return { rootMessages: roots, uniqueMessages };
+  }, [messages]);
 
   // 이전 세션 ID를 추적
   const prevSessionIdRef = useRef<string | null>(null);
 
-  // 새로운 세션 선택 시 스크롤을 맨 위로 이동
+  // 맨 아래로 스크롤하는 함수
+  const scrollToBottom = useCallback(() => {
+    if (scrollContainerRef.current) {
+      const element = scrollContainerRef.current;
+      // 여러 번 시도하여 확실히 맨 아래로 이동
+      const attemptScroll = (attempts = 0) => {
+        element.scrollTop = element.scrollHeight;
+        if (
+          attempts < 3 &&
+          element.scrollTop < element.scrollHeight - element.clientHeight - 10
+        ) {
+          setTimeout(() => attemptScroll(attempts + 1), 50);
+        }
+      };
+      attemptScroll();
+    }
+  }, []);
+
+  // 새로운 세션 선택 시 스크롤을 맨 아래로 이동 (채팅 스타일)
   useEffect(() => {
     // 세션이 실제로 변경되었고, 메시지가 로드된 경우에만 실행
     if (
@@ -214,55 +250,98 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       messages.length > 0 &&
       !isLoading
     ) {
-      console.log(
-        "새로운 세션 선택됨, 스크롤을 맨 위로 이동:",
-        selectedSession.session_id
-      );
-
       // 이전 세션 ID 업데이트
       prevSessionIdRef.current = selectedSession.session_id;
 
-      // DOM이 업데이트된 후 스크롤 실행
-      requestAnimationFrame(() => {
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = 0;
-          console.log("스크롤 위치 리셋 완료");
-        }
-      });
+      // DOM이 완전히 업데이트된 후 스크롤 실행
+      setTimeout(() => scrollToBottom(), 100);
     }
-  }, [selectedSession, messages.length, isLoading]);
+  }, [selectedSession, messages.length, isLoading, scrollToBottom]);
 
-  // 페이지네이션이 리셋될 때 (새 세션 or 새로고침) 스크롤 위로
+  // 페이지네이션이 리셋될 때 (새 세션 or 새로고침) 스크롤을 맨 아래로
   useEffect(() => {
     if (pagination.currentOffset === 0 && messages.length > 0 && !isLoading) {
-      requestAnimationFrame(() => {
-        if (scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = 0;
-        }
-      });
+      setTimeout(() => scrollToBottom(), 50);
     }
-  }, [pagination.currentOffset, messages.length, isLoading]);
+  }, [pagination.currentOffset, messages.length, isLoading, scrollToBottom]);
 
-  // 메시지 로딩 완료 시 스크롤 위치 조정 (새로운 메시지 추가 후)
+  // 채팅 스타일: 이전 메시지 로드 후 스크롤 위치 유지
+  const prevScrollHeight = useRef<number>(0);
+  const prevScrollTop = useRef<number>(0);
+
+  // 더보기 버튼 최적화 (중복 호출 방지)
+  const handleLoadMoreWithScroll = useCallback(() => {
+    const now = Date.now();
+
+    // 중복 클릭 방지 (1초 내 중복 호출 차단)
+    if (
+      !pagination.hasMore ||
+      pagination.isLoadingMore ||
+      isLoading ||
+      isProcessingLoadMore.current ||
+      now - lastPaginationCall.current < 1000
+    ) {
+      return;
+    }
+
+    lastPaginationCall.current = now;
+
+    if (scrollContainerRef.current) {
+      const scrollElement = scrollContainerRef.current;
+      prevScrollTop.current = scrollElement.scrollTop;
+      prevScrollHeight.current = scrollElement.scrollHeight;
+      scrollElement.style.overflow = "hidden";
+    }
+
+    try {
+      onLoadMore();
+    } catch (error) {
+      console.error("더보기 실행 중 에러:", error);
+      isProcessingLoadMore.current = false;
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.style.overflow = "auto";
+      }
+    }
+  }, [pagination.hasMore, pagination.isLoadingMore, isLoading, onLoadMore]);
+
+  // 스크롤 위치 상태 추가
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+
+  // 스크롤 이벤트 최적화 (쓰로틀링 적용)
   useEffect(() => {
-    if (pagination.isLoadingMore === false && messages.length > 20) {
-      // 로딩이 완료되고 새로운 메시지가 추가되었을 때
-      // 약간의 지연 후 observer를 다시 설정하여 확실히 감지되도록 함
-      setTimeout(() => {
-        if (loadMoreRef.current) {
-          // 강제로 observer 다시 설정
-          const observer = new IntersectionObserver(handleIntersection, {
-            root: null,
-            rootMargin: "200px",
-            threshold: 0.1,
-          });
-          observer.observe(loadMoreRef.current);
+    let throttleTimer: ReturnType<typeof setTimeout> | null = null;
 
-          setTimeout(() => observer.disconnect(), 1000);
+    const handleScroll = () => {
+      if (throttleTimer) return;
+
+      throttleTimer = setTimeout(() => {
+        try {
+          if (scrollContainerRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } =
+              scrollContainerRef.current;
+            const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+            setShowScrollToBottom(!isNearBottom && messages.length > 5);
+          }
+        } catch (error) {
+          console.error("스크롤 핸들러 에러:", error);
         }
+        throttleTimer = null;
       }, 100);
+    };
+
+    const scrollElement = scrollContainerRef.current;
+    if (scrollElement) {
+      scrollElement.addEventListener("scroll", handleScroll, { passive: true });
+      handleScroll();
+
+      return () => {
+        if (throttleTimer) {
+          clearTimeout(throttleTimer);
+        }
+        scrollElement.removeEventListener("scroll", handleScroll);
+      };
     }
-  }, [pagination.isLoadingMore, messages.length, handleIntersection]);
+  }, [messages.length]);
 
   if (isLoading && messages.length === 0) {
     return (
@@ -294,7 +373,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   const renderMessageTree = (
     message: ClaudeMessage,
     depth = 0,
-    visitedIds = new Set<string>()
+    visitedIds = new Set<string>(),
+    keyPrefix = ""
   ): React.ReactNode[] => {
     // 순환 참조 방지
     if (visitedIds.has(message.uuid)) {
@@ -303,19 +383,26 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     }
 
     visitedIds.add(message.uuid);
-    const children = messages.filter((m) => m.parentUuid === message.uuid);
+    const children = messages.filter((m) => {
+      const parentUuid = getParentUuid(m);
+      return parentUuid === message.uuid;
+    });
+
+    // 고유한 키 생성
+    const uniqueKey = keyPrefix ? `${keyPrefix}-${message.uuid}` : message.uuid;
 
     // 현재 메시지를 먼저 추가하고, 자식 메시지들을 이어서 추가
     const result: React.ReactNode[] = [
-      <ClaudeMessageNode key={message.uuid} message={message} depth={depth} />,
+      <ClaudeMessageNode key={uniqueKey} message={message} depth={depth} />,
     ];
 
     // 자식 메시지들을 재귀적으로 추가 (depth 증가)
-    children.forEach((child) => {
+    children.forEach((child, index) => {
       const childNodes = renderMessageTree(
         child,
         depth + 1,
-        new Set(visitedIds)
+        new Set(visitedIds),
+        `${uniqueKey}-child-${index}`
       );
       result.push(...childNodes);
     });
@@ -323,56 +410,160 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     return result;
   };
 
-  const rootMessages = buildMessageTree(messages);
-
   return (
-    <div
-      ref={scrollContainerRef}
-      className="flex-1 h-full overflow-y-auto scrollbar-thin"
-    >
-      {/* 디버깅 정보 */}
-      {import.meta.env.DEV && (
-        <div className="bg-yellow-50 p-2 text-xs text-yellow-800 border-b">
-          메시지: {messages.length} / {pagination.totalCount} | 오프셋:{" "}
-          {pagination.currentOffset} | 더 있음: {pagination.hasMore ? "O" : "X"}{" "}
-          | 로딩중: {pagination.isLoadingMore ? "O" : "X"}
-        </div>
-      )}
-      <div className="max-w-4xl mx-auto">
-        {/* 메시지 목록 */}
-        {rootMessages.map((message) => renderMessageTree(message)).flat()}
-
-        {/* 무한 스크롤 트리거 */}
-        {pagination.hasMore && (
-          <div
-            ref={loadMoreRef}
-            className="flex items-center justify-center py-4"
-            style={{ minHeight: "60px" }} // 최소 높이 보장
-          >
-            {pagination.isLoadingMore ? (
-              <div className="flex items-center space-x-2 text-gray-500">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>
-                  더 많은 메시지를 불러오는 중... ({messages.length}/
-                  {pagination.totalCount})
-                </span>
-              </div>
-            ) : (
-              <div className="text-gray-400 text-sm">
-                스크롤하여 더 많은 메시지를 불러오세요 ({messages.length}/
-                {pagination.totalCount})
+    <div className="relative flex-1 h-full">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 h-full overflow-y-auto scrollbar-thin"
+        style={{ scrollBehavior: "auto" }} // smooth 대신 auto로 즉각적인 스크롤
+      >
+        {/* 디버깅 정보 */}
+        {import.meta.env.DEV && (
+          <div className="bg-yellow-50 p-2 text-xs text-yellow-800 border-b space-y-1">
+            <div>
+              메시지: {messages.length} / {pagination.totalCount} | 오프셋:{" "}
+              {pagination.currentOffset} | 더 있음:{" "}
+              {pagination.hasMore ? "O" : "X"} | 로딩중:{" "}
+              {pagination.isLoadingMore ? "O" : "X"}
+            </div>
+            <div>
+              세션: {selectedSession?.session_id?.slice(-8)} | 파일:{" "}
+              {selectedSession?.file_path?.split("/").pop()?.slice(0, 20)}
+            </div>
+            {messages.length > 0 && (
+              <div>
+                첫번째 메시지: {messages[0]?.timestamp} | 마지막 메시지:{" "}
+                {messages[messages.length - 1]?.timestamp}
               </div>
             )}
           </div>
         )}
-
-        {/* 로딩 완료 메시지 */}
-        {!pagination.hasMore && messages.length > 0 && (
-          <div className="flex items-center justify-center py-4">
-            <div className="text-gray-400 text-sm">
-              모든 메시지를 불러왔습니다 ({pagination.totalCount}개)
+        <div className="max-w-4xl mx-auto">
+          {/* 이전 메시지 로드 버튼 (상단) - 채팅 스타일 */}
+          {pagination.hasMore && (
+            <div className="flex items-center justify-center py-4">
+              {pagination.isLoadingMore ? (
+                <div className="flex items-center space-x-2 text-gray-500 py-2 px-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>
+                    이전 메시지를 불러오는 중... ({messages.length}/
+                    {pagination.totalCount})
+                  </span>
+                </div>
+              ) : (
+                <button
+                  onClick={handleLoadMoreWithScroll}
+                  className="flex items-center space-x-2 py-2 px-4 bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>
+                    이전 메시지{" "}
+                    {(() => {
+                      const remainingMessages =
+                        pagination.totalCount - messages.length;
+                      const messagesToLoad = Math.min(
+                        pagination.pageSize,
+                        remainingMessages
+                      );
+                      return messagesToLoad;
+                    })()}
+                    개 더 보기 ({messages.length}/{pagination.totalCount})
+                  </span>
+                </button>
+              )}
             </div>
-          </div>
+          )}
+
+          {/* 로딩 완료 메시지 (상단) */}
+          {!pagination.hasMore && messages.length > 0 && (
+            <div className="flex items-center justify-center py-4">
+              <div className="text-gray-400 text-sm">
+                모든 메시지를 불러왔습니다 ({pagination.totalCount}개)
+              </div>
+            </div>
+          )}
+
+          {/* 메시지 목록 */}
+          {(() => {
+            try {
+              if (rootMessages.length > 0) {
+                // 트리 구조 렌더링
+                return rootMessages
+                  .map((message) => renderMessageTree(message, 0, new Set()))
+                  .flat();
+              } else {
+                // 평면 구조 렌더링
+
+                return uniqueMessages.map((message, index) => {
+                  // 고유 키 생성: UUID가 없거나 중복될 경우 인덱스와 타임스탬프 사용
+                  const uniqueKey =
+                    message.uuid && message.uuid !== "unknown-session"
+                      ? `${message.uuid}-${index}`
+                      : `fallback-${index}-${message.timestamp}-${message.type}`;
+
+                  return (
+                    <ClaudeMessageNode
+                      key={uniqueKey}
+                      message={message}
+                      depth={0}
+                    />
+                  );
+                });
+              }
+            } catch (error) {
+              console.error("메시지 렌더링 에러:", error);
+              console.error("에러 발생 시 메시지 상태:", {
+                messagesLength: messages.length,
+                rootMessagesLength: rootMessages.length,
+                pagination,
+                firstMessage: messages[0],
+                lastMessage: messages[messages.length - 1],
+              });
+
+              // 에러 발생 시 안전한 fallback 렌더링
+              return (
+                <div
+                  key="error-fallback"
+                  className="flex items-center justify-center p-8"
+                >
+                  <div className="text-center text-red-600">
+                    <div className="text-lg font-semibold mb-2">
+                      메시지 렌더링 오류
+                    </div>
+                    <div className="text-sm">
+                      콘솔에서 자세한 오류 정보를 확인하세요.
+                    </div>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                      새로고침
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+          })()}
+        </div>
+
+        {/* 플로팅 맨 아래로 버튼 */}
+        {showScrollToBottom && (
+          <button
+            onClick={scrollToBottom}
+            className={cn(
+              "fixed bottom-10 right-2 p-3 rounded-full shadow-lg transition-all duration-300 z-50",
+              "bg-blue-500/50 hover:bg-blue-600 text-white",
+              "hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-300",
+              "dark:bg-blue-600/50 dark:hover:bg-blue-700 dark:focus:ring-blue-800",
+              showScrollToBottom
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2"
+            )}
+            title="맨 아래로 이동"
+            aria-label="맨 아래로 스크롤"
+          >
+            <ChevronDown className="w-3 h-3" />
+          </button>
         )}
       </div>
     </div>

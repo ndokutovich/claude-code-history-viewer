@@ -50,7 +50,7 @@ pub async fn load_project_sessions(
                             }
 
                             let uuid = log_entry.uuid.unwrap_or_else(|| {
-                                let new_uuid = Uuid::new_v4().to_string();
+                                let new_uuid = format!("{}-line-{}", Uuid::new_v4().to_string(), line_num + 1);
                                 eprintln!("Warning: Missing UUID in line {} of {}, generated: {}", line_num + 1, file_path, new_uuid);
                                 new_uuid
                             });
@@ -268,7 +268,7 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                     }
 
                     let uuid = log_entry.uuid.unwrap_or_else(|| {
-                        let new_uuid = Uuid::new_v4().to_string();
+                        let new_uuid = format!("{}-line-{}", Uuid::new_v4().to_string(), line_num + 1);
                         eprintln!("Warning: Missing UUID in line {} of {}, generated: {}", line_num + 1, session_path, new_uuid);
                         new_uuid
                     });
@@ -334,9 +334,8 @@ pub async fn load_session_messages_paginated(
         .map_err(|e| format!("Failed to open session file: {}", e))?;
     let reader = BufReader::new(file);
     
-    let mut messages: Vec<ClaudeMessage> = Vec::new();
-    let mut total_count = 0;
-    let mut current_index = 0;
+    // First pass: collect all messages to get total count and support reverse ordering
+    let mut all_messages: Vec<ClaudeMessage> = Vec::new();
     
     for (line_num, line_result) in reader.lines().enumerate() {
         let line = line_result.map_err(|e| format!("Failed to read line: {}", e))?;
@@ -356,40 +355,35 @@ pub async fn load_session_messages_paginated(
                         continue;
                     }
                     
-                    if current_index >= offset && messages.len() < limit {
-                        let (role, message_id, model, stop_reason, usage) = if let Some(ref msg) = log_entry.message {
-                            (
-                                Some(msg.role.clone()),
-                                msg.id.clone(),
-                                msg.model.clone(),
-                                msg.stop_reason.clone(),
-                                msg.usage.clone()
-                            )
-                        } else {
-                            (None, None, None, None, None)
-                        };
-                        
-                        let claude_message = ClaudeMessage {
-                            uuid: log_entry.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
-                            parent_uuid: log_entry.parent_uuid,
-                            session_id: log_entry.session_id.unwrap_or_else(|| "unknown-session".to_string()),
-                            timestamp: log_entry.timestamp.unwrap_or_else(|| Utc::now().to_rfc3339()),
-                            message_type: log_entry.message_type.clone(),
-                            content: log_entry.message.map(|m| m.content),
-                            tool_use: log_entry.tool_use,
-                            tool_use_result: log_entry.tool_use_result,
-                            is_sidechain: log_entry.is_sidechain,
-                            usage,
-                            role,
-                            message_id,
-                            model,
-                            stop_reason,
-                        };
-                        messages.push(claude_message);
-                    }
+                    let (role, message_id, model, stop_reason, usage) = if let Some(ref msg) = log_entry.message {
+                        (
+                            Some(msg.role.clone()),
+                            msg.id.clone(),
+                            msg.model.clone(),
+                            msg.stop_reason.clone(),
+                            msg.usage.clone()
+                        )
+                    } else {
+                        (None, None, None, None, None)
+                    };
                     
-                    current_index += 1;
-                    total_count += 1;
+                    let claude_message = ClaudeMessage {
+                        uuid: log_entry.uuid.unwrap_or_else(|| format!("{}-line-{}", Uuid::new_v4().to_string(), line_num + 1)),
+                        parent_uuid: log_entry.parent_uuid,
+                        session_id: log_entry.session_id.unwrap_or_else(|| "unknown-session".to_string()),
+                        timestamp: log_entry.timestamp.unwrap_or_else(|| Utc::now().to_rfc3339()),
+                        message_type: log_entry.message_type.clone(),
+                        content: log_entry.message.map(|m| m.content),
+                        tool_use: log_entry.tool_use,
+                        tool_use_result: log_entry.tool_use_result,
+                        is_sidechain: log_entry.is_sidechain,
+                        usage,
+                        role,
+                        message_id,
+                        model,
+                        stop_reason,
+                    };
+                    all_messages.push(claude_message);
                 }
             },
             Err(e) => {
@@ -398,8 +392,62 @@ pub async fn load_session_messages_paginated(
         }
     }
     
-    let has_more = offset + limit < total_count;
-    let next_offset = if has_more { offset + limit } else { total_count };
+    let total_count = all_messages.len();
+    
+    eprintln!("Pagination Debug - Total: {}, Offset: {}, Limit: {}", total_count, offset, limit);
+    
+    // Chat-style pagination: offset=0 means we want the newest messages (at the end)
+    // offset=100 means we want messages starting 100 from the newest
+    if total_count == 0 {
+        eprintln!("No messages found");
+        return Ok(MessagePage {
+            messages: vec![],
+            total_count: 0,
+            has_more: false,
+            next_offset: 0,
+        });
+    }
+    
+    // Calculate how many messages are already loaded (from newest)
+    let already_loaded = offset;
+    
+    // Calculate remaining messages that can be loaded
+    let remaining_messages = if total_count > already_loaded {
+        total_count - already_loaded
+    } else {
+        0
+    };
+    
+    // Actual messages to load: minimum of limit and remaining messages
+    let messages_to_load = std::cmp::min(limit, remaining_messages);
+    
+    eprintln!("Load calculation: total={}, already_loaded={}, remaining={}, will_load={}", 
+              total_count, already_loaded, remaining_messages, messages_to_load);
+    
+    let (start_idx, end_idx) = if remaining_messages == 0 {
+        // No more messages to load
+        eprintln!("No more messages available");
+        (0, 0)
+    } else {
+        // Load from (total_count - already_loaded - messages_to_load) to (total_count - already_loaded)
+        let start = total_count - already_loaded - messages_to_load;
+        let end = total_count - already_loaded;
+        eprintln!("Loading messages: start={}, end={} (will load {} messages)", start, end, messages_to_load);
+        (start, end)
+    };
+    
+    // Get the slice of messages we need
+    let messages: Vec<ClaudeMessage> = all_messages
+        .into_iter()
+        .skip(start_idx)
+        .take(end_idx - start_idx)
+        .collect();
+    
+    // has_more is true if there are still older messages to load
+    let has_more = start_idx > 0;
+    let next_offset = offset + messages.len();
+    
+    eprintln!("Result: {} messages returned, has_more={}, next_offset={}", messages.len(), has_more, next_offset);
     
     Ok(MessagePage {
         messages,
@@ -456,7 +504,7 @@ pub async fn search_messages(
         .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
     {
         if let Ok(content) = fs::read_to_string(entry.path()) {
-            for line in content.lines() {
+            for (line_num, line) in content.lines().enumerate() {
                 if let Ok(log_entry) = serde_json::from_str::<RawLogEntry>(line) {
                     if log_entry.message_type == "user" || log_entry.message_type == "assistant" {
                         if let Some(message_content) = &log_entry.message {
@@ -468,7 +516,7 @@ pub async fn search_messages(
 
                             if content_str.to_lowercase().contains(&query.to_lowercase()) {
                                 let claude_message = ClaudeMessage {
-                                    uuid: log_entry.uuid.unwrap_or_else(|| Uuid::new_v4().to_string()),
+                                    uuid: log_entry.uuid.unwrap_or_else(|| format!("{}-line-{}", Uuid::new_v4().to_string(), line_num + 1)),
                                     parent_uuid: log_entry.parent_uuid,
                                     session_id: log_entry.session_id.unwrap_or_else(|| "unknown-session".to_string()),
                                     timestamp: log_entry.timestamp.unwrap_or_else(|| Utc::now().to_rfc3339()),

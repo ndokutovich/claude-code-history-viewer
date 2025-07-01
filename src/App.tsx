@@ -7,7 +7,7 @@ import { ModelCostAnalyzer } from "./components/ModelCostAnalyzer";
 import { FolderSelector } from "./components/FolderSelector";
 import { useAppStore } from "./store/useAppStore";
 import { useTheme } from "./hooks/useTheme";
-import { AppErrorType, type ClaudeSession, type Theme, type ProjectStatsSummary, type SessionComparison } from "./types";
+import { AppErrorType, type ClaudeSession, type ClaudeProject, type Theme, type ProjectStatsSummary, type SessionComparison } from "./types";
 import {
   AlertTriangle,
   Settings,

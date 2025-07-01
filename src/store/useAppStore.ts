@@ -270,7 +270,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       );
 
       set({
-        messages: [...messages, ...messagePage.messages],
+        messages: [...messagePage.messages, ...messages], // 더 오래된 메시지를 앞에 추가 (채팅 스타일)
         pagination: {
           ...pagination,
           currentOffset: messagePage.next_offset,
