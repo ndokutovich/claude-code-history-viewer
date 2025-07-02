@@ -1,30 +1,55 @@
 # Claude Code History Viewer
 
 <p style="center">
-  <img src="https://img.shields.io/badge/Version-1.0.0-brightgreen.svg" alt="Version 1.0.0" />
-  <img src="https://img.shields.io/badge/Built%20with-Tauri%20+%20React-blue.svg" alt="Built with Tauri and React" />
+  <img src="https://img.shields.io/badge/Version-1.0.0--beta.2-orange.svg" alt="Version 1.0.0-beta.2" />
+  <img src="https://img.shields.io/badge/Built%20with-Tauri%202.6%20+%20React%2019-blue.svg" alt="Built with Tauri 2.6 and React 19" />
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="MIT License" />
   <img src="https://img.shields.io/badge/Platform-macOS%20|%20Windows%20|%20Linux-lightgrey.svg" alt="Platform" />
+  <img src="https://img.shields.io/badge/Language-Korean%20UI-blueviolet.svg" alt="Korean UI" />
 </p>
 
 A desktop application to browse and analyze your Claude Code conversation history stored locally in the `~/.claude` directory.
 
+> ⚠️ **Beta Notice**: This application is currently in beta. Features and APIs may change.
+
 ## Features
 
+### Core Features
 - 📁 **Browse Projects and Sessions** - Navigate through all your Claude Code projects and conversation sessions
 - 🔍 **Search Across Messages** - Full-text search functionality across all conversations
 - 🎨 **Syntax Highlighting** - Code blocks are beautifully highlighted for better readability with prism-react-renderer
 - 🌲 **Tree View Navigation** - Intuitive project/session hierarchy with expandable tree structure
 - ⚡ **Fast Performance** - Built with Rust backend for efficient file parsing and searching
 - 🖥️ **Cross-Platform** - Works on macOS, Windows, and Linux thanks to Tauri
-- 📊 **Token Usage Statistics** - View token usage analytics per project and session
-- 📃 **Pagination & Virtual Scrolling** - Handle large conversation histories efficiently
+
+### Analytics & Statistics
+- 📊 **Comprehensive Analytics Dashboard** - View detailed usage analytics with interactive charts
+- 📈 **Token Usage Statistics** - Track token usage per project and session with growth rates
+- 🔥 **Activity Heatmaps** - Visualize your interaction patterns over time
+- 📊 **Session Comparisons** - Compare metrics across different sessions
+- 📉 **Tool Usage Analytics** - See which tools are used most frequently
+
+### Advanced Features
+- 🔄 **Auto-Update System** - Automatic update checking with priority levels (critical, recommended, optional)
+- 💭 **Thinking Content Display** - View Claude's reasoning process in formatted blocks
+- 📃 **Efficient Message Loading** - Handle large conversation histories with pagination
 - 🔄 **Session Refresh** - Refresh sessions to see new messages without restarting
+- 📝 **Session Summaries** - AI-generated summaries for quick session overview
+
+### Content Rendering
 - 🖼️ **Image Support** - View images embedded in conversations
 - 📝 **Enhanced Diff Viewer** - Improved line-by-line file change comparison
 - 🎯 **Advanced Message Filtering** - Sidechain messages are filtered for cleaner view
 - 🚀 **Optimized Rendering** - FileEditRenderer for efficient file edit displays
 - 🔧 **Session Management** - Direct path usage and last modified time tracking
+
+### Tool Result Renderers
+- 🌐 **Web Search Results** - Beautiful rendering of web search results
+- 🔧 **MCP (Model Context Protocol)** - Support for MCP tool results
+- 📁 **Codebase Context** - Display codebase exploration results
+- 🔀 **Git Workflows** - Visualize git operations and workflows
+- 💻 **Terminal Streams** - Real-time terminal output display
+- 📚 **Claude Session History** - View referenced session history
 
 ## Screenshots
 
@@ -39,13 +64,13 @@ _[Add screenshots here once available]_
 
 ### Download Pre-built Binaries
 
-Visit the [Releases](https://github.com/[username]/claude-code-history-viewer/releases) page to download the latest version for your platform.
+Visit the [Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases) page to download the latest version for your platform.
 
 ### Build from Source
 
 #### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or higher) 
+- [Node.js](https://nodejs.org/) (v18 or higher)
 - [pnpm](https://pnpm.io/) package manager (v8+)
 - [Rust](https://www.rust-lang.org/) toolchain (latest stable)
 - Platform-specific dependencies:
@@ -57,7 +82,7 @@ Visit the [Releases](https://github.com/[username]/claude-code-history-viewer/re
 
 ```bash
 # Clone the repository
-git clone https://github.com/[username]/claude-code-history-viewer.git
+git clone https://github.com/jhlee0409/claude-code-history-viewer.git
 cd claude-code-history-viewer
 
 # Install dependencies
@@ -79,6 +104,16 @@ The built application will be in `src-tauri/target/release/bundle/`.
 3. Browse through projects and sessions using the left sidebar
 4. Click on any session to view its messages
 5. Use the search feature to find specific conversations or code snippets
+6. View analytics dashboard to understand your usage patterns
+7. Check for updates via the auto-update system
+
+### Update Management
+
+The application includes an automatic update checking system:
+- **Critical Updates**: Must be installed immediately
+- **Recommended Updates**: Suggested for better experience
+- **Optional Updates**: New features you can install at your convenience
+- Updates can be postponed or skipped based on priority level
 
 ## Development
 
@@ -86,10 +121,12 @@ The built application will be in `src-tauri/target/release/bundle/`.
 
 - **Frontend**: React 19.1.0, TypeScript, Tailwind CSS, Zustand
 - **Backend**: Rust, Tauri 2.6.1
-- **UI Components**: HeadlessUI, Radix UI, Heroicons, Lucide React
-- **Code Highlighting**: prism-react-renderer
-- **Data Fetching**: @tanstack/react-query
-- **Virtualization**: @tanstack/react-virtual
+- **UI Components**: Radix UI, Lucide React
+- **Code Highlighting**: prism-react-renderer, react-syntax-highlighter, prismjs
+- **Markdown Rendering**: react-markdown, remark-gfm
+- **Diff Viewing**: react-diff-viewer-continued, diff
+- **Styling**: Tailwind CSS with @tailwindcss/typography, tailwind-merge, clsx
+- **Update System**: reqwest (for version checking)
 
 ### Project Structure
 
@@ -149,6 +186,9 @@ The Tauri backend exposes these commands:
 - `search_messages` - Search across all messages
 - `get_session_token_stats` - Get token usage statistics for a session
 - `get_project_token_stats` - Get token usage statistics for a project
+- `check_for_updates` - Check for available application updates
+- `get_session_analytics` - Get detailed analytics for a session
+- `get_project_analytics` - Get comprehensive analytics for a project
 
 ## Contributing
 
@@ -211,17 +251,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - Built with [Tauri](https://tauri.app/) - A framework for building tiny, blazing fast binaries
-- UI components from [Headless UI](https://headlessui.com/), [Radix UI](https://www.radix-ui.com/), and [Tailwind CSS](https://tailwindcss.com/)
-- Code highlighting powered by [prism-react-renderer](https://github.com/FormidableLabs/prism-react-renderer)
-- Data fetching with [@tanstack/react-query](https://tanstack.com/query)
-- Virtual scrolling with [@tanstack/react-virtual](https://tanstack.com/virtual)
+- UI components from [Radix UI](https://www.radix-ui.com/) and [Tailwind CSS](https://tailwindcss.com/)
+- Icons by [Lucide React](https://lucide.dev/)
+- Code highlighting powered by [prism-react-renderer](https://github.com/FormidableLabs/prism-react-renderer) and [react-syntax-highlighter](https://github.com/react-syntax-highlighter/react-syntax-highlighter)
+- Markdown rendering with [react-markdown](https://github.com/remarkjs/react-markdown)
+- Diff viewing with [react-diff-viewer-continued](https://github.com/praneshr/react-diff-viewer)
 
 ## Support
 
 If you encounter any issues or have questions:
 
-1. Check the [Issues](https://github.com/[username]/claude-code-history-viewer/issues) page
+1. Check the [Issues](https://github.com/jhlee0409/claude-code-history-viewer/issues) page
 2. Create a new issue with detailed information about your problem
 3. Include your platform, app version, and steps to reproduce
+
+## Author
+
+**JaeHyeok Lee**
+- GitHub: [@jhlee0409](https://github.com/jhlee0409)
 
 ---
