@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { check, Update } from '@tauri-apps/plugin-updater';
-import { relaunch } from '@tauri-apps/plugin-process';
+import { useState, useEffect, useCallback } from "react";
+import { check, Update } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { useTranslation } from "react-i18next";
 
 export interface UpdateState {
   isChecking: boolean;
@@ -20,6 +21,7 @@ export interface UseNativeUpdaterReturn {
 }
 
 export function useNativeUpdater(): UseNativeUpdaterReturn {
+  const { t } = useTranslation("common");
   const [state, setState] = useState<UpdateState>({
     isChecking: false,
     hasUpdate: false,
@@ -32,49 +34,54 @@ export function useNativeUpdater(): UseNativeUpdaterReturn {
 
   const checkForUpdates = useCallback(async () => {
     try {
-      setState(prev => ({ ...prev, isChecking: true, error: null }));
-      
+      setState((prev) => ({ ...prev, isChecking: true, error: null }));
+
       const update = await check();
-      
-      setState(prev => ({
+
+      setState((prev) => ({
         ...prev,
         isChecking: false,
         hasUpdate: update?.available ?? false,
         updateInfo: update || null,
       }));
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isChecking: false,
-        error: error instanceof Error ? error.message : '업데이트 확인 중 오류가 발생했습니다.',
+        error:
+          error instanceof Error
+            ? error.message
+            : t("error.updateCheckFailed", "Failed to check for updates"),
       }));
     }
-  }, []);
+  }, [t]);
 
   const downloadAndInstall = useCallback(async () => {
     if (!state.updateInfo) return;
 
     try {
-      setState(prev => ({ ...prev, isDownloading: true, error: null }));
+      setState((prev) => ({ ...prev, isDownloading: true, error: null }));
 
       // 다운로드 진행률 리스너 (Tauri 업데이터 플러그인이 지원하는 경우)
       await state.updateInfo.downloadAndInstall((event) => {
         switch (event.event) {
-          case 'Started':
-            setState(prev => ({ ...prev, downloadProgress: 0 }));
+          case "Started":
+            setState((prev) => ({ ...prev, downloadProgress: 0 }));
             break;
-          case 'Progress':
-            setState(prev => ({ 
-              ...prev, 
-              downloadProgress: Math.round((event.data.chunkLength / (event.data.chunkLength || 1)) * 100)
+          case "Progress":
+            setState((prev) => ({
+              ...prev,
+              downloadProgress: Math.round(
+                (event.data.chunkLength / (event.data.chunkLength || 1)) * 100
+              ),
             }));
             break;
-          case 'Finished':
-            setState(prev => ({ 
-              ...prev, 
-              isDownloading: false, 
+          case "Finished":
+            setState((prev) => ({
+              ...prev,
+              isDownloading: false,
               isInstalling: true,
-              downloadProgress: 100 
+              downloadProgress: 100,
             }));
             break;
         }
@@ -83,17 +90,20 @@ export function useNativeUpdater(): UseNativeUpdaterReturn {
       // 설치 완료 후 앱 재시작
       await relaunch();
     } catch (error) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isDownloading: false,
         isInstalling: false,
-        error: error instanceof Error ? error.message : '업데이트 설치 중 오류가 발생했습니다.',
+        error:
+          error instanceof Error
+            ? error.message
+            : t("error.updateInstallFailed", "Failed to install update"),
       }));
     }
-  }, [state.updateInfo]);
+  }, [state.updateInfo, t]);
 
   const dismissUpdate = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       hasUpdate: false,
       updateInfo: null,

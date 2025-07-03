@@ -52,7 +52,9 @@
     "showDetails": "詳細を表示",
     "solution": "トラブルシューティング",
     "report": "エラーを報告",
-    "copyError": "エラー情報をコピー"
+    "copyError": "エラー情報をコピー",
+    "updateCheckFailed": "アップデートの確認に失敗しました。",
+    "updateInstallFailed": "アップデートのインストールに失敗しました。"
   },
   "update": {
     "available": "バージョン {{version}} アップデート",

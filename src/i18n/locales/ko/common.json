@@ -52,7 +52,9 @@
     "showDetails": "상세 정보 보기",
     "solution": "문제 해결 방법",
     "report": "에러 제보하기",
-    "copyError": "에러 정보 복사"
+    "copyError": "에러 정보 복사",
+    "updateCheckFailed": "업데이트 확인 중 오류가 발생했습니다.",
+    "updateInstallFailed": "업데이트 설치 중 오류가 발생했습니다."
   },
   "update": {
     "available": "버전 {{version}} 업데이트",

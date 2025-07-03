@@ -52,7 +52,9 @@
     "showDetails": "檢視詳情",
     "solution": "疑難排解",
     "report": "回報錯誤",
-    "copyError": "複製錯誤資訊"
+    "copyError": "複製錯誤資訊",
+    "updateCheckFailed": "檢查更新失敗",
+    "updateInstallFailed": "安裝更新失敗"
   },
   "update": {
     "available": "版本 {{version}} 更新",

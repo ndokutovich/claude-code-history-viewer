@@ -52,7 +52,9 @@
     "showDetails": "查看详情",
     "solution": "故障排除",
     "report": "报告错误",
-    "copyError": "复制错误信息"
+    "copyError": "复制错误信息",
+    "updateCheckFailed": "检查更新失败",
+    "updateInstallFailed": "安装更新失败"
   },
   "update": {
     "available": "版本 {{version}} 更新",

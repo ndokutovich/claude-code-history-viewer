@@ -52,7 +52,9 @@
     "showDetails": "Show Details",
     "solution": "Troubleshooting",
     "report": "Report Error",
-    "copyError": "Copy Error Info"
+    "copyError": "Copy Error Info",
+    "updateCheckFailed": "Failed to check for updates",
+    "updateInstallFailed": "Failed to install update"
   },
   "update": {
     "available": "Version {{version}} Update Available",
