@@ -147,15 +147,7 @@
     "No tool usage data available": "ツール使用データがありません",
     "Less": "少ない",
     "More": "多い",
-    "weekdayNames": [
-      "日",
-      "月",
-      "火",
-      "水",
-      "木",
-      "金",
-      "土"
-    ],
+    "weekdayNames": ["日", "月", "火", "水", "木", "金", "土"],
     "min": "分",
     "rank": "{{rank}} ランク",
     "totalTokensUsage": "総トークン使用量",
@@ -394,7 +386,8 @@
     "arguments": "引数:",
     "status": "ステータス:",
     "errorOutput": "エラー出力",
-    "executionResult": "実行結果"
+    "executionResult": "実行結果",
+    "unknownContentType": "不明なコンテンツタイプ"
   },
   "toolUseRenderer": {
     "fileCreation": "ファイル作成",
@@ -490,9 +483,6 @@
   },
   "thinkingRenderer": {
     "title": "Claudeの思考プロセス"
-  },
-  "commandRenderer": {
-    "unknownContentType": "不明なコンテンツタイプ"
   },
   "copyButton": {
     "copy": "コピー",
