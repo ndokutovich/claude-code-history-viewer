@@ -500,6 +500,41 @@
     "upToDate": "Up to date",
     "currentVersionLatest": "Current version {{version}} is the latest version."
   },
+  "feedback": {
+    "title": "Send Feedback",
+    "type": "Feedback Type",
+    "subject": "Subject",
+    "subjectRequired": "Subject *",
+    "content": "Content",
+    "contentRequired": "Content *",
+    "subjectPlaceholder": "Please enter a brief subject",
+    "includeSystemInfo": "Include system information (app version, OS info)",
+    "preview": "Preview",
+    "systemInfoPreview": "System information to include:",
+    "appVersion": "App version: {{version}}",
+    "os": "OS: {{os}} {{version}}",
+    "architecture": "Architecture: {{arch}}",
+    "sendingEmail": "Sending...",
+    "sendEmail": "📧 Send via Email",
+    "openGitHub": "🔗 Open GitHub Issue",
+    "close": "✕",
+    "sendError": "Failed to send feedback. Please try again.",
+    "tips": "💡 Tips:",
+    "tipBugReport": "For bug reports: clearly describe reproduction steps and expected behavior",
+    "tipFeatureRequest": "For feature requests: explain what problem you're trying to solve",
+    "tipScreenshot": "If you have screenshots, please attach them to the email",
+    "types": {
+      "bug": "🐛 Bug Report",
+      "feature": "✨ Feature Request",
+      "improvement": "🔧 Improvement",
+      "other": "💬 Other"
+    },
+    "placeholders": {
+      "bug": "Please describe the situation where the bug occurred and how to reproduce it in detail.",
+      "feature": "Please describe the needed feature and the reason for it.",
+      "default": "Please enter detailed content."
+    }
+  },
   "updateModal": {
     "updateAvailable": "Version {{version}} Update",
     "currentToNew": "Current version: {{current}} → {{latest}}",

@@ -504,7 +504,7 @@ function App() {
                     <MessageSquare
                       className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
                     />
-                    <span>피드백 보내기</span>
+                    <span>{tComponents("feedback.title")}</span>
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator />
@@ -557,19 +557,21 @@ function App() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => {
-                      window.dispatchEvent(new Event('manual-update-check'));
+                      window.dispatchEvent(new Event("manual-update-check"));
                       manualUpdater.checkForUpdates();
                     }}
                     disabled={manualUpdater.state.isChecking}
                   >
                     <RefreshCw
                       className={cn(
-                        "mr-2 h-4 w-4", 
+                        "mr-2 h-4 w-4",
                         manualUpdater.state.isChecking ? "animate-spin" : "",
                         COLORS.ui.text.primary
                       )}
                     />
-                    {manualUpdater.state.isChecking ? t("settings.checking") : t("settings.checkUpdate")}
+                    {manualUpdater.state.isChecking
+                      ? t("settings.checking")
+                      : t("settings.checkUpdate")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -769,11 +771,11 @@ function App() {
 
       {/* Native Update Manager */}
       <UpdateManager />
-      
+
       {/* Feedback Modal */}
-      <FeedbackModal 
-        isOpen={showFeedbackModal} 
-        onClose={() => setShowFeedbackModal(false)} 
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
       />
     </div>
   );

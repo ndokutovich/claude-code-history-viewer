@@ -510,6 +510,41 @@
     "upToDate": "最新版です",
     "currentVersionLatest": "現在のバージョン {{version}} は最新版です。"
   },
+  "feedback": {
+    "title": "フィードバックを送る",
+    "type": "フィードバックの種類",
+    "subject": "件名",
+    "subjectRequired": "件名 *",
+    "content": "内容",
+    "contentRequired": "内容 *",
+    "subjectPlaceholder": "簡単な件名を入力してください",
+    "includeSystemInfo": "システム情報を含める（アプリバージョン、OS情報）",
+    "preview": "プレビュー",
+    "systemInfoPreview": "含まれるシステム情報：",
+    "appVersion": "アプリバージョン： {{version}}",
+    "os": "OS： {{os}} {{version}}",
+    "architecture": "アーキテクチャ： {{arch}}",
+    "sendingEmail": "送信中...",
+    "sendEmail": "📧 メールで送る",
+    "openGitHub": "🔗 GitHubでイシューを登録",
+    "close": "✕",
+    "sendError": "フィードバックの送信に失敗しました。もう一度お試しください。",
+    "tips": "💡 ヒント：",
+    "tipBugReport": "バグ報告の場合： 再現手順と期待される動作を明確に記載してください",
+    "tipFeatureRequest": "機能リクエストの場合： どのような問題を解決したいか説明してください",
+    "tipScreenshot": "スクリーンショットがある場合は、メールに添付してください",
+    "types": {
+      "bug": "🐛 バグ報告",
+      "feature": "✨ 機能リクエスト",
+      "improvement": "🔧 改善提案",
+      "other": "💬 その他"
+    },
+    "placeholders": {
+      "bug": "バグが発生した状況と再現方法を詳しく説明してください。",
+      "feature": "必要な機能とその理由を説明してください。",
+      "default": "詳細な内容を入力してください。"
+    }
+  },
   "updateModal": {
     "updateAvailable": "バージョン {{version}} アップデート",
     "currentToNew": "現在のバージョン: {{current}} → {{latest}}",
