@@ -107,8 +107,40 @@ jobs:
         id: release
         run: |
           # GitHub API로 방금 생성된 릴리즈 정보 가져오기
-          RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          echo "📡 Fetching latest release information from GitHub API..."
+          
+          HTTP_RESPONSE=$(curl -w "HTTPSTATUS:%{http_code}" -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+          
+          # HTTP 상태 코드와 응답 본문 분리
+          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
+          RELEASE_INFO=$(echo "$HTTP_RESPONSE" | sed -E 's/HTTPSTATUS:[0-9]*$//')
+          
+          echo "🔍 HTTP Status Code: $HTTP_STATUS"
+          
+          # HTTP 상태 코드 확인
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "❌ GitHub API call failed with status code: $HTTP_STATUS"
+            echo "📄 Response: $RELEASE_INFO"
+            exit 1
+          fi
+          
+          # JSON 유효성 검사
+          if ! echo "$RELEASE_INFO" | jq . > /dev/null 2>&1; then
+            echo "❌ Invalid JSON response from GitHub API"
+            echo "📄 Response: $RELEASE_INFO"
+            exit 1
+          fi
+          
+          # 필수 필드 존재 확인
+          if [ "$(echo "$RELEASE_INFO" | jq -r '.tag_name')" = "null" ]; then
+            echo "❌ Missing tag_name in release info"
+            echo "📄 Response: $RELEASE_INFO"
+            exit 1
+          fi
+          
+          echo "✅ Successfully fetched release information"
+          echo "🏷️ Release tag: $(echo "$RELEASE_INFO" | jq -r '.tag_name')"
           
           echo "release_info<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_INFO" >> $GITHUB_OUTPUT
