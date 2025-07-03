@@ -10,7 +10,6 @@ import { useAppStore } from "./store/useAppStore";
 import { useTheme } from "./hooks/useTheme";
 import { useUpdateChecker } from "./hooks/useUpdateChecker";
 import { useTranslation } from "react-i18next";
-
 import {
   AppErrorType,
   type ClaudeSession,
@@ -31,7 +30,6 @@ import {
   Laptop,
   Folder,
   Activity,
-  Languages,
 } from "lucide-react";
 import { useLanguageStore } from "./store/useLanguageStore";
 import { type SupportedLanguage, supportedLanguages } from "./i18n";
@@ -48,11 +46,8 @@ import {
 import "./App.css";
 import { cn } from "./utils/cn";
 import { COLORS } from "./constants/colors";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "./components/ui/tooltip";
+
+import { TooltipButton } from "./shared/TooltipButton";
 
 function App() {
   const [showTokenStats, setShowTokenStats] = useState(false);
@@ -371,140 +366,111 @@ function App() {
             <div className="flex items-center space-x-2">
               {selectedProject && (
                 <>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <button
-                        onClick={() => {
-                          if (showAnalytics) {
-                            setShowAnalytics(false);
-                            setProjectSummary(null);
-                            setSessionComparison(null);
-                          } else {
-                            handleLoadAnalytics();
-                          }
-                        }}
+                  <TooltipButton
+                    content={tComponents("analytics.dashboard")}
+                    onClick={() => {
+                      if (showAnalytics) {
+                        setShowAnalytics(false);
+                        setProjectSummary(null);
+                        setSessionComparison(null);
+                      } else {
+                        handleLoadAnalytics();
+                      }
+                    }}
+                    className={cn(
+                      "p-2 rounded-lg transition-colors",
+                      showAnalytics
+                        ? COLORS.semantic.info.bgDark
+                        : COLORS.ui.interactive.hover
+                    )}
+                  >
+                    <BarChart3
+                      className={cn("w-5 h-5", COLORS.ui.text.primary)}
+                    />
+                  </TooltipButton>
+                  <TooltipButton
+                    onClick={() => {
+                      if (showTokenStats) {
+                        setShowTokenStats(false);
+                        clearTokenStats();
+                      } else {
+                        handleLoadTokenStats();
+                      }
+                    }}
+                    disabled={isLoadingTokenStats}
+                    className={cn(
+                      "p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      showTokenStats
+                        ? COLORS.semantic.success.bgDark
+                        : COLORS.ui.interactive.hover
+                    )}
+                    content={tMessages("tokenStats.existing")}
+                  >
+                    {isLoadingTokenStats ? (
+                      <Loader2
                         className={cn(
-                          "p-2 rounded-lg transition-colors",
-                          showAnalytics
-                            ? COLORS.semantic.info.bgDark
-                            : COLORS.ui.interactive.hover
+                          "w-5 h-5 animate-spin",
+                          COLORS.ui.text.primary
                         )}
-                        title={tComponents("analytics.dashboard")}
-                      >
-                        <BarChart3
-                          className={cn("w-5 h-5", COLORS.ui.text.primary)}
-                        />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {tComponents("analytics.dashboard")}
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <button
-                        onClick={() => {
-                          if (showTokenStats) {
-                            setShowTokenStats(false);
-                            clearTokenStats();
-                          } else {
-                            handleLoadTokenStats();
-                          }
-                        }}
-                        disabled={isLoadingTokenStats}
-                        className={cn(
-                          "p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                          showTokenStats
-                            ? COLORS.semantic.success.bgDark
-                            : COLORS.ui.interactive.hover
-                        )}
-                        title={tMessages("tokenStats.existing")}
-                      >
-                        {isLoadingTokenStats ? (
-                          <Loader2
-                            className={cn(
-                              "w-5 h-5 animate-spin",
-                              COLORS.ui.text.primary
-                            )}
-                          />
-                        ) : (
-                          <Activity
-                            className={cn("w-5 h-5", COLORS.ui.text.primary)}
-                          />
-                        )}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {tMessages("tokenStats.title")}
-                    </TooltipContent>
-                  </Tooltip>
+                      />
+                    ) : (
+                      <Activity
+                        className={cn("w-5 h-5", COLORS.ui.text.primary)}
+                      />
+                    )}
+                  </TooltipButton>
                 </>
               )}
 
               {selectedSession && (
                 <>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <button
-                        onClick={() => {
-                          if (showTokenStats || showAnalytics) {
-                            setShowTokenStats(false);
-                            setShowAnalytics(false);
-                            clearTokenStats();
-                            setProjectSummary(null);
-                            setSessionComparison(null);
-                          }
-                        }}
-                        disabled={!showTokenStats && !showAnalytics}
-                        className={cn(
-                          "p-2 rounded-lg transition-colors",
-                          !showTokenStats && !showAnalytics
-                            ? cn(
-                                COLORS.semantic.success.bgDark,
-                                COLORS.semantic.success.text
-                              )
-                            : cn(
-                                COLORS.ui.text.disabled,
-                                "hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700"
-                              )
-                        )}
-                        title={tComponents("message.view")}
-                      >
-                        <MessageSquare
-                          className={cn("w-5 h-5", COLORS.ui.text.primary)}
-                        />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {tComponents("message.view")}
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <button
-                        onClick={() => refreshCurrentSession()}
-                        disabled={isLoadingMessages}
-                        className={cn(
-                          "p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                          COLORS.ui.text.disabled,
-                          "hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700"
-                        )}
-                        title={tComponents("session.refresh")}
-                      >
-                        <RefreshCw
-                          className={cn(
-                            "w-5 h-5",
-                            isLoadingMessages ? "animate-spin" : "",
-                            COLORS.ui.text.primary
-                          )}
-                        />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {tComponents("session.refresh")}
-                    </TooltipContent>
-                  </Tooltip>
+                  <TooltipButton
+                    onClick={() => {
+                      if (showTokenStats || showAnalytics) {
+                        setShowTokenStats(false);
+                        setShowAnalytics(false);
+                        clearTokenStats();
+                        setProjectSummary(null);
+                        setSessionComparison(null);
+                      }
+                    }}
+                    disabled={!showTokenStats && !showAnalytics}
+                    className={cn(
+                      "p-2 rounded-lg transition-colors",
+                      !showTokenStats && !showAnalytics
+                        ? cn(
+                            COLORS.semantic.success.bgDark,
+                            COLORS.semantic.success.text
+                          )
+                        : cn(
+                            COLORS.ui.text.disabled,
+                            "hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700"
+                          )
+                    )}
+                    content={tComponents("message.view")}
+                  >
+                    <MessageSquare
+                      className={cn("w-5 h-5", COLORS.ui.text.primary)}
+                    />
+                  </TooltipButton>
+                  <TooltipButton
+                    onClick={() => refreshCurrentSession()}
+                    disabled={isLoadingMessages}
+                    className={cn(
+                      "p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+                      COLORS.ui.text.disabled,
+                      "hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700"
+                    )}
+                    content={tComponents("session.refresh")}
+                  >
+                    <RefreshCw
+                      className={cn(
+                        "w-5 h-5",
+                        isLoadingMessages ? "animate-spin" : "",
+                        COLORS.ui.text.primary
+                      )}
+                    />
+                  </TooltipButton>
                 </>
               )}
 
@@ -575,9 +541,6 @@ function App() {
                   >
                     {Object.entries(supportedLanguages).map(([code, name]) => (
                       <DropdownMenuRadioItem key={code} value={code}>
-                        <Languages
-                          className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
-                        />
                         <span>{name}</span>
                       </DropdownMenuRadioItem>
                     ))}

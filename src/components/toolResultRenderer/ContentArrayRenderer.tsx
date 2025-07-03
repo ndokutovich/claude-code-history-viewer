@@ -1,4 +1,5 @@
 import { Bot } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ThinkingRenderer, ToolUseRenderer } from "../contentRenderer";
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export const ContentArrayRenderer = ({ toolResult }: Props) => {
+  const { t } = useTranslation("components");
   const content = Array.isArray(toolResult.content) ? toolResult.content : [];
   const totalDurationMs =
     typeof toolResult.totalDurationMs === "number"
@@ -33,40 +35,40 @@ export const ContentArrayRenderer = ({ toolResult }: Props) => {
     <div className="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
       <div className="flex items-center space-x-2 mb-2">
         <Bot className="w-4 h-4" />
-        <span className="font-medium text-indigo-800">Claude API 응답</span>
+        <span className="font-medium text-indigo-800">{t("contentArray.claudeApiResponse")}</span>
       </div>
 
       {/* 메타데이터 정보 */}
       <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
         {totalDurationMs && (
           <div className="bg-white p-2 rounded border">
-            <div className="text-gray-600">실행 시간</div>
+            <div className="text-gray-600">{t("contentArray.executionTime")}</div>
             <div className="font-medium">
-              {(totalDurationMs / 1000).toFixed(2)}초
+              {(totalDurationMs / 1000).toFixed(2)}{t("contentArray.seconds")}
             </div>
           </div>
         )}
         {totalTokens && (
           <div className="bg-white p-2 rounded border">
-            <div className="text-gray-600">총 토큰</div>
+            <div className="text-gray-600">{t("contentArray.totalTokens")}</div>
             <div className="font-medium">{totalTokens.toLocaleString()}</div>
           </div>
         )}
         {totalToolUseCount && (
           <div className="bg-white p-2 rounded border">
-            <div className="text-gray-600">도구 사용 횟수</div>
+            <div className="text-gray-600">{t("contentArray.toolUseCount")}</div>
             <div className="font-medium">{totalToolUseCount}</div>
           </div>
         )}
         {wasInterrupted !== null && (
           <div className="bg-white p-2 rounded border">
-            <div className="text-gray-600">중단 여부</div>
+            <div className="text-gray-600">{t("contentArray.interruptionStatus")}</div>
             <div
               className={`font-medium ${
                 wasInterrupted ? "text-red-600" : "text-green-600"
               }`}
             >
-              {wasInterrupted ? "중단됨" : "완료"}
+              {wasInterrupted ? t("contentArray.interrupted") : t("contentArray.completed")}
             </div>
           </div>
         )}
@@ -76,13 +78,13 @@ export const ContentArrayRenderer = ({ toolResult }: Props) => {
       {usage && (
         <div className="mb-3">
           <div className="text-xs font-medium text-gray-600 mb-1">
-            토큰 사용량:
+            {t("contentArray.tokenUsage")}
           </div>
           <div className="bg-white p-2 rounded border text-xs">
             <div className="grid grid-cols-2 gap-2">
               {typeof usage.input_tokens === "number" && (
                 <div>
-                  <span className="text-gray-600">입력:</span>
+                  <span className="text-gray-600">{t("contentArray.input")}</span>
                   <span className="font-medium ml-1">
                     {usage.input_tokens.toLocaleString()}
                   </span>
@@ -90,7 +92,7 @@ export const ContentArrayRenderer = ({ toolResult }: Props) => {
               )}
               {typeof usage.output_tokens === "number" && (
                 <div>
-                  <span className="text-gray-600">출력:</span>
+                  <span className="text-gray-600">{t("contentArray.output")}</span>
                   <span className="font-medium ml-1">
                     {usage.output_tokens.toLocaleString()}
                   </span>
@@ -98,7 +100,7 @@ export const ContentArrayRenderer = ({ toolResult }: Props) => {
               )}
               {typeof usage.cache_creation_input_tokens === "number" && (
                 <div>
-                  <span className="text-gray-600">캐시 생성:</span>
+                  <span className="text-gray-600">{t("contentArray.cacheCreation")}</span>
                   <span className="font-medium ml-1">
                     {usage.cache_creation_input_tokens.toLocaleString()}
                   </span>
@@ -106,7 +108,7 @@ export const ContentArrayRenderer = ({ toolResult }: Props) => {
               )}
               {typeof usage.cache_read_input_tokens === "number" && (
                 <div>
-                  <span className="text-gray-600">캐시 읽기:</span>
+                  <span className="text-gray-600">{t("contentArray.cacheRead")}</span>
                   <span className="font-medium ml-1">
                     {usage.cache_read_input_tokens.toLocaleString()}
                   </span>
@@ -120,14 +122,14 @@ export const ContentArrayRenderer = ({ toolResult }: Props) => {
       {/* 콘텐츠 */}
       {content.length > 0 && (
         <div>
-          <div className="text-xs font-medium text-gray-600 mb-1">내용:</div>
+          <div className="text-xs font-medium text-gray-600 mb-1">{t("contentArray.content")}</div>
           <div className="space-y-2">
             {content.map((item: unknown, index: number) => {
               if (!item || typeof item !== "object") {
                 return (
                   <div key={index} className="bg-white p-3 rounded border">
                     <div className="text-xs text-gray-500 mb-1">
-                      타입: unknown
+                      {t("contentArray.typeUnknown")}
                     </div>
                     <pre className="text-xs text-gray-700 whitespace-pre-wrap">
                       {JSON.stringify(item, null, 2)}
@@ -167,7 +169,7 @@ export const ContentArrayRenderer = ({ toolResult }: Props) => {
                   ) && (
                     <div>
                       <div className="text-xs text-gray-500 mb-1">
-                        타입: {String(itemObj.type || "unknown")}
+                        {t("contentArray.type")} {String(itemObj.type || "unknown")}
                       </div>
                       <pre className="text-xs text-gray-700 whitespace-pre-wrap">
                         {JSON.stringify(item, null, 2)}

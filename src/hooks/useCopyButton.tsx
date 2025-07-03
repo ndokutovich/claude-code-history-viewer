@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { RefreshCw, Check, X, Clipboard } from "lucide-react";
+import { TooltipButton } from "../shared/TooltipButton";
 
 interface CopyState {
   [key: string]: "idle" | "copying" | "success" | "error";
@@ -41,7 +42,7 @@ export const useCopyButton = () => {
     const state = copyStates[id] || "idle";
 
     return (
-      <button
+      <TooltipButton
         onClick={() => copyToClipboard(text, id)}
         disabled={state === "copying"}
         className={`flex items-center space-x-1 px-2 py-1 text-xs rounded transition-colors ${
@@ -51,7 +52,7 @@ export const useCopyButton = () => {
             ? "bg-red-100 text-red-700"
             : "bg-gray-100 hover:bg-gray-200 text-gray-700"
         }`}
-        title={`${label}하기`}
+        content={label}
       >
         {state === "copying" ? (
           <>
@@ -74,7 +75,7 @@ export const useCopyButton = () => {
             <span>{label}</span>
           </>
         )}
-      </button>
+      </TooltipButton>
     );
   };
 

@@ -2,8 +2,9 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle, Mail, Copy, RefreshCw } from "lucide-react";
 import { COLORS } from "../constants/colors";
 import { cn } from "../utils/cn";
+import { withTranslation, type WithTranslation } from "react-i18next";
 
-interface Props {
+interface Props extends WithTranslation {
   children: ReactNode;
 }
 
@@ -14,7 +15,7 @@ interface State {
   copied: boolean;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundaryComponent extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -25,13 +26,8 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return {
-      hasError: true,
-      error,
-      errorInfo: null,
-      copied: false,
-    };
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -54,19 +50,33 @@ export class ErrorBoundary extends Component<Props, State> {
 
   copyErrorDetails = () => {
     const { error, errorInfo } = this.state;
+    const { t } = this.props;
     const errorDetails = `
-에러 정보:
----------
-에러 메시지: ${error?.message || "Unknown error"}
-에러 스택: ${error?.stack || "No stack trace"}
+${t("error.copyTemplate.header", { defaultValue: "Error Information:" })}
+${t("error.copyTemplate.separator", { defaultValue: "---------" })}
+${t("error.copyTemplate.errorMessage", {
+  message: error?.message || "Unknown error",
+  defaultValue: "Error Message: {{message}}",
+})}
+${t("error.copyTemplate.errorStack", {
+  stack: error?.stack || "No stack trace",
+  defaultValue: "Error Stack: {{stack}}",
+})}
 
-컴포넌트 스택:
+${t("error.copyTemplate.componentStack", {
+  defaultValue: "Component Stack:",
+})}
 ${errorInfo?.componentStack || "No component stack"}
 
-브라우저 정보:
+${t("error.copyTemplate.browserInfo", {
+  defaultValue: "Browser Information:",
+})}
 ${navigator.userAgent}
 
-발생 시간: ${new Date().toISOString()}
+${t("error.copyTemplate.timestamp", {
+  time: new Date().toISOString(),
+  defaultValue: "Occurrence Time: {{time}}",
+})}
     `;
 
     navigator.clipboard.writeText(errorDetails);
@@ -75,25 +85,45 @@ ${navigator.userAgent}
   };
 
   render() {
+    const { t } = this.props;
     if (this.state.hasError) {
       const emailSubject = encodeURIComponent(
-        `[Claude Code History Viewer] 에러 리포트: ${
-          this.state.error?.message || "Unknown error"
-        }`
+        t("error.emailTemplate.subject", {
+          error: this.state.error?.message || "Unknown error",
+          defaultValue: "[Claude Code History Viewer] Error Report: {{error}}",
+        })
       );
       const emailBody = encodeURIComponent(`
-안녕하세요,
+${t("error.emailTemplate.greeting", {
+  defaultValue: "Hello,",
+})}
 
-Claude Code History Viewer 사용 중 다음과 같은 에러가 발생했습니다:
+${t("error.emailTemplate.description", {
+  defaultValue:
+    "I encountered the following error while using Claude Code History Viewer:",
+})}
 
-[여기에 복사한 에러 정보를 붙여넣어 주세요]
+${t("error.emailTemplate.placeholder", {
+  defaultValue: "[Please paste the copied error information here]",
+})}
 
-추가 정보:
-- 어떤 작업을 하다가 에러가 발생했나요?
-- 에러가 반복적으로 발생하나요?
-- 기타 참고사항:
+${t("error.emailTemplate.additionalInfo", {
+  defaultValue: "Additional Information:",
+})}
+${t("error.emailTemplate.whatWereDoing", {
+  defaultValue: "- What were you doing when the error occurred?",
+})}
+${t("error.emailTemplate.isRepeating", {
+  defaultValue: "- Does this error occur repeatedly?",
+})}
+${t("error.emailTemplate.otherNotes", {
+  defaultValue: "- Other notes:",
+})}
 
-감사합니다.
+${t("error.emailTemplate.thanks", {
+  defaultValue: "Thank you.",
+})}
+
       `);
 
       return (
@@ -124,10 +154,15 @@ Claude Code History Viewer 사용 중 다음과 같은 에러가 발생했습니
                   COLORS.semantic.error.textDark
                 )}
               >
-                예기치 않은 오류가 발생했습니다
+                {t("error.unexpectedError", {
+                  defaultValue: "An unexpected error occurred",
+                })}
               </h1>
               <p className={cn("text-lg", COLORS.ui.text.secondary)}>
-                불편을 드려 죄송합니다. 아래 방법으로 문제를 해결해보세요.
+                {t("error.apologize", {
+                  defaultValue:
+                    "We apologize for the inconvenience. Please try the following solutions to resolve the issue.",
+                })}
               </p>
             </div>
 
@@ -145,7 +180,9 @@ Claude Code History Viewer 사용 중 다음과 같은 에러가 발생했습니
                   COLORS.semantic.error.textDark
                 )}
               >
-                에러 정보
+                {t("error.errorInfo", {
+                  defaultValue: "Error Information",
+                })}
               </h2>
               <pre
                 className={cn(
@@ -163,7 +200,9 @@ Claude Code History Viewer 사용 중 다음과 같은 에러가 발생했습니
                       COLORS.ui.text.muted
                     )}
                   >
-                    상세 정보 보기
+                    {t("error.viewDetails", {
+                      defaultValue: "View Details",
+                    })}
                   </summary>
                   <pre
                     className={cn(
@@ -193,10 +232,15 @@ Claude Code History Viewer 사용 중 다음과 같은 에러가 발생했습니
                   )}
                 >
                   <Mail className="w-4 h-4 mr-2" />
-                  에러 제보하기
+                  {t("error.reportError", {
+                    defaultValue: "Report Error",
+                  })}
                 </h3>
                 <p className={cn("text-sm mb-3", COLORS.ui.text.secondary)}>
-                  이 에러가 반복적으로 발생한다면 아래 이메일로 제보해주세요:
+                  {t("error.reportDescription", {
+                    defaultValue:
+                      "If this error occurs repeatedly, please report it to the email below:",
+                  })}
                 </p>
                 <div className="flex flex-col space-y-2">
                   <a
@@ -219,7 +263,13 @@ Claude Code History Viewer 사용 중 다음과 같은 에러가 발생했습니
                     )}
                   >
                     <Copy className="w-4 h-4 mr-2" />
-                    {this.state.copied ? "복사됨!" : "에러 정보 복사"}
+                    {this.state.copied
+                      ? t("error.copied", {
+                          defaultValue: "Copied!",
+                        })
+                      : t("error.copyErrorInfo", {
+                          defaultValue: "Copy Error Information",
+                        })}
                   </button>
                 </div>
               </div>
@@ -233,7 +283,10 @@ Claude Code History Viewer 사용 중 다음과 같은 에러가 발생했습니
                     "hover:bg-blue-700 dark:hover:bg-blue-600"
                   )}
                 >
-                  <RefreshCw className="w-4 h-4 mr-2" />앱 다시 시작
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  {t("error.restartApp", {
+                    defaultValue: "Restart App",
+                  })}
                 </button>
               </div>
             </div>
@@ -245,21 +298,31 @@ Claude Code History Viewer 사용 중 다음과 같은 에러가 발생했습니
               )}
             >
               <h4 className={cn("font-semibold mb-2", COLORS.ui.text.primary)}>
-                문제 해결 방법
+                {t("error.troubleshooting", {
+                  defaultValue: "Troubleshooting",
+                })}
               </h4>
               <ul className={cn("space-y-1", COLORS.ui.text.secondary)}>
-                <li>• 앱을 완전히 종료한 뒤 다시 실행해보세요</li>
-                {/* <li>
-                  • [설정] 또는 [도움말] 메뉴에서 캐시/설정을 초기화해보세요
-                </li> */}
                 <li>
-                  • Claude Code History Viewer의 최신 버전이 설치되어 있는지
-                  확인하세요
+                  •{" "}
+                  {t("error.troubleshootingSteps.restart", {
+                    defaultValue:
+                      "Try completely closing and restarting the app",
+                  })}
                 </li>
-                <li>• 다른 프로젝트를 열어 문제가 반복되는지 확인해보세요</li>
                 <li>
-                  • 문제가 지속된다면 에러 정보를 복사해 개발자에게 제보해
-                  주세요
+                  •{" "}
+                  {t("error.troubleshootingSteps.updateVersion", {
+                    defaultValue:
+                      "Ensure you have the latest version of Claude Code History Viewer installed",
+                  })}
+                </li>
+                <li>
+                  •{" "}
+                  {t("error.troubleshootingSteps.tryOtherProject", {
+                    defaultValue:
+                      "Try opening a different project to see if the issue persists",
+                  })}
                 </li>
               </ul>
             </div>
@@ -271,3 +334,7 @@ Claude Code History Viewer 사용 중 다음과 같은 에러가 발생했습니
     return this.props.children;
   }
 }
+
+export const ErrorBoundary = withTranslation("components")(
+  ErrorBoundaryComponent
+);

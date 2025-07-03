@@ -9,6 +9,8 @@ import {
   type MessagePage,
   type SearchFilters,
   type SessionTokenStats,
+  type ProjectStatsSummary,
+  type SessionComparison,
   type Theme,
   type AppError,
   AppErrorType,
@@ -416,7 +418,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const summary = await invoke("get_project_stats_summary", {
         projectPath,
       });
-      return summary;
+      return summary as ProjectStatsSummary;
     } catch (error) {
       console.error("Failed to load project stats summary:", error);
       throw error;
@@ -429,7 +431,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         sessionId,
         projectPath,
       });
-      return comparison;
+      return comparison as SessionComparison;
     } catch (error) {
       console.error("Failed to load session comparison:", error);
       throw error;

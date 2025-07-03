@@ -1,4 +1,5 @@
 import { Terminal, CheckCircle, AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -21,6 +22,8 @@ interface OutputTag {
 }
 
 export const CommandRenderer = ({ text }: Props) => {
+  const { t } = useTranslation("components");
+  
   // Command 그룹 (name, message, args) 추출
   const commandNameRegex = /<command-name>\s*(.*?)\s*<\/command-name>/gs;
   const commandMessageRegex =
@@ -84,8 +87,8 @@ export const CommandRenderer = ({ text }: Props) => {
     }
   }
 
-  console.log("추출된 명령 그룹:", commandGroup);
-  console.log("추출된 출력 태그들:", outputTags);
+  console.log("Extracted command group:", commandGroup);
+  console.log("Extracted output tags:", outputTags);
 
   // 모든 태그 제거
   const withoutCommands = text
@@ -113,7 +116,7 @@ export const CommandRenderer = ({ text }: Props) => {
           <div className="flex items-center space-x-2 mb-2">
             <Terminal className="w-4 h-4 text-indigo-600" />
             <span className="text-xs font-medium text-indigo-800">
-              명령 실행
+              {t("commandRenderer.commandExecution")}
             </span>
           </div>
 
@@ -121,7 +124,7 @@ export const CommandRenderer = ({ text }: Props) => {
             {commandGroup.name && (
               <div className="flex items-start space-x-2">
                 <span className="text-xs font-medium text-indigo-700 mt-0.5 min-w-[40px]">
-                  명령:
+                  {t("commandRenderer.command")}
                 </span>
                 <code className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded text-xs font-mono">
                   {commandGroup.name}
@@ -132,7 +135,7 @@ export const CommandRenderer = ({ text }: Props) => {
             {commandGroup.args && (
               <div className="flex items-start space-x-2">
                 <span className="text-xs font-medium text-indigo-700 mt-0.5 min-w-[40px]">
-                  인수:
+                  {t("commandRenderer.arguments")}
                 </span>
                 <code className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-mono whitespace-pre-wrap">
                   {commandGroup.args}
@@ -143,7 +146,7 @@ export const CommandRenderer = ({ text }: Props) => {
             {commandGroup.message && (
               <div className="flex items-start space-x-2">
                 <span className="text-xs font-medium text-indigo-700 mt-0.5 min-w-[40px]">
-                  상태:
+                  {t("commandRenderer.status")}
                 </span>
                 <span className="text-sm text-indigo-600 italic">
                   {commandGroup.message}
@@ -163,7 +166,7 @@ export const CommandRenderer = ({ text }: Props) => {
         const contentBg = isError ? "bg-red-100" : "bg-green-100";
         const contentText = isError ? "text-red-700" : "text-green-700";
         const Icon = isError ? AlertCircle : CheckCircle;
-        const label = isError ? "에러 출력" : "실행 결과";
+        const label = isError ? t("commandRenderer.errorOutput") : t("commandRenderer.executionResult");
 
         return (
           <div

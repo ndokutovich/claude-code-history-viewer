@@ -2,6 +2,7 @@
 
 import { Edit } from "lucide-react";
 import { useCopyButton } from "../../hooks/useCopyButton";
+import { useTranslation } from 'react-i18next';
 import { EnhancedDiffViewer } from "../EnhancedDiffViewer";
 import { FileContent } from "../FileContent";
 import { Renderer } from "../../shared/RendererHeader";
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export const FileEditRenderer = ({ toolResult }: Props) => {
+  const { t } = useTranslation('components');
   const { renderCopyButton } = useCopyButton();
   const filePath =
     typeof toolResult.filePath === "string" ? toolResult.filePath : "";
@@ -35,7 +37,7 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
       enableToggle={false}
     >
       <Renderer.Header
-        title="파일 편집 결과"
+        title={t('fileEditRenderer.fileEditResult')}
         icon={<Edit className={cn("w-4 h-4", COLORS.tools.code.icon)} />}
         titleClassName={COLORS.tools.code.text}
         rightContent={
@@ -44,13 +46,13 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
               renderCopyButton(
                 newString,
                 `edit-result-${filePath}`,
-                "변경된 결과 결과 복사"
+                t('fileEditRenderer.copyChangedResult')
               )}
             {originalFile &&
               renderCopyButton(
                 originalFile,
                 `original-file-${filePath}`,
-                "원본 파일 복사"
+                t('fileEditRenderer.copyOriginalFile')
               )}
           </div>
         }
@@ -61,7 +63,7 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
           <div
             className={cn("text-xs font-medium mb-1", COLORS.ui.text.tertiary)}
           >
-            파일 경로:
+            {t('fileEditRenderer.filePath')}
           </div>
           <code
             className={cn(
@@ -83,9 +85,9 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
               COLORS.ui.border.medium
             )}
           >
-            <div className={cn(COLORS.ui.text.tertiary)}>편집 유형</div>
+            <div className={cn(COLORS.ui.text.tertiary)}>{t('fileEditRenderer.editType')}</div>
             <div className={cn(COLORS.tools.code.text)}>
-              {replaceAll ? "전체 교체" : "부분 교체"}
+              {replaceAll ? t('fileEditRenderer.fullReplace') : t('fileEditRenderer.partialReplace')}
             </div>
           </div>
           <div
@@ -95,7 +97,7 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
               COLORS.ui.border.medium
             )}
           >
-            <div className={cn(COLORS.ui.text.tertiary)}>사용자 수정</div>
+            <div className={cn(COLORS.ui.text.tertiary)}>{t('fileEditRenderer.userModified')}</div>
             <div
               className={cn(
                 "font-medium",
@@ -104,7 +106,7 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
                   : COLORS.semantic.success.text
               )}
             >
-              {userModified ? "있음" : "없음"}
+              {userModified ? t('fileEditRenderer.yes') : t('fileEditRenderer.no')}
             </div>
           </div>
         </div>
@@ -123,7 +125,7 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
         {originalFile && (
           <div>
             <FileContent
-              title="원본 파일 내용"
+              title={t('fileEditRenderer.originalFileContent')}
               fileData={{
                 content: originalFile,
                 filePath: filePath,

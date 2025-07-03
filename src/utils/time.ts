@@ -10,6 +10,8 @@ export const formatTime = (timestamp: string): string => {
   const currentLanguage = i18n.language || "en";
   const locale = getLocale(currentLanguage);
 
+  console.log(timestamp, locale);
+
   return date.toLocaleString(locale, {
     year: "numeric",
     month: "long",

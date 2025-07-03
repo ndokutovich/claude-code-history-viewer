@@ -1,6 +1,7 @@
 "use client";
 
 import { Highlight, themes } from "prism-react-renderer";
+import { useTranslation } from "react-i18next";
 import {
   FileText,
   MessageSquare,
@@ -21,6 +22,7 @@ type Props = {
 };
 
 export const ToolUseRenderer = ({ toolUse }: Props) => {
+  const { t } = useTranslation("components");
   const [openRender, setOpenRender] = useState(false);
   const toolName = toolUse.name || "Unknown Tool";
   const toolId = toolUse.id || "";
@@ -107,7 +109,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
           <div className="flex items-center space-x-2">
             <FilePlus className={cn("w-4 h-4", COLORS.semantic.success.icon)} />
             <span className={cn("font-medium", COLORS.semantic.success.text)}>
-              파일 작성
+              {t("toolUseRenderer.fileCreation")}
             </span>
           </div>
           {toolId && (
@@ -152,7 +154,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
             <CheckCircle
               className={cn("w-4 h-4", COLORS.semantic.success.icon)}
             />
-            <span>작성된 내용</span>
+            <span>{t("toolUseRenderer.createdContent")}</span>
           </div>
           <div
             className={cn(
@@ -233,7 +235,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
             <span
               className={cn("font-bold text-medium", COLORS.semantic.info.text)}
             >
-              Task
+              {t("toolUseRenderer.task")}
             </span>
           </div>
           {toolId && (
@@ -259,7 +261,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
                   COLORS.semantic.info.text
                 )}
               >
-                📋 작업 설명
+                {t("toolUseRenderer.taskDescription")}
               </div>
               <div
                 className={cn(
@@ -281,7 +283,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
                   COLORS.semantic.info.text
                 )}
               >
-                💬 상세 지시사항
+                {t("toolUseRenderer.detailedInstructions")}
               </div>
               <div
                 className={cn(
@@ -314,7 +316,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     const oldString = (editToolInput.old_string as string) || "";
     const newString = (editToolInput.new_string as string) || "";
     const replaceAll = (editToolInput.replace_all as boolean) || false;
-    
+
     // FileEditRenderer가 기대하는 형식으로 데이터 변환
     const toolResult = {
       filePath,
@@ -324,7 +326,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
       originalFile: "", // 원본 파일 내용은 tool use에서는 제공되지 않음
       userModified: false, // tool use 단계에서는 아직 사용자 수정이 없음
     };
-    
+
     return <FileEditRenderer toolResult={toolResult} />;
   }
 
@@ -366,7 +368,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
               COLORS.ui.text.inverse
             )}
           >
-            도구 입력 매개변수
+            {t("toolUseRenderer.toolInputParameters")}
           </div>
           <Highlight
             theme={themes.vsDark}

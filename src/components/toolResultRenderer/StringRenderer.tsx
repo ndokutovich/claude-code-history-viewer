@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Folder, Check, FileText } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Renderer } from "../../shared/RendererHeader";
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export const StringRenderer = ({ result }: Props) => {
+  const { t } = useTranslation("components");
   // 파일 트리나 디렉토리 구조인지 확인
   const isFileTree =
     result.includes("/") &&
@@ -31,7 +33,7 @@ export const StringRenderer = ({ result }: Props) => {
   return (
     <Renderer className={cn(COLORS.tools.file.bg, COLORS.tools.file.border)}>
       <Renderer.Header
-        title={isFileTree ? "파일 구조" : "도구 실행 결과"}
+        title={isFileTree ? t("toolResult.fileStructure") : t("toolResult.toolExecutionResult")}
         icon={
           isFileTree ? (
             <Folder className={cn(COLORS.tools.file.icon)} />
@@ -52,11 +54,11 @@ export const StringRenderer = ({ result }: Props) => {
             >
               {isExpanded ? (
                 <>
-                  <span>접기 ▲</span>
+                  <span>{t("toolResult.collapse")} ▲</span>
                 </>
               ) : (
                 <>
-                  <span>펼치기 ({resultLines.length}줄) ▼</span>
+                  <span>{t("toolResult.expand")} ({resultLines.length}{t("toolResult.lines")}) ▼</span>
                 </>
               )}
             </button>
@@ -92,7 +94,7 @@ export const StringRenderer = ({ result }: Props) => {
                 )}
               >
                 <FileText className="w-3 h-3 inline mr-1" />
-                {resultLines.length - MAX_LINES}줄 더 보기
+                {resultLines.length - MAX_LINES}{t("toolResult.lines")} {t("toolResult.showMore")}
               </button>
             </div>
           )}

@@ -3,12 +3,14 @@ import { Renderer } from "../../shared/RendererHeader";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { COLORS } from "../../constants/colors";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   error: string;
 };
 
 export const ErrorRenderer = ({ error }: Props) => {
+  const { t } = useTranslation("components");
   // Extract the error details
   const errorMessage = error.replace("Error: ", "");
 
@@ -18,7 +20,7 @@ export const ErrorRenderer = ({ error }: Props) => {
       className={`${COLORS.semantic.error.bg} ${COLORS.semantic.error.border}`}
     >
       <Renderer.Header
-        title="도구 실행 오류"
+        title={t("error.toolExecutionError")}
         icon={<X className={`w-4 h-4 ${COLORS.semantic.error.icon}`} />}
         titleClassName={COLORS.semantic.error.textDark}
       />

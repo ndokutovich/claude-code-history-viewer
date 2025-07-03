@@ -17,7 +17,9 @@ import {
   Users,
   Award,
   Timer,
+  CircuitBoard,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import type {
   SessionTokenStats,
   ProjectStatsSummary,
@@ -45,7 +47,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   projectSummary,
   sessionComparison,
 }) => {
-  const { t } = useTranslation('components');
+  const { t } = useTranslation("components");
   const [activeTab, setActiveTab] = useState<"project" | "session">("project");
   // Calculate growth rates
   const calculateGrowthRate = (current: number, previous: number): number => {
@@ -93,10 +95,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   const ActivityHeatmapComponent = ({ data }: { data: ActivityHeatmap[] }) => {
     const maxActivity = Math.max(...data.map((d) => d.activity_count), 1);
     const hours = Array.from({ length: 24 }, (_, i) => i);
-    const days = ["일", "월", "화", "수", "목", "금", "토"];
-
+    const days = t("analytics.weekdayNames", { returnObjects: true });
     return (
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto h-[calc(100%-30px)]">
         <div className="inline-block min-w-max">
           {/* Hour labels */}
           <div className="flex gap-1 mb-1 ml-10">
@@ -118,7 +119,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <div key={day} className="flex gap-1 mb-1">
               <div
                 className={cn(
-                  "w-10 flex items-center justify-end pr-2 text-xs",
+                  "w-6 flex items-center justify-end pr-2 text-xs",
                   COLORS.ui.text.muted
                 )}
               >
@@ -134,26 +135,36 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 const tokens = activity?.tokens_used || 0;
 
                 return (
-                  <div
-                    key={`${day}-${hour}`}
-                    className={cn(
-                      "w-6 h-6 rounded-sm transition-all hover:scale-125 hover:ring-2 hover:ring-white/50 cursor-pointer",
-                      intensity > 0.8
-                        ? "bg-emerald-500"
-                        : intensity > 0.6
-                        ? "bg-emerald-600"
-                        : intensity > 0.4
-                        ? "bg-emerald-700"
-                        : intensity > 0.2
-                        ? "bg-emerald-800"
-                        : intensity > 0
-                        ? "bg-emerald-900"
-                        : "bg-gray-800 dark:bg-gray-900"
-                    )}
-                    title={`${day}요일 ${hour}시\n활동: ${
-                      activity?.activity_count || 0
-                    }회\n토큰: ${formatNumber(tokens)}`}
-                  />
+                  <Tooltip key={`${day}-${hour}`}>
+                    <TooltipTrigger>
+                      <div
+                        className={cn(
+                          "w-6 h-6 rounded-sm transition-all hover:scale-125 hover:ring-2 hover:ring-white/50 cursor-pointer",
+                          intensity > 0.8
+                            ? "bg-emerald-500"
+                            : intensity > 0.6
+                            ? "bg-emerald-600"
+                            : intensity > 0.4
+                            ? "bg-emerald-700"
+                            : intensity > 0.2
+                            ? "bg-emerald-800"
+                            : intensity > 0
+                            ? "bg-emerald-900"
+                            : "bg-gray-800 dark:bg-gray-900"
+                        )}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="whitespace-pre-wrap">
+                        {t("analytics.heatmapTooltip", {
+                          day,
+                          hour,
+                          activity: activity?.activity_count || 0,
+                          tokens: formatNumber(tokens),
+                        })}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
                 );
               })}
             </div>
@@ -161,15 +172,19 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
           {/* Legend */}
           <div className="flex items-center gap-4 mt-4 ml-10">
-            <span className={cn("text-xs", COLORS.ui.text.muted)}>{t('analytics.legend.less')}</span>
+            <span className={cn("text-xs", COLORS.ui.text.muted)}>
+              {t("analytics.legend.less")}
+            </span>
             <div className="flex gap-1">
-            <div className="w-4 h-4 bg-gray-800 dark:bg-gray-900 rounded-sm" />
-            <div className="w-4 h-4 bg-emerald-900 rounded-sm" />
-            <div className="w-4 h-4 bg-emerald-700 rounded-sm" />
-            <div className="w-4 h-4 bg-emerald-600 rounded-sm" />
-            <div className="w-4 h-4 bg-emerald-500 rounded-sm" />
+              <div className="w-4 h-4 bg-gray-800 dark:bg-gray-900 rounded-sm" />
+              <div className="w-4 h-4 bg-emerald-900 rounded-sm" />
+              <div className="w-4 h-4 bg-emerald-700 rounded-sm" />
+              <div className="w-4 h-4 bg-emerald-600 rounded-sm" />
+              <div className="w-4 h-4 bg-emerald-500 rounded-sm" />
             </div>
-            <span className={cn("text-xs", COLORS.ui.text.muted)}>{t('analytics.legend.more')}</span>
+            <span className={cn("text-xs", COLORS.ui.text.muted)}>
+              {t("analytics.legend.more")}
+            </span>
           </div>
         </div>
       </div>
@@ -179,22 +194,22 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   // Tool name mapping for better display
   const getToolDisplayName = (toolName: string): string => {
     const toolMap: Record<string, string> = {
-      Bash: "🐚 터미널",
-      Read: "📖 파일 읽기",
-      Edit: "✏️ 파일 편집",
-      Write: "📝 파일 생성",
-      MultiEdit: "🔧 다중 편집",
-      Glob: "🔍 파일 찾기",
-      Grep: "🔎 텍스트 검색",
-      LS: "📁 디렉토리 탐색",
-      Task: "🎯 작업 실행",
-      WebFetch: "🌐 웹 가져오기",
-      WebSearch: "🔍 웹 검색",
-      NotebookRead: "📚 노트북 읽기",
-      NotebookEdit: "📝 노트북 편집",
-      TodoRead: "📋 할일 읽기",
-      TodoWrite: "✅ 할일 작성",
-      exit_plan_mode: "🚪 계획 모드 종료",
+      Bash: t("tools.terminal"),
+      Read: t("tools.readFile"),
+      Edit: t("tools.editFile"),
+      Write: t("tools.createFile"),
+      MultiEdit: t("tools.multiEdit"),
+      Glob: t("tools.findFiles"),
+      Grep: t("tools.searchText"),
+      LS: t("tools.browseDirectory"),
+      Task: t("tools.executeTask"),
+      WebFetch: t("tools.webFetch"),
+      WebSearch: t("tools.webSearch"),
+      NotebookRead: t("tools.notebookRead"),
+      NotebookEdit: t("tools.notebookEdit"),
+      TodoRead: t("tools.todoRead"),
+      TodoWrite: t("tools.todoWrite"),
+      exit_plan_mode: t("tools.exitPlanMode"),
     };
 
     return toolMap[toolName] || `🔧 ${toolName}`;
@@ -211,7 +226,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <Wrench
             className={cn("w-12 h-12 mx-auto mb-2", COLORS.ui.text.disabled)}
           />
-          <p>{t('analytics.noData')}</p>
+          <p>{t("analytics.noData")}</p>
         </div>
       );
     }
@@ -271,10 +286,12 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                   <span
                     className={cn("text-sm font-bold", COLORS.ui.text.primary)}
                   >
-                    {tool.usage_count}회
+                    {t("analytics.count", { count: tool.usage_count })}
                   </span>
                   <div className={cn("text-xs", COLORS.ui.text.muted)}>
-                    {t('analytics.successRate', { percent: Math.round(tool.success_rate) })}
+                    {t("analytics.successRate", {
+                      percent: Math.round(tool.success_rate),
+                    })}
                   </div>
                 </div>
               </div>
@@ -356,7 +373,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               {formatNumber(projectSummary.total_messages)}
             </div>
             <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-              {t('analytics.totalMessages')}
+              {t("analytics.totalMessages")}
             </div>
           </div>
 
@@ -377,7 +394,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               {formatNumber(projectSummary.total_tokens)}
             </div>
             <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-              {t('analytics.totalTokens')}
+              {t("analytics.totalTokens")}
             </div>
           </div>
 
@@ -395,7 +412,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               {formatDuration(projectSummary.avg_session_duration)}
             </div>
             <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-              Avg Session Time
+              {t("analytics.avgSessionTime")}
             </div>
           </div>
 
@@ -413,7 +430,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               {projectSummary.most_used_tools.length}
             </div>
             <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-              Tools Used
+              {t("analytics.toolsUsed")}
             </div>
           </div>
         </div>
@@ -434,7 +451,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 COLORS.ui.text.primary
               )}
             >
-              {t('analytics.activityHeatmapTitle')}
+              {t("analytics.activityHeatmapTitle")}
             </h3>
             {projectSummary.activity_heatmap.length > 0 ? (
               <ActivityHeatmapComponent
@@ -442,7 +459,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               />
             ) : (
               <div className={cn("text-center py-8", COLORS.ui.text.muted)}>
-                {t('analytics.No activity data available')}
+                {t("analytics.No activity data available")}
               </div>
             )}
           </div>
@@ -461,13 +478,13 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 COLORS.ui.text.primary
               )}
             >
-              {t('analytics.mostUsedToolsTitle')}
+              {t("analytics.mostUsedToolsTitle")}
             </h3>
             {projectSummary.most_used_tools.length > 0 ? (
               <ToolUsageChart tools={projectSummary.most_used_tools} />
             ) : (
               <div className={cn("text-center py-8", COLORS.ui.text.muted)}>
-                {t('analytics.No tool usage data available')}
+                {t("analytics.No tool usage data available")}
               </div>
             )}
           </div>
@@ -489,7 +506,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               )}
             >
               <TrendingUp className="w-4 h-4" />
-              <span>{t('analytics.recentActivityTrend')}</span>
+              <span>{t("analytics.recentActivityTrend")}</span>
             </h3>
             <div className="space-y-4">
               {/* Enhanced bar chart */}
@@ -513,51 +530,53 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                       stat.date === new Date().toISOString().split("T")[0];
 
                     return (
-                      <div
-                        key={stat.date}
-                        className="flex-1 flex flex-col items-center justify-end group relative h-full"
-                      >
-                        <div
-                          className={cn(
-                            "w-full rounded-t transition-all duration-300 cursor-pointer",
-                            "hover:scale-105 hover:shadow-lg ",
-                            isToday
-                              ? "bg-gradient-to-t from-emerald-600 to-emerald-400"
-                              : isWeekend
-                              ? "bg-gradient-to-t from-purple-600 to-purple-400"
-                              : stat.total_tokens > maxTokens * 0.7
-                              ? "bg-gradient-to-t from-blue-600 to-blue-400"
-                              : stat.total_tokens > maxTokens * 0.3
-                              ? "bg-gradient-to-t from-indigo-600 to-indigo-400"
-                              : "bg-gradient-to-t from-gray-500 to-gray-400"
-                          )}
-                          style={{ height: `${height}%`, minHeight: "4px" }}
-                          title={`${stat.date}\n📊 토큰: ${formatNumber(
-                            stat.total_tokens
-                          )}\n💬 메시지: ${stat.message_count}\n🎯 세션: ${
-                            stat.session_count
-                          }`}
-                        >
-                          {/* 사용 토큰수 */}
-                          {stat.total_tokens > 0 && (
-                            <div className="text-xs text-center absolute left-0 mb-4 right-0  flex items-center justify-center text-white">
-                              {formatNumber(stat.total_tokens)}
+                      <Tooltip key={stat.date}>
+                        <TooltipTrigger asChild>
+                          <div className="flex-1 flex flex-col items-center justify-end group relative h-full">
+                            <div
+                              className={cn(
+                                "w-full rounded-t transition-all duration-300 cursor-pointer",
+                                "hover:scale-105 hover:shadow-lg ",
+                                isToday
+                                  ? "bg-gradient-to-t from-emerald-600 to-emerald-400"
+                                  : isWeekend
+                                  ? "bg-gradient-to-t from-purple-600 to-purple-400"
+                                  : stat.total_tokens > maxTokens * 0.7
+                                  ? "bg-gradient-to-t from-blue-600 to-blue-400"
+                                  : stat.total_tokens > maxTokens * 0.3
+                                  ? "bg-gradient-to-t from-indigo-600 to-indigo-400"
+                                  : "bg-gradient-to-t from-gray-500 to-gray-400"
+                              )}
+                              style={{ height: `${height}%`, minHeight: "4px" }}
+                            >
+                              {/* 사용 토큰수 */}
+                              {stat.total_tokens > 0 && (
+                                <div className="text-xs text-center absolute left-0 mb-4 right-0  flex items-center justify-center text-white">
+                                  {formatNumber(stat.total_tokens)}
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
 
-                        {/* Date labels for all days */}
-                        <div
-                          className={cn(
-                            "text-xs text-center absolute -bottom-4 left-0 right-0",
-                            isToday
-                              ? "font-bold text-emerald-600"
-                              : "text-gray-500"
-                          )}
-                        >
-                          {stat.date?.slice(5)}
-                        </div>
-                      </div>
+                            {/* Date labels for all days */}
+                            <div
+                              className={cn(
+                                "text-xs text-center absolute -bottom-4 left-0 right-0",
+                                isToday
+                                  ? "font-bold text-emerald-600"
+                                  : "text-gray-500"
+                              )}
+                            >
+                              {stat.date?.slice(5)}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{stat.date}</p>
+                          <p>📊 {t("analytics.tooltipTokens")} {formatNumber(stat.total_tokens)}</p>
+                          <p>💬 {t("analytics.tooltipMessages")} {stat.message_count}</p>
+                          <p>🎯 {t("analytics.tooltipSessions")} {stat.session_count}</p>
+                        </TooltipContent>
+                      </Tooltip>
                     );
                   })}
                 </div>
@@ -584,7 +603,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                       : "0"}
                   </div>
                   <div className={cn("text-xs", COLORS.ui.text.muted)}>
-                    {t('analytics.dailyAvgTokens')}
+                    {t("analytics.dailyAvgTokens")}
                   </div>
                 </div>
                 <div className="text-center">
@@ -599,7 +618,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     )}
                   </div>
                   <div className={cn("text-xs", COLORS.ui.text.muted)}>
-                    {t('analytics.dailyAvgMessages')}
+                    {t("analytics.dailyAvgMessages")}
                   </div>
                 </div>
                 <div className="text-center">
@@ -612,7 +631,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     }
                   </div>
                   <div className={cn("text-xs", COLORS.ui.text.muted)}>
-                    {t('analytics.weeklyActiveDays')}
+                    {t("analytics.weeklyActiveDays")}
                   </div>
                 </div>
               </div>
@@ -621,15 +640,21 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <div className="flex items-center justify-center space-x-4 text-xs">
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-gradient-to-t from-emerald-600 to-emerald-400 rounded" />
-                  <span className={cn(COLORS.ui.text.muted)}>{t('analytics.today')}</span>
+                  <span className={cn(COLORS.ui.text.muted)}>
+                    {t("analytics.today")}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-gradient-to-t from-blue-600 to-blue-400 rounded" />
-                  <span className={cn(COLORS.ui.text.muted)}>{t('analytics.highActivity')}</span>
+                  <span className={cn(COLORS.ui.text.muted)}>
+                    {t("analytics.highActivity")}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-gradient-to-t from-purple-600 to-purple-400 rounded" />
-                  <span className={cn(COLORS.ui.text.muted)}>{t('analytics.weekend')}</span>
+                  <span className={cn(COLORS.ui.text.muted)}>
+                    {t("analytics.weekend")}
+                  </span>
                 </div>
               </div>
             </div>
@@ -647,7 +672,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <h3
             className={cn("text-lg font-semibold mb-4", COLORS.ui.text.primary)}
           >
-            {t('analytics.tokenTypeDistribution')}
+            {t("analytics.tokenTypeDistribution")}
           </h3>
           <div className="space-y-4">
             {/* Token type bars */}
@@ -718,7 +743,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 {formatNumber(projectSummary.total_tokens)}
               </div>
               <div className={cn("text-sm", COLORS.ui.text.muted)}>
-                {t('analytics.totalTokenUsage')}
+                {t("analytics.totalTokenUsage")}
               </div>
             </div>
           </div>
@@ -757,7 +782,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className={cn("text-lg font-semibold", COLORS.ui.text.primary)}>
-              🎯 성능 인사이트
+              {t("analytics.performanceInsights")}
             </h3>
             <div
               className={cn(
@@ -767,7 +792,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                   : "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
               )}
             >
-              {sessionComparison.is_above_average ? t('analytics.aboveAverage') : t('analytics.belowAverage')}
+              {sessionComparison.is_above_average
+                ? t("analytics.aboveAverage")
+                : t("analytics.belowAverage")}
             </div>
           </div>
 
@@ -782,14 +809,16 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 #{sessionComparison.rank_by_tokens}
               </div>
               <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-                {t('analytics.tokenRank')}
+                {t("analytics.tokenRank")}
               </div>
               <div className={cn("text-xs mt-1", COLORS.ui.text.muted)}>
-                {t('analytics.topPercent', { percent: (
-                  (sessionComparison.rank_by_tokens /
-                    (projectSummary?.total_sessions || 1)) *
-                  100
-                ).toFixed(0) })}
+                {t("analytics.topPercent", {
+                  percent: (
+                    (sessionComparison.rank_by_tokens /
+                      (projectSummary?.total_sessions || 1)) *
+                    100
+                  ).toFixed(0),
+                })}
               </div>
             </div>
 
@@ -803,10 +832,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 {sessionComparison.percentage_of_project_tokens.toFixed(1)}%
               </div>
               <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-                {t('analytics.projectShare')}
+                {t("analytics.projectShare")}
               </div>
               <div className={cn("text-xs mt-1", COLORS.ui.text.muted)}>
-                총 {formatNumber(sessionStats.total_tokens)} {t('analytics.tokens')}
+                {t("analytics.totalLabel")} {formatNumber(sessionStats.total_tokens)}{" "}
+                {t("analytics.tokens")}
               </div>
             </div>
 
@@ -820,10 +850,12 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 {avgTokensPerMessage.toLocaleString()}
               </div>
               <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-                {t('analytics.tokensPerMessage')}
+                {t("analytics.tokensPerMessage")}
               </div>
               <div className={cn("text-xs mt-1", COLORS.ui.text.muted)}>
-                {t('analytics.totalMessagesCount', { count: sessionStats.message_count })}
+                {t("analytics.totalMessagesCount", {
+                  count: sessionStats.message_count,
+                })}
               </div>
             </div>
 
@@ -834,13 +866,15 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                   COLORS.ui.text.primary
                 )}
               >
-                {t('analytics.durationMinutes', { minutes: durationMinutes })}
+                {t("analytics.durationMinutes", { minutes: durationMinutes })}
               </div>
               <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-                {t('analytics.sessionTime')}
+                {t("analytics.sessionTime")}
               </div>
               <div className={cn("text-xs mt-1", COLORS.ui.text.muted)}>
-                {t('analytics.rank', { rank: sessionComparison.rank_by_duration })}
+                {t("analytics.rank", {
+                  rank: sessionComparison.rank_by_duration,
+                })}
               </div>
             </div>
           </div>
@@ -857,7 +891,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <h3
             className={cn("text-lg font-semibold mb-4", COLORS.ui.text.primary)}
           >
-            {t('analytics.tokenAnalysis')}
+            {t("analytics.tokenAnalysis")}
           </h3>
 
           <div className="space-y-4">
@@ -945,7 +979,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               {formatNumber(sessionStats.total_tokens)}
             </div>
             <div className={cn("text-sm", COLORS.ui.text.muted)}>
-              총 토큰 사용량
+              {t("analytics.totalTokenUsageLabel")}
             </div>
           </div>
         </div>
@@ -961,7 +995,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <h3
             className={cn("text-lg font-semibold mb-4", COLORS.ui.text.primary)}
           >
-            {t('analytics.sessionTimeline')}
+            {t("analytics.sessionTimeline")}
           </h3>
 
           <div className="space-y-3">
@@ -973,7 +1007,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     COLORS.ui.text.secondary
                   )}
                 >
-                  {t('analytics.startTime')}
+                  {t("analytics.startTime")}
                 </div>
                 <div className={cn("text-xs", COLORS.ui.text.muted)}>
                   {formatTime(sessionStats.first_message_time)}
@@ -986,10 +1020,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     COLORS.ui.text.secondary
                   )}
                 >
-                  {t('analytics.duration')}
+                  {t("analytics.duration")}
                 </div>
                 <div className={cn("text-xs", COLORS.ui.text.muted)}>
-                  {durationMinutes}분
+                  {durationMinutes}{t("analytics.minutesUnit")}
                 </div>
               </div>
               <div className="text-right">
@@ -999,7 +1033,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     COLORS.ui.text.secondary
                   )}
                 >
-                  {t('analytics.endTime')}
+                  {t("analytics.endTime")}
                 </div>
                 <div className={cn("text-xs", COLORS.ui.text.muted)}>
                   {formatTime(sessionStats.last_message_time)}
@@ -1014,7 +1048,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                   COLORS.ui.text.tertiary
                 )}
               >
-                Session ID: {sessionStats.session_id.substring(0, 16)}...
+                {t("analytics.sessionIdLabel")} {sessionStats.session_id.substring(0, 16)}...
               </code>
             </div>
           </div>
@@ -1049,7 +1083,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <span
                 className={cn("text-xs font-medium", COLORS.ui.text.tertiary)}
               >
-                {t('analytics.totalTokens')}
+                {t("analytics.totalTokens")}
               </span>
             </div>
             <div className={cn("text-xl font-bold", COLORS.ui.text.primary)}>
@@ -1065,11 +1099,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <span
                 className={cn("text-xs font-medium", COLORS.ui.text.tertiary)}
               >
-                {t('analytics.totalSessions')}
+                {t("analytics.totalSessions")}
               </span>
             </div>
             <div className={cn("text-xl font-bold", COLORS.ui.text.primary)}>
-              {projectSummary.total_sessions}개
+              {projectSummary.total_sessions}{t("analytics.sessionsUnit")}
             </div>
           </div>
 
@@ -1086,7 +1120,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                       COLORS.ui.text.tertiary
                     )}
                   >
-                    {t('analytics.sessionRank')}
+                    {t("analytics.sessionRank")}
                   </span>
                 </div>
                 <div
@@ -1107,7 +1141,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                       COLORS.ui.text.tertiary
                     )}
                   >
-                    {t('analytics.projectShare')}
+                    {t("analytics.projectShare")}
                   </span>
                 </div>
                 <div
@@ -1132,7 +1166,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                       COLORS.ui.text.tertiary
                     )}
                   >
-                    {t('analytics.avgSession')}
+                    {t("analytics.avgSession")}
                   </span>
                 </div>
                 <div
@@ -1153,13 +1187,14 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                       COLORS.ui.text.tertiary
                     )}
                   >
-                    {t('analytics.activeTime')}
+                    {t("analytics.activeTime")}
                   </span>
                 </div>
                 <div
                   className={cn("text-xl font-bold", COLORS.ui.text.primary)}
                 >
-                  {projectSummary.most_active_hour}{t('analytics.hourSuffix')}
+                  {projectSummary.most_active_hour}
+                  {t("analytics.hourSuffix")}
                 </div>
               </div>
             </>
@@ -1189,7 +1224,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             )}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>{t('analytics.projectOverview')}</span>
+            <span>{t("analytics.projectOverview")}</span>
           </button>
 
           {hasSessionData && (
@@ -1204,7 +1239,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               )}
             >
               <Target className="w-4 h-4" />
-              <span>{t('analytics.sessionDetails')}</span>
+              <span>{t("analytics.sessionDetails")}</span>
             </button>
           )}
         </div>
@@ -1244,10 +1279,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <h2
             className={cn("text-xl font-semibold mb-2", COLORS.ui.text.primary)}
           >
-            {t('analytics.Analytics Dashboard')}
+            {t("analytics.Analytics Dashboard")}
           </h2>
           <p className={cn("text-sm", COLORS.ui.text.tertiary)}>
-            {t('analytics.Select a project to view analytics')}
+            {t("analytics.Select a project to view analytics")}
           </p>
         </div>
       </div>
@@ -1257,12 +1292,15 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   return (
     <div className="flex-1 p-6 overflow-auto">
       <div className="mb-6">
-        <h2 className={cn("text-2xl font-bold mb-2", COLORS.ui.text.primary)}>
-          📊 Analytics Dashboard
-        </h2>
+        <div className="flex items-center space-x-2 mb-4">
+          <CircuitBoard className={cn("w-6 h-6", COLORS.semantic.info.icon)} />
+          <h2 className={cn("text-xl font-semibold", COLORS.ui.text.primary)}>
+            {t("analytics.dashboard")}
+          </h2>
+        </div>
         <p className={cn(COLORS.ui.text.tertiary)}>
           {selectedProject}
-          {selectedSession && ` • ${t('analytics.Session Analysis')}`}
+          {selectedSession && ` • ${t("analytics.Session Analysis")}`}
         </p>
       </div>
 
