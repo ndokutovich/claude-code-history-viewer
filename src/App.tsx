@@ -5,6 +5,7 @@ import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { FolderSelector } from "./components/FolderSelector";
 import { UpdateManager } from "./components/UpdateManager";
+import { FeedbackModal } from "./components/FeedbackModal";
 import { useGitHubUpdater } from "./hooks/useGitHubUpdater";
 import { useAppStore } from "./store/useAppStore";
 import { useTheme } from "./hooks/useTheme";
@@ -51,6 +52,7 @@ import { TooltipButton } from "./shared/TooltipButton";
 function App() {
   const [showTokenStats, setShowTokenStats] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showFolderSelector, setShowFolderSelector] = useState(false);
   const [projectSummary, setProjectSummary] =
     useState<ProjectStatsSummary | null>(null);
@@ -498,6 +500,13 @@ function App() {
                     <span>{t("settings.changeFolder")}</span>
                   </DropdownMenuItem>
 
+                  <DropdownMenuItem onClick={() => setShowFeedbackModal(true)}>
+                    <MessageSquare
+                      className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                    />
+                    <span>피드백 보내기</span>
+                  </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
 
                   <DropdownMenuLabel>
@@ -760,6 +769,12 @@ function App() {
 
       {/* Native Update Manager */}
       <UpdateManager />
+      
+      {/* Feedback Modal */}
+      <FeedbackModal 
+        isOpen={showFeedbackModal} 
+        onClose={() => setShowFeedbackModal(false)} 
+      />
     </div>
   );
 }
