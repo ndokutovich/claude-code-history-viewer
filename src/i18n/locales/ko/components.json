@@ -556,7 +556,7 @@
   "updateModal": {
     "updateAvailable": "버전 {{version}} 업데이트",
     "currentToNew": "현재 버전: {{current}} → {{latest}}",
-    "newVersionAvailable": "새로운 버전이 available합니다.",
+    "newVersionAvailable": "새로운 버전이 있습니다.",
     "updateDeadline": "업데이트 마감일: {{days}}일 남음",
     "majorChanges": "주요 변경사항:",
     "skipThisVersion": "이 버전 건너뛰기",
