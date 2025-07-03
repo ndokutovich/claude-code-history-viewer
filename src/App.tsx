@@ -34,7 +34,7 @@ import {
   Languages,
 } from "lucide-react";
 import { useLanguageStore } from "./store/useLanguageStore";
-import { type SupportedLanguage } from "./i18n";
+import { type SupportedLanguage, supportedLanguages } from "./i18n";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,14 +88,14 @@ function App() {
 
   const { theme, setTheme } = useTheme();
   const updateChecker = useUpdateChecker();
-  const { t, i18n: i18nInstance } = useTranslation('common');
-  const { t: tComponents } = useTranslation('components');
-  const { t: tMessages } = useTranslation('messages');
+  const { t, i18n: i18nInstance } = useTranslation("common");
+  const { t: tComponents } = useTranslation("components");
+  const { t: tMessages } = useTranslation("messages");
   const { language, setLanguage, loadLanguage } = useLanguageStore();
 
   // 디버깅: 언어 상태 확인
-  console.log("Language in store:", language);
-  console.log("Language in i18n:", i18nInstance.language);
+  // console.log("Language in store:", language);
+  // console.log("Language in i18n:", i18nInstance.language);
 
   // 세션 선택 시 토큰 통계 화면에서 채팅 화면으로 자동 전환
   const handleSessionSelect = async (session: ClaudeSession) => {
@@ -491,9 +491,7 @@ function App() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    {t("settings.title")}
-                  </DropdownMenuLabel>
+                  <DropdownMenuLabel>{t("settings.title")}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem onClick={() => setShowFolderSelector(true)}>
@@ -539,38 +537,18 @@ function App() {
                   </DropdownMenuLabel>
                   <DropdownMenuRadioGroup
                     value={language}
-                    onValueChange={(value) => setLanguage(value as SupportedLanguage)}
+                    onValueChange={(value) =>
+                      setLanguage(value as SupportedLanguage)
+                    }
                   >
-                    <DropdownMenuRadioItem value="en">
-                      <Languages
-                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
-                      />
-                      <span>English</span>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="ko">
-                      <Languages
-                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
-                      />
-                      <span>한국어</span>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="ja">
-                      <Languages
-                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
-                      />
-                      <span>日本語</span>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="zh-CN">
-                      <Languages
-                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
-                      />
-                      <span>简体中文</span>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="zh-TW">
-                      <Languages
-                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
-                      />
-                      <span>繁體中文</span>
-                    </DropdownMenuRadioItem>
+                    {Object.entries(supportedLanguages).map(([code, name]) => (
+                      <DropdownMenuRadioItem key={code} value={code}>
+                        <Languages
+                          className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                        />
+                        <span>{name}</span>
+                      </DropdownMenuRadioItem>
+                    ))}
                   </DropdownMenuRadioGroup>
 
                   <DropdownMenuSeparator />
@@ -646,14 +624,14 @@ function App() {
                   )}
                   {showTokenStats && (
                     <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
-                      프로젝트별 토큰 사용량 분석 및 세션별 상세 통계
+                      {tComponents("analytics.tokenUsageDetailed")}
                     </p>
                   )}
                   {showAnalytics && (
                     <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
                       {selectedSession
-                        ? "프로젝트 및 세션 상세 분석"
-                        : "프로젝트 전체 통계 및 활동 분석"}
+                        ? tComponents("analytics.projectSessionAnalysis")
+                        : tComponents("analytics.projectOverallAnalysis")}
                     </p>
                   )}
                 </div>
@@ -677,6 +655,7 @@ function App() {
             ) : showTokenStats ? (
               <div className="h-full overflow-y-auto p-6 space-y-8">
                 <TokenStatsViewer
+                  title={tMessages("tokenStats.title")}
                   sessionStats={sessionTokenStats}
                   projectStats={projectTokenStats}
                 />
@@ -698,10 +677,11 @@ function App() {
                       COLORS.ui.text.disabledDark
                     )}
                   />
-                  <p className="text-lg mb-2">세션을 선택해주세요</p>
+                  <p className="text-lg mb-2">
+                    {tComponents("session.select")}
+                  </p>
                   <p className="text-sm">
-                    좌측에서 프로젝트와 세션을 선택하면 대화 내용을 볼 수
-                    있습니다
+                    {tComponents("session.selectDescription")}
                   </p>
                 </div>
               </div>
@@ -725,24 +705,32 @@ function App() {
           )}
         >
           <div className="flex items-center space-x-4">
-            <span>프로젝트: {projects.length}개</span>
-            <span>세션: {sessions.length}개</span>
+            <span>
+              {tComponents("project.count", { count: projects.length })}
+            </span>
+            <span>
+              {tComponents("session.count", { count: sessions.length })}
+            </span>
             {selectedSession && !showTokenStats && !showAnalytics && (
               <span>
-                메시지: {messages.length}개
-                {pagination.totalCount > messages.length &&
-                  ` / ${pagination.totalCount}개`}
+                {tComponents("message.countWithTotal", {
+                  current: messages.length,
+                  total: pagination.totalCount || messages.length,
+                })}
               </span>
             )}
             {showTokenStats && sessionTokenStats && (
               <span>
-                현재 세션 토큰:{" "}
-                {sessionTokenStats.total_tokens.toLocaleString()}개
+                {tComponents("analytics.currentSessionTokens", {
+                  count: sessionTokenStats.total_tokens,
+                })}
               </span>
             )}
             {showAnalytics && projectSummary && (
               <span>
-                프로젝트 토큰: {projectSummary.total_tokens.toLocaleString()}개
+                {tComponents("analytics.projectTokens", {
+                  count: projectSummary.total_tokens,
+                })}
               </span>
             )}
           </div>
@@ -756,11 +744,11 @@ function App() {
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>
-                  {isLoadingTokenStats && "토큰 통계 로딩 중..."}
-                  {isLoadingProjects && "프로젝트 스캔 중..."}
-                  {isLoadingSessions && "세션 로딩 중..."}
-                  {isLoadingMessages && "메시지 로딩 중..."}
-                  {isLoading && "앱 초기화 중..."}
+                  {isLoadingTokenStats && tComponents("status.loadingStats")}
+                  {isLoadingProjects && tComponents("status.scanning")}
+                  {isLoadingSessions && tComponents("status.loadingSessions")}
+                  {isLoadingMessages && tComponents("status.loadingMessages")}
+                  {isLoading && tComponents("status.initializing")}
                 </span>
               </>
             )}

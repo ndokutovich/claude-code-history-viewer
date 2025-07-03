@@ -41,8 +41,8 @@ interface AppStore extends AppState {
   setClaudePath: (path: string) => void;
   loadSessionTokenStats: (sessionPath: string) => Promise<void>;
   loadProjectTokenStats: (projectPath: string) => Promise<void>;
-  loadProjectStatsSummary: (projectPath: string) => Promise<any>;
-  loadSessionComparison: (sessionId: string, projectPath: string) => Promise<any>;
+  loadProjectStatsSummary: (projectPath: string) => Promise<ProjectStatsSummary>;
+  loadSessionComparison: (sessionId: string, projectPath: string) => Promise<SessionComparison>;
   clearTokenStats: () => void;
   setTheme: (theme: Theme) => Promise<void>;
   setExcludeSidechain: (exclude: boolean) => void;

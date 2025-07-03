@@ -161,15 +161,15 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
           {/* Legend */}
           <div className="flex items-center gap-4 mt-4 ml-10">
-            <span className={cn("text-xs", COLORS.ui.text.muted)}>Less</span>
+            <span className={cn("text-xs", COLORS.ui.text.muted)}>{t('analytics.legend.less')}</span>
             <div className="flex gap-1">
-              <div className="w-4 h-4 bg-gray-800 dark:bg-gray-900 rounded-sm" />
-              <div className="w-4 h-4 bg-emerald-900 rounded-sm" />
-              <div className="w-4 h-4 bg-emerald-700 rounded-sm" />
-              <div className="w-4 h-4 bg-emerald-600 rounded-sm" />
-              <div className="w-4 h-4 bg-emerald-500 rounded-sm" />
+            <div className="w-4 h-4 bg-gray-800 dark:bg-gray-900 rounded-sm" />
+            <div className="w-4 h-4 bg-emerald-900 rounded-sm" />
+            <div className="w-4 h-4 bg-emerald-700 rounded-sm" />
+            <div className="w-4 h-4 bg-emerald-600 rounded-sm" />
+            <div className="w-4 h-4 bg-emerald-500 rounded-sm" />
             </div>
-            <span className={cn("text-xs", COLORS.ui.text.muted)}>More</span>
+            <span className={cn("text-xs", COLORS.ui.text.muted)}>{t('analytics.legend.more')}</span>
           </div>
         </div>
       </div>
@@ -434,7 +434,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 COLORS.ui.text.primary
               )}
             >
-              Activity Heatmap
+              {t('analytics.activityHeatmapTitle')}
             </h3>
             {projectSummary.activity_heatmap.length > 0 ? (
               <ActivityHeatmapComponent
@@ -442,7 +442,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               />
             ) : (
               <div className={cn("text-center py-8", COLORS.ui.text.muted)}>
-                No activity data available
+                {t('analytics.No activity data available')}
               </div>
             )}
           </div>
@@ -461,13 +461,13 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 COLORS.ui.text.primary
               )}
             >
-              Most Used Tools
+              {t('analytics.mostUsedToolsTitle')}
             </h3>
             {projectSummary.most_used_tools.length > 0 ? (
               <ToolUsageChart tools={projectSummary.most_used_tools} />
             ) : (
               <div className={cn("text-center py-8", COLORS.ui.text.muted)}>
-                No tool usage data available
+                {t('analytics.No tool usage data available')}
               </div>
             )}
           </div>
@@ -489,7 +489,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               )}
             >
               <TrendingUp className="w-4 h-4" />
-              <span>최근 7일 활동 추이</span>
+              <span>{t('analytics.recentActivityTrend')}</span>
             </h3>
             <div className="space-y-4">
               {/* Enhanced bar chart */}
@@ -584,7 +584,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                       : "0"}
                   </div>
                   <div className={cn("text-xs", COLORS.ui.text.muted)}>
-                    일평균 토큰
+                    {t('analytics.dailyAvgTokens')}
                   </div>
                 </div>
                 <div className="text-center">
@@ -599,7 +599,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     )}
                   </div>
                   <div className={cn("text-xs", COLORS.ui.text.muted)}>
-                    일평균 메시지
+                    {t('analytics.dailyAvgMessages')}
                   </div>
                 </div>
                 <div className="text-center">
@@ -612,7 +612,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     }
                   </div>
                   <div className={cn("text-xs", COLORS.ui.text.muted)}>
-                    주간 활동일
+                    {t('analytics.weeklyActiveDays')}
                   </div>
                 </div>
               </div>
@@ -621,15 +621,15 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <div className="flex items-center justify-center space-x-4 text-xs">
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-gradient-to-t from-emerald-600 to-emerald-400 rounded" />
-                  <span className={cn(COLORS.ui.text.muted)}>오늘</span>
+                  <span className={cn(COLORS.ui.text.muted)}>{t('analytics.today')}</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-gradient-to-t from-blue-600 to-blue-400 rounded" />
-                  <span className={cn(COLORS.ui.text.muted)}>높은 활동</span>
+                  <span className={cn(COLORS.ui.text.muted)}>{t('analytics.highActivity')}</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-gradient-to-t from-purple-600 to-purple-400 rounded" />
-                  <span className={cn(COLORS.ui.text.muted)}>주말</span>
+                  <span className={cn(COLORS.ui.text.muted)}>{t('analytics.weekend')}</span>
                 </div>
               </div>
             </div>
@@ -647,7 +647,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <h3
             className={cn("text-lg font-semibold mb-4", COLORS.ui.text.primary)}
           >
-            토큰 유형별 분포
+            {t('analytics.tokenTypeDistribution')}
           </h3>
           <div className="space-y-4">
             {/* Token type bars */}
@@ -718,7 +718,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 {formatNumber(projectSummary.total_tokens)}
               </div>
               <div className={cn("text-sm", COLORS.ui.text.muted)}>
-                총 토큰 사용량
+                {t('analytics.totalTokenUsage')}
               </div>
             </div>
           </div>
@@ -767,7 +767,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                   : "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
               )}
             >
-              {sessionComparison.is_above_average ? "평균 이상" : "평균 이하"}
+              {sessionComparison.is_above_average ? t('analytics.aboveAverage') : t('analytics.belowAverage')}
             </div>
           </div>
 
@@ -782,16 +782,14 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 #{sessionComparison.rank_by_tokens}
               </div>
               <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-                토큰 순위
+                {t('analytics.tokenRank')}
               </div>
               <div className={cn("text-xs mt-1", COLORS.ui.text.muted)}>
-                상위{" "}
-                {(
+                {t('analytics.topPercent', { percent: (
                   (sessionComparison.rank_by_tokens /
                     (projectSummary?.total_sessions || 1)) *
                   100
-                ).toFixed(0)}
-                %
+                ).toFixed(0) })}
               </div>
             </div>
 
@@ -805,10 +803,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 {sessionComparison.percentage_of_project_tokens.toFixed(1)}%
               </div>
               <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-                프로젝트 비중
+                {t('analytics.projectShare')}
               </div>
               <div className={cn("text-xs mt-1", COLORS.ui.text.muted)}>
-                총 {formatNumber(sessionStats.total_tokens)} 토큰
+                총 {formatNumber(sessionStats.total_tokens)} {t('analytics.tokens')}
               </div>
             </div>
 
@@ -822,10 +820,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                 {avgTokensPerMessage.toLocaleString()}
               </div>
               <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-                메시지당 토큰
+                {t('analytics.tokensPerMessage')}
               </div>
               <div className={cn("text-xs mt-1", COLORS.ui.text.muted)}>
-                총 {sessionStats.message_count}개 메시지
+                {t('analytics.totalMessagesCount', { count: sessionStats.message_count })}
               </div>
             </div>
 
@@ -836,13 +834,13 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                   COLORS.ui.text.primary
                 )}
               >
-                {durationMinutes}분
+                {t('analytics.durationMinutes', { minutes: durationMinutes })}
               </div>
               <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-                세션 시간
+                {t('analytics.sessionTime')}
               </div>
               <div className={cn("text-xs mt-1", COLORS.ui.text.muted)}>
-                #{sessionComparison.rank_by_duration} 순위
+                {t('analytics.rank', { rank: sessionComparison.rank_by_duration })}
               </div>
             </div>
           </div>
@@ -859,7 +857,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <h3
             className={cn("text-lg font-semibold mb-4", COLORS.ui.text.primary)}
           >
-            💾 토큰 사용 분석
+            {t('analytics.tokenAnalysis')}
           </h3>
 
           <div className="space-y-4">
@@ -963,7 +961,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <h3
             className={cn("text-lg font-semibold mb-4", COLORS.ui.text.primary)}
           >
-            ⏱️ 세션 타임라인
+            {t('analytics.sessionTimeline')}
           </h3>
 
           <div className="space-y-3">
@@ -975,7 +973,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     COLORS.ui.text.secondary
                   )}
                 >
-                  시작 시간
+                  {t('analytics.startTime')}
                 </div>
                 <div className={cn("text-xs", COLORS.ui.text.muted)}>
                   {formatTime(sessionStats.first_message_time)}
@@ -988,7 +986,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     COLORS.ui.text.secondary
                   )}
                 >
-                  지속 시간
+                  {t('analytics.duration')}
                 </div>
                 <div className={cn("text-xs", COLORS.ui.text.muted)}>
                   {durationMinutes}분
@@ -1001,7 +999,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     COLORS.ui.text.secondary
                   )}
                 >
-                  종료 시간
+                  {t('analytics.endTime')}
                 </div>
                 <div className={cn("text-xs", COLORS.ui.text.muted)}>
                   {formatTime(sessionStats.last_message_time)}
@@ -1051,7 +1049,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <span
                 className={cn("text-xs font-medium", COLORS.ui.text.tertiary)}
               >
-                총 토큰
+                {t('analytics.totalTokens')}
               </span>
             </div>
             <div className={cn("text-xl font-bold", COLORS.ui.text.primary)}>
@@ -1067,7 +1065,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <span
                 className={cn("text-xs font-medium", COLORS.ui.text.tertiary)}
               >
-                총 세션
+                {t('analytics.totalSessions')}
               </span>
             </div>
             <div className={cn("text-xl font-bold", COLORS.ui.text.primary)}>
@@ -1088,7 +1086,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                       COLORS.ui.text.tertiary
                     )}
                   >
-                    세션 순위
+                    {t('analytics.sessionRank')}
                   </span>
                 </div>
                 <div
@@ -1109,7 +1107,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                       COLORS.ui.text.tertiary
                     )}
                   >
-                    프로젝트 비중
+                    {t('analytics.projectShare')}
                   </span>
                 </div>
                 <div
@@ -1134,7 +1132,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                       COLORS.ui.text.tertiary
                     )}
                   >
-                    평균 세션
+                    {t('analytics.avgSession')}
                   </span>
                 </div>
                 <div
@@ -1155,13 +1153,13 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                       COLORS.ui.text.tertiary
                     )}
                   >
-                    활발한 시간
+                    {t('analytics.activeTime')}
                   </span>
                 </div>
                 <div
                   className={cn("text-xl font-bold", COLORS.ui.text.primary)}
                 >
-                  {projectSummary.most_active_hour}시
+                  {projectSummary.most_active_hour}{t('analytics.hourSuffix')}
                 </div>
               </div>
             </>
@@ -1191,7 +1189,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             )}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>프로젝트 개요</span>
+            <span>{t('analytics.projectOverview')}</span>
           </button>
 
           {hasSessionData && (
@@ -1206,7 +1204,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               )}
             >
               <Target className="w-4 h-4" />
-              <span>세션 상세</span>
+              <span>{t('analytics.sessionDetails')}</span>
             </button>
           )}
         </div>
@@ -1246,10 +1244,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <h2
             className={cn("text-xl font-semibold mb-2", COLORS.ui.text.primary)}
           >
-            Analytics Dashboard
+            {t('analytics.Analytics Dashboard')}
           </h2>
           <p className={cn("text-sm", COLORS.ui.text.tertiary)}>
-            Select a project to view analytics
+            {t('analytics.Select a project to view analytics')}
           </p>
         </div>
       </div>
@@ -1264,7 +1262,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         </h2>
         <p className={cn(COLORS.ui.text.tertiary)}>
           {selectedProject}
-          {selectedSession && " • Session Analysis"}
+          {selectedSession && ` • ${t('analytics.Session Analysis')}`}
         </p>
       </div>
 

@@ -32,6 +32,16 @@ export const supportedLanguages = {
 
 export type SupportedLanguage = keyof typeof supportedLanguages;
 
+export const languageLocaleMap: Record<string, string> = {
+  en: 'en-US',
+  ko: 'ko-KR',
+  ja: 'ja-JP',
+  'zh-CN': 'zh-CN',
+  'zh-TW': 'zh-TW',
+  'zh-HK': 'zh-HK',
+  'zh-MO': 'zh-MO',
+};
+
 const resources = {
   en: {
     common: enCommon,
@@ -68,14 +78,14 @@ i18n
     fallbackLng: 'en',
     defaultNS: 'common',
     ns: ['common', 'components', 'messages'],
-    
+
     interpolation: {
       escapeValue: false,
     },
-    
+
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
-      caches: ['localStorage'],  // localStorage에 저장
+      caches: ['localStorage'], // localStorage에 저장
     },
   });
 
