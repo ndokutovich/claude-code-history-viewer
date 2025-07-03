@@ -6,6 +6,7 @@ import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { FolderSelector } from "./components/FolderSelector";
 import { UpdateManager } from "./components/UpdateManager";
 import { FeedbackModal } from "./components/FeedbackModal";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useGitHubUpdater } from "./hooks/useGitHubUpdater";
 import { useAppStore } from "./store/useAppStore";
 import { useTheme } from "./hooks/useTheme";
@@ -770,13 +771,17 @@ function App() {
       </div>
 
       {/* Native Update Manager */}
-      <UpdateManager />
+      <ErrorBoundary>
+        <UpdateManager />
+      </ErrorBoundary>
 
       {/* Feedback Modal */}
-      <FeedbackModal
-        isOpen={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
-      />
+      <ErrorBoundary>
+        <FeedbackModal
+          isOpen={showFeedbackModal}
+          onClose={() => setShowFeedbackModal(false)}
+        />
+      </ErrorBoundary>
     </div>
   );
 }
