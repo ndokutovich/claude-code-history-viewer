@@ -124,9 +124,15 @@ function App() {
 
   useEffect(() => {
     // 언어 설정 로드 후 앱 초기화
-    loadLanguage().then(() => {
-      initializeApp();
-    });
+    loadLanguage()
+      .then(() => {
+        initializeApp();
+      })
+      .catch((error) => {
+        console.error("Failed to load language:", error);
+        // 기본 언어로 앱 초기화 진행
+        initializeApp();
+      });
   }, [initializeApp, loadLanguage]);
 
   // i18n 언어 변경 감지
