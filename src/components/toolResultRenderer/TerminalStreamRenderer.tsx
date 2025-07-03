@@ -1,6 +1,7 @@
 "use client";
 
 import { Terminal } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   command: string;
@@ -17,12 +18,13 @@ export const TerminalStreamRenderer = ({
   timestamp,
   exitCode,
 }: Props) => {
+  const { t } = useTranslation('components');
   return (
     <div className="mt-2 p-3 bg-gray-900 rounded-lg">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center space-x-2">
           <Terminal className="w-4 h-4 text-green-400" />
-          <span className="font-medium text-green-400">터미널</span>
+          <span className="font-medium text-green-400">{t('terminalStreamRenderer.title')}</span>
           {command && (
             <code className="text-xs bg-gray-800 px-2 py-1 rounded text-green-300">
               {String(command)}
@@ -56,7 +58,7 @@ export const TerminalStreamRenderer = ({
                   : "bg-red-800 text-red-200"
               }`}
             >
-              exit: {String(exitCode)}
+              {t('terminalStreamRenderer.exitCode')}: {String(exitCode)}
             </span>
           )}
         </div>

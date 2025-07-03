@@ -171,15 +171,7 @@
     "No tool usage data available": "도구 사용 데이터가 없습니다",
     "Less": "적음",
     "More": "많음",
-    "weekdayNames": [
-      "일",
-      "월",
-      "화",
-      "수",
-      "목",
-      "금",
-      "토"
-    ],
+    "weekdayNames": ["일", "월", "화", "수", "목", "금", "토"],
     "min": "분",
     "rank": "{{rank}} 순위",
     "totalTokensUsage": "총 토큰 사용량",
@@ -410,7 +402,8 @@
     "arguments": "인수:",
     "status": "상태:",
     "errorOutput": "에러 출력",
-    "executionResult": "실행 결과"
+    "executionResult": "실행 결과",
+    "unknownContentType": "알 수 없는 콘텐츠 타입"
   },
   "toolUseRenderer": {
     "fileCreation": "파일 작성",
@@ -470,10 +463,73 @@
     "changedFiles": "변경된 파일 ({{count}}개)",
     "viewDiff": "Diff 보기"
   },
+  "assistantMessageDetails": {
+    "model": "모델",
+    "tokenUsage": "토큰 사용량:",
+    "input": "입력",
+    "output": "출력",
+    "cacheCreation": "캐시 생성",
+    "cacheRead": "캐시 읽기",
+    "tier": "티어"
+  },
+  "claudeSessionHistoryRenderer": {
+    "title": "채팅 기록",
+    "noValidMessages": "유효한 채팅 메시지가 없습니다.",
+    "messageCount": "채팅 기록 ({{count}}개 메시지)",
+    "user": "사용자",
+    "claude": "Claude",
+    "noContent": "내용 없음",
+    "tokenUsage": "토큰",
+    "model": "모델",
+    "parsingError": "채팅 기록 파싱 오류",
+    "parsingErrorDescription": "채팅 데이터를 파싱하는 중 오류가 발생했습니다.",
+    "viewOriginalData": "원본 데이터 보기"
+  },
+  "terminalStreamRenderer": {
+    "title": "터미널",
+    "exitCode": "종료 코드"
+  },
+  "webSearchRenderer": {
+    "title": "웹 검색 결과",
+    "query": "검색 쿼리:",
+    "duration": "검색 소요 시간",
+    "seconds": "초",
+    "results": "검색 결과 ({{count}}개):",
+    "unknownResultFormat": "알 수 없는 결과 형식"
+  },
+  "thinkingRenderer": {
+    "title": "Claude의 사고 과정"
+  },
+  "copyButton": {
+    "copy": "복사",
+    "copying": "복사 중...",
+    "copied": "복사됨",
+    "error": "실패"
+  },
   "imageRenderer": {
     "image": "이미지",
     "cannotLoadImage": "이미지를 로드할 수 없습니다",
     "viewFullscreen": "전체 화면으로 보기",
     "downloadImage": "이미지 다운로드"
+  },
+  "upToDateNotification": {
+    "upToDate": "최신 버전입니다",
+    "currentVersionLatest": "현재 버전 {{version}}이 최신 버전입니다."
+  },
+  "updateModal": {
+    "updateAvailable": "버전 {{version}} 업데이트",
+    "currentToNew": "현재 버전: {{current}} → {{latest}}",
+    "newVersionAvailable": "새로운 버전이 available합니다.",
+    "updateDeadline": "업데이트 마감일: {{days}}일 남음",
+    "majorChanges": "주요 변경사항:",
+    "skipThisVersion": "이 버전 건너뛰기",
+    "postpone": "나중에 (7일)",
+    "updateNow": "지금 업데이트",
+    "downloadUpdate": "업데이트 다운로드",
+    "downloading": "다운로드 중",
+    "installing": "설치 중",
+    "readyToInstall": "설치 준비 완료",
+    "viewOnGitHub": "GitHub에서 보기",
+    "downloadProgress": "{{progress}}% 완료"
   }
 }

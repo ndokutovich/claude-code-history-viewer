@@ -163,7 +163,7 @@ export function NativeUpdateModal({
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1 text-center">
-                    {state.downloadProgress}% 완료
+                    {t("updateModal.downloadProgress", { progress: state.downloadProgress })}
                   </p>
                 </div>
               )}

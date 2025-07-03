@@ -23,7 +23,7 @@ interface OutputTag {
 
 export const CommandRenderer = ({ text }: Props) => {
   const { t } = useTranslation("components");
-  
+
   // Command 그룹 (name, message, args) 추출
   const commandNameRegex = /<command-name>\s*(.*?)\s*<\/command-name>/gs;
   const commandMessageRegex =
@@ -166,7 +166,9 @@ export const CommandRenderer = ({ text }: Props) => {
         const contentBg = isError ? "bg-red-100" : "bg-green-100";
         const contentText = isError ? "text-red-700" : "text-green-700";
         const Icon = isError ? AlertCircle : CheckCircle;
-        const label = isError ? t("commandRenderer.errorOutput") : t("commandRenderer.executionResult");
+        const label = isError
+          ? t("commandRenderer.errorOutput")
+          : t("commandRenderer.executionResult");
 
         return (
           <div

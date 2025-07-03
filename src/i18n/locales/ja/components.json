@@ -454,10 +454,76 @@
     "changedFiles": "変更されたファイル ({{count}}ファイル)",
     "viewDiff": "Diff表示"
   },
+  "assistantMessageDetails": {
+    "model": "モデル",
+    "tokenUsage": "トークン使用量:",
+    "input": "入力",
+    "output": "出力",
+    "cacheCreation": "キャッシュ作成",
+    "cacheRead": "キャッシュ読み取り",
+    "tier": "ティア"
+  },
+  "claudeSessionHistoryRenderer": {
+    "title": "チャット履歴",
+    "noValidMessages": "有効なチャットメッセージが見つかりません。",
+    "messageCount": "チャット履歴 ({{count}}メッセージ)",
+    "user": "ユーザー",
+    "claude": "Claude",
+    "noContent": "内容なし",
+    "tokenUsage": "トークン",
+    "model": "モデル",
+    "parsingError": "チャット履歴の解析エラー",
+    "parsingErrorDescription": "チャットデータの解析中にエラーが発生しました。",
+    "viewOriginalData": "元のデータを表示"
+  },
+  "terminalStreamRenderer": {
+    "title": "ターミナル",
+    "exitCode": "終了コード"
+  },
+  "webSearchRenderer": {
+    "title": "ウェブ検索結果",
+    "query": "検索クエリ:",
+    "duration": "検索所要時間",
+    "seconds": "秒",
+    "results": "検索結果 ({{count}}件):",
+    "unknownResultFormat": "不明な結果フォーマット"
+  },
+  "thinkingRenderer": {
+    "title": "Claudeの思考プロセス"
+  },
+  "commandRenderer": {
+    "unknownContentType": "不明なコンテンツタイプ"
+  },
+  "copyButton": {
+    "copy": "コピー",
+    "copying": "コピー中...",
+    "copied": "コピー済み",
+    "error": "エラー"
+  },
   "imageRenderer": {
     "image": "画像",
     "cannotLoadImage": "画像を読み込めません",
-    "viewFullscreen": "フルスクリーンで表示",
+    "viewFullscreen": "全画面表示",
     "downloadImage": "画像をダウンロード"
+  },
+  "upToDateNotification": {
+    "upToDate": "最新版です",
+    "currentVersionLatest": "現在のバージョン {{version}} は最新版です。"
+  },
+  "updateModal": {
+    "updateAvailable": "バージョン {{version}} アップデート",
+    "currentToNew": "現在のバージョン: {{current}} → {{latest}}",
+    "newVersionAvailable": "新しいバージョンが利用可能です。",
+    "updateDeadline": "アップデート期限: 残り {{days}} 日",
+    "majorChanges": "主要な変更点:",
+    "skipThisVersion": "このバージョンをスキップ",
+    "postpone": "後で (7日)",
+    "updateNow": "今すぐアップデート",
+    "downloadUpdate": "アップデートをダウンロード",
+    "downloading": "ダウンロード中",
+    "installing": "インストール中",
+    "readyToInstall": "インストール準備完了",
+    "viewOnGitHub": "GitHubで見る",
+    "downloadProgress": "{{progress}}% 完了"
   }
 }

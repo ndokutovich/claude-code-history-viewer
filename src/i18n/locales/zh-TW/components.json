@@ -469,10 +469,76 @@
     "changedFiles": "已變更檔案 ({{count}}個檔案)",
     "viewDiff": "查看Diff"
   },
+  "assistantMessageDetails": {
+    "model": "模型",
+    "tokenUsage": "權杖使用情況:",
+    "input": "輸入",
+    "output": "輸出",
+    "cacheCreation": "快取建立",
+    "cacheRead": "快取讀取",
+    "tier": "層級"
+  },
+  "claudeSessionHistoryRenderer": {
+    "title": "聊天記錄",
+    "noValidMessages": "未找到有效的聊天訊息。",
+    "messageCount": "聊天記錄 ({{count}}則訊息)",
+    "user": "使用者",
+    "claude": "Claude",
+    "noContent": "無內容",
+    "tokenUsage": "權杖",
+    "model": "模型",
+    "parsingError": "解析聊天記錄時出錯",
+    "parsingErrorDescription": "解析聊天資料時發生錯誤。",
+    "viewOriginalData": "檢視原始資料"
+  },
+  "terminalStreamRenderer": {
+    "title": "終端機",
+    "exitCode": "結束代碼"
+  },
+  "webSearchRenderer": {
+    "title": "網頁搜尋結果",
+    "query": "搜尋查詢:",
+    "duration": "搜尋持續時間",
+    "seconds": "秒",
+    "results": "搜尋結果 ({{count}}則):",
+    "unknownResultFormat": "未知結果格式"
+  },
+  "thinkingRenderer": {
+    "title": "Claude的思考過程"
+  },
+  "commandRenderer": {
+    "unknownContentType": "未知內容類型"
+  },
+  "copyButton": {
+    "copy": "複製",
+    "copying": "複製中...",
+    "copied": "已複製",
+    "error": "錯誤"
+  },
   "imageRenderer": {
     "image": "圖像",
     "cannotLoadImage": "無法載入圖像",
     "viewFullscreen": "全螢幕檢視",
     "downloadImage": "下載圖像"
+  },
+  "upToDateNotification": {
+    "upToDate": "已是最新版本",
+    "currentVersionLatest": "目前版本 {{version}} 是最新版本。"
+  },
+  "updateModal": {
+    "updateAvailable": "版本 {{version}} 更新",
+    "currentToNew": "目前版本: {{current}} → {{latest}}",
+    "newVersionAvailable": "有新版本可用。",
+    "updateDeadline": "更新期限: 剩餘 {{days}} 天",
+    "majorChanges": "主要變更:",
+    "skipThisVersion": "跳過此版本",
+    "postpone": "稍後 (7天)",
+    "updateNow": "立即更新",
+    "downloadUpdate": "下載更新",
+    "downloading": "下載中",
+    "installing": "安裝中",
+    "readyToInstall": "準備安裝",
+    "viewOnGitHub": "在GitHub上查看",
+    "downloadProgress": "{{progress}}% 完成"
   }
 }

@@ -1,6 +1,7 @@
 import { Bot } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   text?: string;
@@ -8,6 +9,7 @@ type Props = {
 };
 
 export const ThinkingRenderer = ({ text, content }: Props) => {
+  const { t } = useTranslation('components');
   const textContent = text || content || "";
   if (!textContent) return null;
   // Extract thinking content and regular content
@@ -28,7 +30,7 @@ export const ThinkingRenderer = ({ text, content }: Props) => {
               <div className="flex items-center space-x-2 mb-2">
                 <Bot className="w-4 h-4 text-amber-600" />
                 <span className="text-xs font-medium text-amber-800">
-                  Claude의 사고 과정
+                  {t('thinkingRenderer.title')}
                 </span>
               </div>
               <div className="text-sm text-amber-700 italic">

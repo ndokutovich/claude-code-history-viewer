@@ -28,7 +28,8 @@ export function GitHubUpdateModal({
   const { t } = useTranslation("components");
   const { state, downloadAndInstall, dismissUpdate } = updater;
 
-  if (!isVisible || !state.hasUpdate || !state.updateInfo || !state.releaseInfo) return null;
+  if (!isVisible || !state.hasUpdate || !state.updateInfo || !state.releaseInfo)
+    return null;
 
   const { updateInfo, releaseInfo } = state;
   const version = updateInfo.version;
@@ -36,13 +37,14 @@ export function GitHubUpdateModal({
   const releaseTitle = releaseInfo.name || `Version ${version}`;
 
   // 우선순위 결정 (릴리즈 노트나 태그에 따라)
-  const isCritical = releaseNotes.toLowerCase().includes("critical") || 
-                     releaseNotes.toLowerCase().includes("hotfix") ||
-                     releaseNotes.toLowerCase().includes("security");
-  const isRecommended = !isCritical && (
-    releaseNotes.toLowerCase().includes("recommended") ||
-    releaseNotes.toLowerCase().includes("important")
-  );
+  const isCritical =
+    releaseNotes.toLowerCase().includes("critical") ||
+    releaseNotes.toLowerCase().includes("hotfix") ||
+    releaseNotes.toLowerCase().includes("security");
+  const isRecommended =
+    !isCritical &&
+    (releaseNotes.toLowerCase().includes("recommended") ||
+      releaseNotes.toLowerCase().includes("important"));
 
   const getModalClasses = () => {
     if (isCritical) {
@@ -95,13 +97,13 @@ export function GitHubUpdateModal({
   };
 
   const handleViewOnGitHub = () => {
-    window.open(releaseInfo.html_url, '_blank');
+    window.open(releaseInfo.html_url, "_blank");
   };
 
   const isProcessing = state.isDownloading || state.isInstalling;
-  const progressText = state.isDownloading 
+  const progressText = state.isDownloading
     ? `${t("updateModal.downloading")} ${state.downloadProgress}%`
-    : state.isInstalling 
+    : state.isInstalling
     ? t("updateModal.installing")
     : "";
 
@@ -124,13 +126,17 @@ export function GitHubUpdateModal({
           <div className="flex items-start space-x-4">
             <div className={cn("p-3 rounded-full", classes.iconBg)}>
               {isProcessing ? (
-                <Loader2 className={cn("w-6 h-6 animate-spin", classes.iconColor)} />
+                <Loader2
+                  className={cn("w-6 h-6 animate-spin", classes.iconColor)}
+                />
               ) : (
                 <Icon className={cn("w-6 h-6", classes.iconColor)} />
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className={cn("text-xl font-semibold", COLORS.ui.text.primary)}>
+              <h2
+                className={cn("text-xl font-semibold", COLORS.ui.text.primary)}
+              >
                 {releaseTitle}
               </h2>
               <div className="flex items-center space-x-2 mt-1">
@@ -146,7 +152,7 @@ export function GitHubUpdateModal({
                   )}
                 >
                   <ExternalLink className="w-3 h-3 inline mr-1" />
-                  GitHub에서 보기
+                  {t("updateModal.viewOnGitHub")}
                 </button>
               </div>
             </div>
@@ -169,15 +175,24 @@ export function GitHubUpdateModal({
         <div className="px-6 pb-2 flex-1 overflow-hidden flex flex-col">
           {state.error && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800">
-              <p className="text-sm text-red-800 dark:text-red-300">{state.error}</p>
+              <p className="text-sm text-red-800 dark:text-red-300">
+                {state.error}
+              </p>
             </div>
           )}
 
           {isProcessing ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <Loader2 className={cn("w-12 h-12 animate-spin mx-auto mb-4", classes.iconColor)} />
-                <p className={cn("text-lg font-medium", COLORS.ui.text.primary)}>
+                <Loader2
+                  className={cn(
+                    "w-12 h-12 animate-spin mx-auto mb-4",
+                    classes.iconColor
+                  )}
+                />
+                <p
+                  className={cn("text-lg font-medium", COLORS.ui.text.primary)}
+                >
                   {progressText}
                 </p>
                 {state.isDownloading && (
@@ -189,7 +204,9 @@ export function GitHubUpdateModal({
                       />
                     </div>
                     <p className="text-xs text-gray-500 mt-1 text-center">
-                      {state.downloadProgress}% 완료
+                      {t("updateModal.downloadProgress", {
+                        progress: state.downloadProgress,
+                      })}
                     </p>
                   </div>
                 )}
@@ -197,12 +214,17 @@ export function GitHubUpdateModal({
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto">
-              <div className={cn("prose prose-sm dark:prose-invert max-w-none", COLORS.ui.text.secondary)}>
+              <div
+                className={cn(
+                  "prose prose-sm dark:prose-invert max-w-none",
+                  COLORS.ui.text.secondary
+                )}
+              >
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
                     // 링크 스타일링
-                    a: ({ node, ...props }) => (
+                    a: ({ ...props }) => (
                       <a
                         {...props}
                         className="text-blue-600 dark:text-blue-400 hover:underline"
@@ -211,7 +233,7 @@ export function GitHubUpdateModal({
                       />
                     ),
                     // 코드 블록 스타일링
-                    code: ({ node, className, ...props }) => (
+                    code: ({ className, ...props }) => (
                       <code
                         className={cn(
                           "bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm",
@@ -221,13 +243,10 @@ export function GitHubUpdateModal({
                       />
                     ),
                     // 체크박스 스타일링
-                    input: ({ node, ...props }) => {
-                      if (props.type === 'checkbox') {
+                    input: ({ ...props }) => {
+                      if (props.type === "checkbox") {
                         return (
-                          <input
-                            {...props}
-                            className="mr-2 accent-blue-600"
-                          />
+                          <input {...props} className="mr-2 accent-blue-600" />
                         );
                       }
                       return <input {...props} />;

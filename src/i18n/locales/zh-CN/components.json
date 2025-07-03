@@ -163,15 +163,7 @@
     "No tool usage data available": "没有工具使用数据",
     "Less": "较少",
     "More": "较多",
-    "weekdayNames": [
-      "日",
-      "一",
-      "二",
-      "三",
-      "四",
-      "五",
-      "六"
-    ],
+    "weekdayNames": ["日", "一", "二", "三", "四", "五", "六"],
     "min": "分钟",
     "rank": "第{{rank}}名",
     "totalTokensUsage": "总令牌使用量",
@@ -409,7 +401,8 @@
     "arguments": "参数:",
     "status": "状态:",
     "errorOutput": "错误输出",
-    "executionResult": "执行结果"
+    "executionResult": "执行结果",
+    "unknownContentType": "未知内容类型"
   },
   "toolUseRenderer": {
     "fileCreation": "文件创建",
@@ -469,10 +462,73 @@
     "changedFiles": "已更改文件 ({{count}}个文件)",
     "viewDiff": "查看Diff"
   },
+  "assistantMessageDetails": {
+    "model": "模型",
+    "tokenUsage": "令牌使用情况:",
+    "input": "输入",
+    "output": "输出",
+    "cacheCreation": "缓存创建",
+    "cacheRead": "缓存读取",
+    "tier": "层级"
+  },
+  "claudeSessionHistoryRenderer": {
+    "title": "聊天记录",
+    "noValidMessages": "未找到有效的聊天消息。",
+    "messageCount": "聊天记录 ({{count}}条消息)",
+    "user": "用户",
+    "claude": "Claude",
+    "noContent": "无内容",
+    "tokenUsage": "令牌",
+    "model": "模型",
+    "parsingError": "解析聊天记录时出错",
+    "parsingErrorDescription": "解析聊天数据时发生错误。",
+    "viewOriginalData": "查看原始数据"
+  },
+  "terminalStreamRenderer": {
+    "title": "终端",
+    "exitCode": "退出代码"
+  },
+  "webSearchRenderer": {
+    "title": "网页搜索结果",
+    "query": "搜索查询:",
+    "duration": "搜索持续时间",
+    "seconds": "秒",
+    "results": "搜索结果 ({{count}}条):",
+    "unknownResultFormat": "未知结果格式"
+  },
+  "thinkingRenderer": {
+    "title": "Claude的思考过程"
+  },
+  "copyButton": {
+    "copy": "复制",
+    "copying": "复制中...",
+    "copied": "已复制",
+    "error": "错误"
+  },
   "imageRenderer": {
     "image": "图像",
     "cannotLoadImage": "无法加载图像",
     "viewFullscreen": "全屏查看",
     "downloadImage": "下载图像"
+  },
+  "upToDateNotification": {
+    "upToDate": "已是最新版本",
+    "currentVersionLatest": "当前版本{{version}}已是最新版本。"
+  },
+  "updateModal": {
+    "updateAvailable": "版本{{version}}更新",
+    "currentToNew": "当前版本: {{current}} → {{latest}}",
+    "newVersionAvailable": "有新版本可用。",
+    "updateDeadline": "更新截止日期: 还剩{{days}}天",
+    "majorChanges": "主要更改:",
+    "skipThisVersion": "跳过这个版本",
+    "postpone": "稍后 (7天)",
+    "updateNow": "立即更新",
+    "downloadUpdate": "下载更新",
+    "downloading": "下载中",
+    "installing": "安装中",
+    "readyToInstall": "准备安装",
+    "viewOnGitHub": "在GitHub上查看",
+    "downloadProgress": "{{progress}}% 完成"
   }
 }
