@@ -7,6 +7,8 @@
   <img src="https://img.shields.io/badge/Languages-Multi--lingual-blueviolet.svg" alt="Multi-lingual UI" />
 </p>
 
+**Languages**: [English](README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) | [中文 (简体)](README.zh-CN.md) | [中文 (繁體)](README.zh-TW.md)
+
 A desktop application to browse and analyze your Claude Code conversation history stored locally in the `~/.claude` directory.
 
 > ⚠️ **Beta Notice**: This application is currently in beta. Features and APIs may change.
@@ -134,6 +136,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 If you encounter issues, please [create an issue](https://github.com/jhlee0409/claude-code-history-viewer/issues) with detailed information.
-
 
 ---
