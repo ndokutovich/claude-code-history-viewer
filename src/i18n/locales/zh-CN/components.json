@@ -468,5 +468,11 @@
     "status": "状态:",
     "changedFiles": "已更改文件 ({{count}}个文件)",
     "viewDiff": "查看Diff"
+  },
+  "imageRenderer": {
+    "image": "图像",
+    "cannotLoadImage": "无法加载图像",
+    "viewFullscreen": "全屏查看",
+    "downloadImage": "下载图像"
   }
 }

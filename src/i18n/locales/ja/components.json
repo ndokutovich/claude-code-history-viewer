@@ -453,5 +453,11 @@
     "status": "ステータス:",
     "changedFiles": "変更されたファイル ({{count}}ファイル)",
     "viewDiff": "Diff表示"
+  },
+  "imageRenderer": {
+    "image": "画像",
+    "cannotLoadImage": "画像を読み込めません",
+    "viewFullscreen": "フルスクリーンで表示",
+    "downloadImage": "画像をダウンロード"
   }
 }

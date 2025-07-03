@@ -468,5 +468,11 @@
     "status": "狀態:",
     "changedFiles": "已變更檔案 ({{count}}個檔案)",
     "viewDiff": "查看Diff"
+  },
+  "imageRenderer": {
+    "image": "圖像",
+    "cannotLoadImage": "無法載入圖像",
+    "viewFullscreen": "全螢幕檢視",
+    "downloadImage": "下載圖像"
   }
 }

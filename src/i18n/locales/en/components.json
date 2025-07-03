@@ -453,5 +453,11 @@
     "status": "Status:",
     "changedFiles": "Changed Files ({{count}} files)",
     "viewDiff": "View Diff"
+  },
+  "imageRenderer": {
+    "image": "Image",
+    "cannotLoadImage": "Cannot load image",
+    "viewFullscreen": "View fullscreen",
+    "downloadImage": "Download image"
   }
 }
