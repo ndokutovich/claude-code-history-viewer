@@ -36,11 +36,8 @@
   },
   "time": {
     "minutesAgo": "{{count}}分钟前",
-    "minutesAgo_plural": "{{count}}分钟前",
     "hoursAgo": "{{count}}小时前",
-    "hoursAgo_plural": "{{count}}小时前",
     "daysAgo": "{{count}}天前",
-    "daysAgo_plural": "{{count}}天前",
     "start": "开始：",
     "end": "结束：",
     "duration": "持续时间",

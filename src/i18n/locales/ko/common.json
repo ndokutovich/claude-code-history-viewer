@@ -36,11 +36,8 @@
   },
   "time": {
     "minutesAgo": "{{count}}분 전",
-    "minutesAgo_plural": "{{count}}분 전",
     "hoursAgo": "{{count}}시간 전",
-    "hoursAgo_plural": "{{count}}시간 전",
     "daysAgo": "{{count}}일 전",
-    "daysAgo_plural": "{{count}}일 전",
     "start": "시작:",
     "end": "종료:",
     "duration": "지속 시간",
