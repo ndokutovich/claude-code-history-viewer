@@ -90,6 +90,7 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
       await invoke("open_github_issues");
     } catch (error) {
       console.error("Failed to open GitHub:", error);
+      alert(t("feedback.openGitHubError"));
     }
   };
 

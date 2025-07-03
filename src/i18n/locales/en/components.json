@@ -533,7 +533,8 @@
       "bug": "Please describe the situation where the bug occurred and how to reproduce it in detail.",
       "feature": "Please describe the needed feature and the reason for it.",
       "default": "Please enter detailed content."
-    }
+    },
+    "openGitHubError": "Failed to open GitHub. Please try again."
   },
   "updateModal": {
     "updateAvailable": "Version {{version}} Update",

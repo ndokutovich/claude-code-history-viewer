@@ -548,7 +548,8 @@
       "bug": "请详细描述发生错误的情况和重现方法。",
       "feature": "请描述所需功能及其原因。",
       "default": "请输入详细内容。"
-    }
+    },
+    "openGitHubError": "无法打开GitHub。请重试。"
   },
   "updateModal": {
     "updateAvailable": "版本{{version}}更新",

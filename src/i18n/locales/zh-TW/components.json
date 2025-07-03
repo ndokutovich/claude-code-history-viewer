@@ -163,15 +163,7 @@
     "No tool usage data available": "沒有工具使用資料",
     "Less": "較少",
     "More": "較多",
-    "weekdayNames": [
-      "日",
-      "一",
-      "二",
-      "三",
-      "四",
-      "五",
-      "六"
-    ],
+    "weekdayNames": ["日", "一", "二", "三", "四", "五", "六"],
     "min": "分鐘",
     "rank": "第{{rank}}名",
     "totalTokensUsage": "總權杖使用量",
@@ -558,7 +550,8 @@
       "bug": "請詳細描述發生錯誤的情況和重現方法。",
       "feature": "請描述所需功能及其原因。",
       "default": "請輸入詳細內容。"
-    }
+    },
+    "openGitHubError": "無法開啟GitHub。請重試。"
   },
   "updateModal": {
     "updateAvailable": "版本 {{version}} 更新",
