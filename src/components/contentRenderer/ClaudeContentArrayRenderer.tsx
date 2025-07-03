@@ -2,6 +2,7 @@ import { ThinkingRenderer } from "./ThinkingRenderer";
 import { ToolUseRenderer } from "./ToolUseRenderer";
 import { ImageRenderer } from "./ImageRenderer";
 import { ClaudeToolResultItem } from "../toolResultRenderer";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   content: unknown[];
@@ -13,6 +14,7 @@ const isContentItem = (item: unknown): item is Record<string, unknown> => {
 };
 
 export const ClaudeContentArrayRenderer = ({ content }: Props) => {
+  const { t } = useTranslation("components");
   if (!Array.isArray(content) || content.length === 0) {
     return null;
   }
@@ -81,7 +83,10 @@ export const ClaudeContentArrayRenderer = ({ content }: Props) => {
                 className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
               >
                 <div className="text-xs font-medium text-yellow-800 mb-2">
-                  알 수 없는 콘텐츠 타입: {itemType}
+                  {t("claudeContentArrayRenderer.unknownContentType", {
+                    defaultValue: "Unknown Content Type: {contentType}",
+                    contentType: itemType,
+                  })}
                 </div>
                 <pre className="text-xs text-yellow-700 overflow-auto">
                   {JSON.stringify(item, null, 2)}

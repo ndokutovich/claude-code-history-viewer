@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AdvancedTextDiff } from "./AdvancedTextDiff";
 import { AlignLeft, Columns } from "lucide-react";
 import ReactDiffViewer from "react-diff-viewer-continued";
@@ -15,6 +16,7 @@ import "prismjs/components/prism-json";
 import "prismjs/components/prism-css";
 import "prismjs/components/prism-scss";
 import "prismjs/components/prism-bash";
+import { TooltipButton } from "../shared/TooltipButton";
 
 type Props = {
   oldText: string;
@@ -30,6 +32,7 @@ export const EnhancedDiffViewer = ({
   filePath = "",
   showAdvancedDiff = false,
 }: Props) => {
+  const { t } = useTranslation("components");
   const [viewMode, setViewMode] = useState<"visual" | "advanced">("advanced");
   const [splitView, setSplitView] = useState(true);
   const { renderCopyButton } = useCopyButton();
@@ -165,13 +168,15 @@ export const EnhancedDiffViewer = ({
   return (
     <div className="mb-3">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-xs font-medium text-gray-600">변경 내용:</div>
+        <div className="text-xs font-medium text-gray-600">
+          {t("diffViewer.changes")}
+        </div>
         <div className="flex items-center space-x-2">
           {/* 이후 코드 복사 버튼 */}
           {renderCopyButton(
             newText,
             `diff-new-${filePath || "content"}`,
-            "이후 코드 복사"
+            t("diffViewer.copyAfterCode")
           )}
 
           {showAdvancedDiff && (
@@ -184,7 +189,7 @@ export const EnhancedDiffViewer = ({
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                시각적 뷰
+                {t("diffViewer.visualView")}
               </button>
               <button
                 onClick={() => setViewMode("advanced")}
@@ -194,28 +199,32 @@ export const EnhancedDiffViewer = ({
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                고급 분석
+                {t("diffViewer.advancedAnalysis")}
               </button>
             </div>
           )}
           {viewMode === "visual" && (
-            <button
+            <TooltipButton
               onClick={() => setSplitView(!splitView)}
               className="flex items-center space-x-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-              title={splitView ? "통합 뷰로 전환" : "분할 뷰로 전환"}
+              content={
+                splitView
+                  ? t("diffViewer.switchToUnified")
+                  : t("diffViewer.switchToSplit")
+              }
             >
               {splitView ? (
                 <>
                   <AlignLeft className="w-3 h-3" />
-                  <span>통합</span>
+                  <span>{t("diffViewer.unified")}</span>
                 </>
               ) : (
                 <>
                   <Columns className="w-3 h-3" />
-                  <span>분할</span>
+                  <span>{t("diffViewer.split")}</span>
                 </>
               )}
-            </button>
+            </TooltipButton>
           )}
         </div>
       </div>
@@ -226,8 +235,8 @@ export const EnhancedDiffViewer = ({
             oldValue={oldText}
             newValue={newText}
             splitView={splitView}
-            leftTitle="이전"
-            rightTitle="이후"
+            leftTitle={t("diffViewer.before")}
+            rightTitle={t("diffViewer.after")}
             hideLineNumbers={false}
             renderContent={language !== "text" ? highlightSyntax : undefined}
             styles={{
@@ -241,7 +250,7 @@ export const EnhancedDiffViewer = ({
         <AdvancedTextDiff
           oldText={oldText}
           newText={newText}
-          title="고급 텍스트 분석"
+          title={t("diffViewer.advancedTextAnalysis")}
         />
       )}
     </div>

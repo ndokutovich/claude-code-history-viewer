@@ -1,6 +1,7 @@
 import { MessageCircle, User, Bot, Wrench, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTranslation } from "react-i18next";
 import { formatTime } from "../../utils/time";
 
 type Props = {
@@ -8,6 +9,7 @@ type Props = {
 };
 
 export const ClaudeSessionHistoryRenderer = ({ content }: Props) => {
+  const { t } = useTranslation('components');
   try {
     // Split by lines and filter out empty lines
     const lines = content.split("\n").filter((line) => line.trim());
@@ -33,10 +35,10 @@ export const ClaudeSessionHistoryRenderer = ({ content }: Props) => {
         <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
           <div className="flex items-center space-x-2 mb-2">
             <MessageCircle className="w-4 h-4" />
-            <span className="font-medium text-gray-800">채팅 기록</span>
+            <span className="font-medium text-gray-800">{t('claudeSessionHistoryRenderer.title')}</span>
           </div>
           <p className="text-gray-600 text-sm">
-            유효한 채팅 메시지가 없습니다.
+            {t('claudeSessionHistoryRenderer.noValidMessages')}
           </p>
         </div>
       );
@@ -47,7 +49,7 @@ export const ClaudeSessionHistoryRenderer = ({ content }: Props) => {
         <div className="flex items-center space-x-2 mb-3">
           <MessageCircle className="w-4 h-4" />
           <span className="font-medium text-purple-800">
-            채팅 기록 ({chatMessages.length}개 메시지)
+            {t('claudeSessionHistoryRenderer.messageCount', { count: chatMessages.length })}
           </span>
         </div>
         <div className="space-y-3 max-h-80 overflow-y-auto">
@@ -67,7 +69,7 @@ export const ClaudeSessionHistoryRenderer = ({ content }: Props) => {
                   <Bot className="w-4 h-4" />
                 )}
                 <span className="font-medium text-sm">
-                  {msg.type === "user" ? "사용자" : "Claude"}
+                  {msg.type === "user" ? t('claudeSessionHistoryRenderer.user') : t('claudeSessionHistoryRenderer.claude')}
                 </span>
                 {typeof msg.timestamp === "string" && (
                   <span className="text-xs text-gray-500">
@@ -125,7 +127,7 @@ export const ClaudeSessionHistoryRenderer = ({ content }: Props) => {
                     </pre>
                   ) : null
                 ) : (
-                  <span className="text-gray-500 italic">내용 없음</span>
+                  <span className="text-gray-500 italic">{t('claudeSessionHistoryRenderer.noContent')}</span>
                 )}
               </div>
               {typeof msg.message === "object" &&
@@ -135,7 +137,7 @@ export const ClaudeSessionHistoryRenderer = ({ content }: Props) => {
                 msg.message.usage !== null && (
                   <div className="mt-2 text-xs text-gray-600">
                     <span>
-                      토큰:{" "}
+                      {t('claudeSessionHistoryRenderer.tokenUsage')}:{" "}
                       {"input_tokens" in msg.message.usage &&
                       typeof msg.message.usage.input_tokens === "number"
                         ? msg.message.usage.input_tokens
@@ -148,7 +150,7 @@ export const ClaudeSessionHistoryRenderer = ({ content }: Props) => {
                     </span>
                     {"model" in msg.message &&
                       typeof msg.message.model === "string" && (
-                        <span className="ml-2">모델: {msg.message.model}</span>
+                        <span className="ml-2">{t('claudeSessionHistoryRenderer.model')}: {msg.message.model}</span>
                       )}
                   </div>
                 )}
@@ -162,13 +164,13 @@ export const ClaudeSessionHistoryRenderer = ({ content }: Props) => {
       <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
         <div className="flex items-center space-x-2 mb-2">
           <X className="w-4 h-4 text-red-500" />
-          <span className="font-medium text-red-800">채팅 기록 파싱 오류</span>
+          <span className="font-medium text-red-800">{t('claudeSessionHistoryRenderer.parsingError')}</span>
         </div>
         <p className="text-red-600 text-sm">
-          채팅 데이터를 파싱하는 중 오류가 발생했습니다.
+          {t('claudeSessionHistoryRenderer.parsingErrorDescription')}
         </p>
         <details className="mt-2">
-          <summary className="text-sm cursor-pointer">원본 데이터 보기</summary>
+          <summary className="text-sm cursor-pointer">{t('claudeSessionHistoryRenderer.viewOriginalData')}</summary>
           <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-x-auto">
             {content}
           </pre>

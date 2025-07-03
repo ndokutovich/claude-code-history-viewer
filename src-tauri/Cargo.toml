@@ -1,6 +1,6 @@
 [package]
 name = "claude-code-history-viewer"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 description = "Claude Code 대화 기록을 탐색하고 분석하는 데스크톱 애플리케이션"
 authors = ["JaeHyeok Lee"]
 license = "MIT"
@@ -26,6 +26,11 @@ tauri-plugin-log = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-store = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+tauri-plugin-http = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-os = "2"
 chrono = { version = "0.4", features = ["serde"] }
 dirs = "5.0"
 uuid = { version = "1.0", features = ["v4", "serde"] }
@@ -34,6 +39,7 @@ tokio = { version = "1.0", features = ["full"] }
 anyhow = "1.0"
 reqwest = { version = "0.11", features = ["json"] }
 regex = "1.0"
+urlencoding = "2.1"
 
 [dev-dependencies]
 tempfile = "3.10.1"

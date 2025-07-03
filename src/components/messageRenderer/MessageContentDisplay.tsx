@@ -2,8 +2,10 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Copy } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { CommandRenderer, ImageRenderer } from "../contentRenderer";
 import { isImageUrl, isBase64Image } from "../../utils/messageUtils";
+import { TooltipButton } from "../../shared/TooltipButton";
 
 interface MessageContentDisplayProps {
   content: string | null;
@@ -14,6 +16,7 @@ export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = ({
   content,
   messageType,
 }) => {
+  const { t } = useTranslation("components");
   if (!content) return null;
 
   if (typeof content === "string") {
@@ -67,13 +70,13 @@ export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = ({
             {content}
           </div>
           <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
+            <TooltipButton
               onClick={() => navigator.clipboard.writeText(content)}
               className="p-1 rounded-full transition-colors bg-blue-600 hover:bg-blue-700 text-white"
-              title="메시지 복사하기"
+              content={t("messageContentDisplay.copyMessage")}
             >
               <Copy className="w-3 h-3" />
-            </button>
+            </TooltipButton>
           </div>
         </div>
       </div>
@@ -86,13 +89,13 @@ export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = ({
             <ReactMarkdown remarkPlugins={[remarkGfm]} children={content} />
           </div>
           <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
+            <TooltipButton
               onClick={() => navigator.clipboard.writeText(content)}
               className="p-1 rounded-full transition-colors bg-green-600 hover:bg-green-700 text-white"
-              title="메시지 복사하기"
+              content={t("messageContentDisplay.copyMessage")}
             >
               <Copy className="w-3 h-3" />
-            </button>
+            </TooltipButton>
           </div>
         </div>
       </div>

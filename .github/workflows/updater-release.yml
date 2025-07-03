@@ -1,0 +1,217 @@
+# GitHub Releases에서 Tauri 업데이터를 위한 메타데이터 자동 생성
+name: Release with Updater Metadata
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-20.04
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: get version
+        run: echo "PACKAGE_VERSION=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
+      
+      - name: create release
+        id: create-release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `v${process.env.PACKAGE_VERSION}`,
+              name: `Claude Code History Viewer v${process.env.PACKAGE_VERSION}`,
+              body: '🎉 새로운 버전이 출시되었습니다! 자세한 변경사항은 아래를 확인하세요.',
+              generate_release_notes: true, // GitHub이 자동으로 릴리즈 노트 생성
+              draft: false,
+              prerelease: false,
+            });
+            return data.id;
+
+  build-tauri:
+    needs: create-release
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, ubuntu-20.04, windows-latest]
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-20.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: install frontend dependencies
+        run: pnpm install
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+
+  generate-updater-metadata:
+    needs: [create-release, build-tauri]
+    permissions:
+      contents: write
+    runs-on: ubuntu-20.04
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Get latest release info
+        id: release
+        run: |
+          # GitHub API로 방금 생성된 릴리즈 정보 가져오기
+          echo "📡 Fetching latest release information from GitHub API..."
+          
+          HTTP_RESPONSE=$(curl -w "HTTPSTATUS:%{http_code}" -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+          
+          # HTTP 상태 코드와 응답 본문 분리
+          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
+          RELEASE_INFO=$(echo "$HTTP_RESPONSE" | sed -E 's/HTTPSTATUS:[0-9]*$//')
+          
+          echo "🔍 HTTP Status Code: $HTTP_STATUS"
+          
+          # HTTP 상태 코드 확인
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "❌ GitHub API call failed with status code: $HTTP_STATUS"
+            echo "📄 Response: $RELEASE_INFO"
+            exit 1
+          fi
+          
+          # JSON 유효성 검사
+          if ! echo "$RELEASE_INFO" | jq . > /dev/null 2>&1; then
+            echo "❌ Invalid JSON response from GitHub API"
+            echo "📄 Response: $RELEASE_INFO"
+            exit 1
+          fi
+          
+          # 필수 필드 존재 확인
+          if [ "$(echo "$RELEASE_INFO" | jq -r '.tag_name')" = "null" ]; then
+            echo "❌ Missing tag_name in release info"
+            echo "📄 Response: $RELEASE_INFO"
+            exit 1
+          fi
+          
+          echo "✅ Successfully fetched release information"
+          echo "🏷️ Release tag: $(echo "$RELEASE_INFO" | jq -r '.tag_name')"
+          
+          echo "release_info<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_INFO" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Generate latest.json for Tauri updater
+        run: |
+          # 릴리즈 정보에서 필요한 데이터 추출
+          RELEASE_INFO='${{ steps.release.outputs.release_info }}'
+          VERSION=$(echo "$RELEASE_INFO" | jq -r '.tag_name' | sed 's/^v//')
+          RELEASE_NOTES=$(echo "$RELEASE_INFO" | jq -r '.body')
+          PUB_DATE=$(echo "$RELEASE_INFO" | jq -r '.published_at')
+          
+          echo "Processing release version: $VERSION"
+          echo "Release notes length: $(echo "$RELEASE_NOTES" | wc -c)"
+          
+          # 플랫폼별 다운로드 URL과 서명 추출
+          DMG_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains("universal.dmg")) | .browser_download_url')
+          DMG_SIG=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains("universal.dmg.sig")) | .browser_download_url')
+          
+          MSI_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".msi")) | .browser_download_url')
+          MSI_SIG=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".msi.sig")) | .browser_download_url')
+          
+          DEB_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".deb")) | .browser_download_url')
+          DEB_SIG=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".deb.sig")) | .browser_download_url')
+          
+          # 서명 내용 다운로드
+          DMG_SIGNATURE=""
+          MSI_SIGNATURE=""
+          DEB_SIGNATURE=""
+          
+          if [ "$DMG_SIG" != "null" ]; then
+            DMG_SIGNATURE=$(curl -s "$DMG_SIG")
+          fi
+          
+          if [ "$MSI_SIG" != "null" ]; then
+            MSI_SIGNATURE=$(curl -s "$MSI_SIG")
+          fi
+          
+          if [ "$DEB_SIG" != "null" ]; then
+            DEB_SIGNATURE=$(curl -s "$DEB_SIG")
+          fi
+          
+          # latest.json 생성
+          cat > latest.json << EOF
+          {
+            "version": "$VERSION",
+            "notes": $(echo "$RELEASE_NOTES" | jq -R -s .),
+            "pub_date": "$PUB_DATE",
+            "platforms": {
+              "darwin-universal": {
+                "signature": "$DMG_SIGNATURE",
+                "url": "$DMG_URL"
+              },
+              "windows-x86_64": {
+                "signature": "$MSI_SIGNATURE",
+                "url": "$MSI_URL"
+              },
+              "linux-x86_64": {
+                "signature": "$DEB_SIGNATURE",
+                "url": "$DEB_URL"
+              }
+            }
+          }
+          EOF
+          
+          echo "Generated latest.json:"
+          cat latest.json
+
+      - name: Upload latest.json to release
+        run: |
+          gh release upload ${{ github.ref_name }} latest.json --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

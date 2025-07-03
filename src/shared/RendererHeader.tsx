@@ -1,6 +1,7 @@
 import { ChevronRight, X } from "lucide-react";
 import { useToggle } from "../hooks";
 import { createContext, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
 
@@ -79,6 +80,7 @@ const RendererHeader = ({
   rightContent,
 }: RendererHeaderProps) => {
   const { isOpen, toggle, hasError, enableToggle } = useContext(ContentContext);
+  const { t } = useTranslation("common");
 
   if (!enableToggle) {
     return (
@@ -97,7 +99,7 @@ const RendererHeader = ({
                 hasError && COLORS.semantic.error.textDark
               )}
             >
-              {`${title} ${hasError ? "오류" : ""}`}
+              {`${title} ${hasError ? t("errorOccurred") : ""}`}
             </span>
           </div>
         </div>
@@ -130,7 +132,7 @@ const RendererHeader = ({
               hasError && COLORS.semantic.error.textDark
             )}
           >
-            {`${title} ${hasError ? "오류" : ""}`}
+            {`${title} ${hasError ? t("errorOccurred") : ""}`}
           </span>
         </div>
       </div>

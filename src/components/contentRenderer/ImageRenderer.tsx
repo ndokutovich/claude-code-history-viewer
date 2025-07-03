@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Image, ZoomIn, Download, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ImageRendererProps {
   imageUrl: string;
@@ -10,6 +11,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
   imageUrl,
   alt = "Claude generated image",
 }) => {
+  const { t } = useTranslation("components");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -41,7 +43,9 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
         <div className="flex items-center justify-center mb-2">
           <Image className="w-8 h-8 text-gray-400" />
         </div>
-        <p className="text-sm text-gray-500">이미지를 로드할 수 없습니다</p>
+        <p className="text-sm text-gray-500">
+          {t("imageRenderer.cannotLoadImage")}
+        </p>
         <p className="text-xs text-gray-400 mt-1 break-all">{imageUrl}</p>
       </div>
     );
@@ -54,21 +58,23 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
             <Image className="w-4 h-4 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">이미지</span>
+            <span className="text-sm font-medium text-gray-700">
+              {t("imageRenderer.image")}
+            </span>
           </div>
 
           <div className="flex items-center space-x-1">
             <button
               onClick={openModal}
               className="p-1 rounded hover:bg-gray-200 transition-colors"
-              title="전체 화면으로 보기"
+              title={t("imageRenderer.viewFullscreen")}
             >
               <ZoomIn className="w-4 h-4 text-gray-600" />
             </button>
             <button
               onClick={handleDownload}
               className="p-1 rounded hover:bg-gray-200 transition-colors"
-              title="이미지 다운로드"
+              title={t("imageRenderer.downloadImage")}
             >
               <Download className="w-4 h-4 text-gray-600" />
             </button>
@@ -82,12 +88,15 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
             alt={alt}
             onError={handleImageError}
             onClick={openModal}
-            className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+            className="min-w-full min-h-full max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
             style={{ maxHeight: "400px", objectFit: "contain" }}
           />
 
           {/* 호버 오버레이 */}
-          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+          <div
+            onClick={openModal}
+            className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100"
+          >
             <div className="bg-white bg-opacity-90 rounded-full p-2">
               <ZoomIn className="w-5 h-5 text-gray-700" />
             </div>
@@ -119,7 +128,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
             <img
               src={imageUrl}
               alt={alt}
-              className="max-w-full max-h-full object-contain rounded-lg"
+              className="min-w-[500px] min-h-[500px] max-w-full max-h-full object-contain rounded-lg"
               onClick={closeModal}
             />
           </div>

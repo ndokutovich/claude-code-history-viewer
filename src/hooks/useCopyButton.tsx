@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { RefreshCw, Check, X, Clipboard } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { TooltipButton } from "../shared/TooltipButton";
 
 interface CopyState {
   [key: string]: "idle" | "copying" | "success" | "error";
 }
 
 export const useCopyButton = () => {
+  const { t } = useTranslation('components');
   // 클립보드 복사 상태 관리
   const [copyStates, setCopyStates] = useState<CopyState>({});
 
@@ -36,12 +39,12 @@ export const useCopyButton = () => {
   const renderCopyButton = (
     text: string,
     id: string,
-    label: string = "복사"
+    label: string = t('copyButton.copy')
   ) => {
     const state = copyStates[id] || "idle";
 
     return (
-      <button
+      <TooltipButton
         onClick={() => copyToClipboard(text, id)}
         disabled={state === "copying"}
         className={`flex items-center space-x-1 px-2 py-1 text-xs rounded transition-colors ${
@@ -51,22 +54,22 @@ export const useCopyButton = () => {
             ? "bg-red-100 text-red-700"
             : "bg-gray-100 hover:bg-gray-200 text-gray-700"
         }`}
-        title={`${label}하기`}
+        content={label}
       >
         {state === "copying" ? (
           <>
             <RefreshCw className="w-3 h-3 animate-spin" />
-            <span>복사 중...</span>
+            <span>{t('copyButton.copying')}</span>
           </>
         ) : state === "success" ? (
           <>
             <Check className="w-3 h-3" />
-            <span>복사됨</span>
+            <span>{t('copyButton.copied')}</span>
           </>
         ) : state === "error" ? (
           <>
             <X className="w-3 h-3" />
-            <span>실패</span>
+            <span>{t('copyButton.error')}</span>
           </>
         ) : (
           <>
@@ -74,7 +77,7 @@ export const useCopyButton = () => {
             <span>{label}</span>
           </>
         )}
-      </button>
+      </TooltipButton>
     );
   };
 

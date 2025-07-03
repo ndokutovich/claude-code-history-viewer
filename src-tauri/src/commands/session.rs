@@ -11,6 +11,7 @@ pub async fn load_project_sessions(
     project_path: String,
     exclude_sidechain: Option<bool>,
 ) -> Result<Vec<ClaudeSession>, String> {
+    let start_time = std::time::Instant::now();
     let mut sessions = Vec::new();
 
     for entry in WalkDir::new(&project_path)
@@ -31,14 +32,18 @@ pub async fn load_project_sessions(
             Utc::now().to_rfc3339()
         };
         
-        if let Ok(content) = fs::read_to_string(entry.path()) {
+        // 파일을 스트리밍으로 읽어서 메모리 사용량 줄이기
+        if let Ok(file) = std::fs::File::open(entry.path()) {
+            use std::io::{BufRead, BufReader};
+            let reader = BufReader::new(file);
             let mut messages: Vec<ClaudeMessage> = Vec::new();
             let mut session_summary: Option<String> = None;
 
-            for (line_num, line) in content.lines().enumerate() {
-                if line.trim().is_empty() { continue; }
+            for (line_num, line_result) in reader.lines().enumerate() {
+                if let Ok(line) = line_result {
+                    if line.trim().is_empty() { continue; }
 
-                match serde_json::from_str::<RawLogEntry>(line) {
+                    match serde_json::from_str::<RawLogEntry>(&line) {
                     Ok(log_entry) => {
                         if log_entry.message_type == "summary" {
                             if session_summary.is_none() { 
@@ -93,13 +98,14 @@ pub async fn load_project_sessions(
                             messages.push(claude_message);
                         }
                     },
-                    Err(e) => {
-                        eprintln!("Error: Failed to parse JSONL at line {} in {}", line_num + 1, file_path);
-                        eprintln!("  Parse error: {}", e);
-                        if line.len() > 200 {
-                            eprintln!("  Line content (truncated): {}...", &line[..200]);
-                        } else {
-                            eprintln!("  Line content: {}", line);
+                        Err(e) => {
+                            eprintln!("Error: Failed to parse JSONL at line {} in {}", line_num + 1, file_path);
+                            eprintln!("  Parse error: {}", e);
+                            if line.len() > 200 {
+                                eprintln!("  Line content (truncated): {}...", &line[..200]);
+                            } else {
+                                eprintln!("  Line content: {}", line);
+                            }
                         }
                     }
                 }
@@ -260,6 +266,11 @@ pub async fn load_project_sessions(
         }
     }
 
+    let elapsed = start_time.elapsed();
+    #[cfg(debug_assertions)]
+    println!("📊 load_project_sessions 성능: {}개 세션, {}ms 소요", 
+             sessions.len(), elapsed.as_millis());
+
     Ok(sessions)
 }
 
@@ -375,6 +386,7 @@ pub async fn load_session_messages_paginated(
     limit: usize,
     exclude_sidechain: Option<bool>,
 ) -> Result<MessagePage, String> {
+    let start_time = std::time::Instant::now();
     use std::io::{BufRead, BufReader};
     use std::fs::File;
     
@@ -442,11 +454,13 @@ pub async fn load_session_messages_paginated(
     
     let total_count = all_messages.len();
     
+    #[cfg(debug_assertions)]
     eprintln!("Pagination Debug - Total: {}, Offset: {}, Limit: {}", total_count, offset, limit);
     
     // Chat-style pagination: offset=0 means we want the newest messages (at the end)
     // offset=100 means we want messages starting 100 from the newest
     if total_count == 0 {
+        #[cfg(debug_assertions)]
         eprintln!("No messages found");
         return Ok(MessagePage {
             messages: vec![],
@@ -469,17 +483,20 @@ pub async fn load_session_messages_paginated(
     // Actual messages to load: minimum of limit and remaining messages
     let messages_to_load = std::cmp::min(limit, remaining_messages);
     
+    #[cfg(debug_assertions)]
     eprintln!("Load calculation: total={}, already_loaded={}, remaining={}, will_load={}", 
               total_count, already_loaded, remaining_messages, messages_to_load);
     
     let (start_idx, end_idx) = if remaining_messages == 0 {
         // No more messages to load
+        #[cfg(debug_assertions)]
         eprintln!("No more messages available");
         (0, 0)
     } else {
         // Load from (total_count - already_loaded - messages_to_load) to (total_count - already_loaded)
         let start = total_count - already_loaded - messages_to_load;
         let end = total_count - already_loaded;
+        #[cfg(debug_assertions)]
         eprintln!("Loading messages: start={}, end={} (will load {} messages)", start, end, messages_to_load);
         (start, end)
     };
@@ -495,6 +512,10 @@ pub async fn load_session_messages_paginated(
     let has_more = start_idx > 0;
     let next_offset = offset + messages.len();
     
+    let elapsed = start_time.elapsed();
+    #[cfg(debug_assertions)]
+    eprintln!("📊 load_session_messages_paginated 성능: {}개 메시지, {}ms 소요", messages.len(), elapsed.as_millis());
+    #[cfg(debug_assertions)]
     eprintln!("Result: {} messages returned, has_more={}, next_offset={}", messages.len(), has_more, next_offset);
     
     Ok(MessagePage {

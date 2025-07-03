@@ -7,8 +7,8 @@ import {
   ChevronDown,
   ChevronRight,
   MessageCircle,
-  Loader2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { ClaudeProject, ClaudeSession } from "../types";
 import { cn } from "../utils/cn";
 
@@ -31,6 +31,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   isLoading,
 }) => {
   const [expandedProject, setExpandedProject] = useState("");
+  const { t } = useTranslation();
 
   const formatTimeAgo = (dateStr: string) => {
     try {
@@ -42,11 +43,17 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
       if (diffMins < 60) {
-        return `${diffMins}분 전`;
+        return t("common:time.minutesAgo", "{{count}} minutes ago", {
+          count: diffMins,
+        });
       } else if (diffHours < 24) {
-        return `${diffHours}시간 전`;
+        return t("common:time.hoursAgo", "{{count}} hours ago", {
+          count: diffHours,
+        });
       } else if (diffDays < 7) {
-        return `${diffDays}일 전`;
+        return t("common:time.daysAgo", "{{count}} days ago", {
+          count: diffDays,
+        });
       } else {
         return date.toLocaleDateString("ko-KR", {
           month: "short",
@@ -62,19 +69,8 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     setExpandedProject((prev) => (prev === projectPath ? "" : projectPath));
   };
 
-  if (isLoading) {
-    return (
-      <div className="w-80 bg-white border-r border-gray-200 flex items-center justify-center">
-        <div className="flex items-center space-x-2 text-gray-500">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span>로딩 중...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="w-80 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col h-full">
+    <div className="max-w-80 w-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col h-full">
       {/* Projects List */}
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         {projects.length === 0 ? (
@@ -83,7 +79,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
               <div className="mb-2">
                 <Folder className="w-8 h-8 mx-auto text-gray-500 dark:text-gray-400" />
               </div>
-              <p className="text-sm">프로젝트를 찾을 수 없습니다</p>
+              <p className="text-sm">
+                {t("components:project.notFound", "No projects found")}
+              </p>
             </div>
           </div>
         ) : (
@@ -117,8 +115,8 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                   </button>
 
                   {/* Sessions for expanded project */}
-                  {isExpanded && sessions.length > 0 && (
-                    <div className="ml-6 space-y-1 pb-2">
+                  {isExpanded && sessions.length > 0 && !isLoading && (
+                    <div className="ml-6 space-y-1">
                       {sessions.map((session) => {
                         const isSessionSelected =
                           selectedSession?.session_id === session.session_id;
@@ -145,20 +143,36 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                     className="font-medium text-gray-800 dark:text-gray-200 text-xs truncate"
                                     title={
                                       session.summary ||
-                                      `세션 ID: ${session.actual_session_id}`
+                                      `${t(
+                                        "components:session.id",
+                                        "Session ID"
+                                      )} ${session.actual_session_id}`
                                     }
                                   >
                                     {session.summary ||
-                                      "세션 요약을 찾을 수 없습니다."}
+                                      t(
+                                        "components:session.summaryNotFound",
+                                        "Summary not found"
+                                      )}
                                   </h3>
                                   <div className="flex items-center space-x-1">
                                     {session.has_tool_use && (
-                                      <span title="도구 사용">
+                                      <span
+                                        title={t(
+                                          "components:tools.toolUsed",
+                                          "Tool used"
+                                        )}
+                                      >
                                         <Wrench className="w-3 h-3 text-blue-400" />
                                       </span>
                                     )}
                                     {session.has_errors && (
-                                      <span title="에러 발생">
+                                      <span
+                                        title={t(
+                                          "components:tools.errorOccurred",
+                                          "Error occurred"
+                                        )}
+                                      >
                                         <AlertTriangle className="w-3 h-3 text-red-400" />
                                       </span>
                                     )}
@@ -171,11 +185,24 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                   </span>
                                   <span>•</span>
                                   <span className="whitespace-nowrap">
-                                    {session.message_count}개 메시지
+                                    {t(
+                                      "components:message.count",
+                                      "{{count}} messages",
+                                      {
+                                        count: session.message_count,
+                                      }
+                                    )}
                                   </span>
                                   <span>•</span>
-                                  <span className="truncate" title={`실제 세션 ID: ${session.actual_session_id}`}>
-                                    ID: {session.actual_session_id.slice(0, 8)}...
+                                  <span
+                                    className="truncate"
+                                    title={`${t(
+                                      "components:session.actualId",
+                                      "Actual ID"
+                                    )}: ${session.actual_session_id}`}
+                                  >
+                                    ID: {session.actual_session_id.slice(0, 8)}
+                                    ...
                                   </span>
                                 </div>
                               </div>

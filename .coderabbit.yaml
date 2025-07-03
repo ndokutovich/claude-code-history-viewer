@@ -1,0 +1,291 @@
+# CodeRabbit Configuration for Tauri + React + TypeScript + Rust Project
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+# ============================================================================
+# 기본 설정
+# ============================================================================
+language: "ko-KR" # 한국어 리뷰
+early_access: false # 얼리 액세스 기능 비활성화
+enable_free_tier: true # 무료 티어 기능 활성화
+tone_instructions: "친근하고 건설적인 톤으로 리뷰를 제공하되, 중요한 보안이나 성능 이슈는 명확하게 지적해주세요."
+
+# ============================================================================
+# 지식 베이스 설정
+# ============================================================================
+knowledge_base:
+  opt_out: false # 지식 베이스 기능 활성화
+  learnings:
+    scope: "auto" # 자동 스코프 설정
+  issues:
+    scope: "auto" # 이슈 스코프 자동 설정
+  pull_requests:
+    scope: "auto" # PR 스코프 자동 설정
+  web_search:
+    enabled: true # 웹 검색 통합 활성화
+  jira:
+    usage: "auto"
+    project_keys: []
+  linear:
+    usage: "auto"
+    team_keys: []
+
+# ============================================================================
+# 채팅 설정
+# ============================================================================
+chat:
+  auto_reply: true # 자동 응답 활성화
+  integrations:
+    jira:
+      usage: "auto"
+    linear:
+      usage: "auto"
+
+# ============================================================================
+# 리뷰 설정
+# ============================================================================
+reviews:
+  # 리뷰 프로필 및 기본 동작
+  profile: "chill" # 적당한 수준의 피드백
+  request_changes_workflow: false # 변경 요청 워크플로우 비활성화
+  abort_on_close: true # PR 종료 시 리뷰 중단
+
+  # 요약 및 상태
+  high_level_summary: true # 상위 수준 요약 생성
+  high_level_summary_in_walkthrough: false # 워크스루에 요약 포함하지 않음
+  high_level_summary_placeholder: "@coderabbitai summary"
+  poem: false # 시 생성 비활성화 (전문적인 리뷰를 위해)
+  review_status: true # 리뷰 상태 표시
+
+  # 워크스루 설정
+  collapse_walkthrough: false # 워크스루 접지 않음
+  changed_files_summary: true # 변경된 파일 요약
+  sequence_diagrams: true # 시퀀스 다이어그램 생성
+
+  # 관련 항목
+  related_issues: true # 관련 이슈 포함
+  related_prs: true # 관련 PR 포함
+  assess_linked_issues: true # 연결된 이슈 평가
+
+  # 제안 기능
+  suggested_labels: true # 라벨 제안
+  suggested_reviewers: true # 리뷰어 제안
+  auto_apply_labels: false # 자동 라벨 적용 비활성화
+  auto_assign_reviewers: false # 자동 리뷰어 할당 비활성화
+
+  # 커밋 상태
+  commit_status: true # 커밋 상태 설정
+  fail_commit_status: false # 실패 시 커밋 상태 실패로 설정하지 않음
+  disable_cache: false # 캐시 비활성화하지 않음
+
+  # ============================================================================
+  # 자동 리뷰 설정
+  # ============================================================================
+  auto_review:
+    enabled: true # 자동 리뷰 활성화
+    auto_incremental_review: true # 증분 리뷰 활성화
+    drafts: false # 초안 PR은 리뷰하지 않음
+    base_branches: ["main", "master", "develop"] # 리뷰할 기본 브랜치
+    labels: [] # 특정 라벨이 있는 PR만 리뷰 (빈 배열 = 모든 PR)
+    ignore_title_keywords:
+      ["[skip ci]", "[ci skip]", "[no review]", "wip:", "WIP:"]
+
+  # ============================================================================
+  # 경로 필터 설정
+  # ============================================================================
+  path_filters:
+    # 포함할 파일들
+    - "src/**/*" # 프론트엔드 소스
+    - "src-tauri/**/*" # 백엔드 Rust 소스
+    - "*.json" # 설정 파일들
+    - "*.toml" # Rust 설정 파일들
+    - "*.yaml" # YAML 설정 파일들
+    - "*.yml" # YAML 설정 파일들
+    - ".github/**/*" # GitHub Actions
+
+    # 제외할 파일들
+    - "!node_modules/**" # Node.js 의존성
+    - "!target/**" # Rust 빌드 결과
+    - "!dist/**" # 빌드 결과
+    - "!build/**" # 빌드 결과
+    - "!**/.*" # 숨김 파일들
+    - "!**/*.log" # 로그 파일들
+    - "!**/*.lock" # 락 파일들
+    - "!**/*.generated.*" # 생성된 파일들
+    - "!**/*.min.*" # 최소화된 파일들
+    - "!**/*.map" # 소스맵 파일들
+    - "!**/*.svg" # SVG 파일들
+    - "!**/*.png" # 이미지 파일들
+    - "!**/*.jpg" # 이미지 파일들
+    - "!**/*.jpeg" # 이미지 파일들
+    - "!**/*.gif" # 이미지 파일들
+    - "!**/*.ico" # 아이콘 파일들
+    - "!**/*.woff*" # 폰트 파일들
+    - "!**/*.ttf" # 폰트 파일들
+    - "!**/*.eot" # 폰트 파일들
+
+  # ============================================================================
+  # 경로별 리뷰 지침
+  # ============================================================================
+  path_instructions:
+    # TypeScript/React 프론트엔드
+    - path: "src/**/*.{ts,tsx}"
+      instructions: |
+        React/TypeScript 코드를 리뷰할 때 다음 사항들을 중점적으로 확인해주세요:
+        - React hooks 사용 규칙 준수 (useEffect, useState, useCallback 등)
+        - TypeScript 타입 안전성 및 올바른 타입 정의
+        - 컴포넌트 성능 최적화 (useMemo, useCallback 적절한 사용)
+        - 접근성(a11y) 고려사항
+        - 상태 관리 패턴 (Zustand 등)
+        - 에러 바운더리 및 에러 처리
+        - 코드 재사용성 및 가독성
+        - Tauri IPC 명령 사용 시 적절한 에러 처리
+
+    # Rust 백엔드
+    - path: "src-tauri/**/*.rs"
+      instructions: |
+        Rust 코드를 리뷰할 때 다음 사항들을 중점적으로 확인해주세요:
+        - 메모리 안전성 및 소유권/차용 규칙 준수
+        - 에러 처리 패턴 (Result, Option 적절한 사용)
+        - 비동기 프로그래밍 패턴 (async/await, Tokio)
+        - Tauri 명령 보안성 검토
+        - 파일 시스템 접근 시 보안 고려사항
+        - 크로스 플랫폼 호환성
+        - 직렬화/역직렬화 안전성 (serde)
+        - 성능 최적화 가능성
+        - 단위 테스트 커버리지
+
+    # 설정 파일들
+    - path: "**/*.{json,toml,yaml,yml}"
+      instructions: |
+        설정 파일을 리뷰할 때 다음 사항들을 확인해주세요:
+        - 보안에 민감한 정보가 하드코딩되지 않았는지
+        - 의존성 버전이 적절한지
+        - Tauri 보안 설정이 올바른지
+        - 빌드 최적화 설정
+        - 크로스 플랫폼 설정 호환성
+
+    # GitHub Actions
+    - path: ".github/**/*.{yml,yaml}"
+      instructions: |
+        CI/CD 워크플로우를 리뷰할 때 다음 사항들을 확인해주세요:
+        - 보안 취약점 (secrets 사용, 권한 설정)
+        - 빌드 효율성 및 최적화
+        - 크로스 플랫폼 빌드 설정
+        - 테스트 커버리지
+        - 아티팩트 관리
+        - 캐시 활용
+
+    # CSS/스타일링
+    - path: "**/*.{css,scss,sass}"
+      instructions: |
+        CSS 코드를 리뷰할 때 다음 사항들을 확인해주세요:
+        - 반응형 디자인 고려사항
+        - 성능 최적화 (불필요한 스타일 제거)
+        - 접근성 고려 (색상 대비, 텍스트 크기 등)
+        - 일관된 스타일 가이드 준수
+        - CSS 변수 및 재사용성
+
+  # ============================================================================
+  # 라벨링 지침
+  # ============================================================================
+  labeling_instructions:
+    - label: "frontend"
+      instructions: "React/TypeScript 관련 변경사항이 있을 때 적용하세요. src/ 폴더의 .ts, .tsx 파일 변경을 포함합니다."
+    - label: "backend"
+      instructions: "Rust/Tauri 관련 변경사항이 있을 때 적용하세요. src-tauri/ 폴더의 .rs 파일 변경을 포함합니다."
+    - label: "performance"
+      instructions: "성능 개선과 관련된 변경사항이 있을 때 적용하세요. 최적화, 메모리 사용량 개선, 속도 향상 등을 포함합니다."
+    - label: "security"
+      instructions: "보안 관련 변경사항이 있을 때 적용하세요. 취약점 수정, 인증/인가, 데이터 검증 등을 포함합니다."
+    - label: "bug"
+      instructions: "버그 수정과 관련된 변경사항이 있을 때 적용하세요."
+    - label: "feature"
+      instructions: "새로운 기능 추가와 관련된 변경사항이 있을 때 적용하세요."
+    - label: "refactor"
+      instructions: "코드 리팩토링과 관련된 변경사항이 있을 때 적용하세요. 기능 변경 없이 코드 구조 개선을 포함합니다."
+    - label: "docs"
+      instructions: "문서 변경과 관련된 변경사항이 있을 때 적용하세요. README, 주석, API 문서 등을 포함합니다."
+    - label: "test"
+      instructions: "테스트 관련 변경사항이 있을 때 적용하세요. 단위 테스트, 통합 테스트 추가/수정을 포함합니다."
+    - label: "config"
+      instructions: "설정 파일 변경과 관련된 변경사항이 있을 때 적용하세요. package.json, Cargo.toml, tauri.conf.json 등을 포함합니다."
+    - label: "ci"
+      instructions: "CI/CD 관련 변경사항이 있을 때 적용하세요. GitHub Actions, 빌드 스크립트 등을 포함합니다."
+    - label: "deps"
+      instructions: "의존성 업데이트와 관련된 변경사항이 있을 때 적용하세요. package.json, Cargo.toml의 의존성 변경을 포함합니다."
+    - label: "ui"
+      instructions: "UI/UX 개선과 관련된 변경사항이 있을 때 적용하세요. 스타일링, 레이아웃, 사용자 경험 개선을 포함합니다."
+    - label: "i18n"
+      instructions: "국제화 관련 변경사항이 있을 때 적용하세요. 번역 파일, 다국어 지원 기능을 포함합니다."
+
+  # ============================================================================
+  # 도구 설정
+  # ============================================================================
+  tools:
+    # TypeScript/JavaScript 도구들
+    eslint:
+      enabled: true
+    biome:
+      enabled: true
+    oxc:
+      enabled: true
+
+    # Rust 도구들
+    clippy:
+      enabled: true
+
+    # 일반 도구들
+    actionlint:
+      enabled: true
+    markdownlint:
+      enabled: true
+    yamllint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    gitleaks:
+      enabled: true
+
+    # 보안 도구들
+    semgrep:
+      enabled: true
+
+    # GitHub Checks 통합
+    github-checks:
+      enabled: true
+      timeout_ms: 120000 # 2분 타임아웃
+
+    # AST-grep 규칙 (고급 패턴 검색)
+    ast-grep:
+      essential_rules: true
+      rule_dirs: []
+      util_dirs: []
+      packages: []
+
+  # ============================================================================
+  # 피니싱 터치 설정
+  # ============================================================================
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+
+# ============================================================================
+# 코드 생성 설정
+# ============================================================================
+code_generation:
+  docstrings:
+    language: "ko-KR" # 한국어 docstring
+    path_instructions:
+      - path: "src/**/*.{ts,tsx}"
+        instructions: "JSDoc 형식으로 TypeScript/React 함수와 컴포넌트에 대한 문서를 생성해주세요."
+      - path: "src-tauri/**/*.rs"
+        instructions: "Rust doc 형식으로 함수와 구조체에 대한 문서를 생성해주세요."
+
+  unit_tests:
+    path_instructions:
+      - path: "src/**/*.{ts,tsx}"
+        instructions: "Jest/React Testing Library를 사용한 단위 테스트를 생성해주세요."
+      - path: "src-tauri/**/*.rs"
+        instructions: "Rust 내장 테스트 프레임워크를 사용한 단위 테스트를 생성해주세요."

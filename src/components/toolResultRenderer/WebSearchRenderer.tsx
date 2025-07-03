@@ -1,12 +1,14 @@
 import { Globe } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   searchData: Record<string, unknown>;
 };
 
 export const WebSearchRenderer = ({ searchData }: Props) => {
+  const { t } = useTranslation('components');
   const query = typeof searchData.query === "string" ? searchData.query : "";
   const results = Array.isArray(searchData.results) ? searchData.results : [];
   const durationSeconds =
@@ -18,12 +20,12 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
     <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
       <div className="flex items-center space-x-2 mb-2">
         <Globe className="w-4 h-4" />
-        <span className="font-medium text-blue-800">웹 검색 결과</span>
+        <span className="font-medium text-blue-800">{t('webSearchRenderer.title')}</span>
       </div>
 
       {/* 검색 정보 */}
       <div className="mb-3">
-        <div className="text-xs font-medium text-gray-600 mb-1">검색 쿼리:</div>
+        <div className="text-xs font-medium text-gray-600 mb-1">{t('webSearchRenderer.query')}</div>
         <code className="text-sm bg-gray-100 px-2 py-1 rounded text-gray-800 block">
           {query}
         </code>
@@ -33,9 +35,9 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
       {durationSeconds && (
         <div className="mb-3 text-xs">
           <div className="bg-white p-2 rounded border">
-            <div className="text-gray-600">검색 소요 시간</div>
+            <div className="text-gray-600">{t('webSearchRenderer.duration')}</div>
             <div className="font-medium text-blue-600">
-              {durationSeconds.toFixed(2)}초
+              {durationSeconds.toFixed(2)}{t('webSearchRenderer.seconds')}
             </div>
           </div>
         </div>
@@ -45,7 +47,7 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
       {results.length > 0 && (
         <div>
           <div className="text-xs font-medium text-gray-600 mb-2">
-            검색 결과 ({results.length}개):
+            {t('webSearchRenderer.results', { count: results.length })}
           </div>
           <div className="space-y-3 max-h-80 overflow-y-auto">
             {results.map((result: unknown, index: number) => (
@@ -237,7 +239,7 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
                   </div>
                 ) : (
                   <div className="text-sm text-gray-500 italic">
-                    알 수 없는 결과 형식
+                    {t('webSearchRenderer.unknownResultFormat')}
                   </div>
                 )}
               </div>

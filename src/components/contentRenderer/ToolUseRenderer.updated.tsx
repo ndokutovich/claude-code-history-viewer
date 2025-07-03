@@ -19,12 +19,14 @@ import { ToolIcon } from "../ToolIcon";
 import { useState } from "react";
 import { Renderer } from "../../shared/RendererHeader";
 import { COLORS, HEX_COLORS } from "../../constants/colors";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   toolUse: Record<string, unknown>;
 };
 
 export const ToolUseRenderer = ({ toolUse }: Props) => {
+  const { t } = useTranslation("components");
   const [openRender, setOpenRender] = useState(false);
   const toolName = toolUse.name || "Unknown Tool";
   const toolId = toolUse.id || "";
@@ -143,7 +145,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
           <div className="flex items-center space-x-2">
             <FilePlus className={`w-4 h-4 ${COLORS.tools.file.icon}`} />
             <span className={`font-medium ${COLORS.tools.file.text}`}>
-              파일 작성
+              {t("tools.fileCreate")}
             </span>
           </div>
           {toolId && (
@@ -173,7 +175,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
             className={`text-xs font-medium ${COLORS.tools.file.icon} mb-2 flex items-center space-x-1`}
           >
             <CheckCircle className={`w-4 h-4 ${COLORS.tools.file.icon}`} />
-            <span>작성된 내용</span>
+            <span>{t("tools.createdContent")}</span>
           </div>
           <div
             className={`rounded overflow-hidden border ${COLORS.tools.file.border} max-h-96 overflow-y-auto`}
@@ -241,7 +243,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
               <div
                 className={`text-sm font-semibold ${COLORS.tools.search.text} mb-2`}
               >
-                📋 작업 설명
+                {t("tools.taskDescription")}
               </div>
               <div
                 className={`p-3 bg-white rounded-lg border ${COLORS.tools.search.bgDark} ${COLORS.ui.text.secondary}`}
@@ -255,7 +257,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
               <div
                 className={`text-sm font-semibold ${COLORS.tools.search.text} mb-2`}
               >
-                💬 상세 지시사항
+                {t("tools.detailedInstructions")}
               </div>
               <div
                 className={`p-3 bg-white rounded-lg border ${COLORS.tools.search.bgDark}`}
@@ -290,7 +292,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
           <div className="flex items-center space-x-2">
             <Edit3 className={`w-4 h-4 ${COLORS.tools.code.icon}`} />
             <span className={`font-medium ${COLORS.tools.code.text}`}>
-              파일 수정
+              {t("tools.fileEdit")}
             </span>
           </div>
           {toolId && (
@@ -322,7 +324,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
               className={`text-xs font-medium ${COLORS.semantic.error.icon} mb-1 flex items-center space-x-1`}
             >
               <X className={`w-4 h-4 ${COLORS.semantic.error.icon}`} />
-              <span>제거된 코드</span>
+              <span>{t("tools.removedCode")}</span>
             </div>
             <div
               className={`rounded overflow-hidden border ${COLORS.semantic.error.border}`}
@@ -348,7 +350,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
               className={`text-xs font-medium ${COLORS.tools.file.icon} mb-1 flex items-center space-x-1`}
             >
               <CheckCircle className={`w-4 h-4 ${COLORS.tools.file.icon}`} />
-              <span>추가된 코드</span>
+              <span>{t("tools.addedCode")}</span>
             </div>
             <div
               className={`rounded overflow-hidden border ${COLORS.tools.file.border}`}
@@ -400,7 +402,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
           <div
             className={`${COLORS.ui.background.dark} px-3 py-1 text-xs ${COLORS.ui.text.inverse}`}
           >
-            도구 입력 매개변수
+            {t("tools.inputParameters")}
           </div>
           <SyntaxHighlighter
             language="json"

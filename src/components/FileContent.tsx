@@ -7,6 +7,7 @@ import remarkGfm from "remark-gfm";
 import { Highlight, themes } from "prism-react-renderer";
 import { useCopyButton } from "../hooks/useCopyButton";
 import { useTheme } from "../hooks/useTheme";
+import { useTranslation } from 'react-i18next';
 import { Renderer } from "../shared/RendererHeader";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
@@ -18,6 +19,7 @@ export const FileContent = ({
   fileData: Record<string, unknown>;
   title: string;
 }) => {
+  const { t } = useTranslation('components');
   const { renderCopyButton } = useCopyButton();
   const { isDarkMode } = useTheme();
   const content = typeof fileData.content === "string" ? fileData.content : "";
@@ -150,13 +152,13 @@ export const FileContent = ({
               renderCopyButton(
                 content,
                 `file-content-${filePath}`,
-                "파일 내용 복사"
+                t('fileContent.copyFileContent')
               )}
 
             <div className={cn("text-xs", COLORS.semantic.info.text)}>
               {numLines > 0 && totalLines > 0 && (
                 <span>
-                  {startLine}-{startLine + numLines - 1} / {totalLines} 줄
+                  {startLine}-{startLine + numLines - 1} / {totalLines} {t('fileContent.lines')}
                 </span>
               )}
             </div>
@@ -170,7 +172,7 @@ export const FileContent = ({
             <div
               className={cn("text-xs font-medium", COLORS.semantic.info.text)}
             >
-              파일 경로:
+              {t('fileContent.filePath')}
             </div>
             <code
               className={cn(
@@ -189,7 +191,7 @@ export const FileContent = ({
               <div
                 className={cn("text-xs font-medium", COLORS.semantic.info.text)}
               >
-                내용:
+                {t('fileContent.content')}
               </div>
               {shouldCollapse && (
                 <button
@@ -202,11 +204,11 @@ export const FileContent = ({
                 >
                   {isExpanded ? (
                     <>
-                      <span>접기 ▲</span>
+                      <span>{t('fileContent.collapse')}</span>
                     </>
                   ) : (
                     <>
-                      <span>펼치기 ({contentLines.length}줄) ▼</span>
+                      <span>{t('fileContent.expand', { count: contentLines.length })}</span>
                     </>
                   )}
                 </button>
@@ -224,12 +226,12 @@ export const FileContent = ({
                 <div className="flex items-center space-x-2">
                   {startLine > 1 && (
                     <span className={cn(COLORS.semantic.info.text)}>
-                      시작 줄: {startLine}
+                      {t('fileContent.startLine', { line: startLine })}
                     </span>
                   )}
                   {shouldCollapse && !isExpanded && (
                     <span className={cn(COLORS.semantic.warning.text)}>
-                      {MAX_LINES}/{contentLines.length} 줄 표시 중
+                      {t('fileContent.showingLines', { current: MAX_LINES, total: contentLines.length })}
                     </span>
                   )}
                 </div>
@@ -334,7 +336,7 @@ export const FileContent = ({
                       )}
                     >
                       <FileText className="w-3 h-3 inline mr-1" />
-                      {contentLines.length - MAX_LINES}줄 더 보기
+                      {t('fileContent.showMoreLines', { count: contentLines.length - MAX_LINES })}
                     </button>
                   </div>
                 )}
@@ -357,7 +359,7 @@ export const FileContent = ({
                       )}
                     >
                       <FileText className="w-3 h-3 inline mr-1" />
-                      {contentLines.length - MAX_LINES}줄 더 보기
+                      {t('fileContent.showMoreLines', { count: contentLines.length - MAX_LINES })}
                     </button>
                   </div>
                 )}

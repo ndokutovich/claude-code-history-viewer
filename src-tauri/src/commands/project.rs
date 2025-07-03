@@ -1,5 +1,5 @@
 use crate::models::*;
-use crate::utils::extract_project_name;
+use crate::utils::{extract_project_name, estimate_message_count_from_size};
 use std::fs;
 use std::path::PathBuf;
 use walkdir::WalkDir;
@@ -48,6 +48,7 @@ pub async fn validate_claude_folder(path: String) -> Result<bool, String> {
 
 #[tauri::command]
 pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, String> {
+    let start_time = std::time::Instant::now();
     let projects_path = PathBuf::from(&claude_path).join("projects");
 
     if !projects_path.exists() {
@@ -84,10 +85,10 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
                         last_modified = Some(modified);
                     }
                 }
-            }
-
-            if let Ok(content) = fs::read_to_string(jsonl_entry.path()) {
-                message_count += content.lines().count();
+                
+                // 파일 크기로 메시지 수 추정 - 훨씬 빠름
+                let estimated_messages = estimate_message_count_from_size(metadata.len());
+                message_count += estimated_messages;
             }
         }
 
@@ -108,6 +109,11 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
     }
 
     projects.sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
+
+    let elapsed = start_time.elapsed();
+    #[cfg(debug_assertions)]
+    println!("📊 scan_projects 성능: {}개 프로젝트, {}ms 소요", 
+             projects.len(), elapsed.as_millis());
 
     Ok(projects)
 }

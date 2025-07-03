@@ -1,17 +1,5 @@
 import type { ClaudeMessage } from "../types";
 
-export const formatTime = (timestamp: string) => {
-  try {
-    return new Date(timestamp).toLocaleTimeString("ko-KR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  } catch {
-    return timestamp;
-  }
-};
-
 export const extractClaudeMessageContent = (
   message: ClaudeMessage
 ): string | null => {
