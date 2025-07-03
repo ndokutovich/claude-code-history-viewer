@@ -246,7 +246,7 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
                 COLORS.ui.border.medium
               )}
             >
-              <div className={cn("text-2xl font-bold", COLORS.ui.text.primary)}>
+              <div className={cn("text-lg font-bold", COLORS.ui.text.primary)}>
                 {totalStats.total_tokens.toLocaleString()}
               </div>
               <div className={cn("text-xs", COLORS.ui.text.tertiary)}>
