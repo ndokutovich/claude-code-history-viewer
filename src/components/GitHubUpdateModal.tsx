@@ -97,7 +97,9 @@ export function GitHubUpdateModal({
   };
 
   const handleViewOnGitHub = () => {
-    window.open(releaseInfo.html_url, "_blank");
+    if (releaseInfo.html_url?.startsWith("https://github.com/")) {
+      window.open(releaseInfo.html_url, "_blank", "noopener,noreferrer");
+    }
   };
 
   const isProcessing = state.isDownloading || state.isInstalling;
