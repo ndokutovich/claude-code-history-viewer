@@ -67,17 +67,44 @@ struct GitHubAsset {
 #[command]
 pub async fn check_for_updates() -> Result<UpdateInfo, String> {
     let current_version = env!("CARGO_PKG_VERSION");
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| format!("HTTP 클라이언트 생성 오류: {}", e))?;
 
+    // 재시도 로직 (최대 3회 시도)
+    let mut last_error = String::new();
+    for attempt in 1..=3 {
+        match fetch_release_info(&client).await {
+            Ok(release) => {
+                return process_release_info(current_version, release);
+            }
+            Err(e) => {
+                last_error = e;
+                if attempt < 3 {
+                    // 재시도 전 잠시 대기 (지수 백오프)
+                    tokio::time::sleep(std::time::Duration::from_millis(1000 * attempt)).await;
+                }
+            }
+        }
+    }
+
+    Err(format!("3번 시도 후 실패: {}", last_error))
+}
+
+async fn fetch_release_info(client: &reqwest::Client) -> Result<GitHubRelease, String> {
     let response = client
         .get("https://api.github.com/repos/jhlee0409/claude-code-history-viewer/releases/latest")
         .header("User-Agent", "Claude-Code-History-Viewer")
+        .header("Accept", "application/vnd.github.v3+json")
         .send()
         .await
         .map_err(|e| format!("네트워크 오류: {}", e))?;
 
     if !response.status().is_success() {
-        return Err("릴리즈 정보를 가져올 수 없습니다".to_string());
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_default();
+        return Err(format!("릴리즈 정보를 가져올 수 없습니다 (HTTP {}): {}", status, error_text));
     }
 
     let release: GitHubRelease = response
@@ -85,6 +112,10 @@ pub async fn check_for_updates() -> Result<UpdateInfo, String> {
         .await
         .map_err(|e| format!("응답 해석 오류: {}", e))?;
 
+    Ok(release)
+}
+
+fn process_release_info(current_version: &str, release: GitHubRelease) -> Result<UpdateInfo, String> {
     let latest_version = release.tag_name.trim_start_matches('v');
     let has_update = version_is_newer(current_version, latest_version);
 

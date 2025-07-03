@@ -4,11 +4,10 @@ import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { FolderSelector } from "./components/FolderSelector";
-import { UpdateModal } from "./components/UpdateModal";
-import { UpToDateNotification } from "./components/UpToDateNotification";
+import { UpdateManager } from "./components/UpdateManager";
+import { useGitHubUpdater } from "./hooks/useGitHubUpdater";
 import { useAppStore } from "./store/useAppStore";
 import { useTheme } from "./hooks/useTheme";
-import { useUpdateChecker } from "./hooks/useUpdateChecker";
 import { useTranslation } from "react-i18next";
 import {
   AppErrorType,
@@ -87,7 +86,7 @@ function App() {
   } = useAppStore();
 
   const { theme, setTheme } = useTheme();
-  const updateChecker = useUpdateChecker();
+  const manualUpdater = useGitHubUpdater();
   const { t, i18n: i18nInstance } = useTranslation("common");
   const { t: tComponents } = useTranslation("components");
   const { t: tMessages } = useTranslation("messages");
@@ -548,12 +547,20 @@ function App() {
 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => updateChecker.checkForUpdates(true)}
+                    onClick={() => {
+                      window.dispatchEvent(new Event('manual-update-check'));
+                      manualUpdater.checkForUpdates();
+                    }}
+                    disabled={manualUpdater.state.isChecking}
                   >
                     <RefreshCw
-                      className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                      className={cn(
+                        "mr-2 h-4 w-4", 
+                        manualUpdater.state.isChecking ? "animate-spin" : "",
+                        COLORS.ui.text.primary
+                      )}
                     />
-                    {t("settings.checkUpdate")}
+                    {manualUpdater.state.isChecking ? t("settings.checking") : t("settings.checkUpdate")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -751,26 +758,8 @@ function App() {
         </div>
       </div>
 
-      {/* Update Modal */}
-      {updateChecker.updateInfo && (
-        <UpdateModal
-          updateInfo={updateChecker.updateInfo}
-          onDownload={updateChecker.downloadUpdate}
-          onPostpone={updateChecker.postponeUpdate}
-          onSkip={updateChecker.skipVersion}
-          onClose={updateChecker.closeModal}
-          isVisible={updateChecker.showModal}
-        />
-      )}
-
-      {/* Up to Date Notification */}
-      {updateChecker.updateInfo && (
-        <UpToDateNotification
-          updateInfo={updateChecker.updateInfo}
-          onClose={updateChecker.closeUpToDateNotification}
-          isVisible={updateChecker.showUpToDateNotification}
-        />
-      )}
+      {/* Native Update Manager */}
+      <UpdateManager />
     </div>
   );
 }

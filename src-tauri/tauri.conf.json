@@ -25,13 +25,22 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "capabilities": ["default", "http-requests"]
     },
     "withGlobalTauri": true
   },
   "plugins": {
     "fs": {
       "requireLiteralLeadingDot": false
+    },
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://api.github.com/repos/jhlee0409/claude-code-history-viewer/releases/latest"
+      ],
+      "dialog": false,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhCMDAzQUUxMEEzNEFDRTcKUldUbnJEUUs0VG9BaXpzVXFxU2NKTjBOYnFIOVlMWWlHY0NkRHBjVHlFUjdvWkdrMXgyaUFXeXYK"
     }
   },
   "bundle": {

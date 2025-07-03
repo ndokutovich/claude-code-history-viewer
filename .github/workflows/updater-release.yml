@@ -1,0 +1,141 @@
+# GitHub Releases에서 Tauri 업데이터를 위한 메타데이터 자동 생성
+name: Release with Updater Metadata
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-20.04
+    outputs:
+      release_id: ${{ steps.create-release.outputs.result }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: get version
+        run: echo "PACKAGE_VERSION=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
+      
+      - name: create release
+        id: create-release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `v${process.env.PACKAGE_VERSION}`,
+              name: `Claude Code History Viewer v${process.env.PACKAGE_VERSION}`,
+              body: '🎉 새로운 버전이 출시되었습니다! 자세한 변경사항은 아래를 확인하세요.',
+              generate_release_notes: true, // GitHub이 자동으로 릴리즈 노트 생성
+              draft: false,
+              prerelease: false,
+            });
+            return data.id;
+
+  build-tauri:
+    needs: create-release
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, ubuntu-20.04, windows-latest]
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-20.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: install frontend dependencies
+        run: pnpm install
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+
+  generate-updater-metadata:
+    needs: [create-release, build-tauri]
+    permissions:
+      contents: write
+    runs-on: ubuntu-20.04
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Get latest release info
+        id: release
+        run: |
+          # GitHub API로 방금 생성된 릴리즈 정보 가져오기
+          RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+          
+          echo "release_info<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_INFO" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Generate latest.json for Tauri updater
+        run: |
+          # 릴리즈 정보에서 필요한 데이터 추출
+          RELEASE_INFO='${{ steps.release.outputs.release_info }}'
+          VERSION=$(echo "$RELEASE_INFO" | jq -r '.tag_name' | sed 's/^v//')
+          RELEASE_NOTES=$(echo "$RELEASE_INFO" | jq -r '.body')
+          PUB_DATE=$(echo "$RELEASE_INFO" | jq -r '.published_at')
+          
+          # 플랫폼별 다운로드 URL 추출
+          DMG_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains("universal.dmg")) | .browser_download_url')
+          MSI_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".msi")) | .browser_download_url')
+          DEB_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".deb")) | .browser_download_url')
+          
+          # latest.json 생성
+          cat > latest.json << EOF
+          {
+            "version": "$VERSION",
+            "notes": $(echo "$RELEASE_NOTES" | jq -R -s .),
+            "pub_date": "$PUB_DATE",
+            "platforms": {
+              "darwin-universal": {
+                "url": "$DMG_URL"
+              },
+              "windows-x86_64": {
+                "url": "$MSI_URL"
+              },
+              "linux-x86_64": {
+                "url": "$DEB_URL"
+              }
+            }
+          }
+          EOF
+          
+          echo "Generated latest.json:"
+          cat latest.json
+
+      - name: Upload latest.json to release
+        run: |
+          gh release upload ${{ github.ref_name }} latest.json --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
