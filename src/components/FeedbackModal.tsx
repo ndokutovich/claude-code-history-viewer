@@ -43,6 +43,7 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
       setSystemInfo(info);
     } catch (error) {
       console.error("Failed to load system info:", error);
+      alert(t("feedback.systemInfoError"));
     }
   };
 

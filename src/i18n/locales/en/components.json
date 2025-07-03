@@ -534,7 +534,8 @@
       "feature": "Please describe the needed feature and the reason for it.",
       "default": "Please enter detailed content."
     },
-    "openGitHubError": "Failed to open GitHub. Please try again."
+    "openGitHubError": "Failed to open GitHub. Please try again.",
+    "systemInfoError": "Failed to load system information. Please try again."
   },
   "updateModal": {
     "updateAvailable": "Version {{version}} Update",

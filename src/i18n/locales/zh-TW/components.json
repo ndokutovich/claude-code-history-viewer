@@ -401,7 +401,8 @@
     "arguments": "參數:",
     "status": "狀態:",
     "errorOutput": "錯誤輸出",
-    "executionResult": "執行結果"
+    "executionResult": "執行結果",
+    "unknownContentType": "未知內容類型"
   },
   "toolUseRenderer": {
     "fileCreation": "檔案建立",
@@ -498,9 +499,6 @@
   "thinkingRenderer": {
     "title": "Claude的思考過程"
   },
-  "commandRenderer": {
-    "unknownContentType": "未知內容類型"
-  },
   "copyButton": {
     "copy": "複製",
     "copying": "複製中...",
@@ -551,7 +549,8 @@
       "feature": "請描述所需功能及其原因。",
       "default": "請輸入詳細內容。"
     },
-    "openGitHubError": "無法開啟GitHub。請重試。"
+    "openGitHubError": "無法開啟GitHub。請重試。",
+    "systemInfoError": "無法載入系統資訊。請重試。"
   },
   "updateModal": {
     "updateAvailable": "版本 {{version}} 更新",

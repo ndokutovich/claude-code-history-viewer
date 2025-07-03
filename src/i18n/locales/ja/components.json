@@ -534,7 +534,8 @@
       "feature": "必要な機能とその理由を説明してください。",
       "default": "詳細な内容を入力してください。"
     },
-    "openGitHubError": "GitHubを開けませんでした。もう一度お試しください。"
+    "openGitHubError": "GitHubを開けませんでした。もう一度お試しください。",
+    "systemInfoError": "システム情報の読み込みに失敗しました。もう一度お試しください。"
   },
   "updateModal": {
     "updateAvailable": "バージョン {{version}} アップデート",

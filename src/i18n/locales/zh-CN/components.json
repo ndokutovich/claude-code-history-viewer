@@ -549,7 +549,8 @@
       "feature": "请描述所需功能及其原因。",
       "default": "请输入详细内容。"
     },
-    "openGitHubError": "无法打开GitHub。请重试。"
+    "openGitHubError": "无法打开GitHub。请重试。",
+    "systemInfoError": "无法加载系统信息。请重试。"
   },
   "updateModal": {
     "updateAvailable": "版本{{version}}更新",
