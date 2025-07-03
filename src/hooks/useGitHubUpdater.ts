@@ -127,14 +127,13 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
           case "Started":
             setState((prev) => ({ ...prev, downloadProgress: 0 }));
             break;
-          case "Progress":
-            setState((prev) => ({
-              ...prev,
-              downloadProgress: Math.round(
-                (event.data.chunkLength / (event.data.chunkLength || 1)) * 100
-              ),
-            }));
+          case "Progress": {
+            const progress = Math.round(
+              (event.data.chunkLength / (event.data.chunkLength || 1)) * 100
+            );
+            setState((prev) => ({ ...prev, downloadProgress: progress }));
             break;
+          }
           case "Finished":
             setState((prev) => ({
               ...prev,
