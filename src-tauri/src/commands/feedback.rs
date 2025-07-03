@@ -19,7 +19,7 @@ pub struct FeedbackData {
 #[tauri::command]
 pub async fn send_feedback(feedback: FeedbackData) -> Result<(), String> {
     let mut email_body = feedback.body.clone();
-    
+
     // 시스템 정보 포함
     if feedback.include_system_info {
         let system_info = get_system_info().await?;
@@ -29,7 +29,7 @@ pub async fn send_feedback(feedback: FeedbackData) -> Result<(), String> {
         email_body.push_str(&format!("OS: {} {}\n", system_info.os_type, system_info.os_version));
         email_body.push_str(&format!("Architecture: {}\n", system_info.arch));
     }
-    
+
     // 피드백 타입에 따른 이메일 주제 조정
     let email_subject = match feedback.feedback_type.as_str() {
         "bug" => format!("[Bug Report] {}", feedback.subject),
@@ -37,21 +37,26 @@ pub async fn send_feedback(feedback: FeedbackData) -> Result<(), String> {
         "improvement" => format!("[Improvement] {}", feedback.subject),
         _ => format!("[Feedback] {}", feedback.subject),
     };
-    
+
     // URL 인코딩
     let encoded_subject = urlencoding::encode(&email_subject);
     let encoded_body = urlencoding::encode(&email_body);
-    
+
     // mailto 링크 생성
+
+    let feedback_email = std::env::var("FEEDBACK_EMAIL")
+        .unwrap_or_else(|_| "feedback@claude-history-viewer.app".to_string());
     let mailto_url = format!(
-        "mailto:feedback@claude-history-viewer.app?subject={}&body={}",
-        encoded_subject, encoded_body
+         "mailto:{}?subject={}&body={}",
+         feedback_email,
+         encoded_subject,
+         encoded_body
     );
-    
+
     // 시스템 기본 이메일 앱으로 열기
     tauri_plugin_opener::open_url(mailto_url, None::<String>)
         .map_err(|e| format!("Failed to open email client: {}", e))?;
-    
+
     Ok(())
 }
 
@@ -68,9 +73,9 @@ pub async fn get_system_info() -> Result<SystemInfo, String> {
 #[tauri::command]
 pub async fn open_github_issues() -> Result<(), String> {
     let github_url = "https://github.com/jhlee0409/claude-code-history-viewer/issues/new";
-    
+
     tauri_plugin_opener::open_url(github_url, None::<String>)
         .map_err(|e| format!("Failed to open GitHub: {}", e))?;
-    
+
     Ok(())
 }
