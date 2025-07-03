@@ -9,6 +9,8 @@ import { UpToDateNotification } from "./components/UpToDateNotification";
 import { useAppStore } from "./store/useAppStore";
 import { useTheme } from "./hooks/useTheme";
 import { useUpdateChecker } from "./hooks/useUpdateChecker";
+import { useTranslation } from "react-i18next";
+
 import {
   AppErrorType,
   type ClaudeSession,
@@ -29,7 +31,10 @@ import {
   Laptop,
   Folder,
   Activity,
+  Languages,
 } from "lucide-react";
+import { useLanguageStore } from "./store/useLanguageStore";
+import { type SupportedLanguage } from "./i18n";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,6 +88,14 @@ function App() {
 
   const { theme, setTheme } = useTheme();
   const updateChecker = useUpdateChecker();
+  const { t, i18n: i18nInstance } = useTranslation('common');
+  const { t: tComponents } = useTranslation('components');
+  const { t: tMessages } = useTranslation('messages');
+  const { language, setLanguage, loadLanguage } = useLanguageStore();
+
+  // 디버깅: 언어 상태 확인
+  console.log("Language in store:", language);
+  console.log("Language in i18n:", i18nInstance.language);
 
   // 세션 선택 시 토큰 통계 화면에서 채팅 화면으로 자동 전환
   const handleSessionSelect = async (session: ClaudeSession) => {
@@ -108,8 +121,38 @@ function App() {
   };
 
   useEffect(() => {
-    initializeApp();
-  }, [initializeApp]);
+    // 언어 설정 로드 후 앱 초기화
+    loadLanguage().then(() => {
+      initializeApp();
+    });
+  }, [initializeApp, loadLanguage]);
+
+  // i18n 언어 변경 감지
+  useEffect(() => {
+    const handleLanguageChange = (lng: string) => {
+      // 스토어의 언어와 다르면 업데이트
+      const currentLang = lng.startsWith("zh")
+        ? lng.includes("TW") || lng.includes("HK")
+          ? "zh-TW"
+          : "zh-CN"
+        : lng.split("-")[0];
+
+      if (
+        currentLang &&
+        currentLang !== language &&
+        ["en", "ko", "ja", "zh-CN", "zh-TW"].includes(currentLang)
+      ) {
+        useLanguageStore.setState({
+          language: currentLang as SupportedLanguage,
+        });
+      }
+    };
+
+    i18nInstance.on("languageChanged", handleLanguageChange);
+    return () => {
+      i18nInstance.off("languageChanged", handleLanguageChange);
+    };
+  }, [language, i18nInstance]);
 
   // Handle errors
   useEffect(() => {
@@ -255,7 +298,7 @@ function App() {
               COLORS.semantic.error.text
             )}
           >
-            오류가 발생했습니다
+            {t("errorOccurred")}
           </h1>
           <p className={cn("mb-4", COLORS.semantic.error.text)}>
             {error.message}
@@ -268,7 +311,7 @@ function App() {
               COLORS.semantic.error.text
             )}
           >
-            다시 시도
+            {t("retry")}
           </button>
         </div>
       </div>
@@ -296,10 +339,10 @@ function App() {
               <h1
                 className={cn("text-xl font-semibold", COLORS.ui.text.primary)}
               >
-                Claude Code History Viewer
+                {t("appName")}
               </h1>
               <p className={cn("text-sm", COLORS.ui.text.muted)}>
-                Claude Code 대화 기록을 탐색하고 분석하세요
+                {t("appDescription")}
               </p>
             </div>
           </div>
@@ -311,7 +354,10 @@ function App() {
                 {selectedSession && (
                   <>
                     <span className="mx-2">›</span>
-                    <span>세션 {selectedSession.session_id.slice(-8)}</span>
+                    <span>
+                      {tComponents("session.title")}{" "}
+                      {selectedSession.session_id.slice(-8)}
+                    </span>
                   </>
                 )}
               </div>
@@ -336,7 +382,7 @@ function App() {
                         ? COLORS.semantic.info.bgDark
                         : COLORS.ui.interactive.hover
                     )}
-                    title="분석 대시보드"
+                    title={tComponents("analytics.dashboard")}
                   >
                     <BarChart3
                       className={cn("w-5 h-5", COLORS.ui.text.primary)}
@@ -359,7 +405,7 @@ function App() {
                         ? COLORS.semantic.success.bgDark
                         : COLORS.ui.interactive.hover
                     )}
-                    title="토큰 통계 (기존)"
+                    title={tMessages("tokenStats.existing")}
                   >
                     {isLoadingTokenStats ? (
                       <Loader2
@@ -402,7 +448,7 @@ function App() {
                             "hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700"
                           )
                     )}
-                    title="메시지 보기"
+                    title={tComponents("message.view")}
                   >
                     <MessageSquare
                       className={cn("w-5 h-5", COLORS.ui.text.primary)}
@@ -417,7 +463,7 @@ function App() {
                       COLORS.ui.text.disabled,
                       "hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-gray-700"
                     )}
-                    title="세션 새로고침"
+                    title={tComponents("session.refresh")}
                   >
                     <RefreshCw
                       className={cn(
@@ -445,19 +491,23 @@ function App() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>설정</DropdownMenuLabel>
+                  <DropdownMenuLabel>
+                    {t("settings.title")}
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem onClick={() => setShowFolderSelector(true)}>
                     <Folder
                       className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
                     />
-                    <span>폴더 변경</span>
+                    <span>{t("settings.changeFolder")}</span>
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator />
 
-                  <DropdownMenuLabel>테마</DropdownMenuLabel>
+                  <DropdownMenuLabel>
+                    {t("settings.theme.title")}
+                  </DropdownMenuLabel>
                   <DropdownMenuRadioGroup
                     value={theme}
                     onValueChange={(value) => setTheme(value as Theme)}
@@ -466,21 +516,63 @@ function App() {
                       <Sun
                         className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
                       />
-                      <span>라이트</span>
+                      <span>{t("settings.theme.light")}</span>
                     </DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="dark">
                       <Moon
                         className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
                       />
-                      <span>다크</span>
+                      <span>{t("settings.theme.dark")}</span>
                     </DropdownMenuRadioItem>
                     <DropdownMenuRadioItem value="system">
                       <Laptop
                         className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
                       />
-                      <span>시스템</span>
+                      <span>{t("settings.theme.system")}</span>
                     </DropdownMenuRadioItem>
                   </DropdownMenuRadioGroup>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuLabel>
+                    {t("settings.language.title")}
+                  </DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={language}
+                    onValueChange={(value) => setLanguage(value as SupportedLanguage)}
+                  >
+                    <DropdownMenuRadioItem value="en">
+                      <Languages
+                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                      />
+                      <span>English</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="ko">
+                      <Languages
+                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                      />
+                      <span>한국어</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="ja">
+                      <Languages
+                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                      />
+                      <span>日本語</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="zh-CN">
+                      <Languages
+                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                      />
+                      <span>简体中文</span>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="zh-TW">
+                      <Languages
+                        className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
+                      />
+                      <span>繁體中文</span>
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() => updateChecker.checkForUpdates(true)}
@@ -488,7 +580,7 @@ function App() {
                     <RefreshCw
                       className={cn("mr-2 h-4 w-4", COLORS.ui.text.primary)}
                     />
-                    업데이트 확인
+                    {t("settings.checkUpdate")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -530,14 +622,14 @@ function App() {
                     )}
                   >
                     {showAnalytics
-                      ? "분석 대시보드"
+                      ? tComponents("analytics.dashboard")
                       : showTokenStats
-                      ? "토큰 사용량 통계"
-                      : "대화 내용"}
+                      ? tMessages("tokenStats.title")
+                      : tComponents("message.conversation")}
                   </h2>
                   <span className={cn("text-sm", COLORS.ui.text.secondary)}>
                     {selectedSession?.summary ||
-                      "세션 요약을 찾을 수 없습니다."}
+                      tComponents("session.summaryNotFound")}
                   </span>
                   {!showTokenStats && !showAnalytics && selectedSession && (
                     <div>
@@ -545,9 +637,10 @@ function App() {
                         {pagination.totalCount >= messages.length &&
                           ` ${pagination.totalCount || "-"}개 • `}
                         {selectedSession.has_tool_use
-                          ? "도구 사용됨"
-                          : "일반 대화"}
-                        {selectedSession.has_errors && " • 에러 발생"}
+                          ? tComponents("tools.toolUsed")
+                          : tComponents("tools.generalConversation")}
+                        {selectedSession.has_errors &&
+                          ` • ${tComponents("tools.errorOccurred")}`}
                       </p>
                     </div>
                   )}

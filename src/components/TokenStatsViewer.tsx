@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   BarChart3,
   TrendingUp,
@@ -25,8 +26,10 @@ interface TokenStatsViewerProps {
 export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
   sessionStats,
   projectStats = [],
-  title = "토큰 사용량 통계",
+  title,
 }) => {
+  const { t } = useTranslation('components');
+  const displayTitle = title || t('analytics.tokenUsage');
   // 단일 세션 통계 표시
   const renderSessionStats = (
     stats: SessionTokenStats,

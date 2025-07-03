@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   BarChart3,
   TrendingUp,
@@ -44,6 +45,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   projectSummary,
   sessionComparison,
 }) => {
+  const { t } = useTranslation('components');
   const [activeTab, setActiveTab] = useState<"project" | "session">("project");
   // Calculate growth rates
   const calculateGrowthRate = (current: number, previous: number): number => {
@@ -209,7 +211,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <Wrench
             className={cn("w-12 h-12 mx-auto mb-2", COLORS.ui.text.disabled)}
           />
-          <p>도구 사용 데이터가 없습니다</p>
+          <p>{t('analytics.noData')}</p>
         </div>
       );
     }
@@ -272,7 +274,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     {tool.usage_count}회
                   </span>
                   <div className={cn("text-xs", COLORS.ui.text.muted)}>
-                    성공률 {Math.round(tool.success_rate)}%
+                    {t('analytics.successRate', { percent: Math.round(tool.success_rate) })}
                   </div>
                 </div>
               </div>
@@ -354,7 +356,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               {formatNumber(projectSummary.total_messages)}
             </div>
             <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-              Total Messages
+              {t('analytics.totalMessages')}
             </div>
           </div>
 
@@ -375,7 +377,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               {formatNumber(projectSummary.total_tokens)}
             </div>
             <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-              Total Tokens
+              {t('analytics.totalTokens')}
             </div>
           </div>
 
