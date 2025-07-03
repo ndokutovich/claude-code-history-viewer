@@ -66,7 +66,7 @@ export function useNativeUpdater(): UseNativeUpdaterReturn {
           case 'Progress':
             setState(prev => ({ 
               ...prev, 
-              downloadProgress: Math.round((event.data.chunkLength / event.data.contentLength) * 100)
+              downloadProgress: Math.round((event.data.chunkLength / (event.data.chunkLength || 1)) * 100)
             }));
             break;
           case 'Finished':

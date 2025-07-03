@@ -152,9 +152,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     set({ isLoadingProjects: true, error: null });
     try {
+      const start = performance.now();
       const projects = await invoke<ClaudeProject[]>("scan_projects", {
         claudePath,
       });
+      const duration = performance.now() - start;
+      console.log(`🚀 [Frontend] scanProjects: ${projects.length}개 프로젝트, ${duration.toFixed(1)}ms`);
+      
       set({ projects });
     } catch (error) {
       console.error("Failed to scan projects:", error);
