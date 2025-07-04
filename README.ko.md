@@ -17,18 +17,28 @@ Claude Code는 대화 기록을 `~/.claude/projects/` 폴더에 JSONL 파일로 
 
 ### 메인 인터페이스
 
-![Main Interface](docs/images/main-interface.png)
 프로젝트 탐색과 대화 내용 확인 - 코드 블록 구문 강조 포함
+
+<p align="center">
+  <img width="49%" alt="Main Interface 1" src="https://github.com/user-attachments/assets/45719832-324c-40c3-8dfe-5c70ddffc0a9" />
+  <img width="49%" alt="Main Interface 2" src="https://github.com/user-attachments/assets/bb9fbc9d-9d78-4a95-a2ab-a1b1b763f515" />
+</p>
 
 ### 사용량 분석 대시보드
 
-![Analytics Dashboard](docs/images/analytics-dashboard.png)
 활동 히트맵과 도구 사용 통계로 사용 패턴 파악
+
+<img width="720" alt="Analytics Dashboard" src="https://github.com/user-attachments/assets/77dc026c-8901-47d1-a8ca-e5235b97e945" />
 
 ### 상세 토큰 통계
 
-![Token Statistics](docs/images/token-statistics.png)
 프로젝트별 토큰 사용량과 세션 상세 분석
+
+<img width="720" alt="Token Statistics" src="https://github.com/user-attachments/assets/ec5b17d0-076c-435e-8cec-1c6fd74265db" />
+
+### 데모
+
+<img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
 
 ## 주요 기능
 

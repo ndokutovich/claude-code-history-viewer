@@ -17,18 +17,28 @@ Claude Code 將對話記錄保存在 `~/.claude/projects/` 資料夾的 JSONL �
 
 ### 主介面
 
-![Main Interface](docs/images/main-interface.png)
 瀏覽專案並檢視具有語法醒目提示程式碼區塊的對話
+
+<p align="center">
+  <img width="49%" alt="Main Interface 1" src="https://github.com/user-attachments/assets/45719832-324c-40c3-8dfe-5c70ddffc0a9" />
+  <img width="49%" alt="Main Interface 2" src="https://github.com/user-attachments/assets/bb9fbc9d-9d78-4a95-a2ab-a1b1b763f515" />
+</p>
 
 ### 分析儀表板
 
-![Analytics Dashboard](docs/images/analytics-dashboard.png)
 活動熱力圖和工具使用統計，了解您的使用模式
+
+<img width="720" alt="Analytics Dashboard" src="https://github.com/user-attachments/assets/77dc026c-8901-47d1-a8ca-e5235b97e945" />
 
 ### Token 統計
 
-![Token Statistics](docs/images/token-statistics.png)
 每個專案的 token 使用量細分和工作階段層級分析
+
+<img width="720" alt="Token Statistics" src="https://github.com/user-attachments/assets/ec5b17d0-076c-435e-8cec-1c6fd74265db" />
+
+### 演示
+
+<img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
 
 ## 主要功能
 
@@ -47,9 +57,11 @@ Claude Code 將對話記錄保存在 `~/.claude/projects/` 資料夾的 JSONL �
 ## 安裝
 
 ### 下載
+
 從 [Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases) 取得最新版本。
 
 ### 從原始碼建置
+
 ```bash
 git clone https://github.com/jhlee0409/claude-code-history-viewer.git
 cd claude-code-history-viewer
@@ -81,6 +93,7 @@ pnpm tauri:build
 ## Claude 目錄結構
 
 應用程式期望以下結構：
+
 ```
 ~/.claude/
 ├── projects/          # 專案對話

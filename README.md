@@ -20,8 +20,7 @@ Browse projects and view conversations with syntax-highlighted code blocks
 <p align="center">
   <img width="49%" alt="Main Interface 1" src="https://github.com/user-attachments/assets/45719832-324c-40c3-8dfe-5c70ddffc0a9" />
   <img width="49%" alt="Main Interface 2" src="https://github.com/user-attachments/assets/bb9fbc9d-9d78-4a95-a2ab-a1b1b763f515" />
-</ㅔ>
-
+</p>
 
 ### Analytics Dashboard
 
@@ -29,18 +28,15 @@ Activity heatmap and tool usage statistics to understand your usage patterns
 
 <img width="720" alt="Analytics Dashboard" src="https://github.com/user-attachments/assets/77dc026c-8901-47d1-a8ca-e5235b97e945" />
 
-
 ### Token Statistics
 
 Per-project token usage breakdown and session-level analysis
 
 <img width="720" alt="Token Statistics" src="https://github.com/user-attachments/assets/ec5b17d0-076c-435e-8cec-1c6fd74265db" />
 
-
 ### Demo
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
-
 
 ## What it does
 
@@ -59,9 +55,11 @@ The app also handles large conversation histories without freezing up, and auto-
 ## Installation
 
 ### Download
+
 Get the latest version from [Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases).
 
 ### Build from source
+
 ```bash
 git clone https://github.com/jhlee0409/claude-code-history-viewer.git
 cd claude-code-history-viewer
@@ -93,6 +91,7 @@ Everything runs locally. No data is sent to any servers. The app only reads file
 ## Claude directory structure
 
 The app expects this structure:
+
 ```
 ~/.claude/
 ├── projects/          # Project conversations
