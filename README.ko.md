@@ -1,140 +1,119 @@
 # Claude Code History Viewer
 
-<p style="center">
-  <img src="https://img.shields.io/badge/Version-1.0.0--beta.3-orange.svg" alt="Version 1.0.0-beta.3" />
-  <img src="https://img.shields.io/badge/Built%20with-Tauri%202.6.1%20+%20React%2019.1.0-blue.svg" alt="Built with Tauri 2.6.1 and React 19.1.0" />
-  <img src="https://img.shields.io/badge/Platform-macOS-lightgrey.svg" alt="Platform" />
-  <img src="https://img.shields.io/badge/Languages-Multi--lingual-blueviolet.svg" alt="Multi-lingual UI" />
-</p>
+Claude Code의 대화 기록(`~/.claude`)을 보기 편하게 탐색할 수 있는 데스크톱 앱입니다.
+
+![Version](https://img.shields.io/badge/Version-1.0.0--beta.3-orange.svg)
+![Platform](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)
 
 **Languages**: [English](README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) | [中文 (简体)](README.zh-CN.md) | [中文 (繁體)](README.zh-TW.md)
 
-`~/.claude` 디렉토리에 저장된 Claude Code 대화 기록을 탐색하고 분석할 수 있는 데스크톱 애플리케이션입니다.
+> ⚠️ **베타 소프트웨어** - 불안정하거나 변경될 수 있습니다
 
-> ⚠️ **베타 알림**: 이 애플리케이션은 현재 베타 단계입니다. 기능과 API가 변경될 수 있습니다.
+## 왜 만들었나
 
-## 기능
+Claude Code는 대화 기록을 `~/.claude/projects/` 폴더에 JSONL 파일로 저장합니다. 이 파일들은 읽기 어렵고 검색도 불편해서, 제대로 된 인터페이스로 대화를 확인하고 사용량 통계도 볼 수 있는 앱을 만들었습니다.
 
-### 핵심 기능
+## 스크린샷 및 데모
 
-- 📁 **프로젝트 및 세션 탐색** - 모든 Claude Code 프로젝트와 대화 세션을 탐색
-- 🎨 **구문 강조** - react-syntax-highlighter를 사용하여 코드 블록을 아름답게 강조 표시
-- 🌲 **트리 뷰 탐색** - 확장 가능한 트리 구조로 직관적인 프로젝트/세션 계층 구조
-- ⚡ **빠른 성능** - 효율적인 파일 파싱과 검색을 위한 Rust 백엔드
-- 🖥️ **macOS 네이티브** - macOS용 Tauri로 구축된 최적화된 데스크톱 애플리케이션
+### 메인 인터페이스
 
-### 분석 및 통계
+![Main Interface](docs/images/main-interface.png)
+프로젝트 탐색과 대화 내용 확인 - 코드 블록 구문 강조 포함
 
-- 📊 **종합 분석 대시보드** - 상호작용 차트가 포함된 상세한 사용량 분석 보기
-- 📈 **토큰 사용량 통계** - 프로젝트 및 세션별 토큰 사용량을 성장률과 함께 추적
-- 🔥 **활동 히트맵** - 시간에 따른 상호작용 패턴 시각화
-- 📊 **세션 비교** - 다양한 세션 간 메트릭 비교
-- 📉 **도구 사용량 분석** - 가장 자주 사용되는 도구 확인
+### 사용량 분석 대시보드
 
-### 고급 기능
+![Analytics Dashboard](docs/images/analytics-dashboard.png)
+활동 히트맵과 도구 사용 통계로 사용 패턴 파악
 
-- 🔄 **자동 업데이트 시스템** - 우선순위 레벨(중요, 권장, 선택)에 따른 자동 업데이트 확인
-- 💭 **Thinking 콘텐츠 표시** - Claude의 추론 과정을 포맷된 블록으로 보기
-- 📃 **효율적인 메시지 로딩** - 페이지네이션으로 대용량 대화 기록 처리
-- 🔄 **세션 새로고침** - 재시작 없이 세션을 새로고침하여 새 메시지 확인
-- 📝 **세션 요약** - 빠른 세션 개요를 위한 AI 생성 요약
+### 상세 토큰 통계
 
-### 콘텐츠 렌더링
+![Token Statistics](docs/images/token-statistics.png)
+프로젝트별 토큰 사용량과 세션 상세 분석
 
-- 🖼️ **이미지 지원** - 대화에 포함된 이미지 보기
-- 📝 **향상된 Diff 뷰어** - 개선된 라인별 파일 변경 비교
-- 🚀 **풍부한 도구 결과** - 다양한 도구 출력의 아름다운 렌더링 (웹 검색, git 워크플로우, 터미널 스트림 등)
+## 주요 기능
+
+**대화 탐색**: 왼쪽에 프로젝트 트리, 오른쪽에 대화 내용이 표시됩니다.
+
+**검색 및 필터링**: 전체 대화 기록에서 특정 대화나 메시지를 찾을 수 있습니다.
+
+**사용량 분석**: 어떤 프로젝트를 가장 많이 사용하는지, 시간대별 토큰 사용량, 활동 패턴 등을 확인할 수 있습니다. Claude Code 사용 습관을 파악하는 데 유용합니다.
+
+**보기 편한 인터페이스**: 코드 블록 구문 강조, diff 포맷팅, 읽기 편한 메시지 스레드 등으로 JSONL 원본보다 훨씬 보기 좋습니다.
+
+**도구 출력 시각화**: 웹 검색 결과, git 작업, 터미널 출력 등이 읽기 편한 형태로 표시됩니다.
+
+대용량 대화 기록도 끊김 없이 처리하고, 새로운 대화가 추가되면 자동으로 새로고침됩니다.
 
 ## 설치
 
-### 미리 빌드된 바이너리 다운로드
+### 다운로드
 
-[Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases) 페이지를 방문하여 플랫폼에 맞는 최신 버전을 다운로드하세요.
+[Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases)에서 최신 버전을 받으세요.
 
-### 소스에서 빌드
-
-#### 필수 조건
-
-- [Node.js](https://nodejs.org/) (v18 이상)
-- [pnpm](https://pnpm.io/) 패키지 매니저 (v8+)
-- [Rust](https://www.rust-lang.org/) 툴체인 (최신 안정 버전)
-- **macOS**: Xcode Command Line Tools
-
-#### 빌드
+### 직접 빌드
 
 ```bash
-# 저장소 클론
 git clone https://github.com/jhlee0409/claude-code-history-viewer.git
 cd claude-code-history-viewer
-
-# 의존성 설치
 pnpm install
-
-# 개발 모드에서 실행
-pnpm tauri:dev
-
-# 프로덕션용 빌드
 pnpm tauri:build
 ```
 
-빌드된 애플리케이션은 `src-tauri/target/release/bundle/`에 있습니다.
+**필요한 것**: Node.js 18+, pnpm, Rust 툴체인, Xcode Command Line Tools (macOS)
 
 ## 사용법
 
-1. 애플리케이션 실행
-2. 앱이 자동으로 `~/.claude` 디렉토리에서 대화 기록을 스캔합니다
-3. 왼쪽 사이드바를 사용하여 프로젝트와 세션을 탐색합니다
-4. 세션을 클릭하여 메시지를 확인합니다
-5. 분석 대시보드를 보고 사용 패턴을 이해합니다
-6. 자동 업데이트 시스템을 통해 업데이트를 확인합니다
+1. 앱 실행
+2. `~/.claude`를 자동으로 스캔해서 대화 데이터를 찾습니다
+3. 왼쪽 사이드바에서 프로젝트 탐색
+4. 세션을 클릭하면 메시지를 볼 수 있습니다
+5. 분석 탭에서 사용량 통계 확인
 
-## 기여
+## 현재 제한사항
 
-기여를 환영합니다! Pull Request를 제출해 주세요.
+- **macOS만 지원** (Windows/Linux 지원 예정)
+- **베타 소프트웨어** - 아직 거친 부분이 있을 수 있습니다
+- 대용량 대화 기록(수천 개 메시지)은 초기 로딩이 느릴 수 있습니다
+- 자동 업데이트 시스템은 아직 테스트 중입니다
+
+## 데이터 프라이버시
+
+모든 처리가 로컬에서 이루어집니다. 서버로 데이터를 전송하지 않으며, `~/.claude` 디렉토리만 읽습니다.
 
 ## Claude 디렉토리 구조
 
-앱은 다음에서 대화 데이터를 읽습니다:
+다음 구조를 예상합니다:
 
-```text
+```
 ~/.claude/
-├── projects/          # 프로젝트별 대화 데이터
+├── projects/          # 프로젝트 대화
 │   └── [project-name]/
-│       └── *.jsonl    # 대화 메시지가 포함된 JSONL 파일
-├── ide/              # IDE 관련 데이터
-├── statsig/          # 통계/분석 데이터
-└── todos/            # 할 일 목록 데이터
+│       └── *.jsonl    # 대화 파일
+├── ide/              # IDE 데이터
+├── statsig/          # 분석 데이터
+└── todos/            # 할 일 목록
 ```
 
 ## 문제 해결
 
-### 일반적인 문제
+**"Claude 데이터를 찾을 수 없음"**: Claude Code를 사용해서 대화 기록이 있는지 확인하세요. `~/.claude`가 존재하는지도 확인해보세요.
 
-**앱이 Claude 데이터를 찾을 수 없는 경우**
+**성능 문제**: 대화 기록이 매우 큰 경우 다른 앱들을 종료해보세요. 현재는 모든 데이터를 메모리에 로드합니다.
 
-- Claude Code가 설치되어 있고 대화 기록이 있는지 확인하세요
-- `~/.claude` 디렉토리가 존재하고 프로젝트 데이터가 포함되어 있는지 확인하세요
+**업데이트 문제**: 베타 자동 업데이터가 불안정할 수 있습니다. 문제 시 수동으로 다운로드하세요.
 
-**대용량 기록으로 인한 성능 문제**
+## 기여
 
-- 앱은 긴 메시지 목록에 가상화를 사용합니다
-- 성능이 저하되면 오래된 대화를 아카이브하는 것을 고려하세요
-
-## 개인정보 보호
-
-이 애플리케이션은 완전히 로컬에서 실행되며 외부 서버로 데이터를 전송하지 않습니다. 모든 대화 데이터는 사용자의 컴퓨터에 남아있습니다.
-
-## 라이선스
-
-이 프로젝트는 MIT 라이선스에 따라 라이선스가 부여됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
+Pull Request 환영합니다. 사이드 프로젝트라 응답이 늦을 수 있습니다.
 
 ## 기술 스택
 
-- [Tauri](https://tauri.app/) + React + TypeScript로 구축
-- UI: [Tailwind CSS](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)
+Tauri (Rust + React)로 제작. UI는 Tailwind CSS와 Radix 컴포넌트 사용.
 
-## 지원
+## 라이선스
 
-문제가 발생하면 자세한 정보와 함께 [이슈를 생성](https://github.com/jhlee0409/claude-code-history-viewer/issues)해 주세요.
+MIT 라이선스 - [LICENSE](LICENSE) 파일 참조.
 
 ---
+
+**질문이나 문제 있으시면?** 설정과 어떤 문제가 발생했는지 자세히 적어서 [이슈를 등록](https://github.com/jhlee0409/claude-code-history-viewer/issues)해주세요.

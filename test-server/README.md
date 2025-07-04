@@ -5,8 +5,9 @@
 ## 📋 테스트 완료 체크리스트
 
 ✅ **테스트 성공 확인 사항:**
+
 - HTTP 권한 설정 (`capabilities/http.json`)
-- Updater 권한 설정 (`capabilities/default.json`) 
+- Updater 권한 설정 (`capabilities/default.json`)
 - 플랫폼별 바이너리 지원 (`darwin-aarch64`, `darwin-x86_64`, `darwin-universal`)
 - GitHub API 연동 및 릴리즈 노트 표시
 - 자동/수동 업데이트 확인 기능
@@ -39,23 +40,26 @@ node server.cjs  # 주의: .cjs 확장자 사용
 ```
 
 `src/hooks/useGitHubUpdater.ts`에서 로컬 서버 사용:
+
 ```typescript
 // 테스트용: 로컬 서버로 요청
 const response = await fetch('http://localhost:3000/latest.json', {
 ```
 
 ### 3. 버전 설정
+
 - 현재 앱 버전: `1.0.0-beta.1` (tauri.conf.json)
 - 테스트 서버 버전: `1.0.0-beta.3` (latest.json)
 
 ### 4. 필수 권한 확인
 
 `src-tauri/capabilities/default.json`:
+
 ```json
 {
   "permissions": [
     "core:default",
-    "dialog:allow-open", 
+    "dialog:allow-open",
     "dialog:default",
     "updater:default",
     "updater:allow-check"
@@ -64,6 +68,7 @@ const response = await fetch('http://localhost:3000/latest.json', {
 ```
 
 `src-tauri/capabilities/http.json`:
+
 ```json
 {
   "permissions": [
@@ -71,8 +76,8 @@ const response = await fetch('http://localhost:3000/latest.json', {
     {
       "identifier": "http:allow-fetch",
       "allow": [
-        {"url": "https://api.github.com/**"},
-        {"url": "http://localhost:3000/**"}
+        { "url": "https://api.github.com/**" },
+        { "url": "http://localhost:3000/**" }
       ]
     }
   ]
@@ -88,19 +93,23 @@ const response = await fetch('http://localhost:3000/latest.json', {
 ### 6. 테스트 시나리오
 
 #### ✅ 정상 업데이트
+
 - 업데이트 모달 표시
-- 릴리즈 노트 마크다운 렌더링  
+- 릴리즈 노트 마크다운 렌더링
 - 다운로드/설치 진행률 표시
 
 #### ✅ 네트워크 오류
+
 - 서버 중지 후 오류 메시지 확인
 
 #### ✅ 우선순위 테스트
+
 - `latest.json`의 `notes`에 키워드 추가:
   - "critical", "security", "hotfix" → 빨간색 긴급 모달
   - "recommended", "important" → 파란색 권장 모달
 
 #### ✅ 취소/건너뛰기 테스트
+
 - "이 버전 건너뛰기" 버튼 동작 확인
 
 ## 🔧 트러블슈팅
@@ -110,7 +119,7 @@ const response = await fetch('http://localhost:3000/latest.json', {
 1. **"http.fetch not allowed"**
    → `capabilities/http.json` 권한 확인
 
-2. **"updater.check not allowed"** 
+2. **"updater.check not allowed"**
    → `capabilities/default.json`에 updater 권한 추가
 
 3. **"platform not found"**
@@ -122,6 +131,7 @@ const response = await fetch('http://localhost:3000/latest.json', {
 ## 📝 프로덕션 배포 전 복원 체크리스트
 
 ### 1. `tauri.conf.json` 복원
+
 ```json
 "updater": {
   "active": true,
@@ -135,26 +145,33 @@ const response = await fetch('http://localhost:3000/latest.json', {
 ```
 
 ### 2. `useGitHubUpdater.ts` 복원
+
 ```typescript
 // 프로덕션: GitHub API 사용
-const response = await fetch('https://api.github.com/repos/jhlee0409/claude-code-history-viewer/releases/latest', {
-  headers: {
-    'Accept': 'application/vnd.github.v3+json',
-    'User-Agent': 'Claude-Code-History-Viewer',
-  },
-});
+const response = await fetch(
+  "https://api.github.com/repos/jhlee0409/claude-code-history-viewer/releases/latest",
+  {
+    headers: {
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "Claude-Code-History-Viewer",
+    },
+  }
+);
 ```
 
 ### 3. GitHub Secrets 설정
+
 - `TAURI_SIGNING_PRIVATE_KEY`
 - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
 
 ### 4. 버전 번호 업데이트
+
 - 실제 릴리즈 버전으로 변경
 
 ## 🏗️ 아키텍처 요약
 
 ### 업데이트 플로우:
+
 1. **자동 체크** (앱 시작 5초 후) 또는 **수동 체크** (설정 메뉴)
 2. **GitHub API** 호출하여 최신 릴리즈 정보 가져오기
 3. **Tauri 업데이터**로 실제 업데이트 파일 확인
@@ -163,8 +180,9 @@ const response = await fetch('https://api.github.com/repos/jhlee0409/claude-code
 6. **앱 재시작** (자동)
 
 ### 주요 컴포넌트:
+
 - `useGitHubUpdater`: GitHub API 연동 및 상태 관리
-- `GitHubUpdateModal`: 업데이트 UI 및 다운로드 처리  
+- `GitHubUpdateModal`: 업데이트 UI 및 다운로드 처리
 - `UpdateManager`: 전체 업데이트 플로우 관리
 - `UpToDateNotification`: 최신 버전 알림 (수동 체크 시에만)
 
