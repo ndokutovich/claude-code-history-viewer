@@ -1,5 +1,3 @@
-![demo](https://github.com/user-attachments/assets/492295a9-1d73-4e85-93e7-fce9974b023c)# Claude Code History Viewer
-
 A desktop app to browse and search your Claude Code conversation history stored in `~/.claude`.
 
 ![Version](https://img.shields.io/badge/Version-1.0.0--beta.3-orange.svg)
