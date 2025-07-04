@@ -1,4 +1,4 @@
-# Claude Code History Viewer
+![demo](https://github.com/user-attachments/assets/492295a9-1d73-4e85-93e7-fce9974b023c)# Claude Code History Viewer
 
 A desktop app to browse and search your Claude Code conversation history stored in `~/.claude`.
 
@@ -17,18 +17,32 @@ Claude Code stores conversation history in JSONL files scattered across `~/.clau
 
 ### Main Interface
 
-![Main Interface](docs/images/main-interface.png)
 Browse projects and view conversations with syntax-highlighted code blocks
+
+<p align="center">
+  <img width="49%" alt="Main Interface 1" src="https://github.com/user-attachments/assets/45719832-324c-40c3-8dfe-5c70ddffc0a9" />
+  <img width="49%" alt="Main Interface 2" src="https://github.com/user-attachments/assets/bb9fbc9d-9d78-4a95-a2ab-a1b1b763f515" />
+</ㅔ>
+
 
 ### Analytics Dashboard
 
-![Analytics Dashboard](docs/images/analytics-dashboard.png)
 Activity heatmap and tool usage statistics to understand your usage patterns
+
+<img width="720" alt="Analytics Dashboard" src="https://github.com/user-attachments/assets/77dc026c-8901-47d1-a8ca-e5235b97e945" />
+
 
 ### Token Statistics
 
-![Token Statistics](docs/images/token-statistics.png)
 Per-project token usage breakdown and session-level analysis
+
+<img width="720" alt="Token Statistics" src="https://github.com/user-attachments/assets/ec5b17d0-076c-435e-8cec-1c6fd74265db" />
+
+
+### Demo
+
+<img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
 
 ## What it does
 
