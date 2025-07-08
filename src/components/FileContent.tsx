@@ -6,8 +6,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Highlight, themes } from "prism-react-renderer";
 import { useCopyButton } from "../hooks/useCopyButton";
-import { useTheme } from "../hooks/useTheme";
-import { useTranslation } from 'react-i18next';
+import { useTheme } from "@/contexts/theme";
+import { useTranslation } from "react-i18next";
 import { Renderer } from "../shared/RendererHeader";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
@@ -19,7 +19,7 @@ export const FileContent = ({
   fileData: Record<string, unknown>;
   title: string;
 }) => {
-  const { t } = useTranslation('components');
+  const { t } = useTranslation("components");
   const { renderCopyButton } = useCopyButton();
   const { isDarkMode } = useTheme();
   const content = typeof fileData.content === "string" ? fileData.content : "";
@@ -152,13 +152,14 @@ export const FileContent = ({
               renderCopyButton(
                 content,
                 `file-content-${filePath}`,
-                t('fileContent.copyFileContent')
+                t("fileContent.copyFileContent")
               )}
 
             <div className={cn("text-xs", COLORS.semantic.info.text)}>
               {numLines > 0 && totalLines > 0 && (
                 <span>
-                  {startLine}-{startLine + numLines - 1} / {totalLines} {t('fileContent.lines')}
+                  {startLine}-{startLine + numLines - 1} / {totalLines}{" "}
+                  {t("fileContent.lines")}
                 </span>
               )}
             </div>
@@ -172,7 +173,7 @@ export const FileContent = ({
             <div
               className={cn("text-xs font-medium", COLORS.semantic.info.text)}
             >
-              {t('fileContent.filePath')}
+              {t("fileContent.filePath")}
             </div>
             <code
               className={cn(
@@ -191,7 +192,7 @@ export const FileContent = ({
               <div
                 className={cn("text-xs font-medium", COLORS.semantic.info.text)}
               >
-                {t('fileContent.content')}
+                {t("fileContent.content")}
               </div>
               {shouldCollapse && (
                 <button
@@ -204,11 +205,15 @@ export const FileContent = ({
                 >
                   {isExpanded ? (
                     <>
-                      <span>{t('fileContent.collapse')}</span>
+                      <span>{t("fileContent.collapse")}</span>
                     </>
                   ) : (
                     <>
-                      <span>{t('fileContent.expand', { count: contentLines.length })}</span>
+                      <span>
+                        {t("fileContent.expand", {
+                          count: contentLines.length,
+                        })}
+                      </span>
                     </>
                   )}
                 </button>
@@ -226,12 +231,15 @@ export const FileContent = ({
                 <div className="flex items-center space-x-2">
                   {startLine > 1 && (
                     <span className={cn(COLORS.semantic.info.text)}>
-                      {t('fileContent.startLine', { line: startLine })}
+                      {t("fileContent.startLine", { line: startLine })}
                     </span>
                   )}
                   {shouldCollapse && !isExpanded && (
                     <span className={cn(COLORS.semantic.warning.text)}>
-                      {t('fileContent.showingLines', { current: MAX_LINES, total: contentLines.length })}
+                      {t("fileContent.showingLines", {
+                        current: MAX_LINES,
+                        total: contentLines.length,
+                      })}
                     </span>
                   )}
                 </div>
@@ -277,7 +285,13 @@ export const FileContent = ({
                       : language
                   }
                 >
-                  {({ className, style, tokens, getLineProps, getTokenProps }) => (
+                  {({
+                    className,
+                    style,
+                    tokens,
+                    getLineProps,
+                    getTokenProps,
+                  }) => (
                     <pre
                       className={className}
                       style={{
@@ -309,7 +323,10 @@ export const FileContent = ({
                           </span>
                           <span style={{ display: "table-cell" }}>
                             {line.map((token, key) => (
-                              <span key={key} {...getTokenProps({ token, key })} />
+                              <span
+                                key={key}
+                                {...getTokenProps({ token, key })}
+                              />
                             ))}
                           </span>
                         </div>
@@ -336,7 +353,9 @@ export const FileContent = ({
                       )}
                     >
                       <FileText className="w-3 h-3 inline mr-1" />
-                      {t('fileContent.showMoreLines', { count: contentLines.length - MAX_LINES })}
+                      {t("fileContent.showMoreLines", {
+                        count: contentLines.length - MAX_LINES,
+                      })}
                     </button>
                   </div>
                 )}
@@ -359,7 +378,9 @@ export const FileContent = ({
                       )}
                     >
                       <FileText className="w-3 h-3 inline mr-1" />
-                      {t('fileContent.showMoreLines', { count: contentLines.length - MAX_LINES })}
+                      {t("fileContent.showMoreLines", {
+                        count: contentLines.length - MAX_LINES,
+                      })}
                     </button>
                   </div>
                 )}

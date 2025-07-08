@@ -11,7 +11,6 @@ import {
   type SessionTokenStats,
   type ProjectStatsSummary,
   type SessionComparison,
-  type Theme,
   type AppError,
   AppErrorType,
 } from "../types";
@@ -43,10 +42,14 @@ interface AppStore extends AppState {
   setClaudePath: (path: string) => void;
   loadSessionTokenStats: (sessionPath: string) => Promise<void>;
   loadProjectTokenStats: (projectPath: string) => Promise<void>;
-  loadProjectStatsSummary: (projectPath: string) => Promise<ProjectStatsSummary>;
-  loadSessionComparison: (sessionId: string, projectPath: string) => Promise<SessionComparison>;
+  loadProjectStatsSummary: (
+    projectPath: string
+  ) => Promise<ProjectStatsSummary>;
+  loadSessionComparison: (
+    sessionId: string,
+    projectPath: string
+  ) => Promise<SessionComparison>;
   clearTokenStats: () => void;
-  setTheme: (theme: Theme) => Promise<void>;
   setExcludeSidechain: (exclude: boolean) => void;
 }
 
@@ -78,7 +81,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   error: null,
   sessionTokenStats: null,
   projectTokenStats: [],
-  theme: "system" as Theme,
   excludeSidechain: true,
 
   // Actions
@@ -95,11 +97,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       try {
         const store = await load("settings.json", { autoSave: false });
         const savedPath = await store.get<string>("claudePath");
-        const savedTheme = await store.get<Theme>("theme");
-
-        if (savedTheme) {
-          set({ theme: savedTheme });
-        }
 
         if (savedPath) {
           // Validate saved path
@@ -157,8 +154,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
         claudePath,
       });
       const duration = performance.now() - start;
-      console.log(`🚀 [Frontend] scanProjects: ${projects.length}개 프로젝트, ${duration.toFixed(1)}ms`);
-      
+      console.log(
+        `🚀 [Frontend] scanProjects: ${
+          projects.length
+        }개 프로젝트, ${duration.toFixed(1)}ms`
+      );
+
       set({ projects });
     } catch (error) {
       console.error("Failed to scan projects:", error);
@@ -335,13 +336,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       // 프로젝트 세션 목록도 새로고침하여 message_count 업데이트
       if (selectedProject) {
-        const sessions = await invoke<ClaudeSession[]>("load_project_sessions", {
-          projectPath: selectedProject.path,
-          excludeSidechain: get().excludeSidechain,
-        });
+        const sessions = await invoke<ClaudeSession[]>(
+          "load_project_sessions",
+          {
+            projectPath: selectedProject.path,
+            excludeSidechain: get().excludeSidechain,
+          }
+        );
         set({ sessions });
       }
-      
+
       // 현재 세션을 다시 로드 (첫 페이지부터)
       await get().selectSession(selectedSession, pagination.pageSize);
       console.log("새로고침 완료");
@@ -444,19 +448,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   clearTokenStats: () => {
     set({ sessionTokenStats: null, projectTokenStats: [] });
-  },
-
-  setTheme: async (theme: Theme) => {
-    set({ theme });
-
-    // Save to persistent storage
-    try {
-      const store = await load("settings.json", { autoSave: false });
-      await store.set("theme", theme);
-      await store.save();
-    } catch (error) {
-      console.error("Failed to save theme:", error);
-    }
   },
 
   setExcludeSidechain: (exclude: boolean) => {

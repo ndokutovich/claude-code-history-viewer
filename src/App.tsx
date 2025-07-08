@@ -9,13 +9,14 @@ import { FeedbackModal } from "./components/FeedbackModal";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useGitHubUpdater } from "./hooks/useGitHubUpdater";
 import { useAppStore } from "./store/useAppStore";
-import { useTheme } from "./hooks/useTheme";
+
+import { useTheme, type Theme } from "@/contexts/theme";
+
 import { useTranslation } from "react-i18next";
 import {
   AppErrorType,
   type ClaudeSession,
   type ClaudeProject,
-  type Theme,
   type ProjectStatsSummary,
   type SessionComparison,
 } from "./types";
@@ -94,10 +95,6 @@ function App() {
   const { t: tComponents } = useTranslation("components");
   const { t: tMessages } = useTranslation("messages");
   const { language, setLanguage, loadLanguage } = useLanguageStore();
-
-  // 디버깅: 언어 상태 확인
-  // console.log("Language in store:", language);
-  // console.log("Language in i18n:", i18nInstance.language);
 
   // 세션 선택 시 토큰 통계 화면에서 채팅 화면으로 자동 전환
   const handleSessionSelect = async (session: ClaudeSession) => {
