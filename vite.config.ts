@@ -99,6 +99,12 @@ export default defineConfig(({ mode }) => ({
     },
   },
 
+  resolve: {
+    alias: {
+      "@": "/src",
+    },
+  },
+
   // Optimize dependencies pre-bundling
   optimizeDeps: {
     include: [
