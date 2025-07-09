@@ -107,7 +107,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       {/* 모달 */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="relative max-w-screen-lg max-h-screen-lg">
+          <div className="relative max-w-(--breakpoint-lg) max-h-screen-lg">
             {/* 닫기 버튼 */}
             <button
               onClick={closeModal}

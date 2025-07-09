@@ -204,7 +204,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
 
     return (
       <div
-        className={`mt-2 p-3 bg-gradient-to-r from-purple-50 to-blue-50 border ${COLORS.tools.search.border} rounded-lg`}
+        className={`mt-2 p-3 bg-linear-to-r from-purple-50 to-blue-50 border ${COLORS.tools.search.border} rounded-lg`}
       >
         {/* 헤더 */}
         <div

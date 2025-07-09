@@ -347,7 +347,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <div
             className={cn(
               "p-6 rounded-lg border",
-              "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950",
+              "bg-linear-to-br from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950",
               COLORS.semantic.info.border
             )}
           >
@@ -380,7 +380,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <div
             className={cn(
               "p-6 rounded-lg border",
-              "bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950",
+              "bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950",
               COLORS.tools.search.border
             )}
           >
@@ -401,7 +401,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <div
             className={cn(
               "p-6 rounded-lg border",
-              "bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950",
+              "bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950",
               COLORS.semantic.success.border
             )}
           >
@@ -419,7 +419,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <div
             className={cn(
               "p-6 rounded-lg border",
-              "bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950",
+              "bg-linear-to-br from-orange-50 to-red-50 dark:from-orange-950 dark:to-red-950",
               COLORS.semantic.warning.border
             )}
           >
@@ -538,14 +538,14 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                                 "w-full rounded-t transition-all duration-300 cursor-pointer",
                                 "hover:scale-105 hover:shadow-lg ",
                                 isToday
-                                  ? "bg-gradient-to-t from-emerald-600 to-emerald-400"
+                                  ? "bg-linear-to-t from-emerald-600 to-emerald-400"
                                   : isWeekend
-                                  ? "bg-gradient-to-t from-purple-600 to-purple-400"
+                                  ? "bg-linear-to-t from-purple-600 to-purple-400"
                                   : stat.total_tokens > maxTokens * 0.7
-                                  ? "bg-gradient-to-t from-blue-600 to-blue-400"
+                                  ? "bg-linear-to-t from-blue-600 to-blue-400"
                                   : stat.total_tokens > maxTokens * 0.3
-                                  ? "bg-gradient-to-t from-indigo-600 to-indigo-400"
-                                  : "bg-gradient-to-t from-gray-500 to-gray-400"
+                                  ? "bg-linear-to-t from-indigo-600 to-indigo-400"
+                                  : "bg-linear-to-t from-gray-500 to-gray-400"
                               )}
                               style={{ height: `${height}%`, minHeight: "4px" }}
                             >
@@ -639,19 +639,19 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               {/* Legend */}
               <div className="flex items-center justify-center space-x-4 text-xs">
                 <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-gradient-to-t from-emerald-600 to-emerald-400 rounded" />
+                  <div className="w-3 h-3 bg-linear-to-t from-emerald-600 to-emerald-400 rounded" />
                   <span className={cn(COLORS.ui.text.muted)}>
                     {t("analytics.today")}
                   </span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-gradient-to-t from-blue-600 to-blue-400 rounded" />
+                  <div className="w-3 h-3 bg-linear-to-t from-blue-600 to-blue-400 rounded" />
                   <span className={cn(COLORS.ui.text.muted)}>
                     {t("analytics.highActivity")}
                   </span>
                 </div>
                 <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-gradient-to-t from-purple-600 to-purple-400 rounded" />
+                  <div className="w-3 h-3 bg-linear-to-t from-purple-600 to-purple-400 rounded" />
                   <span className={cn(COLORS.ui.text.muted)}>
                     {t("analytics.weekend")}
                   </span>
@@ -773,8 +773,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           className={cn(
             "p-6 rounded-lg border",
             sessionComparison.is_above_average
-              ? "bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950"
-              : "bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950",
+              ? "bg-linear-to-r from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950"
+              : "bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-950 dark:to-orange-950",
             sessionComparison.is_above_average
               ? COLORS.semantic.success.border
               : COLORS.semantic.warning.border
@@ -1069,7 +1069,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       <div
         className={cn(
           "p-4 rounded-lg border mb-6",
-          "bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50",
+          "bg-linear-to-r from-indigo-50 via-purple-50 to-pink-50",
           "dark:from-indigo-950 dark:via-purple-950 dark:to-pink-950",
           COLORS.semantic.info.border
         )}

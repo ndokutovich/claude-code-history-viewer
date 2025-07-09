@@ -91,6 +91,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
       if (!releaseInfo) {
         throw new Error("릴리즈 정보를 가져올 수 없습니다.");
       }
+      console.log(releaseInfo);
 
       // Tauri 업데이터로 업데이트 확인
       const update = await check();
@@ -98,7 +99,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
       setState((prev) => ({
         ...prev,
         isChecking: false,
-        hasUpdate: update?.available ?? false,
+        hasUpdate: !!update,
         updateInfo: update || null,
         releaseInfo,
       }));

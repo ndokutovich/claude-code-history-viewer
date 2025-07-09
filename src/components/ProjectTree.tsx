@@ -136,7 +136,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                             )}
                           >
                             <div className="flex items-start space-x-3">
-                              <MessageCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                              <MessageCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center justify-between">
                                   <h3

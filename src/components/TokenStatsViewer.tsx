@@ -36,7 +36,7 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
   ) => (
     <div
       className={cn(
-        "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 p-4 rounded-lg border",
+        "bg-linear-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 p-4 rounded-lg border",
         COLORS.semantic.info.border
       )}
     >
@@ -125,7 +125,7 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div
           className={cn(
-            "bg-gradient-to-r from-indigo-100 to-blue-100 dark:from-indigo-900 dark:to-blue-900 p-3 rounded border",
+            "bg-linear-to-r from-indigo-100 to-blue-100 dark:from-indigo-900 dark:to-blue-900 p-3 rounded border",
             COLORS.tools.system.border
           )}
         >
@@ -222,7 +222,7 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
         {/* 프로젝트 전체 요약 */}
         <div
           className={cn(
-            "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 p-4 rounded-lg border",
+            "bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 p-4 rounded-lg border",
             COLORS.semantic.success.border
           )}
         >
