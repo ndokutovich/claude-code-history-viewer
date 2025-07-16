@@ -39,7 +39,11 @@ export const ThemeMenuGroup = () => {
       <DropdownMenuLabel>{t("settings.theme.title")}</DropdownMenuLabel>
       <DropdownMenuRadioGroup
         value={theme}
-        onValueChange={(value) => setTheme(value as Theme)}
+        onValueChange={(value) => {
+          if (value === "light" || value === "dark" || value === "system") {
+            setTheme(value);
+          }
+        }}
       >
         {themeItems.map(({ icon, label, value }) => (
           <DropdownMenuRadioItem key={value} value={value}>
