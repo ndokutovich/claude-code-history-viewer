@@ -11,6 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 import type { ClaudeProject, ClaudeSession } from "../types";
 import { cn } from "../utils/cn";
+import { getLocale } from "../utils/time";
 
 interface ProjectTreeProps {
   projects: ClaudeProject[];
@@ -31,7 +32,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   isLoading,
 }) => {
   const [expandedProject, setExpandedProject] = useState("");
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const formatTimeAgo = (dateStr: string) => {
     try {
@@ -55,7 +56,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
           count: diffDays,
         });
       } else {
-        return date.toLocaleDateString("ko-KR", {
+        return date.toLocaleDateString(getLocale(i18n.language || "en"), {
           month: "short",
           day: "numeric",
         });
