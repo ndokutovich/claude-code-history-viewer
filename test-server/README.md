@@ -49,7 +49,7 @@ const response = await fetch('http://localhost:3000/latest.json', {
 ### 3. 버전 설정
 
 - 현재 앱 버전: `1.0.0-beta.1` (tauri.conf.json)
-- 테스트 서버 버전: `1.0.0-beta.3` (latest.json)
+- 테스트 서버 버전: `1.0.0-beta.4` (latest.json)
 
 ### 4. 필수 권한 확인
 
