@@ -40,12 +40,13 @@
         "https://github.com/jhlee0409/claude-code-history-viewer/releases/download/latest/latest.json"
       ],
       "dialog": false,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhCMDAzQUUxMEEzNEFDRTcKUldUbnJEUUs0VG9BaXpzVXFxU2NKTjBOYnFIOVlMWWlHY0NkRHBjVHlFUjdvWkdrMXgyaUFXeXYK"
+      "pubkey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAN03TI0H0yqbEiUtgH1sTbYv38wH26H7x3qqGU9VFXAo=\n-----END PUBLIC KEY-----"
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
