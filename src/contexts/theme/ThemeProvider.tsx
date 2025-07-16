@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ThemeContext, type Theme } from "@/contexts/theme/context";
 import { loadThemeFromTauriStore, saveThemeToTauriStore } from "./utils";
 
@@ -13,17 +13,17 @@ type ThemeProviderProps = {
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(initialState.theme);
 
-  const handleSetTheme = async (theme: Theme) => {
+  const handleSetTheme = useCallback(async (theme: Theme) => {
     setTheme(theme);
     await saveThemeToTauriStore(theme);
-  };
+  }, []);
 
-  const initializeTheme = async () => {
+  const initializeTheme = useCallback(async () => {
     const theme = await loadThemeFromTauriStore();
     if (theme) {
       setTheme(theme);
     }
-  };
+  }, []);
 
   const isDarkMode =
     theme === "dark" ||
@@ -65,7 +65,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       initializeTheme,
       isDarkMode,
     }),
-    [isDarkMode, theme]
+    [isDarkMode, theme, initializeTheme, handleSetTheme]
   );
 
   return (
