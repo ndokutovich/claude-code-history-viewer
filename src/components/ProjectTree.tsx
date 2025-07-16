@@ -98,7 +98,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                       onProjectSelect(project);
                       toggleProject(project.path);
                     }}
-                    className="w-full text-left p-3 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
+                    className="text-left w-full p-3 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
                   >
                     <div className="flex items-center space-x-2">
                       {isExpanded ? (
@@ -108,7 +108,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                       )}
                       <Folder className="w-4 h-4 text-blue-400" />
                       <div className="min-w-0 flex-1 flex items-center">
-                        <p className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm">
+                        <p className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm max-w-56">
                           {project.name}
                         </p>
                       </div>
