@@ -91,10 +91,10 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
       if (!releaseInfo) {
         throw new Error("릴리즈 정보를 가져올 수 없습니다.");
       }
--      console.log(releaseInfo);
-+      if (process.env.NODE_ENV === 'development') {
-+        console.log('Release info:', releaseInfo);
-+      }
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Release info:', releaseInfo);
+      }
 
       // Tauri 업데이터로 업데이트 확인
       const update = await check();
