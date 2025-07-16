@@ -37,7 +37,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://github.com/jhlee0409/claude-code-history-viewer/releases/download/latest/latest.json"
+        "https://github.com/jhlee0409/claude-code-history-viewer/releases/latest/download/latest.json"
       ],
       "dialog": false,
       "pubkey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAN03TI0H0yqbEiUtgH1sTbYv38wH26H7x3qqGU9VFXAo=\n-----END PUBLIC KEY-----"
