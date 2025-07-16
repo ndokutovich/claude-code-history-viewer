@@ -13,9 +13,20 @@
   line-height: 1.5;
 }
 
+.dark .prose pre {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  color: #e5e7eb;
+}
+
 .prose code {
   background-color: #f3f4f6;
   padding: 0.125rem 0.25rem;
   border-radius: 0.25rem;
   font-size: 0.875rem;
+}
+
+.dark .prose code {
+  background-color: #1f2937;
+  color: #e5e7eb;
 }
