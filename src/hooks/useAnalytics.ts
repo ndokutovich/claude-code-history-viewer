@@ -8,7 +8,7 @@
 
 import { useCallback, useMemo, useEffect } from "react";
 import { useAppStore } from "../store/useAppStore";
-import type { UseAnalyticsReturn, AnalyticsView } from "../types/analytics";
+import type { UseAnalyticsReturn } from "../types/analytics";
 
 export const useAnalytics = (): UseAnalyticsReturn => {
   const {
@@ -16,8 +16,6 @@ export const useAnalytics = (): UseAnalyticsReturn => {
     analytics,
     selectedProject,
     selectedSession,
-    sessionTokenStats,
-    projectTokenStats,
     isLoadingTokenStats,
 
     // Store actions
@@ -113,7 +111,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
         setAnalyticsLoadingSessionComparison(true);
         try {
           const comparison = await loadSessionComparison(
-            selectedSession.session_id,
+            selectedSession.actual_session_id,
             selectedProject.path
           );
           setAnalyticsSessionComparison(comparison);
@@ -209,7 +207,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
         try {
           setAnalyticsLoadingSessionComparison(true);
           const comparison = await loadSessionComparison(
-            selectedSession.session_id,
+            selectedSession.actual_session_id,
             selectedProject.path
           );
           setAnalyticsSessionComparison(comparison);
@@ -226,8 +224,10 @@ export const useAnalytics = (): UseAnalyticsReturn => {
       updateSessionComparison();
     }
   }, [
-    selectedSession?.session_id,
+    selectedSession?.actual_session_id,
     selectedProject?.path,
+    selectedProject,
+    selectedSession,
     analytics.currentView,
     loadSessionComparison,
     setAnalyticsLoadingSessionComparison,
@@ -253,6 +253,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
   }, [
     selectedSession?.session_id,
     selectedSession?.file_path,
+    selectedSession,
     analytics.currentView,
     loadSessionTokenStats,
   ]);

@@ -16,7 +16,6 @@ import {
 } from "../types";
 import {
   type AnalyticsState,
-  type AnalyticsActions,
   type AnalyticsViewType,
   initialAnalyticsState,
 } from "../types/analytics";
@@ -344,7 +343,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   refreshCurrentSession: async () => {
-    const { selectedProject, selectedSession, pagination } = get();
+    const { selectedProject, selectedSession, pagination, analytics } = get();
 
     if (!selectedSession) {
       console.warn("No session selected for refresh");
@@ -371,6 +370,41 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       // 현재 세션을 다시 로드 (첫 페이지부터)
       await get().selectSession(selectedSession, pagination.pageSize);
+      
+      // 분석 뷰일 때 분석 데이터도 새로고침
+      if (selectedProject && (analytics.currentView === "tokenStats" || analytics.currentView === "analytics")) {
+        console.log("분석 데이터 새로고침 시작:", analytics.currentView);
+        
+        if (analytics.currentView === "tokenStats") {
+          // 토큰 통계 새로고침
+          await get().loadProjectTokenStats(selectedProject.path);
+          if (selectedSession?.file_path) {
+            await get().loadSessionTokenStats(selectedSession.file_path);
+          }
+        } else if (analytics.currentView === "analytics") {
+          // 분석 대시보드 새로고침
+          const projectSummary = await invoke<ProjectStatsSummary>(
+            "get_project_stats_summary",
+            { projectPath: selectedProject.path }
+          );
+          get().setAnalyticsProjectSummary(projectSummary);
+          
+          // 세션 비교 데이터도 새로고침
+          if (selectedSession) {
+            const sessionComparison = await invoke<SessionComparison>(
+              "get_session_comparison",
+              { 
+                sessionId: selectedSession.actual_session_id,
+                projectPath: selectedProject.path 
+              }
+            );
+            get().setAnalyticsSessionComparison(sessionComparison);
+          }
+        }
+        
+        console.log("분석 데이터 새로고침 완료");
+      }
+      
       console.log("새로고침 완료");
     } catch (error) {
       console.error("새로고침 실패:", error);

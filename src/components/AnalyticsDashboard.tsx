@@ -20,13 +20,7 @@ import {
   CircuitBoard,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-import type {
-  SessionTokenStats,
-  ProjectStatsSummary,
-  ToolUsageStats,
-  ActivityHeatmap,
-  SessionComparison,
-} from "../types";
+import type { ToolUsageStats, ActivityHeatmap } from "../types";
 import { formatTime, formatDuration } from "../utils/time";
 import { COLORS } from "../constants/colors";
 import { cn } from "../utils/cn";
@@ -35,26 +29,21 @@ import { useAnalytics } from "../hooks/useAnalytics";
 
 /**
  * Analytics Dashboard Component
- * 
+ *
  * props 전달을 최소화하고 직접 store와 hook을 사용하여 의존성을 낮춤
  */
 export const AnalyticsDashboard: React.FC = () => {
-  const { 
-    selectedProject, 
-    selectedSession, 
-    sessionTokenStats, 
-    projectTokenStats 
-  } = useAppStore();
-  
+  const { selectedProject, selectedSession, sessionTokenStats } = useAppStore();
+
   const { state: analyticsState } = useAnalytics();
   const { t } = useTranslation("components");
   const [activeTab, setActiveTab] = useState<"project" | "session">("project");
-  
+
   // 컴포넌트 내부에서 사용할 데이터 정의
   const projectSummary = analyticsState.projectSummary;
   const sessionComparison = analyticsState.sessionComparison;
   const sessionStats = sessionTokenStats;
-  
+
   // Calculate growth rates
   const calculateGrowthRate = (current: number, previous: number): number => {
     if (previous === 0) return 0;
@@ -578,9 +567,18 @@ export const AnalyticsDashboard: React.FC = () => {
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>{stat.date}</p>
-                          <p>📊 {t("analytics.tooltipTokens")} {formatNumber(stat.total_tokens)}</p>
-                          <p>💬 {t("analytics.tooltipMessages")} {stat.message_count}</p>
-                          <p>🎯 {t("analytics.tooltipSessions")} {stat.session_count}</p>
+                          <p>
+                            📊 {t("analytics.tooltipTokens")}{" "}
+                            {formatNumber(stat.total_tokens)}
+                          </p>
+                          <p>
+                            💬 {t("analytics.tooltipMessages")}{" "}
+                            {stat.message_count}
+                          </p>
+                          <p>
+                            🎯 {t("analytics.tooltipSessions")}{" "}
+                            {stat.session_count}
+                          </p>
                         </TooltipContent>
                       </Tooltip>
                     );
@@ -841,7 +839,8 @@ export const AnalyticsDashboard: React.FC = () => {
                 {t("analytics.projectShare")}
               </div>
               <div className={cn("text-xs mt-1", COLORS.ui.text.muted)}>
-                {t("analytics.totalLabel")} {formatNumber(sessionStats.total_tokens)}{" "}
+                {t("analytics.totalLabel")}{" "}
+                {formatNumber(sessionStats.total_tokens)}{" "}
                 {t("analytics.tokens")}
               </div>
             </div>
@@ -1029,7 +1028,8 @@ export const AnalyticsDashboard: React.FC = () => {
                   {t("analytics.duration")}
                 </div>
                 <div className={cn("text-xs", COLORS.ui.text.muted)}>
-                  {durationMinutes}{t("analytics.minutesUnit")}
+                  {durationMinutes}
+                  {t("analytics.minutesUnit")}
                 </div>
               </div>
               <div className="text-right">
@@ -1054,7 +1054,8 @@ export const AnalyticsDashboard: React.FC = () => {
                   COLORS.ui.text.tertiary
                 )}
               >
-                {t("analytics.sessionIdLabel")} {sessionStats.session_id.substring(0, 16)}...
+                {t("analytics.sessionIdLabel")}{" "}
+                {sessionStats.session_id.substring(0, 16)}...
               </code>
             </div>
           </div>
@@ -1109,7 +1110,8 @@ export const AnalyticsDashboard: React.FC = () => {
               </span>
             </div>
             <div className={cn("text-xl font-bold", COLORS.ui.text.primary)}>
-              {projectSummary.total_sessions}{t("analytics.sessionsUnit")}
+              {projectSummary.total_sessions}
+              {t("analytics.sessionsUnit")}
             </div>
           </div>
 
@@ -1254,7 +1256,7 @@ export const AnalyticsDashboard: React.FC = () => {
           <div className="ml-auto flex items-center space-x-2 text-sm text-gray-500">
             <Hash className="w-4 h-4" />
             <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-              {selectedSession.substring(0, 8)}...
+              {selectedSession.session_id.substring(0, 8)}...
             </code>
           </div>
         )}
