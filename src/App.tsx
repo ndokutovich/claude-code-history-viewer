@@ -1,19 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { UpdateManager } from "./components/UpdateManager";
 import { useAppStore } from "./store/useAppStore";
+import { useAnalytics } from "./hooks/useAnalytics";
 
 import { useTranslation } from "react-i18next";
-import {
-  AppErrorType,
-  type ClaudeSession,
-  type ClaudeProject,
-  type ProjectStatsSummary,
-  type SessionComparison,
-} from "./types";
+import { AppErrorType, type ClaudeSession, type ClaudeProject } from "./types";
 import { AlertTriangle, Loader2, MessageSquare } from "lucide-react";
 import { useLanguageStore } from "./store/useLanguageStore";
 import { type SupportedLanguage } from "./i18n";
@@ -25,13 +20,6 @@ import { Header } from "@/layouts/Header/Header";
 import { ModalContainer } from "./layouts/Header/SettingDropdown/ModalContainer";
 
 function App() {
-  const [showTokenStats, setShowTokenStats] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [projectSummary, setProjectSummary] =
-    useState<ProjectStatsSummary | null>(null);
-  const [sessionComparison, setSessionComparison] =
-    useState<SessionComparison | null>(null);
-
   const {
     projects,
     sessions,
@@ -43,7 +31,6 @@ function App() {
     isLoadingProjects,
     isLoadingSessions,
     isLoadingMessages,
-    isLoadingTokenStats,
     error,
     sessionTokenStats,
     projectTokenStats,
@@ -51,39 +38,23 @@ function App() {
     selectProject,
     selectSession,
     loadMoreMessages,
-
-    loadProjectTokenStats,
-    loadProjectStatsSummary,
-    loadSessionComparison,
-    clearTokenStats,
   } = useAppStore();
+
+  const {
+    state: analyticsState,
+    actions: analyticsActions,
+    computed,
+  } = useAnalytics();
 
   const { t, i18n: i18nInstance } = useTranslation("common");
   const { t: tComponents } = useTranslation("components");
   const { t: tMessages } = useTranslation("messages");
   const { language, loadLanguage } = useLanguageStore();
 
-  // 세션 선택 시 토큰 통계 화면에서 채팅 화면으로 자동 전환
+  // 세션 선택 시 현재 뷰 유지 (useAnalytics hook에서 자동 데이터 업데이트 처리)
   const handleSessionSelect = async (session: ClaudeSession) => {
-    if (showTokenStats || showAnalytics) {
-      setShowTokenStats(false);
-      setShowAnalytics(false);
-      clearTokenStats();
-    }
     await selectSession(session);
-
-    // Load session comparison if analytics was open
-    if (selectedProject && showAnalytics) {
-      try {
-        const comparison = await loadSessionComparison(
-          session.session_id,
-          selectedProject.path
-        );
-        setSessionComparison(comparison);
-      } catch (error) {
-        console.error("Failed to load session comparison:", error);
-      }
-    }
+    // useAnalytics hook의 useEffect에서 자동으로 데이터 업데이트 처리
   };
 
   useEffect(() => {
@@ -128,16 +99,12 @@ function App() {
 
   // 프로젝트 선택 핸들러 (분석 상태 초기화 포함)
   const handleProjectSelect = async (project: ClaudeProject) => {
-    const wasAnalyticsOpen = showAnalytics;
-    const wasTokenStatsOpen = showTokenStats;
+    const wasAnalyticsOpen = computed.isAnalyticsView;
+    const wasTokenStatsOpen = computed.isTokenStatsView;
 
     // 기존 분석 데이터 초기화
-    if (showAnalytics || showTokenStats) {
-      setShowAnalytics(false);
-      setShowTokenStats(false);
-      setProjectSummary(null);
-      setSessionComparison(null);
-      clearTokenStats();
+    if (!computed.isMessagesView) {
+      analyticsActions.switchToMessages();
     }
 
     // 프로젝트 선택
@@ -146,9 +113,7 @@ function App() {
     // 분석 탭이 열려있었다면 새 프로젝트의 분석 데이터 자동 로드
     if (wasAnalyticsOpen) {
       try {
-        setShowAnalytics(true);
-        const summary = await loadProjectStatsSummary(project.path);
-        setProjectSummary(summary);
+        await analyticsActions.switchToAnalytics();
       } catch (error) {
         console.error("Failed to auto-load analytics for new project:", error);
       }
@@ -157,8 +122,7 @@ function App() {
     // 토큰 통계 탭이 열려있었다면 새 프로젝트의 토큰 통계 자동 로드
     if (wasTokenStatsOpen) {
       try {
-        setShowTokenStats(true);
-        await loadProjectTokenStats(project.path);
+        await analyticsActions.switchToTokenStats();
       } catch (error) {
         console.error(
           "Failed to auto-load token stats for new project:",
@@ -234,7 +198,9 @@ function App() {
           {/* Main Content Area */}
           <div className="w-full flex flex-col relative">
             {/* Content Header */}
-            {(selectedSession || showTokenStats || showAnalytics) && (
+            {(selectedSession ||
+              computed.isTokenStatsView ||
+              computed.isAnalyticsView) && (
               <div
                 className={cn(
                   "p-4 border-b",
@@ -250,9 +216,9 @@ function App() {
                         COLORS.ui.text.primary
                       )}
                     >
-                      {showAnalytics
+                      {computed.isAnalyticsView
                         ? tComponents("analytics.dashboard")
-                        : showTokenStats
+                        : computed.isTokenStatsView
                         ? tMessages("tokenStats.title")
                         : tComponents("message.conversation")}
                     </h2>
@@ -260,7 +226,7 @@ function App() {
                       {selectedSession?.summary ||
                         tComponents("session.summaryNotFound")}
                     </span>
-                    {!showTokenStats && !showAnalytics && selectedSession && (
+                    {computed.isMessagesView && selectedSession && (
                       <div>
                         <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
                           {pagination.totalCount >= messages.length &&
@@ -273,12 +239,12 @@ function App() {
                         </p>
                       </div>
                     )}
-                    {showTokenStats && (
+                    {computed.isTokenStatsView && (
                       <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
                         {tComponents("analytics.tokenUsageDetailed")}
                       </p>
                     )}
-                    {showAnalytics && (
+                    {computed.isAnalyticsView && (
                       <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
                         {selectedSession
                           ? tComponents("analytics.projectSessionAnalysis")
@@ -292,18 +258,11 @@ function App() {
 
             {/* Content */}
             <div className="flex-1 overflow-hidden">
-              {showAnalytics ? (
+              {computed.isAnalyticsView ? (
                 <div className="h-full overflow-y-auto">
-                  <AnalyticsDashboard
-                    selectedProject={selectedProject?.name}
-                    selectedSession={selectedSession?.session_id}
-                    sessionStats={sessionTokenStats}
-                    projectStats={projectTokenStats}
-                    projectSummary={projectSummary}
-                    sessionComparison={sessionComparison}
-                  />
+                  <AnalyticsDashboard />
                 </div>
-              ) : showTokenStats ? (
+              ) : computed.isTokenStatsView ? (
                 <div className="h-full overflow-y-auto p-6 space-y-8">
                   <TokenStatsViewer
                     title={tMessages("tokenStats.title")}
@@ -362,7 +321,7 @@ function App() {
               <span>
                 {tComponents("session.count", { count: sessions.length })}
               </span>
-              {selectedSession && !showTokenStats && !showAnalytics && (
+              {selectedSession && computed.isMessagesView && (
                 <span>
                   {tComponents("message.countWithTotal", {
                     current: messages.length,
@@ -370,17 +329,17 @@ function App() {
                   })}
                 </span>
               )}
-              {showTokenStats && sessionTokenStats && (
+              {computed.isTokenStatsView && sessionTokenStats && (
                 <span>
                   {tComponents("analytics.currentSessionTokens", {
                     count: sessionTokenStats.total_tokens,
                   })}
                 </span>
               )}
-              {showAnalytics && projectSummary && (
+              {computed.isAnalyticsView && analyticsState.projectSummary && (
                 <span>
                   {tComponents("analytics.projectTokens", {
-                    count: projectSummary.total_tokens,
+                    count: analyticsState.projectSummary.total_tokens,
                   })}
                 </span>
               )}
@@ -391,11 +350,12 @@ function App() {
                 isLoadingProjects ||
                 isLoadingSessions ||
                 isLoadingMessages ||
-                isLoadingTokenStats) && (
+                computed.isAnyLoading) && (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>
-                    {isLoadingTokenStats && tComponents("status.loadingStats")}
+                    {computed.isAnyLoading &&
+                      tComponents("status.loadingStats")}
                     {isLoadingProjects && tComponents("status.scanning")}
                     {isLoadingSessions && tComponents("status.loadingSessions")}
                     {isLoadingMessages && tComponents("status.loadingMessages")}

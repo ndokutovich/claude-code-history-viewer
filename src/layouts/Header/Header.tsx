@@ -8,23 +8,14 @@ import {
 
 import { TooltipButton } from "@/shared/TooltipButton";
 import { useAppStore } from "@/store/useAppStore";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
-import { useState } from "react";
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
-import type { ProjectStatsSummary, SessionComparison } from "@/types";
 import { SettingDropdown } from "./SettingDropdown";
 
 export const Header = () => {
-  const [showTokenStats, setShowTokenStats] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-
-  const [projectSummary, setProjectSummary] =
-    useState<ProjectStatsSummary | null>(null);
-  const [sessionComparison, setSessionComparison] =
-    useState<SessionComparison | null>(null);
-
   const { t } = useTranslation("common");
   const { t: tComponents } = useTranslation("components");
   const { t: tMessages } = useTranslation("messages");
@@ -33,32 +24,20 @@ export const Header = () => {
     selectedProject,
     selectedSession,
     isLoadingMessages,
-    isLoadingTokenStats,
-    loadProjectTokenStats,
-    loadProjectStatsSummary,
-    loadSessionComparison,
-    clearTokenStats,
     refreshCurrentSession,
-    loadSessionTokenStats,
   } = useAppStore();
+
+  const {
+    actions: analyticsActions,
+    computed,
+  } = useAnalytics();
 
   // 토큰 통계 로드
   const handleLoadTokenStats = async () => {
     if (!selectedProject) return;
 
     try {
-      // 프로젝트 전체 통계 로드
-      await loadProjectTokenStats(selectedProject.path);
-
-      // 현재 세션 통계 로드 (선택된 경우)
-      if (selectedSession) {
-        // Use file_path from session directly
-        const sessionPath = selectedSession.file_path;
-        await loadSessionTokenStats(sessionPath);
-      }
-
-      setShowTokenStats(true);
-      setShowAnalytics(false);
+      await analyticsActions.switchToTokenStats();
     } catch (error) {
       console.error("Failed to load token stats:", error);
     }
@@ -69,21 +48,7 @@ export const Header = () => {
     if (!selectedProject) return;
 
     try {
-      setShowAnalytics(true);
-      setShowTokenStats(false);
-
-      // Load project summary
-      const summary = await loadProjectStatsSummary(selectedProject.path);
-      setProjectSummary(summary);
-
-      // Load session comparison if session is selected
-      if (selectedSession) {
-        const comparison = await loadSessionComparison(
-          selectedSession.session_id,
-          selectedProject.path
-        );
-        setSessionComparison(comparison);
-      }
+      await analyticsActions.switchToAnalytics();
     } catch (error) {
       console.error("Failed to load analytics:", error);
     }
@@ -136,17 +101,15 @@ export const Header = () => {
                 <TooltipButton
                   content={tComponents("analytics.dashboard")}
                   onClick={() => {
-                    if (showAnalytics) {
-                      setShowAnalytics(false);
-                      setProjectSummary(null);
-                      setSessionComparison(null);
+                    if (computed.isAnalyticsView) {
+                      analyticsActions.switchToMessages();
                     } else {
                       handleLoadAnalytics();
                     }
                   }}
                   className={cn(
                     "p-2 rounded-lg transition-colors",
-                    showAnalytics
+                    computed.isAnalyticsView
                       ? COLORS.semantic.info.bgDark
                       : COLORS.ui.interactive.hover
                   )}
@@ -157,23 +120,22 @@ export const Header = () => {
                 </TooltipButton>
                 <TooltipButton
                   onClick={() => {
-                    if (showTokenStats) {
-                      setShowTokenStats(false);
-                      clearTokenStats();
+                    if (computed.isTokenStatsView) {
+                      analyticsActions.switchToMessages();
                     } else {
                       handleLoadTokenStats();
                     }
                   }}
-                  disabled={isLoadingTokenStats}
+                  disabled={computed.isAnyLoading}
                   className={cn(
                     "p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-                    showTokenStats
+                    computed.isTokenStatsView
                       ? COLORS.semantic.success.bgDark
                       : COLORS.ui.interactive.hover
                   )}
                   content={tMessages("tokenStats.existing")}
                 >
-                  {isLoadingTokenStats ? (
+                  {computed.isAnyLoading ? (
                     <Loader2
                       className={cn(
                         "w-5 h-5 animate-spin",
@@ -193,18 +155,14 @@ export const Header = () => {
               <>
                 <TooltipButton
                   onClick={() => {
-                    if (showTokenStats || showAnalytics) {
-                      setShowTokenStats(false);
-                      setShowAnalytics(false);
-                      clearTokenStats();
-                      setProjectSummary(null);
-                      setSessionComparison(null);
+                    if (!computed.isMessagesView) {
+                      analyticsActions.switchToMessages();
                     }
                   }}
-                  disabled={!showTokenStats && !showAnalytics}
+                  disabled={computed.isMessagesView}
                   className={cn(
                     "p-2 rounded-lg transition-colors",
-                    !showTokenStats && !showAnalytics
+                    computed.isMessagesView
                       ? cn(
                           COLORS.semantic.success.bgDark,
                           COLORS.semantic.success.text

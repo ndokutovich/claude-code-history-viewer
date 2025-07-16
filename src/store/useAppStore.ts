@@ -14,6 +14,12 @@ import {
   type AppError,
   AppErrorType,
 } from "../types";
+import {
+  type AnalyticsState,
+  type AnalyticsActions,
+  type AnalyticsViewType,
+  initialAnalyticsState,
+} from "../types/analytics";
 
 // Tauri API가 사용 가능한지 확인하는 함수
 const isTauriAvailable = () => {
@@ -28,6 +34,9 @@ const isTauriAvailable = () => {
 interface AppStore extends AppState {
   // Filter state
   excludeSidechain: boolean;
+
+  // Analytics state
+  analytics: AnalyticsState;
 
   // Actions
   initializeApp: () => Promise<void>;
@@ -51,6 +60,17 @@ interface AppStore extends AppState {
   ) => Promise<SessionComparison>;
   clearTokenStats: () => void;
   setExcludeSidechain: (exclude: boolean) => void;
+
+  // Analytics actions
+  setAnalyticsCurrentView: (view: AnalyticsViewType) => void;
+  setAnalyticsProjectSummary: (summary: ProjectStatsSummary | null) => void;
+  setAnalyticsSessionComparison: (comparison: SessionComparison | null) => void;
+  setAnalyticsLoadingProjectSummary: (loading: boolean) => void;
+  setAnalyticsLoadingSessionComparison: (loading: boolean) => void;
+  setAnalyticsProjectSummaryError: (error: string | null) => void;
+  setAnalyticsSessionComparisonError: (error: string | null) => void;
+  resetAnalytics: () => void;
+  clearAnalyticsErrors: () => void;
 }
 
 const DEFAULT_PAGE_SIZE = 20; // 초기 로딩 시 20개 메시지만 로드하여 빠른 로딩
@@ -82,6 +102,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
   sessionTokenStats: null,
   projectTokenStats: [],
   excludeSidechain: true,
+
+  // Analytics state
+  analytics: initialAnalyticsState,
 
   // Actions
   initializeApp: async () => {
@@ -461,5 +484,83 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (selectedSession) {
       get().selectSession(selectedSession);
     }
+  },
+
+  // Analytics actions
+  setAnalyticsCurrentView: (view: AnalyticsViewType) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        currentView: view,
+      },
+    }));
+  },
+
+  setAnalyticsProjectSummary: (summary: ProjectStatsSummary | null) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        projectSummary: summary,
+      },
+    }));
+  },
+
+  setAnalyticsSessionComparison: (comparison: SessionComparison | null) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        sessionComparison: comparison,
+      },
+    }));
+  },
+
+  setAnalyticsLoadingProjectSummary: (loading: boolean) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        isLoadingProjectSummary: loading,
+      },
+    }));
+  },
+
+  setAnalyticsLoadingSessionComparison: (loading: boolean) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        isLoadingSessionComparison: loading,
+      },
+    }));
+  },
+
+  setAnalyticsProjectSummaryError: (error: string | null) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        projectSummaryError: error,
+      },
+    }));
+  },
+
+  setAnalyticsSessionComparisonError: (error: string | null) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        sessionComparisonError: error,
+      },
+    }));
+  },
+
+  resetAnalytics: () => {
+    set({ analytics: initialAnalyticsState });
+  },
+
+  clearAnalyticsErrors: () => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        projectSummaryError: null,
+        sessionComparisonError: null,
+      },
+    }));
   },
 }));
