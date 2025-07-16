@@ -158,8 +158,6 @@ export interface PaginationState {
   isLoadingMore: boolean;
 }
 
-export type Theme = "light" | "dark" | "system";
-
 // Error types
 export enum AppErrorType {
   CLAUDE_FOLDER_NOT_FOUND = "CLAUDE_FOLDER_NOT_FOUND",
@@ -193,7 +191,6 @@ export interface AppState {
   error: AppError | null;
   sessionTokenStats: SessionTokenStats | null;
   projectTokenStats: SessionTokenStats[];
-  theme: Theme;
 }
 
 export interface SessionTokenStats {

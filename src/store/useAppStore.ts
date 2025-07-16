@@ -11,10 +11,14 @@ import {
   type SessionTokenStats,
   type ProjectStatsSummary,
   type SessionComparison,
-  type Theme,
   type AppError,
   AppErrorType,
 } from "../types";
+import {
+  type AnalyticsState,
+  type AnalyticsViewType,
+  initialAnalyticsState,
+} from "../types/analytics";
 
 // Tauri API가 사용 가능한지 확인하는 함수
 const isTauriAvailable = () => {
@@ -30,6 +34,9 @@ interface AppStore extends AppState {
   // Filter state
   excludeSidechain: boolean;
 
+  // Analytics state
+  analytics: AnalyticsState;
+
   // Actions
   initializeApp: () => Promise<void>;
   scanProjects: () => Promise<void>;
@@ -43,11 +50,26 @@ interface AppStore extends AppState {
   setClaudePath: (path: string) => void;
   loadSessionTokenStats: (sessionPath: string) => Promise<void>;
   loadProjectTokenStats: (projectPath: string) => Promise<void>;
-  loadProjectStatsSummary: (projectPath: string) => Promise<ProjectStatsSummary>;
-  loadSessionComparison: (sessionId: string, projectPath: string) => Promise<SessionComparison>;
+  loadProjectStatsSummary: (
+    projectPath: string
+  ) => Promise<ProjectStatsSummary>;
+  loadSessionComparison: (
+    sessionId: string,
+    projectPath: string
+  ) => Promise<SessionComparison>;
   clearTokenStats: () => void;
-  setTheme: (theme: Theme) => Promise<void>;
   setExcludeSidechain: (exclude: boolean) => void;
+
+  // Analytics actions
+  setAnalyticsCurrentView: (view: AnalyticsViewType) => void;
+  setAnalyticsProjectSummary: (summary: ProjectStatsSummary | null) => void;
+  setAnalyticsSessionComparison: (comparison: SessionComparison | null) => void;
+  setAnalyticsLoadingProjectSummary: (loading: boolean) => void;
+  setAnalyticsLoadingSessionComparison: (loading: boolean) => void;
+  setAnalyticsProjectSummaryError: (error: string | null) => void;
+  setAnalyticsSessionComparisonError: (error: string | null) => void;
+  resetAnalytics: () => void;
+  clearAnalyticsErrors: () => void;
 }
 
 const DEFAULT_PAGE_SIZE = 20; // 초기 로딩 시 20개 메시지만 로드하여 빠른 로딩
@@ -78,8 +100,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
   error: null,
   sessionTokenStats: null,
   projectTokenStats: [],
-  theme: "system" as Theme,
   excludeSidechain: true,
+
+  // Analytics state
+  analytics: initialAnalyticsState,
 
   // Actions
   initializeApp: async () => {
@@ -95,11 +119,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
       try {
         const store = await load("settings.json", { autoSave: false });
         const savedPath = await store.get<string>("claudePath");
-        const savedTheme = await store.get<Theme>("theme");
-
-        if (savedTheme) {
-          set({ theme: savedTheme });
-        }
 
         if (savedPath) {
           // Validate saved path
@@ -157,8 +176,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
         claudePath,
       });
       const duration = performance.now() - start;
-      console.log(`🚀 [Frontend] scanProjects: ${projects.length}개 프로젝트, ${duration.toFixed(1)}ms`);
-      
+      if (import.meta.env.DEV) {
+        console.log(
+          `🚀 [Frontend] scanProjects: ${
+            projects.length
+          }개 프로젝트, ${duration.toFixed(1)}ms`
+        );
+      }
+
       set({ projects });
     } catch (error) {
       console.error("Failed to scan projects:", error);
@@ -320,7 +345,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   refreshCurrentSession: async () => {
-    const { selectedProject, selectedSession, pagination } = get();
+    const { selectedProject, selectedSession, pagination, analytics } = get();
 
     if (!selectedSession) {
       console.warn("No session selected for refresh");
@@ -335,15 +360,53 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       // 프로젝트 세션 목록도 새로고침하여 message_count 업데이트
       if (selectedProject) {
-        const sessions = await invoke<ClaudeSession[]>("load_project_sessions", {
-          projectPath: selectedProject.path,
-          excludeSidechain: get().excludeSidechain,
-        });
+        const sessions = await invoke<ClaudeSession[]>(
+          "load_project_sessions",
+          {
+            projectPath: selectedProject.path,
+            excludeSidechain: get().excludeSidechain,
+          }
+        );
         set({ sessions });
       }
-      
+
       // 현재 세션을 다시 로드 (첫 페이지부터)
       await get().selectSession(selectedSession, pagination.pageSize);
+      
+      // 분석 뷰일 때 분석 데이터도 새로고침
+      if (selectedProject && (analytics.currentView === "tokenStats" || analytics.currentView === "analytics")) {
+        console.log("분석 데이터 새로고침 시작:", analytics.currentView);
+        
+        if (analytics.currentView === "tokenStats") {
+          // 토큰 통계 새로고침
+          await get().loadProjectTokenStats(selectedProject.path);
+          if (selectedSession?.file_path) {
+            await get().loadSessionTokenStats(selectedSession.file_path);
+          }
+        } else if (analytics.currentView === "analytics") {
+          // 분석 대시보드 새로고침
+          const projectSummary = await invoke<ProjectStatsSummary>(
+            "get_project_stats_summary",
+            { projectPath: selectedProject.path }
+          );
+          get().setAnalyticsProjectSummary(projectSummary);
+          
+          // 세션 비교 데이터도 새로고침
+          if (selectedSession) {
+            const sessionComparison = await invoke<SessionComparison>(
+              "get_session_comparison",
+              { 
+                sessionId: selectedSession.actual_session_id,
+                projectPath: selectedProject.path 
+              }
+            );
+            get().setAnalyticsSessionComparison(sessionComparison);
+          }
+        }
+        
+        console.log("분석 데이터 새로고침 완료");
+      }
+      
       console.log("새로고침 완료");
     } catch (error) {
       console.error("새로고침 실패:", error);
@@ -446,19 +509,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({ sessionTokenStats: null, projectTokenStats: [] });
   },
 
-  setTheme: async (theme: Theme) => {
-    set({ theme });
-
-    // Save to persistent storage
-    try {
-      const store = await load("settings.json", { autoSave: false });
-      await store.set("theme", theme);
-      await store.save();
-    } catch (error) {
-      console.error("Failed to save theme:", error);
-    }
-  },
-
   setExcludeSidechain: (exclude: boolean) => {
     set({ excludeSidechain: exclude });
     // 필터 변경 시 현재 프로젝트와 세션 새로고침
@@ -470,5 +520,83 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (selectedSession) {
       get().selectSession(selectedSession);
     }
+  },
+
+  // Analytics actions
+  setAnalyticsCurrentView: (view: AnalyticsViewType) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        currentView: view,
+      },
+    }));
+  },
+
+  setAnalyticsProjectSummary: (summary: ProjectStatsSummary | null) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        projectSummary: summary,
+      },
+    }));
+  },
+
+  setAnalyticsSessionComparison: (comparison: SessionComparison | null) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        sessionComparison: comparison,
+      },
+    }));
+  },
+
+  setAnalyticsLoadingProjectSummary: (loading: boolean) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        isLoadingProjectSummary: loading,
+      },
+    }));
+  },
+
+  setAnalyticsLoadingSessionComparison: (loading: boolean) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        isLoadingSessionComparison: loading,
+      },
+    }));
+  },
+
+  setAnalyticsProjectSummaryError: (error: string | null) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        projectSummaryError: error,
+      },
+    }));
+  },
+
+  setAnalyticsSessionComparisonError: (error: string | null) => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        sessionComparisonError: error,
+      },
+    }));
+  },
+
+  resetAnalytics: () => {
+    set({ analytics: initialAnalyticsState });
+  },
+
+  clearAnalyticsErrors: () => {
+    set((state) => ({
+      analytics: {
+        ...state.analytics,
+        projectSummaryError: null,
+        sessionComparisonError: null,
+      },
+    }));
   },
 }));

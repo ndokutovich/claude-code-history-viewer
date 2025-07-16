@@ -1,11 +1,14 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { visualizer } from "rollup-plugin-visualizer";
+import tailwindcss from "@tailwindcss/vite";
+import path from "path";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
+    tailwindcss(),
     // Add bundle analyzer when ANALYZE env var is set
     mode === "production" &&
       visualizer({
@@ -96,6 +99,12 @@ export default defineConfig(({ mode }) => ({
           }
         },
       },
+    },
+  },
+
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
     },
   },
 

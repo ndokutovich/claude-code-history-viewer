@@ -68,13 +68,13 @@ export const AdvancedTextDiff = ({
     let title = "";
 
     if (part.added) {
-      colorClasses = "bg-green-100 text-green-800 border-l-2 border-green-400";
+      colorClasses = "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-l-2 border-green-400 dark:border-green-500";
       title = t("advancedTextDiff.added");
     } else if (part.removed) {
-      colorClasses = "bg-red-100 text-red-800 border-l-2 border-red-400";
+      colorClasses = "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-l-2 border-red-400 dark:border-red-500";
       title = t("advancedTextDiff.removed");
     } else {
-      colorClasses = "text-gray-700";
+      colorClasses = "text-gray-700 dark:text-gray-300";
       title = t("advancedTextDiff.unchanged");
     }
 
@@ -110,16 +110,16 @@ export const AdvancedTextDiff = ({
     diffResults.length > 20 || oldText.length + newText.length > 1000;
 
   return (
-    <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+    <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
-          <FileEdit className="w-4 h-4" />
-          <span className="font-medium text-amber-800">{defaultTitle}</span>
+          <FileEdit className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <span className="font-medium text-amber-800 dark:text-amber-200">{defaultTitle}</span>
         </div>
         {shouldCollapse && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-xs px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded transition-colors"
+            className="text-xs px-2 py-1 bg-amber-100 dark:bg-amber-900 hover:bg-amber-200 dark:hover:bg-amber-800 text-amber-700 dark:text-amber-300 rounded transition-colors"
           >
             {isExpanded
               ? t("advancedTextDiff.collapse")
@@ -130,7 +130,7 @@ export const AdvancedTextDiff = ({
 
       {/* Diff Mode Selector */}
       <div className="mb-3">
-        <div className="text-xs font-medium text-gray-600 mb-2">
+        <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
           {t("advancedTextDiff.comparisonMethod")}
         </div>
         <div className="flex flex-wrap gap-1">
@@ -149,8 +149,8 @@ export const AdvancedTextDiff = ({
               onClick={() => setCurrentMode(mode)}
               className={`px-2 py-1 text-xs rounded transition-colors ${
                 currentMode === mode
-                  ? "bg-amber-200 text-amber-800 font-medium"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 font-medium"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
               }`}
             >
               {getModeLabel(mode)}
@@ -161,23 +161,23 @@ export const AdvancedTextDiff = ({
 
       {/* Statistics */}
       <div className="mb-3 grid grid-cols-3 gap-2 text-xs">
-        <div className="bg-white p-2 rounded border">
-          <div className="text-gray-600">{t("advancedTextDiff.additions")}</div>
-          <div className="font-medium text-green-600">+{stats.additions}</div>
+        <div className="bg-white dark:bg-gray-800 p-2 rounded border dark:border-gray-600">
+          <div className="text-gray-600 dark:text-gray-400">{t("advancedTextDiff.additions")}</div>
+          <div className="font-medium text-green-600 dark:text-green-400">+{stats.additions}</div>
         </div>
-        <div className="bg-white p-2 rounded border">
-          <div className="text-gray-600">{t("advancedTextDiff.deletions")}</div>
-          <div className="font-medium text-red-600">-{stats.deletions}</div>
+        <div className="bg-white dark:bg-gray-800 p-2 rounded border dark:border-gray-600">
+          <div className="text-gray-600 dark:text-gray-400">{t("advancedTextDiff.deletions")}</div>
+          <div className="font-medium text-red-600 dark:text-red-400">-{stats.deletions}</div>
         </div>
-        <div className="bg-white p-2 rounded border">
-          <div className="text-gray-600">{t("advancedTextDiff.same")}</div>
-          <div className="font-medium text-gray-600">{stats.unchanged}</div>
+        <div className="bg-white dark:bg-gray-800 p-2 rounded border dark:border-gray-600">
+          <div className="text-gray-600 dark:text-gray-400">{t("advancedTextDiff.same")}</div>
+          <div className="font-medium text-gray-600 dark:text-gray-400">{stats.unchanged}</div>
         </div>
       </div>
 
       {/* Diff Content */}
       {(!shouldCollapse || isExpanded) && (
-        <div className="bg-white p-3 rounded border max-h-96 overflow-y-auto">
+        <div className="bg-white dark:bg-gray-800 p-3 rounded border dark:border-gray-600 max-h-96 overflow-y-auto">
           <div className="font-mono text-sm leading-relaxed">
             {diffResults.map((part, index) => renderDiffPart(part, index))}
           </div>
@@ -185,11 +185,11 @@ export const AdvancedTextDiff = ({
       )}
 
       {shouldCollapse && !isExpanded && (
-        <div className="bg-white p-3 rounded border text-center">
-          <div className="text-sm text-gray-500">
+        <div className="bg-white dark:bg-gray-800 p-3 rounded border dark:border-gray-600 text-center">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             {t("advancedTextDiff.manyChanges")}
           </div>
-          <div className="text-xs text-gray-400 mt-1">
+          <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
             {t("advancedTextDiff.changeSummary", {
               count: diffResults.length,
               chars: oldText.length + newText.length,

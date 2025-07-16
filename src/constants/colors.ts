@@ -153,8 +153,8 @@ export const COLORS = {
       text: "text-gray-800 dark:text-gray-200",
     },
     assistant: {
-      bg: "bg-gray-50 dark:bg-gray-850",
-      text: "text-gray-800 dark:text-gray-200",
+      bg: "bg-gray-50 dark:bg-gray-900",
+      text: "text-gray-800 dark:text-gray-100",
     },
     system: {
       bg: "bg-blue-50 dark:bg-blue-950",

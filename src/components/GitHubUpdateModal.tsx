@@ -124,7 +124,7 @@ export function GitHubUpdateModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-start justify-between p-6 pb-4 flex-shrink-0">
+        <div className="flex items-start justify-between p-6 pb-4 shrink-0">
           <div className="flex items-start space-x-4">
             <div className={cn("p-3 rounded-full", classes.iconBg)}>
               {isProcessing ? (
@@ -263,7 +263,7 @@ export function GitHubUpdateModal({
         </div>
 
         {/* Actions */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end space-y-2 space-y-reverse sm:space-y-0 sm:space-x-3">
             {!isCritical && !isProcessing && (
               <button

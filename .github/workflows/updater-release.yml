@@ -4,13 +4,13 @@ name: Release with Updater Metadata
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   create-release:
     permissions:
       contents: write
-    runs-on: ubuntu-latest  # ubuntu-20.04에서 변경
+    runs-on: ubuntu-latest # ubuntu-20.04에서 변경
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
 
@@ -27,7 +27,7 @@ jobs:
 
       - name: get version
         run: echo "PACKAGE_VERSION=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
-      
+
       - name: create release
         id: create-release
         uses: actions/github-script@v7
@@ -52,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest]  # 임시로 macOS만  # ubuntu-20.04에서 변경
+        platform: [macos-latest] # 임시로 macOS만  # ubuntu-20.04에서 변경
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -87,7 +87,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
@@ -101,50 +100,50 @@ jobs:
     needs: [create-release, build-tauri]
     permissions:
       contents: write
-    runs-on: ubuntu-latest  # ubuntu-20.04에서 변경
-    
+    runs-on: ubuntu-latest # ubuntu-20.04에서 변경
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Get latest release info
         id: release
         run: |
           # GitHub API로 방금 생성된 릴리즈 정보 가져오기
           echo "📡 Fetching latest release information from GitHub API..."
-          
+
           HTTP_RESPONSE=$(curl -w "HTTPSTATUS:%{http_code}" -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/releases/latest")
-          
+
           # HTTP 상태 코드와 응답 본문 분리
           HTTP_STATUS=$(echo "$HTTP_RESPONSE" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
           RELEASE_INFO=$(echo "$HTTP_RESPONSE" | sed -E 's/HTTPSTATUS:[0-9]*$//')
-          
+
           echo "🔍 HTTP Status Code: $HTTP_STATUS"
-          
+
           # HTTP 상태 코드 확인
           if [ "$HTTP_STATUS" != "200" ]; then
             echo "❌ GitHub API call failed with status code: $HTTP_STATUS"
             echo "📄 Response: $RELEASE_INFO"
             exit 1
           fi
-          
+
           # JSON 유효성 검사
           if ! echo "$RELEASE_INFO" | jq . > /dev/null 2>&1; then
             echo "❌ Invalid JSON response from GitHub API"
             echo "📄 Response: $RELEASE_INFO"
             exit 1
           fi
-          
+
           # 필수 필드 존재 확인
           if [ "$(echo "$RELEASE_INFO" | jq -r '.tag_name')" = "null" ]; then
             echo "❌ Missing tag_name in release info"
             echo "📄 Response: $RELEASE_INFO"
             exit 1
           fi
-          
+
           echo "✅ Successfully fetched release information"
           echo "🏷️ Release tag: $(echo "$RELEASE_INFO" | jq -r '.tag_name')"
-          
+
           echo "release_info<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_INFO" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -156,37 +155,27 @@ jobs:
           VERSION=$(echo "$RELEASE_INFO" | jq -r '.tag_name' | sed 's/^v//')
           RELEASE_NOTES=$(echo "$RELEASE_INFO" | jq -r '.body')
           PUB_DATE=$(echo "$RELEASE_INFO" | jq -r '.published_at')
-          
+
           echo "Processing release version: $VERSION"
           echo "Release notes length: $(echo "$RELEASE_NOTES" | wc -c)"
-          
+
           # 플랫폼별 다운로드 URL과 서명 추출
           DMG_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains("universal.dmg")) | .browser_download_url')
           DMG_SIG=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains("universal.dmg.sig")) | .browser_download_url')
-          
+
           MSI_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".msi")) | .browser_download_url')
           MSI_SIG=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".msi.sig")) | .browser_download_url')
-          
+
           DEB_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".deb")) | .browser_download_url')
           DEB_SIG=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".deb.sig")) | .browser_download_url')
-          
-          # 서명 내용 다운로드
+
+          # 서명 내용 다운로드 (base64로 인코딩)
           DMG_SIGNATURE=""
-          MSI_SIGNATURE=""
-          DEB_SIGNATURE=""
-          
+
           if [ "$DMG_SIG" != "null" ]; then
-            DMG_SIGNATURE=$(curl -s "$DMG_SIG")
+            DMG_SIGNATURE=$(curl -s "$DMG_SIG" | base64 -w 0)
           fi
-          
-          if [ "$MSI_SIG" != "null" ]; then
-            MSI_SIGNATURE=$(curl -s "$MSI_SIG")
-          fi
-          
-          if [ "$DEB_SIG" != "null" ]; then
-            DEB_SIGNATURE=$(curl -s "$DEB_SIG")
-          fi
-          
+
           # latest.json 생성
           cat > latest.json << EOF
           {
@@ -197,19 +186,11 @@ jobs:
               "darwin-universal": {
                 "signature": "$DMG_SIGNATURE",
                 "url": "$DMG_URL"
-              },
-              "windows-x86_64": {
-                "signature": "$MSI_SIGNATURE",
-                "url": "$MSI_URL"
-              },
-              "linux-x86_64": {
-                "signature": "$DEB_SIGNATURE",
-                "url": "$DEB_URL"
               }
             }
           }
           EOF
-          
+
           echo "Generated latest.json:"
           cat latest.json
 

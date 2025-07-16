@@ -94,7 +94,7 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
                                 {/* URL */}
                                 {url && (
                                   <div className="flex items-center space-x-2">
-                                    <Globe className="w-3 h-3 text-green-500 flex-shrink-0" />
+                                    <Globe className="w-3 h-3 text-green-500 shrink-0" />
                                     <a
                                       href={url}
                                       target="_blank"
@@ -169,7 +169,7 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
                             {/* URL */}
                             {url && (
                               <div className="flex items-center space-x-2">
-                                <Globe className="w-3 h-3 text-green-500 flex-shrink-0" />
+                                <Globe className="w-3 h-3 text-green-500 shrink-0" />
                                 <a
                                   href={url}
                                   target="_blank"
