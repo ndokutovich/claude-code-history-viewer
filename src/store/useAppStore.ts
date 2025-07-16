@@ -176,11 +176,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
         claudePath,
       });
       const duration = performance.now() - start;
-      console.log(
-        `🚀 [Frontend] scanProjects: ${
-          projects.length
-        }개 프로젝트, ${duration.toFixed(1)}ms`
-      );
+      if (import.meta.env.DEV) {
+        console.log(
+          `🚀 [Frontend] scanProjects: ${
+            projects.length
+          }개 프로젝트, ${duration.toFixed(1)}ms`
+        );
+      }
 
       set({ projects });
     } catch (error) {
