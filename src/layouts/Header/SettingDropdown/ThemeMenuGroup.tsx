@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { Sun, Moon, Laptop } from "lucide-react";
 
 import { cn } from "@/utils/cn";
-import { useTheme, type Theme } from "@/contexts/theme";
+import { useTheme } from "@/contexts/theme";
 import { COLORS } from "@/constants/colors";
 
 export const ThemeMenuGroup = () => {
