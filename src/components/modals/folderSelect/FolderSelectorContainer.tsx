@@ -24,7 +24,12 @@ export const FolderSelectorContainer: React.FC = () => {
 
     // 경로 설정 및 프로젝트 스캔
     setClaudePath(claudeFolderPath);
-    await scanProjects();
+    try {
+      await scanProjects();
+    } catch (error) {
+      console.error("Failed to scan projects:", error);
+      // 에러 처리 로직 추가 (예: 사용자에게 알림)
+    }
   };
 
   if (!isOpen("folderSelector")) return null;
