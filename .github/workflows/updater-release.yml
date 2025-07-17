@@ -87,7 +87,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
@@ -96,7 +96,6 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
-          
 
   generate-updater-metadata:
     needs: [create-release, build-tauri]
@@ -106,7 +105,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install GitHub CLI
         run: |
           if ! command -v gh &> /dev/null; then
@@ -174,7 +173,7 @@ jobs:
           # macOS DMG 파일 URL과 서명 추출
           DMG_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".dmg") and (.name | contains(".sig") | not)) | .browser_download_url')
           DMG_SIG=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".dmg.sig")) | .browser_download_url')
-          
+
           echo "DMG URL: $DMG_URL"
           echo "DMG SIG URL: $DMG_SIG"
 
