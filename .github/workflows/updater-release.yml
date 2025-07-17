@@ -86,6 +86,8 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
@@ -95,50 +97,6 @@ jobs:
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           
-      - name: Generate signature files
-        run: |
-          # 버전 정보 가져오기
-          VERSION=$(node -pe "require('./package.json').version")
-          
-          # 실제 생성된 DMG 파일 찾기
-          DMG_FILE=$(find src-tauri/target/release/bundle/dmg -name "*.dmg" | head -1)
-          if [ -z "$DMG_FILE" ]; then
-            echo "❌ DMG file not found"
-            exit 1
-          fi
-          echo "Found DMG file: $DMG_FILE"
-          
-          # 개인키를 임시 파일로 저장
-          echo "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" | base64 -d > private_key.pem
-          
-          # DMG 파일 서명 생성
-          openssl pkeyutl -sign -inkey private_key.pem -in "$DMG_FILE" -out "${DMG_FILE}.sig"
-          
-          # 개인키 파일 삭제
-          rm private_key.pem
-          
-      - name: Install GitHub CLI
-        run: |
-          if ! command -v gh &> /dev/null; then
-            echo "Installing GitHub CLI..."
-            brew install gh
-          else
-            echo "GitHub CLI is already installed"
-          fi
-          
-      - name: Upload signature files
-        run: |
-          # 생성된 .sig 파일 찾기
-          SIG_FILE=$(find src-tauri/target/release/bundle/dmg -name "*.dmg.sig" | head -1)
-          if [ -z "$SIG_FILE" ]; then
-            echo "❌ Signature file not found"
-            exit 1
-          fi
-          echo "Found signature file: $SIG_FILE"
-          
-          gh release upload ${{ github.ref_name }} "$SIG_FILE" --clobber
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-updater-metadata:
     needs: [create-release, build-tauri]
