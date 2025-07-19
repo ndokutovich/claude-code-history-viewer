@@ -10,7 +10,7 @@ jobs:
   create-release:
     permissions:
       contents: write
-    runs-on: ubuntu-latest # ubuntu-20.04에서 변경
+    runs-on: ubuntu-latest
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
 
@@ -39,7 +39,7 @@ jobs:
               tag_name: `v${process.env.PACKAGE_VERSION}`,
               name: `Claude Code History Viewer v${process.env.PACKAGE_VERSION}`,
               body: '🎉 새로운 버전이 출시되었습니다! 자세한 변경사항은 아래를 확인하세요.',
-              generate_release_notes: true, // GitHub이 자동으로 릴리즈 노트 생성
+              generate_release_notes: true,
               draft: false,
               prerelease: false,
             });
@@ -52,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest] # 임시로 macOS만  # ubuntu-20.04에서 변경
+        platform: [macos-latest]
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -65,15 +65,6 @@ jobs:
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
-
-      # Ubuntu 의존성 설치 (임시로 비활성화)
-      # - name: install dependencies (ubuntu only)
-      #   if: matrix.platform == 'ubuntu-latest'
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
-      #     # 추가 의존성 (Ubuntu 22.04+에서 필요할 수 있음)
-      #     sudo apt-get install -y libayatana-appindicator3-dev
 
       - name: install pnpm
         uses: pnpm/action-setup@v4
@@ -101,56 +92,18 @@ jobs:
     needs: [create-release, build-tauri]
     permissions:
       contents: write
-    runs-on: ubuntu-latest # ubuntu-20.04에서 변경
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install GitHub CLI
-        run: |
-          if ! command -v gh &> /dev/null; then
-            echo "Installing GitHub CLI..."
-            sudo apt-get update
-            sudo apt-get install -y gh
-          else
-            echo "GitHub CLI is already installed"
-          fi
-
       - name: Get latest release info
         id: release
         run: |
-          # GitHub API로 방금 생성된 릴리즈 정보 가져오기
           echo "📡 Fetching latest release information from GitHub API..."
 
-          HTTP_RESPONSE=$(curl -w "HTTPSTATUS:%{http_code}" -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/releases/latest")
-
-          # HTTP 상태 코드와 응답 본문 분리
-          HTTP_STATUS=$(echo "$HTTP_RESPONSE" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
-          RELEASE_INFO=$(echo "$HTTP_RESPONSE" | sed -E 's/HTTPSTATUS:[0-9]*$//')
-
-          echo "🔍 HTTP Status Code: $HTTP_STATUS"
-
-          # HTTP 상태 코드 확인
-          if [ "$HTTP_STATUS" != "200" ]; then
-            echo "❌ GitHub API call failed with status code: $HTTP_STATUS"
-            echo "📄 Response: $RELEASE_INFO"
-            exit 1
-          fi
-
-          # JSON 유효성 검사
-          if ! echo "$RELEASE_INFO" | jq . > /dev/null 2>&1; then
-            echo "❌ Invalid JSON response from GitHub API"
-            echo "📄 Response: $RELEASE_INFO"
-            exit 1
-          fi
-
-          # 필수 필드 존재 확인
-          if [ "$(echo "$RELEASE_INFO" | jq -r '.tag_name')" = "null" ]; then
-            echo "❌ Missing tag_name in release info"
-            echo "📄 Response: $RELEASE_INFO"
-            exit 1
-          fi
 
           echo "✅ Successfully fetched release information"
           echo "🏷️ Release tag: $(echo "$RELEASE_INFO" | jq -r '.tag_name')"
@@ -160,22 +113,20 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Generate latest.json for Tauri updater
-        env:
-          RELEASE_INFO: ${{ steps.release.outputs.release_info }}
         run: |
-          # 릴리즈 정보를 환경변수에서 파일로 안전하게 저장
-          echo "$RELEASE_INFO" > release_info.json
+          # GitHub Actions 출력에서 직접 데이터 추출
+          RELEASE_JSON='${{ steps.release.outputs.release_info }}'
 
-          # 릴리즈 정보에서 필요한 데이터 추출
-          VERSION=$(jq -r '.tag_name' release_info.json | sed 's/^v//')
-          PUB_DATE=$(jq -r '.published_at' release_info.json)
+          # 릴리즈 정보에서 필요한 데이터 직접 추출
+          VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name' | sed 's/^v//')
+          PUB_DATE=$(echo "$RELEASE_JSON" | jq -r '.published_at')
 
           echo "Processing release version: $VERSION"
           echo "Publish date: $PUB_DATE"
 
           # macOS DMG 파일 URL과 서명 추출
-          DMG_URL=$(jq -r '.assets[] | select(.name | contains(".dmg") and (.name | contains(".sig") | not)) | .browser_download_url' release_info.json)
-          DMG_SIG=$(jq -r '.assets[] | select(.name | contains(".dmg.sig")) | .browser_download_url' release_info.json)
+          DMG_URL=$(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | contains(".dmg") and (.name | contains(".sig") | not)) | .browser_download_url')
+          DMG_SIG=$(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | contains(".dmg.sig")) | .browser_download_url')
 
           echo "DMG URL: $DMG_URL"
           echo "DMG SIG URL: $DMG_SIG"
@@ -189,7 +140,7 @@ jobs:
           # jq를 사용해서 안전하게 JSON 생성
           jq -n \
             --arg version "$VERSION" \
-            --argjson notes "$(jq '.body' release_info.json)" \
+            --argjson notes "$(echo "$RELEASE_JSON" | jq '.body')" \
             --arg pub_date "$PUB_DATE" \
             --arg signature "$DMG_SIGNATURE" \
             --arg url "$DMG_URL" \
@@ -207,9 +158,6 @@ jobs:
 
           echo "Generated latest.json:"
           cat latest.json
-
-          # 임시 파일 정리
-          rm -f release_info.json
 
       - name: Upload latest.json to release
         run: |
