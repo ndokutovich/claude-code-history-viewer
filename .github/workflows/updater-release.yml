@@ -137,54 +137,70 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Generate latest.json for Tauri updater
-        # 릴리스 정보를 환경 변수로 전달하여 셸 인용 문제를 근본적으로 해결합니다.
-        env:
-          RELEASE_INFO: ${{ steps.release.outputs.release_info }}
-        run: |
-          # 환경 변수에서 파일로 쓰는 것이 가장 안전한 방법입니다.
-          echo "$RELEASE_INFO" > release.json
-
-          # 릴리즈 정보에서 필요한 데이터 직접 추출
-          VERSION=$(jq -r '.tag_name' release.json | sed 's/^v//')
-          PUB_DATE=$(jq -r '.published_at' release.json)
-
-          echo "Processing release version: $VERSION"
-          echo "Publish date: $PUB_DATE"
-
-          # macOS DMG 파일 URL과 서명 추출 (타입 안전성 추가)
-          DMG_URL=$(jq -r '.assets[] | select(type == "object" and has("name") and (.name | contains(".dmg") and (.name | contains(".sig") | not))) | .browser_download_url' release.json)
-          DMG_SIG=$(jq -r '.assets[] | select(type == "object" and has("name") and (.name | contains(".dmg.sig"))) | .browser_download_url' release.json)
-
-          echo "DMG URL: $DMG_URL"
-          echo "DMG SIG URL: $DMG_SIG"
-
-          # 서명 내용 다운로드 (base64로 인코딩)
-          DMG_SIGNATURE=""
-          if [ -n "$DMG_SIG" ] && [ "$DMG_SIG" != "null" ]; then
-            DMG_SIGNATURE=$(curl -sL "$DMG_SIG" | base64 -w 0)
-          fi
-
-          # jq를 사용해서 안전하게 JSON 생성
-          jq -n \
-            --arg version "$VERSION" \
-            --argjson notes "$(jq '.body' release.json)" \
-            --arg pub_date "$PUB_DATE" \
-            --arg signature "$DMG_SIGNATURE" \
-            --arg url "$DMG_URL" \
-            '{
-              version: $version,
-              notes: $notes,
-              pub_date: $pub_date,
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // GitHub API로 안전하게 릴리스 정보 가져오기
+            const release = await github.rest.repos.getRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: ${{ needs.create-release.outputs.release_id }}
+            });
+            
+            const releaseData = release.data;
+            const version = releaseData.tag_name.replace(/^v/, '');
+            const pubDate = releaseData.published_at;
+            
+            console.log(`Processing release version: ${version}`);
+            console.log(`Publish date: ${pubDate}`);
+            
+            // 에셋에서 DMG 파일과 서명 찾기 (타입 안전)
+            const dmgAsset = releaseData.assets.find(asset => 
+              asset && typeof asset === 'object' && asset.name && 
+              asset.name.includes('.dmg') && !asset.name.includes('.sig')
+            );
+            
+            const sigAsset = releaseData.assets.find(asset => 
+              asset && typeof asset === 'object' && asset.name && 
+              asset.name.includes('.dmg.sig')
+            );
+            
+            const dmgUrl = dmgAsset?.browser_download_url || '';
+            const sigUrl = sigAsset?.browser_download_url || '';
+            
+            console.log(`DMG URL: ${dmgUrl}`);
+            console.log(`DMG SIG URL: ${sigUrl}`);
+            
+            // 서명 다운로드
+            let signature = '';
+            if (sigUrl) {
+              try {
+                const sigResponse = await fetch(sigUrl);
+                const sigContent = await sigResponse.text();
+                signature = Buffer.from(sigContent).toString('base64');
+              } catch (error) {
+                console.warn('Failed to download signature:', error.message);
+              }
+            }
+            
+            // latest.json 생성
+            const latestJson = {
+              version: version,
+              notes: releaseData.body || '',
+              pub_date: pubDate,
               platforms: {
                 "darwin-universal": {
-                  signature: $signature,
-                  url: $url
+                  signature: signature,
+                  url: dmgUrl
                 }
               }
-            }' > latest.json
-
-          echo "Generated latest.json:"
-          cat latest.json
+            };
+            
+            fs.writeFileSync('latest.json', JSON.stringify(latestJson, null, 2));
+            console.log('Generated latest.json:');
+            console.log(JSON.stringify(latestJson, null, 2));
 
       - name: Upload latest.json to release
         run: |
