@@ -97,26 +97,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Get latest release info
+      # 'latest' 대신 ID로 특정 릴리스를 조회하여 Race Condition을 방지하고 안정성을 높입니다.
+      - name: Get specific release info by ID
         id: release
         run: |
-          echo "📡 Fetching latest release information from GitHub API..."
+          echo "📡 Fetching release information for ID: ${{ needs.create-release.outputs.release_id }}"
 
-          RELEASE_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/releases/latest")
+          RELEASE_INFO=$(curl -s -L \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/${{ needs.create-release.outputs.release_id }}")
+
+          # curl 호출이 실패했거나 유효한 JSON이 아닌 경우 워크플로우를 중단시킵니다.
+          if ! echo "$RELEASE_INFO" | jq . > /dev/null 2>&1; then
+            echo "::error::Failed to fetch or parse release information from GitHub API."
+            echo "Response was: $RELEASE_INFO"
+            exit 1
+          fi
 
           echo "✅ Successfully fetched release information"
           echo "🏷️ Release tag: $(echo "$RELEASE_INFO" | jq -r '.tag_name')"
 
+          # 셸 인용 문제를 피하기 위해 heredoc 문법으로 안전하게 출력을 설정합니다.
           echo "release_info<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_INFO" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Generate latest.json for Tauri updater
+        # 릴리스 정보를 환경 변수로 전달하여 셸 인용 문제를 근본적으로 해결합니다.
+        env:
+          RELEASE_INFO: ${{ steps.release.outputs.release_info }}
         run: |
-          # GitHub Actions 출력을 파일에 저장하여 셸 인용(quoting) 문제를 회피합니다.
-          # 이렇게 하면 릴리스 노트에 작은따옴표(')나 다른 특수문자가 포함되어도 안전합니다.
-          echo '${{ steps.release.outputs.release_info }}' > release.json
+          # 환경 변수에서 파일로 쓰는 것이 가장 안전한 방법입니다.
+          echo "$RELEASE_INFO" > release.json
 
           # 릴리즈 정보에서 필요한 데이터 직접 추출
           VERSION=$(jq -r '.tag_name' release.json | sed 's/^v//')
