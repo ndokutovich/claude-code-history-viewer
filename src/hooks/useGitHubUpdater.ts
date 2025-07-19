@@ -3,6 +3,7 @@ import { fetch } from "@tauri-apps/plugin-http";
 import { check, Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { getVersion } from "@tauri-apps/api/app";
+import { getCachedUpdateResult, setCachedUpdateResult } from "../utils/updateCache";
 
 export interface GitHubRelease {
   tag_name: string;
@@ -30,7 +31,7 @@ export interface UpdateState {
 
 export interface UseGitHubUpdaterReturn {
   state: UpdateState;
-  checkForUpdates: () => Promise<void>;
+  checkForUpdates: (forceCheck?: boolean) => Promise<void>;
   downloadAndInstall: () => Promise<void>;
   dismissUpdate: () => void;
 }
@@ -58,6 +59,10 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
   const fetchGitHubRelease =
     useCallback(async (): Promise<GitHubRelease | null> => {
       try {
+        // AbortController로 타임아웃 제어 (10초)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
         const response = await fetch(
           "https://api.github.com/repos/jhlee0409/claude-code-history-viewer/releases/latest",
           {
@@ -66,8 +71,11 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
               Accept: "application/vnd.github.v3+json",
               "User-Agent": "Claude-Code-History-Viewer",
             },
+            signal: controller.signal,
           }
         );
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error(`GitHub API 오류: ${response.status}`);
@@ -76,14 +84,33 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
         const release = (await response.json()) as GitHubRelease;
         return release;
       } catch (error) {
-        console.error("GitHub 릴리즈 정보 가져오기 실패:", error);
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.warn("GitHub API 요청 타임아웃 (10초)");
+        } else {
+          console.error("GitHub 릴리즈 정보 가져오기 실패:", error);
+        }
         return null;
       }
     }, []);
 
-  const checkForUpdates = useCallback(async () => {
+  const checkForUpdates = useCallback(async (forceCheck: boolean = false) => {
     try {
       setState((prev) => ({ ...prev, isChecking: true, error: null }));
+
+      // 강제 체크가 아니면 캐시 확인
+      if (!forceCheck && state.currentVersion) {
+        const cached = getCachedUpdateResult(state.currentVersion);
+        if (cached) {
+          setState((prev) => ({
+            ...prev,
+            isChecking: false,
+            hasUpdate: cached.hasUpdate,
+            updateInfo: null, // Tauri 업데이트 객체는 캐시하지 않음
+            releaseInfo: cached.releaseInfo,
+          }));
+          return;
+        }
+      }
 
       // GitHub API로 릴리즈 정보 가져오기
       const releaseInfo = await fetchGitHubRelease();
@@ -99,10 +126,17 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
       // Tauri 업데이터로 업데이트 확인
       const update = await check();
 
+      const hasUpdate = !!update;
+
+      // 결과 캐싱 (현재 버전이 있을 때만)
+      if (state.currentVersion) {
+        setCachedUpdateResult(hasUpdate, releaseInfo, state.currentVersion);
+      }
+
       setState((prev) => ({
         ...prev,
         isChecking: false,
-        hasUpdate: !!update,
+        hasUpdate,
         updateInfo: update || null,
         releaseInfo,
       }));
@@ -117,7 +151,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
             : "업데이트 확인 중 오류가 발생했습니다.",
       }));
     }
-  }, [fetchGitHubRelease]);
+  }, [fetchGitHubRelease, state.currentVersion]);
 
   const downloadAndInstall = useCallback(async () => {
     if (!state.updateInfo) return;
@@ -174,11 +208,12 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
     }));
   }, []);
 
-  // 앱 시작 시 자동으로 업데이트 확인 (5초 후)
+  // 앱 시작 시 자동으로 업데이트 확인 (백그라운드에서 30초 후, 더 짧은 타임아웃)
   useEffect(() => {
     const timer = setTimeout(() => {
+      // 백그라운드에서 조용히 확인 (사용자 방해 최소화)
       checkForUpdates();
-    }, 5000);
+    }, 30000); // 5초 → 30초로 변경
 
     return () => clearTimeout(timer);
   }, [checkForUpdates]);

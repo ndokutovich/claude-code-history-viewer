@@ -64,7 +64,7 @@ export const SettingDropdown = () => {
           <DropdownMenuItem
             onClick={() => {
               window.dispatchEvent(new Event("manual-update-check"));
-              manualUpdater.checkForUpdates();
+              manualUpdater.checkForUpdates(true); // 강제 체크
             }}
             disabled={manualUpdater.state.isChecking}
           >

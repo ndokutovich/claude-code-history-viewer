@@ -68,28 +68,28 @@ struct GitHubAsset {
 pub async fn check_for_updates() -> Result<UpdateInfo, String> {
     let current_version = env!("CARGO_PKG_VERSION");
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
+        .timeout(std::time::Duration::from_secs(10)) // 30초 → 10초로 단축
         .build()
         .map_err(|e| format!("HTTP 클라이언트 생성 오류: {}", e))?;
 
-    // 재시도 로직 (최대 3회 시도)
+    // 재시도 로직 (최대 2회 시도로 단축)
     let mut last_error = String::new();
-    for attempt in 1..=3 {
+    for attempt in 1..=2 {
         match fetch_release_info(&client).await {
             Ok(release) => {
                 return process_release_info(current_version, release);
             }
             Err(e) => {
                 last_error = e;
-                if attempt < 3 {
-                    // 재시도 전 잠시 대기 (지수 백오프)
-                    tokio::time::sleep(std::time::Duration::from_millis(1000 * attempt)).await;
+                if attempt < 2 {
+                    // 재시도 전 짧은 대기 (500ms)
+                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
                 }
             }
         }
     }
 
-    Err(format!("3번 시도 후 실패: {}", last_error))
+    Err(format!("2번 시도 후 실패: {}", last_error))
 }
 
 async fn fetch_release_info(client: &reqwest::Client) -> Result<GitHubRelease, String> {
