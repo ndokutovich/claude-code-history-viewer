@@ -6,10 +6,11 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   create-release:
-    permissions:
-      contents: write
     runs-on: ubuntu-latest
     outputs:
       release_id: ${{ steps.create-release.outputs.result }}
@@ -25,8 +26,8 @@ jobs:
         with:
           version: 8
 
-      - name: get version
-        run: echo "PACKAGE_VERSION=$(node -pe "require('./package.json').version")" >> $GITHUB_ENV
+      - name: get version from tag
+        run: echo "PACKAGE_VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
 
       - name: create release
         id: create-release
@@ -47,8 +48,6 @@ jobs:
 
   build-tauri:
     needs: create-release
-    permissions:
-      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -62,9 +61,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'pnpm-lock.yaml'
 
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
+
+      - name: cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            src-tauri/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: install pnpm
         uses: pnpm/action-setup@v4
@@ -90,8 +104,6 @@ jobs:
 
   generate-updater-metadata:
     needs: [create-release, build-tauri]
-    permissions:
-      contents: write
     runs-on: ubuntu-latest
 
     steps:
@@ -139,9 +151,9 @@ jobs:
           echo "Processing release version: $VERSION"
           echo "Publish date: $PUB_DATE"
 
-          # macOS DMG 파일 URL과 서명 추출
-          DMG_URL=$(jq -r '.assets[] | select(.name | contains(".dmg") and (.name | contains(".sig") | not)) | .browser_download_url' release.json)
-          DMG_SIG=$(jq -r '.assets[] | select(.name | contains(".dmg.sig")) | .browser_download_url' release.json)
+          # macOS DMG 파일 URL과 서명 추출 (타입 안전성 추가)
+          DMG_URL=$(jq -r '.assets[] | select(type == "object" and has("name") and (.name | contains(".dmg") and (.name | contains(".sig") | not))) | .browser_download_url' release.json)
+          DMG_SIG=$(jq -r '.assets[] | select(type == "object" and has("name") and (.name | contains(".dmg.sig"))) | .browser_download_url' release.json)
 
           echo "DMG URL: $DMG_URL"
           echo "DMG SIG URL: $DMG_SIG"
