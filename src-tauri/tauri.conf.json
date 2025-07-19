@@ -40,7 +40,7 @@
         "https://github.com/jhlee0409/claude-code-history-viewer/releases/latest/download/latest.json"
       ],
       "dialog": false,
-      "pubkey": "untrusted comment: minisign public key: 96956FE03A91462F\nRWQvRpE64G+VlvCWNUco/2W9bWCV++3wRlF5oWGf/cmYr2HwMMyPC1Fr"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEI3MzJFODg5N0Y4NzYwQkEKUldTNllJZC9pZWd5dDBocFBkY20yZHdudHJsbFdzaU50bEJlUWFIVmpGZVNYeE4wM3BMbTZOengK"
     }
   },
   "bundle": {
