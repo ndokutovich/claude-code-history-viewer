@@ -86,8 +86,13 @@ jobs:
       - name: Setup Tauri signing key
         run: |
           mkdir -p ~/.tauri
-          echo "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" > ~/.tauri/ci.key
-          chmod 600 ~/.tauri/ci.key
+          if [ -n "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" ]; then
+            echo "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" | base64 -d > ~/.tauri/ci.key
+            chmod 600 ~/.tauri/ci.key
+          else
+            echo "Warning: TAURI_SIGNING_PRIVATE_KEY secret not set"
+            exit 1
+          fi
 
       - uses: tauri-apps/tauri-action@v0
         env:
