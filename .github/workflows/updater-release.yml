@@ -160,9 +160,11 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Generate latest.json for Tauri updater
+        env:
+          RELEASE_INFO: ${{ steps.release.outputs.release_info }}
         run: |
-          # 릴리즈 정보를 파일로 저장하여 안전하게 처리
-          echo '${{ steps.release.outputs.release_info }}' > release_info.json
+          # 릴리즈 정보를 환경변수에서 파일로 안전하게 저장
+          echo "$RELEASE_INFO" > release_info.json
 
           # 릴리즈 정보에서 필요한 데이터 추출
           VERSION=$(jq -r '.tag_name' release_info.json | sed 's/^v//')
