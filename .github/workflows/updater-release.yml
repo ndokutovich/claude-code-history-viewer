@@ -161,18 +161,19 @@ jobs:
 
       - name: Generate latest.json for Tauri updater
         run: |
+          # 릴리즈 정보를 파일로 저장하여 안전하게 처리
+          echo '${{ steps.release.outputs.release_info }}' > release_info.json
+
           # 릴리즈 정보에서 필요한 데이터 추출
-          RELEASE_INFO='${{ steps.release.outputs.release_info }}'
-          VERSION=$(echo "$RELEASE_INFO" | jq -r '.tag_name' | sed 's/^v//')
-          RELEASE_NOTES=$(echo "$RELEASE_INFO" | jq -r '.body')
-          PUB_DATE=$(echo "$RELEASE_INFO" | jq -r '.published_at')
+          VERSION=$(jq -r '.tag_name' release_info.json | sed 's/^v//')
+          PUB_DATE=$(jq -r '.published_at' release_info.json)
 
           echo "Processing release version: $VERSION"
-          echo "Release notes length: $(echo "$RELEASE_NOTES" | wc -c)"
+          echo "Publish date: $PUB_DATE"
 
           # macOS DMG 파일 URL과 서명 추출
-          DMG_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".dmg") and (.name | contains(".sig") | not)) | .browser_download_url')
-          DMG_SIG=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | contains(".dmg.sig")) | .browser_download_url')
+          DMG_URL=$(jq -r '.assets[] | select(.name | contains(".dmg") and (.name | contains(".sig") | not)) | .browser_download_url' release_info.json)
+          DMG_SIG=$(jq -r '.assets[] | select(.name | contains(".dmg.sig")) | .browser_download_url' release_info.json)
 
           echo "DMG URL: $DMG_URL"
           echo "DMG SIG URL: $DMG_SIG"
@@ -183,10 +184,10 @@ jobs:
             DMG_SIGNATURE=$(curl -s "$DMG_SIG" | base64 -w 0)
           fi
 
-          # jq를 사용해서 안전하게 JSON 생성 (가장 안정적)
+          # jq를 사용해서 안전하게 JSON 생성
           jq -n \
             --arg version "$VERSION" \
-            --arg notes "$RELEASE_NOTES" \
+            --argjson notes "$(jq '.body' release_info.json)" \
             --arg pub_date "$PUB_DATE" \
             --arg signature "$DMG_SIGNATURE" \
             --arg url "$DMG_URL" \
@@ -204,6 +205,9 @@ jobs:
 
           echo "Generated latest.json:"
           cat latest.json
+
+          # 임시 파일 정리
+          rm -f release_info.json
 
       - name: Upload latest.json to release
         run: |
