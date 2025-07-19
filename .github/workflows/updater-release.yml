@@ -86,7 +86,7 @@ jobs:
       - name: Setup Tauri signing key
         run: |
           mkdir -p ~/.tauri
-          echo "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" > ~/.tauri/ci.key
+          echo '${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}' > ~/.tauri/ci.key
           chmod 600 ~/.tauri/ci.key
 
       - uses: tauri-apps/tauri-action@v0
