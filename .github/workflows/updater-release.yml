@@ -179,25 +179,28 @@ jobs:
 
           # 서명 내용 다운로드 (base64로 인코딩)
           DMG_SIGNATURE=""
-
           if [ "$DMG_SIG" != "null" ]; then
             DMG_SIGNATURE=$(curl -s "$DMG_SIG" | base64 -w 0)
           fi
 
-          # latest.json 생성
-          cat > latest.json << EOF
-          {
-            "version": "$VERSION",
-            "notes": $(echo "$RELEASE_NOTES" | jq -R -s .),
-            "pub_date": "$PUB_DATE",
-            "platforms": {
-              "darwin-universal": {
-                "signature": "$DMG_SIGNATURE",
-                "url": "$DMG_URL"
+          # jq를 사용해서 안전하게 JSON 생성 (가장 안정적)
+          jq -n \
+            --arg version "$VERSION" \
+            --arg notes "$RELEASE_NOTES" \
+            --arg pub_date "$PUB_DATE" \
+            --arg signature "$DMG_SIGNATURE" \
+            --arg url "$DMG_URL" \
+            '{
+              version: $version,
+              notes: $notes,
+              pub_date: $pub_date,
+              platforms: {
+                "darwin-universal": {
+                  signature: $signature,
+                  url: $url
+                }
               }
-            }
-          }
-          EOF
+            }' > latest.json
 
           echo "Generated latest.json:"
           cat latest.json
