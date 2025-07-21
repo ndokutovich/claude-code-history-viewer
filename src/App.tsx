@@ -3,7 +3,7 @@ import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
-import { UpdateManager } from "./components/UpdateManager";
+import { SimpleUpdateManager } from "./components/SimpleUpdateManager";
 import { useAppStore } from "./store/useAppStore";
 import { useAnalytics } from "./hooks/useAnalytics";
 
@@ -366,8 +366,8 @@ function App() {
             </div>
           </div>
         </div>
-        {/* Native Update Manager */}
-        <UpdateManager />
+        {/* Simple Update Manager */}
+        <SimpleUpdateManager />
       </div>
 
       {/* Modals */}

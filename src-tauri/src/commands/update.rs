@@ -20,48 +20,48 @@ pub enum UpdateType {
     Major,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UpdateMessage {
-    title: String,
-    description: String,
-    features: Vec<String>,
+    pub title: String,
+    pub description: String,
+    pub features: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct UpdateMetadata {
-    priority: UpdatePriority,
-    r#type: UpdateType,
-    force_update: bool,
-    minimum_version: Option<String>,
-    deadline: Option<String>,
-    message: UpdateMessage,
+    pub priority: UpdatePriority,
+    pub r#type: UpdateType,
+    pub force_update: bool,
+    pub minimum_version: Option<String>,
+    pub deadline: Option<String>,
+    pub message: UpdateMessage,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct UpdateInfo {
-    has_update: bool,
-    latest_version: Option<String>,
-    current_version: String,
-    download_url: Option<String>,
-    release_url: Option<String>,
-    metadata: Option<UpdateMetadata>,
-    is_forced: bool,
-    days_until_deadline: Option<i64>,
+    pub has_update: bool,
+    pub latest_version: Option<String>,
+    pub current_version: String,
+    pub download_url: Option<String>,
+    pub release_url: Option<String>,
+    pub metadata: Option<UpdateMetadata>,
+    pub is_forced: bool,
+    pub days_until_deadline: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize)]
-struct GitHubRelease {
-    tag_name: String,
-    html_url: String,
-    published_at: String,
-    body: String,
-    assets: Vec<GitHubAsset>,
+pub struct GitHubRelease {
+    pub tag_name: String,
+    pub html_url: String,
+    pub published_at: String,
+    pub body: String,
+    pub assets: Vec<GitHubAsset>,
 }
 
 #[derive(Serialize, Deserialize)]
-struct GitHubAsset {
-    name: String,
-    browser_download_url: String,
+pub struct GitHubAsset {
+    pub name: String,
+    pub browser_download_url: String,
 }
 
 #[command]
@@ -92,7 +92,7 @@ pub async fn check_for_updates() -> Result<UpdateInfo, String> {
     Err(format!("2번 시도 후 실패: {}", last_error))
 }
 
-async fn fetch_release_info(client: &reqwest::Client) -> Result<GitHubRelease, String> {
+pub async fn fetch_release_info(client: &reqwest::Client) -> Result<GitHubRelease, String> {
     let response = client
         .get("https://api.github.com/repos/jhlee0409/claude-code-history-viewer/releases/latest")
         .header("User-Agent", "Claude-Code-History-Viewer")
@@ -152,7 +152,7 @@ fn process_release_info(current_version: &str, release: GitHubRelease) -> Result
     })
 }
 
-fn parse_metadata_from_body(body: &str) -> Option<UpdateMetadata> {
+pub fn parse_metadata_from_body(body: &str) -> Option<UpdateMetadata> {
     let re = Regex::new(r"<!-- UPDATE_METADATA\s*\n(.*?)\n-->");
 
     if let Ok(regex) = re {
@@ -176,7 +176,7 @@ fn calculate_days_until_deadline(deadline: &str) -> Result<i64, String> {
     Ok(duration.num_days())
 }
 
-fn version_is_newer(current: &str, latest: &str) -> bool {
+pub fn version_is_newer(current: &str, latest: &str) -> bool {
     // 간단한 버전 비교 (semantic versioning)
     let current_parts: Vec<u32> = current.split('.')
         .filter_map(|s| s.parse().ok())

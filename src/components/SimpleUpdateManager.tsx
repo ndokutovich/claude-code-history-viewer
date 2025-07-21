@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
-import { useGitHubUpdater } from "../hooks/useGitHubUpdater";
-import { GitHubUpdateModal } from "./GitHubUpdateModal";
+import { useSmartUpdater } from "../hooks/useSmartUpdater";
+import { SimpleUpdateModal } from "./SimpleUpdateModal";
+import { UpdateIntroModal } from "./UpdateConsentModal";
 import { UpToDateNotification } from "./UpToDateNotification";
 
-export function UpdateManager() {
-  const updater = useGitHubUpdater();
-  const [showModal, setShowModal] = useState(true);
+export function SimpleUpdateManager() {
+  const updater = useSmartUpdater();
+  const [showUpdateModal, setShowUpdateModal] = useState(true);
   const [showUpToDate, setShowUpToDate] = useState(false);
   const [manualCheck, setManualCheck] = useState(false);
 
-  // 업데이트 확인이 완료되면 결과에 따라 UI 표시
+  // 수동 체크 결과 처리
   useEffect(() => {
-    // 수동 체크가 아닌 경우 최신 버전 알림을 표시하지 않음
     if (
       !updater.state.isChecking &&
       !updater.state.hasUpdate &&
@@ -29,40 +29,42 @@ export function UpdateManager() {
     manualCheck,
   ]);
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-  };
-
-  const handleCloseUpToDate = () => {
-    setShowUpToDate(false);
-  };
-
-  // 수동 업데이트 체크 함수를 외부에서 호출할 수 있도록 노출
+  // 수동 업데이트 체크 이벤트 리스너
   useEffect(() => {
     const handleManualCheck = () => {
       setManualCheck(true);
+      updater.smartCheckForUpdates(true); // 강제 체크
     };
 
-    // updater의 checkForUpdates가 호출될 때마다 manualCheck 플래그 설정
     window.addEventListener("manual-update-check", handleManualCheck);
     return () => {
       window.removeEventListener("manual-update-check", handleManualCheck);
     };
-  }, []);
+  }, [updater]);
+
+  const handleCloseUpdateModal = () => {
+    setShowUpdateModal(false);
+  };
 
   return (
     <>
-      {/* GitHub 업데이트 모달 */}
-      <GitHubUpdateModal
-        updater={updater}
-        isVisible={showModal && updater.state.hasUpdate}
-        onClose={handleCloseModal}
+      {/* 업데이트 시스템 안내 모달 (첫 실행 시) */}
+      <UpdateIntroModal
+        isOpen={updater.showIntroModal}
+        onClose={updater.onIntroClose}
       />
 
-      {/* 최신 버전 알림 - 수동 체크 시에만 표시 */}
+      {/* 개선된 업데이트 모달 */}
+      <SimpleUpdateModal
+        updater={updater}
+        isVisible={showUpdateModal && updater.shouldShowUpdateModal}
+        onClose={handleCloseUpdateModal}
+      />
+
+      {/* 최신 버전 알림 (수동 체크 시) */}
       <UpToDateNotification
         currentVersion={updater.state.currentVersion}
-        onClose={handleCloseUpToDate}
+        onClose={() => setShowUpToDate(false)}
         isVisible={showUpToDate}
       />
     </>

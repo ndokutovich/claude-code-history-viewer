@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { visualizer } from "rollup-plugin-visualizer";
@@ -122,5 +123,18 @@ export default defineConfig(({ mode }) => ({
       "@tauri-apps/plugin-dialog",
       "@tauri-apps/plugin-store",
     ],
+  },
+
+  // Test configuration
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    globals: true,
+    css: true,
+    server: {
+      deps: {
+        inline: ['@tauri-apps/plugin-http', '@tauri-apps/plugin-updater', '@tauri-apps/api']
+      }
+    }
   },
 }));

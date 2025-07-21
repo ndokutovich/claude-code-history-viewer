@@ -208,15 +208,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
     }));
   }, []);
 
-  // 앱 시작 시 자동으로 업데이트 확인 (백그라운드에서 30초 후, 더 짧은 타임아웃)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // 백그라운드에서 조용히 확인 (사용자 방해 최소화)
-      checkForUpdates();
-    }, 30000); // 5초 → 30초로 변경
-
-    return () => clearTimeout(timer);
-  }, [checkForUpdates]);
+  // 자동 실행은 SmartUpdater에서 관리하므로 여기서는 제거
 
   return {
     state,
