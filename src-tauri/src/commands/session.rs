@@ -20,7 +20,7 @@ pub async fn load_project_sessions(
         .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
     {
         let file_path = entry.path().to_string_lossy().to_string();
-        
+
         let last_modified = if let Ok(metadata) = entry.metadata() {
             if let Ok(modified) = metadata.modified() {
                 let dt: DateTime<Utc> = modified.into();
@@ -31,7 +31,7 @@ pub async fn load_project_sessions(
         } else {
             Utc::now().to_rfc3339()
         };
-        
+
         // 파일을 스트리밍으로 읽어서 메모리 사용량 줄이기
         if let Ok(file) = std::fs::File::open(entry.path()) {
             use std::io::{BufRead, BufReader};
@@ -46,7 +46,7 @@ pub async fn load_project_sessions(
                     match serde_json::from_str::<RawLogEntry>(&line) {
                     Ok(log_entry) => {
                         if log_entry.message_type == "summary" {
-                            if session_summary.is_none() { 
+                            if session_summary.is_none() {
                                 session_summary = log_entry.summary;
                             }
                         } else {
@@ -59,7 +59,7 @@ pub async fn load_project_sessions(
                                 eprintln!("Warning: Missing UUID in line {} of {}, generated: {}", line_num + 1, file_path, new_uuid);
                                 new_uuid
                             });
-                            
+
                             let (role, message_id, model, stop_reason, usage) = if let Some(ref msg) = log_entry.message {
                                 (
                                     Some(msg.role.clone()),
@@ -71,7 +71,7 @@ pub async fn load_project_sessions(
                             } else {
                                 (None, None, None, None, None)
                             };
-                            
+
                             let claude_message = ClaudeMessage {
                                 uuid,
                                 parent_uuid: log_entry.parent_uuid,
@@ -122,10 +122,10 @@ pub async fn load_project_sessions(
                         }
                     })
                     .unwrap_or_else(|| "unknown-session".to_string());
-                
+
                 // Create unique session ID based on file path
                 let session_id = file_path.clone();
-                
+
                 let raw_project_name = entry.path()
                     .parent()
                     .and_then(|p| p.file_name())
@@ -244,10 +244,10 @@ pub async fn load_project_sessions(
     // 1. First pass: Collect all existing summaries mapped by actual_session_id
     // 2. Second pass: Apply collected summaries to any session that's missing one
     // This provides a better user experience by showing the same summary for related sessions.
-    
+
     // Create a map of actual_session_id to summary
     let mut summary_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
-    
+
     // First pass: collect all summaries
     for session in &sessions {
         if let Some(ref summary) = session.summary {
@@ -256,7 +256,7 @@ pub async fn load_project_sessions(
             }
         }
     }
-    
+
     // Second pass: apply summaries to sessions that don't have them
     for session in &mut sessions {
         if session.summary.is_none() || session.summary.as_ref().map(|s| s.is_empty()).unwrap_or(false) {
@@ -268,7 +268,7 @@ pub async fn load_project_sessions(
 
     let elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
-    println!("📊 load_project_sessions 성능: {}개 세션, {}ms 소요", 
+    println!("📊 load_project_sessions 성능: {}개 세션, {}ms 소요",
              sessions.len(), elapsed.as_millis());
 
     Ok(sessions)
@@ -295,7 +295,7 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                             eprintln!("Warning: Missing UUID for summary in line {} of {}, generated: {}", line_num + 1, session_path, new_uuid);
                             new_uuid
                         });
-                        
+
                         let summary_message = ClaudeMessage {
                             uuid,
                             parent_uuid: None,
@@ -331,7 +331,7 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                         eprintln!("Warning: Missing UUID in line {} of {}, generated: {}", line_num + 1, session_path, new_uuid);
                         new_uuid
                     });
-                    
+
                     let (role, message_id, model, stop_reason, usage) = if let Some(ref msg) = log_entry.message {
                         (
                             Some(msg.role.clone()),
@@ -343,7 +343,7 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                     } else {
                         (None, None, None, None, None)
                     };
-                    
+
                     let claude_message = ClaudeMessage {
                         uuid,
                         parent_uuid: log_entry.parent_uuid,
@@ -389,32 +389,32 @@ pub async fn load_session_messages_paginated(
     let start_time = std::time::Instant::now();
     use std::io::{BufRead, BufReader};
     use std::fs::File;
-    
+
     let file = File::open(&session_path)
         .map_err(|e| format!("Failed to open session file: {}", e))?;
     let reader = BufReader::new(file);
-    
+
     // First pass: collect all messages to get total count and support reverse ordering
     let mut all_messages: Vec<ClaudeMessage> = Vec::new();
-    
+
     for (line_num, line_result) in reader.lines().enumerate() {
         let line = line_result.map_err(|e| format!("Failed to read line: {}", e))?;
-        
+
         if line.trim().is_empty() {
             continue;
         }
-        
+
         match serde_json::from_str::<RawLogEntry>(&line) {
             Ok(log_entry) => {
                 if log_entry.message_type != "summary" {
                     if log_entry.session_id.is_none() && log_entry.timestamp.is_none() {
                         continue;
                     }
-                    
+
                     if exclude_sidechain.unwrap_or(false) && log_entry.is_sidechain.unwrap_or(false) {
                         continue;
                     }
-                    
+
                     let (role, message_id, model, stop_reason, usage) = if let Some(ref msg) = log_entry.message {
                         (
                             Some(msg.role.clone()),
@@ -426,7 +426,7 @@ pub async fn load_session_messages_paginated(
                     } else {
                         (None, None, None, None, None)
                     };
-                    
+
                     let claude_message = ClaudeMessage {
                         uuid: log_entry.uuid.unwrap_or_else(|| format!("{}-line-{}", Uuid::new_v4().to_string(), line_num + 1)),
                         parent_uuid: log_entry.parent_uuid,
@@ -451,12 +451,12 @@ pub async fn load_session_messages_paginated(
             }
         }
     }
-    
+
     let total_count = all_messages.len();
-    
+
     #[cfg(debug_assertions)]
     eprintln!("Pagination Debug - Total: {}, Offset: {}, Limit: {}", total_count, offset, limit);
-    
+
     // Chat-style pagination: offset=0 means we want the newest messages (at the end)
     // offset=100 means we want messages starting 100 from the newest
     if total_count == 0 {
@@ -469,24 +469,24 @@ pub async fn load_session_messages_paginated(
             next_offset: 0,
         });
     }
-    
+
     // Calculate how many messages are already loaded (from newest)
     let already_loaded = offset;
-    
+
     // Calculate remaining messages that can be loaded
     let remaining_messages = if total_count > already_loaded {
         total_count - already_loaded
     } else {
         0
     };
-    
+
     // Actual messages to load: minimum of limit and remaining messages
     let messages_to_load = std::cmp::min(limit, remaining_messages);
-    
+
     #[cfg(debug_assertions)]
-    eprintln!("Load calculation: total={}, already_loaded={}, remaining={}, will_load={}", 
+    eprintln!("Load calculation: total={}, already_loaded={}, remaining={}, will_load={}",
               total_count, already_loaded, remaining_messages, messages_to_load);
-    
+
     let (start_idx, end_idx) = if remaining_messages == 0 {
         // No more messages to load
         #[cfg(debug_assertions)]
@@ -494,30 +494,38 @@ pub async fn load_session_messages_paginated(
         (0, 0)
     } else {
         // Load from (total_count - already_loaded - messages_to_load) to (total_count - already_loaded)
-        let start = total_count - already_loaded - messages_to_load;
-        let end = total_count - already_loaded;
+        let start = if total_count > already_loaded + messages_to_load {
+            total_count - already_loaded - messages_to_load
+        } else {
+            0
+        };
+        let end = if total_count > already_loaded {
+            total_count - already_loaded
+        } else {
+            0
+        };
         #[cfg(debug_assertions)]
         eprintln!("Loading messages: start={}, end={} (will load {} messages)", start, end, messages_to_load);
         (start, end)
     };
-    
+
     // Get the slice of messages we need
-    let messages: Vec<ClaudeMessage> = all_messages
-        .into_iter()
-        .skip(start_idx)
-        .take(end_idx - start_idx)
-        .collect();
-    
+    let messages: Vec<ClaudeMessage> = if start_idx < end_idx && end_idx <= all_messages.len() {
+        all_messages[start_idx..end_idx].to_vec()
+    } else {
+        vec![]
+    };
+
     // has_more is true if there are still older messages to load
     let has_more = start_idx > 0;
     let next_offset = offset + messages.len();
-    
+
     let elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
     eprintln!("📊 load_session_messages_paginated 성능: {}개 메시지, {}ms 소요", messages.len(), elapsed.as_millis());
     #[cfg(debug_assertions)]
     eprintln!("Result: {} messages returned, has_more={}, next_offset={}", messages.len(), has_more, next_offset);
-    
+
     Ok(MessagePage {
         messages,
         total_count,
@@ -535,12 +543,12 @@ pub async fn get_session_message_count(
         .map_err(|e| format!("Failed to read session file: {}", e))?;
 
     let mut count = 0;
-    
+
     for line in content.lines() {
         if line.trim().is_empty() {
             continue;
         }
-        
+
         if let Ok(log_entry) = serde_json::from_str::<RawLogEntry>(line) {
             if log_entry.message_type != "summary" {
                 if exclude_sidechain.unwrap_or(false) && log_entry.is_sidechain.unwrap_or(false) {
@@ -610,4 +618,124 @@ pub async fn search_messages(
     }
 
     Ok(all_messages)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_pagination_calculation_first_page() {
+        let total_count = 200;
+        let offset = 0;
+        let limit = 20;
+
+        let already_loaded = offset;
+        let remaining = if total_count > already_loaded {
+            total_count - already_loaded
+        } else {
+            0
+        };
+        let messages_to_load = std::cmp::min(limit, remaining);
+
+        assert_eq!(messages_to_load, 20);
+        assert_eq!(remaining, 200);
+
+        let start = if total_count > already_loaded + messages_to_load {
+            total_count - already_loaded - messages_to_load
+        } else {
+            0
+        };
+        let end = if total_count > already_loaded {
+            total_count - already_loaded
+        } else {
+            0
+        };
+
+        assert_eq!(start, 180); // 200 - 0 - 20
+        assert_eq!(end, 200);   // 200 - 0
+    }
+
+    #[test]
+    fn test_pagination_at_120_messages() {
+        let total_count = 300;
+        let offset = 120;
+        let limit = 20;
+
+        let already_loaded = offset;
+        let remaining = if total_count > already_loaded {
+            total_count - already_loaded
+        } else {
+            0
+        };
+        let messages_to_load = std::cmp::min(limit, remaining);
+
+        assert_eq!(remaining, 180); // 300 - 120
+        assert_eq!(messages_to_load, 20);
+
+        let start = if total_count > already_loaded + messages_to_load {
+            total_count - already_loaded - messages_to_load
+        } else {
+            0
+        };
+        let end = if total_count > already_loaded {
+            total_count - already_loaded
+        } else {
+            0
+        };
+
+        assert_eq!(start, 160); // 300 - 120 - 20
+        assert_eq!(end, 180);   // 300 - 120
+    }
+
+    #[test]
+    fn test_pagination_boundary_case() {
+        let total_count = 150;
+        let offset = 140;
+        let limit = 20;
+
+        let already_loaded = offset;
+        let remaining = if total_count > already_loaded {
+            total_count - already_loaded
+        } else {
+            0
+        };
+        let messages_to_load = std::cmp::min(limit, remaining);
+
+        assert_eq!(remaining, 10);
+        assert_eq!(messages_to_load, 10); // Only 10 messages left
+
+        let start = if total_count > already_loaded + messages_to_load {
+            total_count - already_loaded - messages_to_load
+        } else {
+            0
+        };
+        let end = if total_count > already_loaded {
+            total_count - already_loaded
+        } else {
+            0
+        };
+
+        assert_eq!(start, 0);  // 150 - 140 - 10 = 0
+        assert_eq!(end, 10);   // 150 - 140 = 10
+    }
+
+    #[test]
+    fn test_pagination_overflow_protection() {
+        let total_count = 50;
+        let offset = 100; // Offset larger than total
+        let limit = 20;
+
+        let already_loaded = offset;
+        let remaining = if total_count > already_loaded {
+            total_count - already_loaded
+        } else {
+            0
+        };
+
+        assert_eq!(remaining, 0); // Safe return of 0
+
+        let messages_to_load = std::cmp::min(limit, remaining);
+        assert_eq!(messages_to_load, 0);
+    }
 }

@@ -300,8 +300,60 @@ export const useAppStore = create<AppStore>((set, get) => ({
         }
       );
 
+      // 디버깅 로그 추가
+      console.log("🔍 Before update:", {
+        currentMessages: messages.length,
+        newMessages: messagePage.messages.length,
+        nextOffset: messagePage.next_offset,
+        hasMore: messagePage.has_more,
+      });
+
+      // 중복 방지를 위한 안전한 병합
+      const existingUuids = new Set(messages.map((msg) => msg.uuid));
+      const newMessages = messagePage.messages.filter(
+        (msg) => !existingUuids.has(msg.uuid)
+      );
+
+      const updatedMessages = [...newMessages, ...messages];
+
+      // 실시간 검증
+      const validation = {
+        existingMessages: messages.length,
+        newMessagesFromServer: messagePage.messages.length,
+        actuallyNewMessages: newMessages.length,
+        totalMessages: updatedMessages.length,
+        duplicatesFiltered: messagePage.messages.length - newMessages.length,
+        hasMore: messagePage.has_more,
+        nextOffset: messagePage.next_offset,
+      };
+
+      console.log("🔍 After merge:", validation);
+
+      // 안전성 검증
+      if (validation.duplicatesFiltered > 0) {
+        console.warn(
+          "⚠️ Duplicate messages detected and filtered:",
+          validation.duplicatesFiltered
+        );
+      }
+
+      if (validation.actuallyNewMessages === 0 && messagePage.has_more) {
+        console.error(
+          "🚨 Server returned no new messages but claims more available"
+        );
+      }
+
+      // 성능 모니터링
+      if (validation.totalMessages > 500) {
+        console.warn(
+          "📊 Large message count detected:",
+          validation.totalMessages,
+          "messages loaded"
+        );
+      }
+
       set({
-        messages: [...messagePage.messages, ...messages], // 더 오래된 메시지를 앞에 추가 (채팅 스타일)
+        messages: updatedMessages, // 더 오래된 메시지를 앞에 추가 (채팅 스타일)
         pagination: {
           ...pagination,
           currentOffset: messagePage.next_offset,
@@ -372,11 +424,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       // 현재 세션을 다시 로드 (첫 페이지부터)
       await get().selectSession(selectedSession, pagination.pageSize);
-      
+
       // 분석 뷰일 때 분석 데이터도 새로고침
-      if (selectedProject && (analytics.currentView === "tokenStats" || analytics.currentView === "analytics")) {
+      if (
+        selectedProject &&
+        (analytics.currentView === "tokenStats" ||
+          analytics.currentView === "analytics")
+      ) {
         console.log("분석 데이터 새로고침 시작:", analytics.currentView);
-        
+
         if (analytics.currentView === "tokenStats") {
           // 토큰 통계 새로고침
           await get().loadProjectTokenStats(selectedProject.path);
@@ -390,23 +446,23 @@ export const useAppStore = create<AppStore>((set, get) => ({
             { projectPath: selectedProject.path }
           );
           get().setAnalyticsProjectSummary(projectSummary);
-          
+
           // 세션 비교 데이터도 새로고침
           if (selectedSession) {
             const sessionComparison = await invoke<SessionComparison>(
               "get_session_comparison",
-              { 
+              {
                 sessionId: selectedSession.actual_session_id,
-                projectPath: selectedProject.path 
+                projectPath: selectedProject.path,
               }
             );
             get().setAnalyticsSessionComparison(sessionComparison);
           }
         }
-        
+
         console.log("분석 데이터 새로고침 완료");
       }
-      
+
       console.log("새로고침 완료");
     } catch (error) {
       console.error("새로고침 실패:", error);

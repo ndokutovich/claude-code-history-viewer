@@ -213,6 +213,15 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       new Map(messages.map((msg) => [msg.uuid, msg])).values()
     );
 
+    // 디버깅: 중복 제거 전후 비교
+    if (messages.length !== uniqueMessages.length) {
+      console.log("🚨 Duplicates found:", {
+        originalCount: messages.length,
+        uniqueCount: uniqueMessages.length,
+        duplicates: messages.length - uniqueMessages.length,
+      });
+    }
+
     // 루트 메시지 찾기
     const roots: ClaudeMessage[] = [];
     uniqueMessages.forEach((msg) => {
