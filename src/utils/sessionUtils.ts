@@ -28,6 +28,14 @@ export function getSessionTitle(
         .filter((c: any) => c.type === "text" && c.text)
         .map((c: any) => c.text)
         .join(" ");
+    } else if (typeof firstMsg.content === "object") {
+      // Handle object content (e.g., { text: "..." } or { content: "..." })
+      const obj = firstMsg.content as any;
+      if (obj.text) {
+        text = obj.text;
+      } else if (obj.content && typeof obj.content === "string") {
+        text = obj.content;
+      }
     }
 
     if (text.trim()) {

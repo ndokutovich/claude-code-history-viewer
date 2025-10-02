@@ -6,6 +6,7 @@ import { COLORS } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
 import type { ClaudeMessage, ClaudeSession } from "@/types";
 import { getSessionTitle } from "@/utils/sessionUtils";
+import { normalizeQuotes } from "@/utils/stringUtils";
 
 interface GroupedSearchResult {
   sessionId: string;
@@ -259,16 +260,55 @@ export const SearchView = () => {
     // Highlight search query in preview
     const highlightQuery = (text: string) => {
       if (!query) return text;
-      const parts = text.split(new RegExp(`(${query})`, "gi"));
-      return parts.map((part, i) =>
-        part.toLowerCase() === query.toLowerCase() ? (
+
+      // Normalize smart quotes to regular quotes (same as backend does)
+      const normalizedQuery = normalizeQuotes(query);
+
+      // Parse quoted and unquoted terms
+      const terms: string[] = [];
+
+      // Match both double and single quoted phrases
+      const quotedRegex = /"([^"]+)"|'([^']+)'/g;
+      let remaining = normalizedQuery;
+      let match;
+
+      // Extract quoted phrases and remove them from the query
+      while ((match = quotedRegex.exec(normalizedQuery)) !== null) {
+        const term = match[1] || match[2];
+        if (term) {
+          terms.push(term);
+          // Remove the matched quoted phrase from remaining text
+          remaining = remaining.replace(match[0], ' ');
+        }
+      }
+
+      // Extract remaining unquoted words
+      const unquotedWords = remaining.split(/\s+/).filter(w => w.trim());
+      terms.push(...unquotedWords);
+
+      if (terms.length === 0) return text;
+
+      // Escape special regex characters in terms
+      const escapedTerms = terms.map(term =>
+        term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      );
+
+      // Create regex pattern for all terms
+      const pattern = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
+      const parts = text.split(pattern);
+
+      return parts.map((part, i) => {
+        const isMatch = terms.some(term =>
+          part.toLowerCase() === term.toLowerCase()
+        );
+        return isMatch ? (
           <mark key={i} className="bg-yellow-200 dark:bg-yellow-800">
             {part}
           </mark>
         ) : (
           part
-        )
-      );
+        );
+      });
     };
 
     return (
