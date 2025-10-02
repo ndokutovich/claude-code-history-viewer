@@ -5,6 +5,7 @@ import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
 import type { ClaudeMessage, ClaudeSession } from "@/types";
+import { getSessionTitle } from "@/utils/sessionUtils";
 
 interface GroupedSearchResult {
   sessionId: string;
@@ -363,24 +364,7 @@ export const SearchView = () => {
                     <MessageSquare className="w-4 h-4" />
                     <div className="text-left">
                       <div className={cn("font-medium", COLORS.ui.text.primary)}>
-                        {group.session?.summary || (() => {
-                          const firstMsg = group.messages[0];
-                          if (!firstMsg?.content) return `Session ${group.sessionId.slice(-8)}`;
-
-                          if (typeof firstMsg.content === 'string') {
-                            return firstMsg.content.substring(0, 60);
-                          }
-
-                          if (Array.isArray(firstMsg.content)) {
-                            const text = firstMsg.content
-                              .filter((c: any) => c.type === 'text' && c.text)
-                              .map((c: any) => c.text)
-                              .join(' ');
-                            return text.substring(0, 60) || `Session ${group.sessionId.slice(-8)}`;
-                          }
-
-                          return `Session ${group.sessionId.slice(-8)}`;
-                        })()}
+                        {getSessionTitle(group.session, group.messages, 60)}
                       </div>
                       <div className={cn("text-xs", COLORS.ui.text.muted)}>
                         {group.messages.length} {t("search.matches")}
