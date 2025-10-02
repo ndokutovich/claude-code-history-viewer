@@ -266,10 +266,10 @@ pub async fn load_project_sessions(
         }
     }
 
-    let elapsed = start_time.elapsed();
+    let _elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
-    println!("📊 load_project_sessions 성능: {}개 세션, {}ms 소요", 
-             sessions.len(), elapsed.as_millis());
+    println!("📊 load_project_sessions 성능: {}개 세션, {}ms 소요",
+             sessions.len(), _elapsed.as_millis());
 
     Ok(sessions)
 }
@@ -511,10 +511,10 @@ pub async fn load_session_messages_paginated(
     // has_more is true if there are still older messages to load
     let has_more = start_idx > 0;
     let next_offset = offset + messages.len();
-    
-    let elapsed = start_time.elapsed();
+
+    let _elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
-    eprintln!("📊 load_session_messages_paginated 성능: {}개 메시지, {}ms 소요", messages.len(), elapsed.as_millis());
+    eprintln!("📊 load_session_messages_paginated 성능: {}개 메시지, {}ms 소요", messages.len(), _elapsed.as_millis());
     #[cfg(debug_assertions)]
     eprintln!("Result: {} messages returned, has_more={}, next_offset={}", messages.len(), has_more, next_offset);
     
