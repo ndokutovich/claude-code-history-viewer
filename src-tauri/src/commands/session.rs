@@ -94,6 +94,7 @@ pub async fn load_project_sessions(
                                 message_id,
                                 model,
                                 stop_reason,
+                                project_path: None,
                             };
                             messages.push(claude_message);
                         }
@@ -318,6 +319,7 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                             message_id: None,
                             model: None,
                             stop_reason: None,
+                            project_path: None,
                         };
                         messages.push(summary_message);
                     }
@@ -366,6 +368,7 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                         message_id,
                         model,
                         stop_reason,
+                        project_path: None,
                     };
                     messages.push(claude_message);
                 }
@@ -442,6 +445,7 @@ pub async fn load_session_messages_paginated(
                         message_id,
                         model,
                         stop_reason,
+                        project_path: None,
                     };
                     all_messages.push(claude_message);
                 }
@@ -655,6 +659,12 @@ pub async fn search_messages(
         .filter_map(|e| e.ok())
         .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
     {
+        // Extract project path from file path
+        // Path format: ~/.claude/projects/[project_name]/[session].jsonl
+        let project_path = entry.path()
+            .parent() // Get parent directory (project folder)
+            .map(|p| p.to_string_lossy().to_string());
+
         if let Ok(content) = fs::read_to_string(entry.path()) {
             for (line_num, line) in content.lines().enumerate() {
                 if let Ok(log_entry) = serde_json::from_str::<RawLogEntry>(line) {
@@ -694,6 +704,7 @@ pub async fn search_messages(
                                     message_id: message_content.id.clone(),
                                     model: message_content.model.clone(),
                                     stop_reason: message_content.stop_reason.clone(),
+                                    project_path: project_path.clone(),
                                 };
                                 all_messages.push(claude_message);
                             }

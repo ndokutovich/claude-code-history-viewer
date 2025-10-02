@@ -101,6 +101,8 @@ export interface ClaudeMessage {
     cache_read_input_tokens?: number;
     service_tier?: string;
   };
+  // Search metadata
+  projectPath?: string;
 }
 
 export interface ClaudeProject {

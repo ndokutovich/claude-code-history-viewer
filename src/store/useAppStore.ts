@@ -44,6 +44,7 @@ interface AppStore extends AppState {
   initializeApp: () => Promise<void>;
   scanProjects: () => Promise<void>;
   selectProject: (project: ClaudeProject) => Promise<void>;
+  loadProjectSessions: (projectPath: string) => Promise<ClaudeSession[]>;
   selectSession: (session: ClaudeSession, pageSize?: number) => Promise<void>;
   loadMoreMessages: () => Promise<void>;
   refreshCurrentSession: () => Promise<void>;
@@ -217,6 +218,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set({ error: { type: AppErrorType.UNKNOWN, message: String(error) } });
     } finally {
       set({ isLoadingSessions: false });
+    }
+  },
+
+  loadProjectSessions: async (projectPath: string) => {
+    try {
+      const sessions = await invoke<ClaudeSession[]>("load_project_sessions", {
+        projectPath,
+        excludeSidechain: get().excludeSidechain,
+      });
+      return sessions;
+    } catch (error) {
+      console.error("Failed to load project sessions:", error);
+      throw error;
     }
   },
 

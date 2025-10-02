@@ -8,6 +8,7 @@ import type { ClaudeMessage, ClaudeSession } from "@/types";
 
 interface GroupedSearchResult {
   sessionId: string;
+  projectPath: string | null;
   session: ClaudeSession | null;
   messages: ClaudeMessage[];
   isExpanded: boolean;
@@ -23,6 +24,7 @@ export const SearchView = () => {
     searchMessages,
     selectSession,
     setSearchOpen,
+    loadProjectSessions,
   } = useAppStore();
 
   const [query, setQuery] = useState(searchQuery);
@@ -41,6 +43,7 @@ export const SearchView = () => {
 
         groups.set(message.sessionId, {
           sessionId: message.sessionId,
+          projectPath: message.projectPath || null,
           session,
           messages: [],
           isExpanded: expandedSessions.has(message.sessionId),
@@ -81,26 +84,62 @@ export const SearchView = () => {
   const { t: tComponents } = useTranslation("components");
 
   const handleJumpToMessage = async (
-    session: ClaudeSession | null,
+    group: GroupedSearchResult,
     messageUuid: string
   ) => {
-    if (!session) return;
+    console.log("Jump to message clicked:", { group, messageUuid });
 
-    // Close search view first
-    setSearchOpen(false);
+    try {
+      let session = group.session;
 
-    // Load full conversation with large page size
-    await selectSession(session, 10000);
+      // If session not found, we need to load it from the project
+      if (!session) {
+        if (!group.projectPath) {
+          console.error("No session and no project path - this should not happen");
+          alert("Cannot jump to message: Missing project information");
+          return;
+        }
 
-    // Scroll to message after a brief delay to allow rendering
-    setTimeout(() => {
-      const element = document.getElementById(`message-${messageUuid}`);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "center" });
-        element.classList.add("highlight-message");
-        setTimeout(() => element.classList.remove("highlight-message"), 2000);
+        console.log("Session not loaded, loading from project:", group.projectPath);
+        const projectSessions = await loadProjectSessions(group.projectPath);
+        session = projectSessions.find(
+          (s: ClaudeSession) => s.actual_session_id === group.sessionId
+        ) || null;
+
+        if (!session) {
+          console.error("Session not found after loading project sessions");
+          alert(`Cannot find session ${group.sessionId.slice(-8)} in project`);
+          return;
+        }
       }
-    }, 300);
+
+      console.log("Closing search view");
+      // Close search view first
+      setSearchOpen(false);
+
+      console.log("Loading session with full messages:", session.session_id);
+      // Load full conversation with large page size
+      await selectSession(session, 10000);
+
+      console.log("Waiting for render...");
+      // Scroll to message after a brief delay to allow rendering
+      setTimeout(() => {
+        console.log("Attempting to find element:", `message-${messageUuid}`);
+        const element = document.getElementById(`message-${messageUuid}`);
+        if (element) {
+          console.log("Element found, scrolling to it");
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          element.classList.add("highlight-message");
+          setTimeout(() => element.classList.remove("highlight-message"), 2000);
+        } else {
+          console.error("Message element not found:", `message-${messageUuid}`);
+          alert(`Message not found in conversation. UUID: ${messageUuid}`);
+        }
+      }, 500); // Increased delay to 500ms
+    } catch (error) {
+      console.error("Error jumping to message:", error);
+      alert(`Error jumping to message: ${error}`);
+    }
   };
 
   const renderMessagePreview = (message: ClaudeMessage) => {
@@ -257,7 +296,7 @@ export const SearchView = () => {
                           "p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                         )}
                         onClick={() =>
-                          handleJumpToMessage(group.session, message.uuid)
+                          handleJumpToMessage(group, message.uuid)
                         }
                       >
                         <div className="flex items-start justify-between mb-2">
