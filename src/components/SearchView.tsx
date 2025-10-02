@@ -22,6 +22,7 @@ export const SearchView = () => {
     sessions,
     searchMessages,
     selectSession,
+    setSearchOpen,
   } = useAppStore();
 
   const [query, setQuery] = useState(searchQuery);
@@ -85,6 +86,9 @@ export const SearchView = () => {
   ) => {
     if (!session) return;
 
+    // Close search view first
+    setSearchOpen(false);
+
     // Load full conversation with large page size
     await selectSession(session, 10000);
 
@@ -101,11 +105,29 @@ export const SearchView = () => {
 
   const renderMessagePreview = (message: ClaudeMessage) => {
     let preview = "";
+
+    // Try to extract text from content
     if (typeof message.content === "string") {
       preview = message.content;
     } else if (Array.isArray(message.content)) {
-      const textContent = message.content.find((c: any) => c.type === "text");
-      preview = (textContent as any)?.text || "";
+      // Extract all text from array items
+      const texts = message.content
+        .filter((c: any) => c.type === "text" && c.text)
+        .map((c: any) => c.text);
+      preview = texts.join(" ");
+    } else if (message.content && typeof message.content === "object") {
+      // Handle object content
+      const obj = message.content as any;
+      if (obj.text) {
+        preview = obj.text;
+      } else if (obj.content && typeof obj.content === "string") {
+        preview = obj.content;
+      }
+    }
+
+    // If still no preview, show a placeholder
+    if (!preview.trim()) {
+      preview = tComponents("message.none");
     }
 
     // Highlight search query in preview

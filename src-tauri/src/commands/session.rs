@@ -554,6 +554,83 @@ pub async fn get_session_message_count(
     Ok(count)
 }
 
+/// Parse search query to extract quoted phrases and individual words
+/// Example: `askmeevery "pricing update"` -> [(false, "askmeevery"), (true, "pricing update")]
+fn parse_search_query(query: &str) -> Vec<(bool, String)> {
+    let mut terms = Vec::new();
+    let mut current_term = String::new();
+    let mut in_quotes = false;
+    let mut chars = query.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        match ch {
+            '"' => {
+                if in_quotes {
+                    // End of quoted phrase
+                    if !current_term.is_empty() {
+                        terms.push((true, current_term.clone())); // true = quoted
+                        current_term.clear();
+                    }
+                    in_quotes = false;
+                } else {
+                    // Start of quoted phrase
+                    // Save any accumulated unquoted term first
+                    if !current_term.is_empty() {
+                        terms.push((false, current_term.trim().to_string()));
+                        current_term.clear();
+                    }
+                    in_quotes = true;
+                }
+            }
+            ' ' if !in_quotes => {
+                // Space outside quotes - word boundary
+                if !current_term.is_empty() {
+                    terms.push((false, current_term.trim().to_string()));
+                    current_term.clear();
+                }
+            }
+            _ => {
+                current_term.push(ch);
+            }
+        }
+    }
+
+    // Add any remaining term
+    if !current_term.is_empty() {
+        terms.push((in_quotes, current_term.trim().to_string()));
+    }
+
+    // Filter out empty strings
+    terms.into_iter().filter(|(_, s)| !s.is_empty()).collect()
+}
+
+/// Check if content matches all search terms
+/// Quoted terms must match exactly, unquoted terms must all appear somewhere
+fn matches_search_terms(content: &str, terms: &[(bool, String)]) -> bool {
+    let content_lower = content.to_lowercase();
+
+    for (is_quoted, term) in terms {
+        let term_lower = term.to_lowercase();
+
+        if *is_quoted {
+            // Quoted term: must match exactly as substring
+            if !content_lower.contains(&term_lower) {
+                return false;
+            }
+        } else {
+            // Unquoted term: split by spaces and all words must appear
+            let words: Vec<&str> = term_lower.split_whitespace().collect();
+            for word in words {
+                if !content_lower.contains(word) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    true
+}
+
 #[tauri::command]
 pub async fn search_messages(
     claude_path: String,
@@ -564,6 +641,12 @@ pub async fn search_messages(
     let mut all_messages = Vec::new();
 
     if !projects_path.exists() {
+        return Ok(vec![]);
+    }
+
+    // Parse the search query into terms
+    let search_terms = parse_search_query(&query);
+    if search_terms.is_empty() {
         return Ok(vec![]);
     }
 
@@ -579,11 +662,23 @@ pub async fn search_messages(
                         if let Some(message_content) = &log_entry.message {
                             let content_str = match &message_content.content {
                                 serde_json::Value::String(s) => s.clone(),
-                                serde_json::Value::Array(arr) => serde_json::to_string(arr).unwrap_or_default(),
+                                serde_json::Value::Array(arr) => {
+                                    // Extract text from array content items
+                                    arr.iter()
+                                        .filter_map(|item| {
+                                            if let Some(text) = item.get("text") {
+                                                text.as_str().map(|s| s.to_string())
+                                            } else {
+                                                None
+                                            }
+                                        })
+                                        .collect::<Vec<String>>()
+                                        .join(" ")
+                                }
                                 _ => "".to_string(),
                             };
 
-                            if content_str.to_lowercase().contains(&query.to_lowercase()) {
+                            if matches_search_terms(&content_str, &search_terms) {
                                 let claude_message = ClaudeMessage {
                                     uuid: log_entry.uuid.unwrap_or_else(|| format!("{}-line-{}", Uuid::new_v4().to_string(), line_num + 1)),
                                     parent_uuid: log_entry.parent_uuid,
