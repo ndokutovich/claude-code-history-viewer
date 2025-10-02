@@ -568,7 +568,8 @@ fn parse_search_query(query: &str) -> Vec<(bool, String)> {
 
     while let Some(ch) = chars.next() {
         match ch {
-            '"' => {
+            // Handle both regular quotes and smart quotes (curly quotes)
+            '"' | '“' | '”' | '\'' | '‘' | '’' => {
                 if in_quotes {
                     // End of quoted phrase
                     if !current_term.is_empty() {
@@ -608,10 +609,23 @@ fn parse_search_query(query: &str) -> Vec<(bool, String)> {
     terms.into_iter().filter(|(_, s)| !s.is_empty()).collect()
 }
 
+/// Normalize quotes in text - converts all smart quotes to regular quotes
+fn normalize_quotes(text: &str) -> String {
+    text.chars()
+        .map(|ch| match ch {
+            '“' | '”' => '"',
+            '‘' | '’' => '\'',
+            _ => ch,
+        })
+        .collect()
+}
+
 /// Check if content matches all search terms
 /// Quoted terms must match exactly, unquoted terms must all appear somewhere
 fn matches_search_terms(content: &str, terms: &[(bool, String)]) -> bool {
-    let content_lower = content.to_lowercase();
+    // Normalize quotes in content so smart quotes match regular quotes
+    let normalized_content = normalize_quotes(content);
+    let content_lower = normalized_content.to_lowercase();
 
     for (is_quoted, term) in terms {
         let term_lower = term.to_lowercase();
