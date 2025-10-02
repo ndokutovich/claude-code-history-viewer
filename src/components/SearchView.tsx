@@ -31,14 +31,18 @@ export const SearchView = () => {
   const [query, setQuery] = useState(searchQuery);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
   const [searchResultSessions, setSearchResultSessions] = useState<Map<string, ClaudeSession>>(new Map());
+  const [isLoadingSessionMetadata, setIsLoadingSessionMetadata] = useState(false);
 
   // Load session metadata for all search results
   useEffect(() => {
     const loadSessionMetadata = async () => {
       if (searchResults.length === 0) {
         setSearchResultSessions(new Map());
+        setIsLoadingSessionMetadata(false);
         return;
       }
+
+      setIsLoadingSessionMetadata(true);
 
       // Group by project path to minimize backend calls
       const projectPaths = new Set<string>();
@@ -46,13 +50,18 @@ export const SearchView = () => {
         if (msg.projectPath) projectPaths.add(msg.projectPath);
       });
 
+      console.log("Loading session metadata for projects:", Array.from(projectPaths));
+
       const sessionMap = new Map<string, ClaudeSession>();
 
       // Load sessions for each project
       for (const projectPath of projectPaths) {
         try {
+          console.log("Loading sessions from:", projectPath);
           const sessions = await loadProjectSessions(projectPath);
+          console.log(`Loaded ${sessions.length} sessions from ${projectPath}`);
           sessions.forEach(session => {
+            console.log(`  Session: ${session.actual_session_id} -> ${session.summary || 'No summary'}`);
             sessionMap.set(session.actual_session_id, session);
           });
         } catch (error) {
@@ -60,7 +69,9 @@ export const SearchView = () => {
         }
       }
 
+      console.log(`Total sessions loaded: ${sessionMap.size}`);
       setSearchResultSessions(sessionMap);
+      setIsLoadingSessionMetadata(false);
     };
 
     loadSessionMetadata();
@@ -74,6 +85,11 @@ export const SearchView = () => {
       if (!groups.has(message.sessionId)) {
         // Find the session in the loaded search result sessions
         const session = searchResultSessions.get(message.sessionId) || null;
+
+        if (!session) {
+          console.log(`Session not found for sessionId: ${message.sessionId}`);
+          console.log(`Available session IDs:`, Array.from(searchResultSessions.keys()));
+        }
 
         groups.set(message.sessionId, {
           sessionId: message.sessionId,
@@ -126,7 +142,7 @@ export const SearchView = () => {
     try {
       if (!group.session) {
         console.error("Session not loaded - this should not happen");
-        alert("Session information not loaded yet. Please try again.");
+        alert(`Session not found.\nLooking for: ${group.sessionId}\nLoaded sessions: ${searchResultSessions.size}\nProject path: ${group.projectPath || 'none'}`);
         return;
       }
 
@@ -268,9 +284,9 @@ export const SearchView = () => {
 
       {/* Search Results */}
       <div className="flex-1 overflow-y-auto p-4">
-        {isLoadingMessages ? (
+        {isLoadingMessages || isLoadingSessionMetadata ? (
           <div className={cn("text-center py-8", COLORS.ui.text.muted)}>
-            {t("search.searching")}
+            {isLoadingMessages ? t("search.searching") : "Loading session information..."}
           </div>
         ) : searchResults.length === 0 ? (
           <div className={cn("text-center py-8", COLORS.ui.text.muted)}>

@@ -5,6 +5,7 @@ import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { SimpleUpdateManager } from "./components/SimpleUpdateManager";
 import { SearchView } from "./components/SearchView";
+import { DebugConsole } from "./components/DebugConsole";
 import { useAppStore } from "./store/useAppStore";
 import { useAnalytics } from "./hooks/useAnalytics";
 
@@ -394,6 +395,9 @@ function App() {
 
       {/* Modals */}
       <ModalContainer />
+
+      {/* Debug Console */}
+      <DebugConsole />
     </>
   );
 }
