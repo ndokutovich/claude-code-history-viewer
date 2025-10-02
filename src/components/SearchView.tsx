@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, X, ChevronDown, ChevronRight, MessageSquare } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { cn } from "@/utils/cn";
@@ -20,15 +20,51 @@ export const SearchView = () => {
     searchQuery,
     searchResults,
     isLoadingMessages,
-    sessions,
+    projects,
     searchMessages,
     selectSession,
+    selectProject,
     setSearchOpen,
     loadProjectSessions,
   } = useAppStore();
 
   const [query, setQuery] = useState(searchQuery);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
+  const [searchResultSessions, setSearchResultSessions] = useState<Map<string, ClaudeSession>>(new Map());
+
+  // Load session metadata for all search results
+  useEffect(() => {
+    const loadSessionMetadata = async () => {
+      if (searchResults.length === 0) {
+        setSearchResultSessions(new Map());
+        return;
+      }
+
+      // Group by project path to minimize backend calls
+      const projectPaths = new Set<string>();
+      searchResults.forEach(msg => {
+        if (msg.projectPath) projectPaths.add(msg.projectPath);
+      });
+
+      const sessionMap = new Map<string, ClaudeSession>();
+
+      // Load sessions for each project
+      for (const projectPath of projectPaths) {
+        try {
+          const sessions = await loadProjectSessions(projectPath);
+          sessions.forEach(session => {
+            sessionMap.set(session.actual_session_id, session);
+          });
+        } catch (error) {
+          console.error("Failed to load sessions for project:", projectPath, error);
+        }
+      }
+
+      setSearchResultSessions(sessionMap);
+    };
+
+    loadSessionMetadata();
+  }, [searchResults, loadProjectSessions]);
 
   // Group search results by session
   const groupedResults = useMemo(() => {
@@ -36,10 +72,8 @@ export const SearchView = () => {
 
     searchResults.forEach((message) => {
       if (!groups.has(message.sessionId)) {
-        // Find the session in the sessions list
-        const session = sessions.find(
-          (s) => s.actual_session_id === message.sessionId
-        ) || null;
+        // Find the session in the loaded search result sessions
+        const session = searchResultSessions.get(message.sessionId) || null;
 
         groups.set(message.sessionId, {
           sessionId: message.sessionId,
@@ -57,7 +91,7 @@ export const SearchView = () => {
         new Date(b.messages[0]?.timestamp || 0).getTime() -
         new Date(a.messages[0]?.timestamp || 0).getTime()
     );
-  }, [searchResults, sessions, expandedSessions]);
+  }, [searchResults, searchResultSessions, expandedSessions]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,36 +124,37 @@ export const SearchView = () => {
     console.log("Jump to message clicked:", { group, messageUuid });
 
     try {
-      let session = group.session;
-
-      // If session not found, we need to load it from the project
-      if (!session) {
-        if (!group.projectPath) {
-          console.error("No session and no project path - this should not happen");
-          alert("Cannot jump to message: Missing project information");
-          return;
-        }
-
-        console.log("Session not loaded, loading from project:", group.projectPath);
-        const projectSessions = await loadProjectSessions(group.projectPath);
-        session = projectSessions.find(
-          (s: ClaudeSession) => s.actual_session_id === group.sessionId
-        ) || null;
-
-        if (!session) {
-          console.error("Session not found after loading project sessions");
-          alert(`Cannot find session ${group.sessionId.slice(-8)} in project`);
-          return;
-        }
+      if (!group.session) {
+        console.error("Session not loaded - this should not happen");
+        alert("Session information not loaded yet. Please try again.");
+        return;
       }
 
+      if (!group.projectPath) {
+        console.error("No project path - this should not happen");
+        alert("Cannot jump to message: Missing project information");
+        return;
+      }
+
+      // Find the project that matches this session
+      const project = projects.find((p) => p.path === group.projectPath);
+      if (!project) {
+        console.error("Project not found:", group.projectPath);
+        alert("Cannot find project for this session");
+        return;
+      }
+
+      console.log("Switching to project:", project.name);
+      // Switch to the project first (updates UI to show correct project)
+      await selectProject(project);
+
       console.log("Closing search view");
-      // Close search view first
+      // Close search view
       setSearchOpen(false);
 
-      console.log("Loading session with full messages:", session.session_id);
+      console.log("Loading session with full messages:", group.session.session_id);
       // Load full conversation with large page size
-      await selectSession(session, 10000);
+      await selectSession(group.session, 10000);
 
       console.log("Waiting for render...");
       // Scroll to message after a brief delay to allow rendering
@@ -135,7 +170,7 @@ export const SearchView = () => {
           console.error("Message element not found:", `message-${messageUuid}`);
           alert(`Message not found in conversation. UUID: ${messageUuid}`);
         }
-      }, 500); // Increased delay to 500ms
+      }, 500);
     } catch (error) {
       console.error("Error jumping to message:", error);
       alert(`Error jumping to message: ${error}`);
