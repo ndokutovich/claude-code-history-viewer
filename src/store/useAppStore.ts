@@ -44,7 +44,7 @@ interface AppStore extends AppState {
   initializeApp: () => Promise<void>;
   scanProjects: () => Promise<void>;
   selectProject: (project: ClaudeProject) => Promise<void>;
-  loadProjectSessions: (projectPath: string) => Promise<ClaudeSession[]>;
+  loadProjectSessions: (projectPath: string, excludeSidechain?: boolean) => Promise<ClaudeSession[]>;
   selectSession: (session: ClaudeSession, pageSize?: number) => Promise<void>;
   loadMoreMessages: () => Promise<void>;
   refreshCurrentSession: () => Promise<void>;
@@ -221,11 +221,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
-  loadProjectSessions: async (projectPath: string) => {
+  loadProjectSessions: async (projectPath: string, excludeSidechain?: boolean) => {
     try {
       const sessions = await invoke<ClaudeSession[]>("load_project_sessions", {
         projectPath,
-        excludeSidechain: get().excludeSidechain,
+        excludeSidechain: excludeSidechain !== undefined ? excludeSidechain : get().excludeSidechain,
       });
       return sessions;
     } catch (error) {

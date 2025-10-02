@@ -54,11 +54,11 @@ export const SearchView = () => {
 
       const sessionMap = new Map<string, ClaudeSession>();
 
-      // Load sessions for each project
+      // Load sessions for each project (including sidechains for search)
       for (const projectPath of projectPaths) {
         try {
           console.log("Loading sessions from:", projectPath);
-          const sessions = await loadProjectSessions(projectPath);
+          const sessions = await loadProjectSessions(projectPath, false); // Don't exclude sidechains
           console.log(`Loaded ${sessions.length} sessions from ${projectPath}`);
           sessions.forEach(session => {
             console.log(`  Session: ${session.actual_session_id} -> ${session.summary || 'No summary'}`);
@@ -88,7 +88,18 @@ export const SearchView = () => {
 
         if (!session) {
           console.log(`Session not found for sessionId: ${message.sessionId}`);
-          console.log(`Available session IDs:`, Array.from(searchResultSessions.keys()));
+          console.log(`Message project path: ${message.projectPath}`);
+          console.log(`Total available sessions: ${searchResultSessions.size}`);
+          // Show first 5 session IDs from the same project
+          const sameProjectSessions = Array.from(searchResultSessions.entries())
+            .filter(([_, s]) => s.file_path?.includes(message.projectPath || ''))
+            .slice(0, 5);
+          console.log(`Sample sessions from same project:`, sameProjectSessions.map(([id, s]) => ({
+            id,
+            actual_id: s.actual_session_id,
+            session_id: s.session_id,
+            summary: s.summary?.substring(0, 50)
+          })));
         }
 
         groups.set(message.sessionId, {
@@ -140,14 +151,8 @@ export const SearchView = () => {
     console.log("Jump to message clicked:", { group, messageUuid });
 
     try {
-      if (!group.session) {
-        console.error("Session not loaded - this should not happen");
-        alert(`Session not found.\nLooking for: ${group.sessionId}\nLoaded sessions: ${searchResultSessions.size}\nProject path: ${group.projectPath || 'none'}`);
-        return;
-      }
-
       if (!group.projectPath) {
-        console.error("No project path - this should not happen");
+        console.error("No project path");
         alert("Cannot jump to message: Missing project information");
         return;
       }
@@ -164,13 +169,43 @@ export const SearchView = () => {
       // Switch to the project first (updates UI to show correct project)
       await selectProject(project);
 
+      // Load all sessions from the project to find the one containing this message
+      const projectSessions = await loadProjectSessions(group.projectPath, false);
+
+      // The message might be in a file with a different actual_session_id
+      // We need to find which session file contains messages with this sessionId
+      // For now, use the first matching session or create a pseudo-session
+      let targetSession = projectSessions.find(s => s.actual_session_id === group.sessionId);
+
+      if (!targetSession) {
+        // Session ID not found as actual_session_id, might be in a multi-session file
+        // Use the first message's info to construct the file path
+        const fileName = `${group.sessionId}.jsonl`;
+        const filePath = `${group.projectPath}/${fileName}`;
+
+        // Create a pseudo session object
+        targetSession = {
+          session_id: filePath,
+          actual_session_id: group.sessionId,
+          file_path: filePath,
+          project_name: project.name,
+          message_count: group.messages.length,
+          first_message_time: group.messages[0]?.timestamp || new Date().toISOString(),
+          last_message_time: group.messages[group.messages.length - 1]?.timestamp || new Date().toISOString(),
+          last_modified: new Date().toISOString(),
+          has_tool_use: false,
+          has_errors: false,
+          summary: group.messages[0]?.content?.toString().substring(0, 100)
+        };
+      }
+
       console.log("Closing search view");
       // Close search view
       setSearchOpen(false);
 
-      console.log("Loading session with full messages:", group.session.session_id);
+      console.log("Loading session with full messages:", targetSession.session_id);
       // Load full conversation with large page size
-      await selectSession(group.session, 10000);
+      await selectSession(targetSession, 10000);
 
       console.log("Waiting for render...");
       // Scroll to message after a brief delay to allow rendering
@@ -328,7 +363,7 @@ export const SearchView = () => {
                     <MessageSquare className="w-4 h-4" />
                     <div className="text-left">
                       <div className={cn("font-medium", COLORS.ui.text.primary)}>
-                        {group.session?.summary || `Session ${group.sessionId.slice(-8)}`}
+                        {group.session?.summary || group.messages[0]?.content?.toString().substring(0, 60) || `Session ${group.sessionId.slice(-8)}`}
                       </div>
                       <div className={cn("text-xs", COLORS.ui.text.muted)}>
                         {group.messages.length} {t("search.matches")}
