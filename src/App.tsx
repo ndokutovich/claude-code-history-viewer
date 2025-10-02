@@ -4,6 +4,7 @@ import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { SimpleUpdateManager } from "./components/SimpleUpdateManager";
+import { SearchView } from "./components/SearchView";
 import { useAppStore } from "./store/useAppStore";
 import { useAnalytics } from "./hooks/useAnalytics";
 
@@ -34,10 +35,12 @@ function App() {
     error,
     sessionTokenStats,
     projectTokenStats,
+    isSearchOpen,
     initializeApp,
     selectProject,
     selectSession,
     loadMoreMessages,
+    setSearchOpen,
   } = useAppStore();
 
   const {
@@ -69,6 +72,23 @@ function App() {
         initializeApp();
       });
   }, [initializeApp, loadLanguage]);
+
+  // Cmd+F keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+        e.preventDefault();
+        setSearchOpen(!isSearchOpen);
+      }
+      // Escape to close search
+      if (e.key === "Escape" && isSearchOpen) {
+        setSearchOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSearchOpen, setSearchOpen]);
 
   // i18n 언어 변경 감지
   useEffect(() => {
@@ -258,7 +278,9 @@ function App() {
 
             {/* Content */}
             <div className="flex-1 overflow-hidden">
-              {computed.isAnalyticsView ? (
+              {isSearchOpen ? (
+                <SearchView />
+              ) : computed.isAnalyticsView ? (
                 <div className="h-full overflow-y-auto">
                   <AnalyticsDashboard />
                 </div>

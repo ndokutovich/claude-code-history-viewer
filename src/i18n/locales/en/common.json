@@ -67,5 +67,14 @@
     "now": "Update Now",
     "download": "Download Update",
     "upToDate": "You have the latest version"
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search messages...",
+    "searching": "Searching...",
+    "noResults": "No results found",
+    "enterQuery": "Enter a search query to find messages",
+    "foundResults": "Found {{count}} messages in {{sessions}} conversations",
+    "matches": "matches"
   }
 }

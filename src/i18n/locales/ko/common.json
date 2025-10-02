@@ -67,5 +67,14 @@
     "now": "지금 업데이트",
     "download": "업데이트 다운로드",
     "upToDate": "최신 버전입니다"
+  },
+  "search": {
+    "title": "검색",
+    "placeholder": "메시지 검색...",
+    "searching": "검색 중...",
+    "noResults": "검색 결과가 없습니다",
+    "enterQuery": "메시지를 찾으려면 검색어를 입력하세요",
+    "foundResults": "{{sessions}}개 대화에서 {{count}}개 메시지 발견",
+    "matches": "개 일치"
   }
 }

@@ -37,6 +37,9 @@ interface AppStore extends AppState {
   // Analytics state
   analytics: AnalyticsState;
 
+  // Search state
+  isSearchOpen: boolean;
+
   // Actions
   initializeApp: () => Promise<void>;
   scanProjects: () => Promise<void>;
@@ -59,6 +62,7 @@ interface AppStore extends AppState {
   ) => Promise<SessionComparison>;
   clearTokenStats: () => void;
   setExcludeSidechain: (exclude: boolean) => void;
+  setSearchOpen: (isOpen: boolean) => void;
 
   // Analytics actions
   setAnalyticsCurrentView: (view: AnalyticsViewType) => void;
@@ -72,7 +76,7 @@ interface AppStore extends AppState {
   clearAnalyticsErrors: () => void;
 }
 
-const DEFAULT_PAGE_SIZE = 20; // 초기 로딩 시 20개 메시지만 로드하여 빠른 로딩
+const DEFAULT_PAGE_SIZE = 100; // 초기 로딩 시 100개 메시지 로드
 
 export const useAppStore = create<AppStore>((set, get) => ({
   // Initial state
@@ -101,6 +105,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   sessionTokenStats: null,
   projectTokenStats: [],
   excludeSidechain: true,
+  isSearchOpen: false,
 
   // Analytics state
   analytics: initialAnalyticsState,
@@ -598,5 +603,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
         sessionComparisonError: null,
       },
     }));
+  },
+
+  setSearchOpen: (isOpen: boolean) => {
+    set({ isSearchOpen: isOpen });
+    if (!isOpen) {
+      // Clear search results when closing
+      set({ searchQuery: "", searchResults: [] });
+    }
   },
 }));
