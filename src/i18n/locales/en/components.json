@@ -155,7 +155,15 @@
     "No tool usage data available": "No tool usage data available",
     "Less": "Less",
     "More": "More",
-    "weekdayNames": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "weekdayNames": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
     "min": "min",
     "rank": "{{rank}} rank",
     "totalTokensUsage": "Total Tokens Usage",
@@ -386,8 +394,7 @@
     "arguments": "Arguments:",
     "status": "Status:",
     "errorOutput": "Error Output",
-    "executionResult": "Execution Result",
-    "unknownContentType": "Unknown content type"
+    "executionResult": "Execution Result"
   },
   "toolUseRenderer": {
     "fileCreation": "File Creation",
@@ -446,111 +453,5 @@
     "status": "Status:",
     "changedFiles": "Changed Files ({{count}} files)",
     "viewDiff": "View Diff"
-  },
-  "assistantMessageDetails": {
-    "model": "Model",
-    "tokenUsage": "Token Usage:",
-    "input": "Input",
-    "output": "Output",
-    "cacheCreation": "Cache Creation",
-    "cacheRead": "Cache Read",
-    "tier": "Tier"
-  },
-  "claudeSessionHistoryRenderer": {
-    "title": "Chat History",
-    "noValidMessages": "No valid chat messages found.",
-    "messageCount": "Chat History ({{count}} messages)",
-    "user": "User",
-    "claude": "Claude",
-    "noContent": "No content",
-    "tokenUsage": "Tokens",
-    "model": "Model",
-    "parsingError": "Error parsing chat history",
-    "parsingErrorDescription": "An error occurred while parsing the chat data.",
-    "viewOriginalData": "View original data"
-  },
-  "terminalStreamRenderer": {
-    "title": "Terminal",
-    "exitCode": "exit"
-  },
-  "webSearchRenderer": {
-    "title": "Web Search Results",
-    "query": "Search Query:",
-    "duration": "Search Duration",
-    "seconds": "seconds",
-    "results": "Search Results ({{count}}):",
-    "unknownResultFormat": "Unknown result format"
-  },
-  "thinkingRenderer": {
-    "title": "Claude's thought process"
-  },
-  "copyButton": {
-    "copy": "Copy",
-    "copying": "Copying...",
-    "copied": "Copied",
-    "error": "Error"
-  },
-  "imageRenderer": {
-    "image": "Image",
-    "cannotLoadImage": "Cannot load image",
-    "viewFullscreen": "View fullscreen",
-    "downloadImage": "Download image"
-  },
-  "upToDateNotification": {
-    "upToDate": "Up to date",
-    "currentVersionLatest": "Current version {{version}} is the latest version."
-  },
-  "feedback": {
-    "title": "Send Feedback",
-    "type": "Feedback Type",
-    "subject": "Subject",
-    "subjectRequired": "Subject *",
-    "content": "Content",
-    "contentRequired": "Content *",
-    "subjectPlaceholder": "Please enter a brief subject",
-    "includeSystemInfo": "Include system information (app version, OS info)",
-    "preview": "Preview",
-    "systemInfoPreview": "System information to include:",
-    "appVersion": "App version: {{version}}",
-    "os": "OS: {{os}} {{version}}",
-    "architecture": "Architecture: {{arch}}",
-    "sendingEmail": "Sending...",
-    "sendEmail": "📧 Send via Email",
-    "openGitHub": "🔗 Open GitHub Issue",
-    "close": "✕",
-    "sendError": "Failed to send feedback. Please try again.",
-    "tips": "💡 Tips:",
-    "tipBugReport": "For bug reports: clearly describe reproduction steps and expected behavior",
-    "tipFeatureRequest": "For feature requests: explain what problem you're trying to solve",
-    "tipScreenshot": "If you have screenshots, please attach them to the email",
-    "types": {
-      "bug": "🐛 Bug Report",
-      "feature": "✨ Feature Request",
-      "improvement": "🔧 Improvement",
-      "other": "💬 Other"
-    },
-    "placeholders": {
-      "bug": "Please describe the situation where the bug occurred and how to reproduce it in detail.",
-      "feature": "Please describe the needed feature and the reason for it.",
-      "default": "Please enter detailed content."
-    },
-    "openGitHubError": "Failed to open GitHub. Please try again.",
-    "systemInfoError": "Failed to load system information. Please try again."
-  },
-  "updateModal": {
-    "updateAvailable": "Version {{version}} Update",
-    "currentToNew": "Current version: {{current}} → {{latest}}",
-    "newVersionAvailable": "A new version is available.",
-    "updateDeadline": "Update deadline: {{days}} days remaining",
-    "majorChanges": "Major changes:",
-    "skipThisVersion": "Skip this version",
-    "postpone": "Later (7 days)",
-    "updateNow": "Update now",
-    "downloadUpdate": "Download update",
-    "downloading": "Downloading",
-    "installing": "Installing",
-    "readyToInstall": "Ready to install",
-    "viewOnGitHub": "View on GitHub",
-    "downloadProgress": "{{progress}}% complete"
   }
 }

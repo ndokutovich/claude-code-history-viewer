@@ -31,13 +31,15 @@
       "title": "語言",
       "description": "選擇您偏好的語言"
     },
-    "checkUpdate": "檢查更新",
-    "checking": "檢查中..."
+    "checkUpdate": "檢查更新"
   },
   "time": {
     "minutesAgo": "{{count}}分鐘前",
+    "minutesAgo_plural": "{{count}}分鐘前",
     "hoursAgo": "{{count}}小時前",
+    "hoursAgo_plural": "{{count}}小時前",
     "daysAgo": "{{count}}天前",
+    "daysAgo_plural": "{{count}}天前",
     "start": "開始：",
     "end": "結束：",
     "duration": "持續時間",
@@ -52,9 +54,7 @@
     "showDetails": "檢視詳情",
     "solution": "疑難排解",
     "report": "回報錯誤",
-    "copyError": "複製錯誤資訊",
-    "updateCheckFailed": "檢查更新失敗",
-    "updateInstallFailed": "安裝更新失敗"
+    "copyError": "複製錯誤資訊"
   },
   "update": {
     "available": "版本 {{version}} 更新",

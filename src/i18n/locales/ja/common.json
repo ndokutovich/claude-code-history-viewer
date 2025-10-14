@@ -31,13 +31,15 @@
       "title": "言語",
       "description": "お好みの言語を選択してください"
     },
-    "checkUpdate": "アップデートを確認",
-    "checking": "確認中..."
+    "checkUpdate": "アップデートを確認"
   },
   "time": {
     "minutesAgo": "{{count}}分前",
+    "minutesAgo_plural": "{{count}}分前",
     "hoursAgo": "{{count}}時間前",
+    "hoursAgo_plural": "{{count}}時間前",
     "daysAgo": "{{count}}日前",
+    "daysAgo_plural": "{{count}}日前",
     "start": "開始：",
     "end": "終了：",
     "duration": "期間",
@@ -52,9 +54,7 @@
     "showDetails": "詳細を表示",
     "solution": "トラブルシューティング",
     "report": "エラーを報告",
-    "copyError": "エラー情報をコピー",
-    "updateCheckFailed": "アップデートの確認に失敗しました。",
-    "updateInstallFailed": "アップデートのインストールに失敗しました。"
+    "copyError": "エラー情報をコピー"
   },
   "update": {
     "available": "バージョン {{version}} アップデート",

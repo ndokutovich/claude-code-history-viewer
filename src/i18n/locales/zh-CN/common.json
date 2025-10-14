@@ -31,13 +31,15 @@
       "title": "语言",
       "description": "选择您偏好的语言"
     },
-    "checkUpdate": "检查更新",
-    "checking": "检查中..."
+    "checkUpdate": "检查更新"
   },
   "time": {
     "minutesAgo": "{{count}}分钟前",
+    "minutesAgo_plural": "{{count}}分钟前",
     "hoursAgo": "{{count}}小时前",
+    "hoursAgo_plural": "{{count}}小时前",
     "daysAgo": "{{count}}天前",
+    "daysAgo_plural": "{{count}}天前",
     "start": "开始：",
     "end": "结束：",
     "duration": "持续时间",
@@ -52,9 +54,7 @@
     "showDetails": "查看详情",
     "solution": "故障排除",
     "report": "报告错误",
-    "copyError": "复制错误信息",
-    "updateCheckFailed": "检查更新失败",
-    "updateInstallFailed": "安装更新失败"
+    "copyError": "复制错误信息"
   },
   "update": {
     "available": "版本 {{version}} 更新",

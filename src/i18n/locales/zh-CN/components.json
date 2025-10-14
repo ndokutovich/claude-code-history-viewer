@@ -163,7 +163,15 @@
     "No tool usage data available": "没有工具使用数据",
     "Less": "较少",
     "More": "较多",
-    "weekdayNames": ["日", "一", "二", "三", "四", "五", "六"],
+    "weekdayNames": [
+      "日",
+      "一",
+      "二",
+      "三",
+      "四",
+      "五",
+      "六"
+    ],
     "min": "分钟",
     "rank": "第{{rank}}名",
     "totalTokensUsage": "总令牌使用量",
@@ -401,8 +409,7 @@
     "arguments": "参数:",
     "status": "状态:",
     "errorOutput": "错误输出",
-    "executionResult": "执行结果",
-    "unknownContentType": "未知内容类型"
+    "executionResult": "执行结果"
   },
   "toolUseRenderer": {
     "fileCreation": "文件创建",
@@ -461,111 +468,5 @@
     "status": "状态:",
     "changedFiles": "已更改文件 ({{count}}个文件)",
     "viewDiff": "查看Diff"
-  },
-  "assistantMessageDetails": {
-    "model": "模型",
-    "tokenUsage": "令牌使用情况:",
-    "input": "输入",
-    "output": "输出",
-    "cacheCreation": "缓存创建",
-    "cacheRead": "缓存读取",
-    "tier": "层级"
-  },
-  "claudeSessionHistoryRenderer": {
-    "title": "聊天记录",
-    "noValidMessages": "未找到有效的聊天消息。",
-    "messageCount": "聊天记录 ({{count}}条消息)",
-    "user": "用户",
-    "claude": "Claude",
-    "noContent": "无内容",
-    "tokenUsage": "令牌",
-    "model": "模型",
-    "parsingError": "解析聊天记录时出错",
-    "parsingErrorDescription": "解析聊天数据时发生错误。",
-    "viewOriginalData": "查看原始数据"
-  },
-  "terminalStreamRenderer": {
-    "title": "终端",
-    "exitCode": "退出代码"
-  },
-  "webSearchRenderer": {
-    "title": "网页搜索结果",
-    "query": "搜索查询:",
-    "duration": "搜索持续时间",
-    "seconds": "秒",
-    "results": "搜索结果 ({{count}}条):",
-    "unknownResultFormat": "未知结果格式"
-  },
-  "thinkingRenderer": {
-    "title": "Claude的思考过程"
-  },
-  "copyButton": {
-    "copy": "复制",
-    "copying": "复制中...",
-    "copied": "已复制",
-    "error": "错误"
-  },
-  "imageRenderer": {
-    "image": "图像",
-    "cannotLoadImage": "无法加载图像",
-    "viewFullscreen": "全屏查看",
-    "downloadImage": "下载图像"
-  },
-  "upToDateNotification": {
-    "upToDate": "已是最新版本",
-    "currentVersionLatest": "当前版本{{version}}已是最新版本。"
-  },
-  "feedback": {
-    "title": "发送反馈",
-    "type": "反馈类型",
-    "subject": "主题",
-    "subjectRequired": "主题 *",
-    "content": "内容",
-    "contentRequired": "内容 *",
-    "subjectPlaceholder": "请输入简短的主题",
-    "includeSystemInfo": "包含系统信息（应用版本、操作系统信息）",
-    "preview": "预览",
-    "systemInfoPreview": "将包含的系统信息：",
-    "appVersion": "应用版本： {{version}}",
-    "os": "操作系统： {{os}} {{version}}",
-    "architecture": "架构： {{arch}}",
-    "sendingEmail": "发送中...",
-    "sendEmail": "📧 通过邮件发送",
-    "openGitHub": "🔗 在GitHub上创建问题",
-    "close": "✕",
-    "sendError": "发送反馈失败。请重试。",
-    "tips": "💡 提示：",
-    "tipBugReport": "对于错误报告：请清晰描述重现步骤和预期行为",
-    "tipFeatureRequest": "对于功能请求：请解释您试图解决的问题",
-    "tipScreenshot": "如果您有截图，请将其附加到邮件中",
-    "types": {
-      "bug": "🐛 错误报告",
-      "feature": "✨ 功能请求",
-      "improvement": "🔧 改进建议",
-      "other": "💬 其他"
-    },
-    "placeholders": {
-      "bug": "请详细描述发生错误的情况和重现方法。",
-      "feature": "请描述所需功能及其原因。",
-      "default": "请输入详细内容。"
-    },
-    "openGitHubError": "无法打开GitHub。请重试。",
-    "systemInfoError": "无法加载系统信息。请重试。"
-  },
-  "updateModal": {
-    "updateAvailable": "版本{{version}}更新",
-    "currentToNew": "当前版本: {{current}} → {{latest}}",
-    "newVersionAvailable": "有新版本可用。",
-    "updateDeadline": "更新截止日期: 还剩{{days}}天",
-    "majorChanges": "主要更改:",
-    "skipThisVersion": "跳过这个版本",
-    "postpone": "稍后 (7天)",
-    "updateNow": "立即更新",
-    "downloadUpdate": "下载更新",
-    "downloading": "下载中",
-    "installing": "安装中",
-    "readyToInstall": "准备安装",
-    "viewOnGitHub": "在GitHub上查看",
-    "downloadProgress": "{{progress}}% 完成"
   }
 }
