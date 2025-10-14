@@ -171,7 +171,15 @@
     "No tool usage data available": "도구 사용 데이터가 없습니다",
     "Less": "적음",
     "More": "많음",
-    "weekdayNames": ["일", "월", "화", "수", "목", "금", "토"],
+    "weekdayNames": [
+      "일",
+      "월",
+      "화",
+      "수",
+      "목",
+      "금",
+      "토"
+    ],
     "min": "분",
     "rank": "{{rank}} 순위",
     "totalTokensUsage": "총 토큰 사용량",
@@ -402,8 +410,7 @@
     "arguments": "인수:",
     "status": "상태:",
     "errorOutput": "에러 출력",
-    "executionResult": "실행 결과",
-    "unknownContentType": "알 수 없는 콘텐츠 타입"
+    "executionResult": "실행 결과"
   },
   "toolUseRenderer": {
     "fileCreation": "파일 작성",
@@ -463,110 +470,107 @@
     "changedFiles": "변경된 파일 ({{count}}개)",
     "viewDiff": "Diff 보기"
   },
+  "imageRenderer": {
+    "cannotLoadImage": "이미지를 불러올 수 없습니다",
+    "image": "이미지",
+    "viewFullscreen": "전체화면으로 보기",
+    "downloadImage": "이미지 다운로드"
+  },
+  "thinkingRenderer": {
+    "title": "사고 과정"
+  },
+  "feedback": {
+    "title": "피드백 보내기",
+    "close": "닫기",
+    "type": "피드백 유형",
+    "types": {
+      "bug": "버그 제보",
+      "feature": "기능 요청",
+      "improvement": "개선 제안",
+      "other": "기타"
+    },
+    "subjectRequired": "제목 (필수)",
+    "subjectPlaceholder": "피드백 요약을 간단히 작성해주세요",
+    "contentRequired": "내용 (필수)",
+    "placeholders": {
+      "bug": "다음 내용을 설명해주세요:\n1. 어떤 작업을 하다가 문제가 발생했나요?\n2. 어떤 결과를 기대했나요?\n3. 실제로는 어떤 일이 발생했나요?",
+      "feature": "추가되었으면 하는 기능과 그 이유를 설명해주세요.",
+      "default": "자세한 피드백을 제공해주세요."
+    },
+    "includeSystemInfo": "시스템 정보 포함",
+    "preview": "미리보기",
+    "systemInfoPreview": "시스템 정보:",
+    "appVersion": "앱 버전: {{version}}",
+    "os": "운영체제: {{os}} {{version}}",
+    "architecture": "아키텍처: {{arch}}",
+    "sendingEmail": "전송 중...",
+    "sendEmail": "이메일로 보내기",
+    "openGitHub": "GitHub Issues 열기",
+    "tips": "더 나은 피드백을 위한 팁:",
+    "tipBugReport": "버그 제보 시, 문제를 재현하는 단계를 포함해주세요",
+    "tipFeatureRequest": "기능 요청 시, 사용 사례를 설명해주세요",
+    "tipScreenshot": "스크린샷이나 예시가 있으면 매우 도움이 됩니다",
+    "systemInfoError": "시스템 정보를 불러오지 못했습니다",
+    "sendError": "피드백 전송에 실패했습니다",
+    "openGitHubError": "GitHub을 열지 못했습니다"
+  },
+  "settings": {
+    "title": "설정",
+    "changeFolder": "Claude 폴더 변경",
+    "checkUpdate": "업데이트 확인",
+    "language": {
+      "title": "언어"
+    },
+    "theme": {
+      "title": "테마",
+      "light": "라이트",
+      "dark": "다크",
+      "system": "시스템"
+    }
+  },
   "assistantMessageDetails": {
     "model": "모델",
-    "tokenUsage": "토큰 사용량:",
+    "tokenUsage": "토큰 사용량",
     "input": "입력",
     "output": "출력",
     "cacheCreation": "캐시 생성",
     "cacheRead": "캐시 읽기",
-    "tier": "티어"
-  },
-  "claudeSessionHistoryRenderer": {
-    "title": "채팅 기록",
-    "noValidMessages": "유효한 채팅 메시지가 없습니다.",
-    "messageCount": "채팅 기록 ({{count}}개 메시지)",
-    "user": "사용자",
-    "claude": "Claude",
-    "noContent": "내용 없음",
-    "tokenUsage": "토큰",
-    "model": "모델",
-    "parsingError": "채팅 기록 파싱 오류",
-    "parsingErrorDescription": "채팅 데이터를 파싱하는 중 오류가 발생했습니다.",
-    "viewOriginalData": "원본 데이터 보기"
-  },
-  "terminalStreamRenderer": {
-    "title": "터미널",
-    "exitCode": "종료 코드"
-  },
-  "webSearchRenderer": {
-    "title": "웹 검색 결과",
-    "query": "검색 쿼리:",
-    "duration": "검색 소요 시간",
-    "seconds": "초",
-    "results": "검색 결과 ({{count}}개):",
-    "unknownResultFormat": "알 수 없는 결과 형식"
-  },
-  "thinkingRenderer": {
-    "title": "Claude의 사고 과정"
+    "tier": "서비스 티어"
   },
   "copyButton": {
     "copy": "복사",
     "copying": "복사 중...",
-    "copied": "복사됨",
-    "error": "실패"
+    "copied": "복사됨!",
+    "error": "에러"
   },
-  "imageRenderer": {
-    "image": "이미지",
-    "cannotLoadImage": "이미지를 로드할 수 없습니다",
-    "viewFullscreen": "전체 화면으로 보기",
-    "downloadImage": "이미지 다운로드"
+  "claudeSessionHistoryRenderer": {
+    "title": "Claude 세션 기록",
+    "noValidMessages": "유효한 메시지를 찾을 수 없습니다",
+    "messageCount": "{{count}}개 메시지",
+    "user": "사용자",
+    "claude": "Claude",
+    "noContent": "내용 없음",
+    "tokenUsage": "토큰 사용량:",
+    "model": "모델:",
+    "parsingError": "파싱 오류",
+    "parsingErrorDescription": "메시지 내용 파싱에 실패했습니다",
+    "viewOriginalData": "원본 데이터 보기"
+  },
+  "terminalStreamRenderer": {
+    "title": "터미널 스트림",
+    "exitCode": "종료 코드:"
+  },
+  "webSearchRenderer": {
+    "title": "웹 검색 결과",
+    "query": "검색어:",
+    "searchTime": "검색 시간:",
+    "seconds": "초",
+    "results": "{{count}}개 결과",
+    "unknownResultFormat": "알 수 없는 결과 형식",
+    "duration": "소요 시간:"
   },
   "upToDateNotification": {
-    "upToDate": "최신 버전입니다",
-    "currentVersionLatest": "현재 버전 {{version}}이 최신 버전입니다."
-  },
-  "feedback": {
-    "title": "피드백 보내기",
-    "type": "피드백 유형",
-    "subject": "제목",
-    "subjectRequired": "제목 *",
-    "content": "상세 내용",
-    "contentRequired": "상세 내용 *",
-    "subjectPlaceholder": "간단한 제목을 입력해주세요",
-    "includeSystemInfo": "시스템 정보 포함 (앱 버전, OS 정보)",
-    "preview": "미리보기",
-    "systemInfoPreview": "포함될 시스템 정보:",
-    "appVersion": "앱 버전: {{version}}",
-    "os": "OS: {{os}} {{version}}",
-    "architecture": "아키텍처: {{arch}}",
-    "sendingEmail": "전송 중...",
-    "sendEmail": "📧 이메일로 보내기",
-    "openGitHub": "🔗 GitHub에서 이슈 등록",
-    "close": "✕",
-    "sendError": "피드백 전송에 실패했습니다. 다시 시도해주세요.",
-    "tips": "💡 팁:",
-    "tipBugReport": "버그 신고 시: 재현 단계와 예상 동작을 명확히 적어주세요",
-    "tipFeatureRequest": "기능 요청 시: 어떤 문제를 해결하려는지 설명해주세요",
-    "tipScreenshot": "스크린샷이 있다면 이메일에 첨부해주세요",
-    "types": {
-      "bug": "🐛 버그 신고",
-      "feature": "✨기능 요청",
-      "improvement": "🔧 개선사항",
-      "other": "💬 기타"
-    },
-    "placeholders": {
-      "bug": "버그가 발생한 상황과 재현 방법을 자세히 설명해주세요.",
-      "feature": "필요한 기능과 그 이유를 설명해주세요.",
-      "default": "자세한 내용을 입력해주세요."
-    },
-    "openGitHubError": "GitHub를 열 수 없습니다. 다시 시도해주세요.",
-    "systemInfoError": "시스템 정보를 불러올 수 없습니다. 다시 시도해주세요."
-  },
-  "updateModal": {
-    "updateAvailable": "버전 {{version}} 업데이트",
-    "currentToNew": "현재 버전: {{current}} → {{latest}}",
-    "newVersionAvailable": "새로운 버전이 있습니다.",
-    "updateDeadline": "업데이트 마감일: {{days}}일 남음",
-    "majorChanges": "주요 변경사항:",
-    "skipThisVersion": "이 버전 건너뛰기",
-    "postpone": "나중에 (7일)",
-    "updateNow": "지금 업데이트",
-    "downloadUpdate": "업데이트 다운로드",
-    "downloading": "다운로드 중",
-    "installing": "설치 중",
-    "readyToInstall": "설치 준비 완료",
-    "viewOnGitHub": "GitHub에서 보기",
-    "downloadProgress": "{{progress}}% 완료"
+    "upToDate": "이미 최신 버전입니다",
+    "currentVersionLatest": "현재 버전 {{version}}이 최신입니다"
   }
 }

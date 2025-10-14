@@ -155,7 +155,15 @@
     "No tool usage data available": "No tool usage data available",
     "Less": "Less",
     "More": "More",
-    "weekdayNames": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    "weekdayNames": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ],
     "min": "min",
     "rank": "{{rank}} rank",
     "totalTokensUsage": "Total Tokens Usage",
@@ -386,8 +394,7 @@
     "arguments": "Arguments:",
     "status": "Status:",
     "errorOutput": "Error Output",
-    "executionResult": "Execution Result",
-    "unknownContentType": "Unknown content type"
+    "executionResult": "Execution Result"
   },
   "toolUseRenderer": {
     "fileCreation": "File Creation",
@@ -447,110 +454,107 @@
     "changedFiles": "Changed Files ({{count}} files)",
     "viewDiff": "View Diff"
   },
+  "imageRenderer": {
+    "cannotLoadImage": "Cannot load image",
+    "image": "Image",
+    "viewFullscreen": "View fullscreen",
+    "downloadImage": "Download image"
+  },
+  "thinkingRenderer": {
+    "title": "Thinking Process"
+  },
+  "feedback": {
+    "title": "Send Feedback",
+    "close": "Close",
+    "type": "Feedback Type",
+    "types": {
+      "bug": "Bug Report",
+      "feature": "Feature Request",
+      "improvement": "Improvement Suggestion",
+      "other": "Other"
+    },
+    "subjectRequired": "Subject (required)",
+    "subjectPlaceholder": "Brief summary of your feedback",
+    "contentRequired": "Content (required)",
+    "placeholders": {
+      "bug": "Please describe:\n1. What were you doing when the issue occurred?\n2. What did you expect to happen?\n3. What actually happened?",
+      "feature": "Please describe the feature you'd like to see added and why it would be useful.",
+      "default": "Please provide detailed feedback."
+    },
+    "includeSystemInfo": "Include system information",
+    "preview": "Preview",
+    "systemInfoPreview": "System Information:",
+    "appVersion": "App Version: {{version}}",
+    "os": "OS: {{os}} {{version}}",
+    "architecture": "Architecture: {{arch}}",
+    "sendingEmail": "Sending...",
+    "sendEmail": "Send via Email",
+    "openGitHub": "Open GitHub Issues",
+    "tips": "Tips for better feedback:",
+    "tipBugReport": "For bug reports, include steps to reproduce the issue",
+    "tipFeatureRequest": "For feature requests, explain the use case",
+    "tipScreenshot": "Screenshots or examples are very helpful",
+    "systemInfoError": "Failed to load system information",
+    "sendError": "Failed to send feedback",
+    "openGitHubError": "Failed to open GitHub"
+  },
+  "settings": {
+    "title": "Settings",
+    "changeFolder": "Change Claude Folder",
+    "checkUpdate": "Check for Updates",
+    "language": {
+      "title": "Language"
+    },
+    "theme": {
+      "title": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    }
+  },
   "assistantMessageDetails": {
     "model": "Model",
-    "tokenUsage": "Token Usage:",
+    "tokenUsage": "Token Usage",
     "input": "Input",
     "output": "Output",
     "cacheCreation": "Cache Creation",
     "cacheRead": "Cache Read",
-    "tier": "Tier"
-  },
-  "claudeSessionHistoryRenderer": {
-    "title": "Chat History",
-    "noValidMessages": "No valid chat messages found.",
-    "messageCount": "Chat History ({{count}} messages)",
-    "user": "User",
-    "claude": "Claude",
-    "noContent": "No content",
-    "tokenUsage": "Tokens",
-    "model": "Model",
-    "parsingError": "Error parsing chat history",
-    "parsingErrorDescription": "An error occurred while parsing the chat data.",
-    "viewOriginalData": "View original data"
-  },
-  "terminalStreamRenderer": {
-    "title": "Terminal",
-    "exitCode": "exit"
-  },
-  "webSearchRenderer": {
-    "title": "Web Search Results",
-    "query": "Search Query:",
-    "duration": "Search Duration",
-    "seconds": "seconds",
-    "results": "Search Results ({{count}}):",
-    "unknownResultFormat": "Unknown result format"
-  },
-  "thinkingRenderer": {
-    "title": "Claude's thought process"
+    "tier": "Service Tier"
   },
   "copyButton": {
     "copy": "Copy",
     "copying": "Copying...",
-    "copied": "Copied",
+    "copied": "Copied!",
     "error": "Error"
   },
-  "imageRenderer": {
-    "image": "Image",
-    "cannotLoadImage": "Cannot load image",
-    "viewFullscreen": "View fullscreen",
-    "downloadImage": "Download image"
+  "claudeSessionHistoryRenderer": {
+    "title": "Claude Session History",
+    "noValidMessages": "No valid messages found",
+    "messageCount": "{{count}} message",
+    "user": "User",
+    "claude": "Claude",
+    "noContent": "No content",
+    "tokenUsage": "Token Usage:",
+    "model": "Model:",
+    "parsingError": "Parsing Error",
+    "parsingErrorDescription": "Failed to parse message content",
+    "viewOriginalData": "View Original Data"
+  },
+  "terminalStreamRenderer": {
+    "title": "Terminal Stream",
+    "exitCode": "Exit Code:"
+  },
+  "webSearchRenderer": {
+    "title": "Web Search Results",
+    "query": "Query:",
+    "searchTime": "Search Time:",
+    "seconds": "seconds",
+    "results": "{{count}} result",
+    "unknownResultFormat": "Unknown result format",
+    "duration": "Duration:"
   },
   "upToDateNotification": {
-    "upToDate": "Up to date",
-    "currentVersionLatest": "Current version {{version}} is the latest version."
-  },
-  "feedback": {
-    "title": "Send Feedback",
-    "type": "Feedback Type",
-    "subject": "Subject",
-    "subjectRequired": "Subject *",
-    "content": "Content",
-    "contentRequired": "Content *",
-    "subjectPlaceholder": "Please enter a brief subject",
-    "includeSystemInfo": "Include system information (app version, OS info)",
-    "preview": "Preview",
-    "systemInfoPreview": "System information to include:",
-    "appVersion": "App version: {{version}}",
-    "os": "OS: {{os}} {{version}}",
-    "architecture": "Architecture: {{arch}}",
-    "sendingEmail": "Sending...",
-    "sendEmail": "📧 Send via Email",
-    "openGitHub": "🔗 Open GitHub Issue",
-    "close": "✕",
-    "sendError": "Failed to send feedback. Please try again.",
-    "tips": "💡 Tips:",
-    "tipBugReport": "For bug reports: clearly describe reproduction steps and expected behavior",
-    "tipFeatureRequest": "For feature requests: explain what problem you're trying to solve",
-    "tipScreenshot": "If you have screenshots, please attach them to the email",
-    "types": {
-      "bug": "🐛 Bug Report",
-      "feature": "✨ Feature Request",
-      "improvement": "🔧 Improvement",
-      "other": "💬 Other"
-    },
-    "placeholders": {
-      "bug": "Please describe the situation where the bug occurred and how to reproduce it in detail.",
-      "feature": "Please describe the needed feature and the reason for it.",
-      "default": "Please enter detailed content."
-    },
-    "openGitHubError": "Failed to open GitHub. Please try again.",
-    "systemInfoError": "Failed to load system information. Please try again."
-  },
-  "updateModal": {
-    "updateAvailable": "Version {{version}} Update",
-    "currentToNew": "Current version: {{current}} → {{latest}}",
-    "newVersionAvailable": "A new version is available.",
-    "updateDeadline": "Update deadline: {{days}} days remaining",
-    "majorChanges": "Major changes:",
-    "skipThisVersion": "Skip this version",
-    "postpone": "Later (7 days)",
-    "updateNow": "Update now",
-    "downloadUpdate": "Download update",
-    "downloading": "Downloading",
-    "installing": "Installing",
-    "readyToInstall": "Ready to install",
-    "viewOnGitHub": "View on GitHub",
-    "downloadProgress": "{{progress}}% complete"
+    "upToDate": "Already Up to Date",
+    "currentVersionLatest": "Current version {{version}} is the latest"
   }
 }

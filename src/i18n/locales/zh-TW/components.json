@@ -163,7 +163,15 @@
     "No tool usage data available": "沒有工具使用資料",
     "Less": "較少",
     "More": "較多",
-    "weekdayNames": ["日", "一", "二", "三", "四", "五", "六"],
+    "weekdayNames": [
+      "日",
+      "一",
+      "二",
+      "三",
+      "四",
+      "五",
+      "六"
+    ],
     "min": "分鐘",
     "rank": "第{{rank}}名",
     "totalTokensUsage": "總權杖使用量",
@@ -401,8 +409,7 @@
     "arguments": "參數:",
     "status": "狀態:",
     "errorOutput": "錯誤輸出",
-    "executionResult": "執行結果",
-    "unknownContentType": "未知內容類型"
+    "executionResult": "執行結果"
   },
   "toolUseRenderer": {
     "fileCreation": "檔案建立",
@@ -462,110 +469,107 @@
     "changedFiles": "已變更檔案 ({{count}}個檔案)",
     "viewDiff": "查看Diff"
   },
+  "imageRenderer": {
+    "cannotLoadImage": "無法載入圖片",
+    "image": "圖片",
+    "viewFullscreen": "全螢幕檢視",
+    "downloadImage": "下載圖片"
+  },
+  "thinkingRenderer": {
+    "title": "思考過程"
+  },
+  "feedback": {
+    "title": "傳送回饋",
+    "close": "關閉",
+    "type": "回饋類型",
+    "types": {
+      "bug": "錯誤報告",
+      "feature": "功能請求",
+      "improvement": "改進建議",
+      "other": "其他"
+    },
+    "subjectRequired": "主旨 (必填)",
+    "subjectPlaceholder": "簡要概述您的回饋",
+    "contentRequired": "內容 (必填)",
+    "placeholders": {
+      "bug": "請描述:\n1. 問題發生時您在做什麼？\n2. 您期望會發生什麼？\n3. 實際發生了什麼？",
+      "feature": "請描述您希望新增的功能以及為什麼它會有用。",
+      "default": "請提供詳細的回饋。"
+    },
+    "includeSystemInfo": "包含系統資訊",
+    "preview": "預覽",
+    "systemInfoPreview": "系統資訊:",
+    "appVersion": "應用程式版本: {{version}}",
+    "os": "作業系統: {{os}} {{version}}",
+    "architecture": "架構: {{arch}}",
+    "sendingEmail": "傳送中...",
+    "sendEmail": "透過電子郵件傳送",
+    "openGitHub": "開啟GitHub Issues",
+    "tips": "更好的回饋提示:",
+    "tipBugReport": "對於錯誤報告,請包含重現問題的步驟",
+    "tipFeatureRequest": "對於功能請求,請解釋使用情境",
+    "tipScreenshot": "螢幕截圖或範例非常有幫助",
+    "systemInfoError": "無法載入系統資訊",
+    "sendError": "傳送回饋失敗",
+    "openGitHubError": "無法開啟GitHub"
+  },
+  "settings": {
+    "title": "設定",
+    "changeFolder": "變更Claude資料夾",
+    "checkUpdate": "檢查更新",
+    "language": {
+      "title": "語言"
+    },
+    "theme": {
+      "title": "主題",
+      "light": "淺色",
+      "dark": "深色",
+      "system": "系統"
+    }
+  },
   "assistantMessageDetails": {
     "model": "模型",
-    "tokenUsage": "權杖使用情況:",
+    "tokenUsage": "權杖使用量",
     "input": "輸入",
     "output": "輸出",
     "cacheCreation": "快取建立",
     "cacheRead": "快取讀取",
-    "tier": "層級"
-  },
-  "claudeSessionHistoryRenderer": {
-    "title": "聊天記錄",
-    "noValidMessages": "未找到有效的聊天訊息。",
-    "messageCount": "聊天記錄 ({{count}}則訊息)",
-    "user": "使用者",
-    "claude": "Claude",
-    "noContent": "無內容",
-    "tokenUsage": "權杖",
-    "model": "模型",
-    "parsingError": "解析聊天記錄時出錯",
-    "parsingErrorDescription": "解析聊天資料時發生錯誤。",
-    "viewOriginalData": "檢視原始資料"
-  },
-  "terminalStreamRenderer": {
-    "title": "終端機",
-    "exitCode": "結束代碼"
-  },
-  "webSearchRenderer": {
-    "title": "網頁搜尋結果",
-    "query": "搜尋查詢:",
-    "duration": "搜尋持續時間",
-    "seconds": "秒",
-    "results": "搜尋結果 ({{count}}則):",
-    "unknownResultFormat": "未知結果格式"
-  },
-  "thinkingRenderer": {
-    "title": "Claude的思考過程"
+    "tier": "服務層級"
   },
   "copyButton": {
     "copy": "複製",
     "copying": "複製中...",
-    "copied": "已複製",
+    "copied": "已複製！",
     "error": "錯誤"
   },
-  "imageRenderer": {
-    "image": "圖像",
-    "cannotLoadImage": "無法載入圖像",
-    "viewFullscreen": "全螢幕檢視",
-    "downloadImage": "下載圖像"
+  "claudeSessionHistoryRenderer": {
+    "title": "Claude會話歷史",
+    "noValidMessages": "未找到有效訊息",
+    "messageCount": "{{count}}則訊息",
+    "user": "使用者",
+    "claude": "Claude",
+    "noContent": "無內容",
+    "tokenUsage": "權杖使用量:",
+    "model": "模型:",
+    "parsingError": "解析錯誤",
+    "parsingErrorDescription": "無法解析訊息內容",
+    "viewOriginalData": "查看原始資料"
+  },
+  "terminalStreamRenderer": {
+    "title": "終端流",
+    "exitCode": "退出代碼:"
+  },
+  "webSearchRenderer": {
+    "title": "網頁搜尋結果",
+    "query": "查詢:",
+    "searchTime": "搜尋時間:",
+    "seconds": "秒",
+    "results": "{{count}}個結果",
+    "unknownResultFormat": "未知結果格式",
+    "duration": "時長:"
   },
   "upToDateNotification": {
     "upToDate": "已是最新版本",
-    "currentVersionLatest": "目前版本 {{version}} 是最新版本。"
-  },
-  "feedback": {
-    "title": "發送意見回馔",
-    "type": "意見回馔類型",
-    "subject": "主題",
-    "subjectRequired": "主題 *",
-    "content": "內容",
-    "contentRequired": "內容 *",
-    "subjectPlaceholder": "請輸入簡短的主題",
-    "includeSystemInfo": "包含系統資訊（應用程式版本、作業系統資訊）",
-    "preview": "預覽",
-    "systemInfoPreview": "將包含的系統資訊：",
-    "appVersion": "應用程式版本： {{version}}",
-    "os": "作業系統： {{os}} {{version}}",
-    "architecture": "架構： {{arch}}",
-    "sendingEmail": "發送中...",
-    "sendEmail": "📧 透過電子郵件發送",
-    "openGitHub": "🔗 在GitHub上建立問題",
-    "close": "✕",
-    "sendError": "發送意見回馔失敗。請重試。",
-    "tips": "💡 提示：",
-    "tipBugReport": "用於錯誤回報：請清晰描述重現步驟和預期行為",
-    "tipFeatureRequest": "用於功能請求：請解釋您試圖解決的問題",
-    "tipScreenshot": "如果您有截圖，請將其附加到電子郵件中",
-    "types": {
-      "bug": "🐛 錯誤回報",
-      "feature": "✨ 功能請求",
-      "improvement": "🔧 改進建議",
-      "other": "💬 其他"
-    },
-    "placeholders": {
-      "bug": "請詳細描述發生錯誤的情況和重現方法。",
-      "feature": "請描述所需功能及其原因。",
-      "default": "請輸入詳細內容。"
-    },
-    "openGitHubError": "無法開啟GitHub。請重試。",
-    "systemInfoError": "無法載入系統資訊。請重試。"
-  },
-  "updateModal": {
-    "updateAvailable": "版本 {{version}} 更新",
-    "currentToNew": "目前版本: {{current}} → {{latest}}",
-    "newVersionAvailable": "有新版本可用。",
-    "updateDeadline": "更新期限: 剩餘 {{days}} 天",
-    "majorChanges": "主要變更:",
-    "skipThisVersion": "跳過此版本",
-    "postpone": "稍後 (7天)",
-    "updateNow": "立即更新",
-    "downloadUpdate": "下載更新",
-    "downloading": "下載中",
-    "installing": "安裝中",
-    "readyToInstall": "準備安裝",
-    "viewOnGitHub": "在GitHub上查看",
-    "downloadProgress": "{{progress}}% 完成"
+    "currentVersionLatest": "目前版本 {{version}} 為最新版本"
   }
 }
