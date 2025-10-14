@@ -453,5 +453,108 @@
     "status": "ステータス:",
     "changedFiles": "変更されたファイル ({{count}}ファイル)",
     "viewDiff": "Diff表示"
+  },
+  "imageRenderer": {
+    "cannotLoadImage": "画像を読み込めません",
+    "image": "画像",
+    "viewFullscreen": "全画面表示",
+    "downloadImage": "画像をダウンロード"
+  },
+  "thinkingRenderer": {
+    "title": "思考プロセス"
+  },
+  "feedback": {
+    "title": "フィードバックを送信",
+    "close": "閉じる",
+    "type": "フィードバックの種類",
+    "types": {
+      "bug": "バグ報告",
+      "feature": "機能リクエスト",
+      "improvement": "改善提案",
+      "other": "その他"
+    },
+    "subjectRequired": "件名 (必須)",
+    "subjectPlaceholder": "フィードバックの簡単な要約",
+    "contentRequired": "内容 (必須)",
+    "placeholders": {
+      "bug": "以下を説明してください:\n1. 問題が発生したときに何をしていましたか？\n2. 何が起こると期待していましたか？\n3. 実際には何が起こりましたか？",
+      "feature": "追加したい機能とその理由を説明してください。",
+      "default": "詳細なフィードバックを提供してください。"
+    },
+    "includeSystemInfo": "システム情報を含める",
+    "preview": "プレビュー",
+    "systemInfoPreview": "システム情報:",
+    "appVersion": "アプリバージョン: {{version}}",
+    "os": "OS: {{os}} {{version}}",
+    "architecture": "アーキテクチャ: {{arch}}",
+    "sendingEmail": "送信中...",
+    "sendEmail": "メールで送信",
+    "openGitHub": "GitHub Issuesを開く",
+    "tips": "より良いフィードバックのためのヒント:",
+    "tipBugReport": "バグ報告の場合、問題を再現する手順を含めてください",
+    "tipFeatureRequest": "機能リクエストの場合、使用例を説明してください",
+    "tipScreenshot": "スクリーンショットや例があると非常に役立ちます",
+    "systemInfoError": "システム情報の読み込みに失敗しました",
+    "sendError": "フィードバックの送信に失敗しました",
+    "openGitHubError": "GitHubを開けませんでした"
+  },
+  "settings": {
+    "title": "設定",
+    "changeFolder": "Claudeフォルダを変更",
+    "checkUpdate": "アップデートを確認",
+    "language": {
+      "title": "言語"
+    },
+    "theme": {
+      "title": "テーマ",
+      "light": "ライト",
+      "dark": "ダーク",
+      "system": "システム"
+    }
+  },
+  "assistantMessageDetails": {
+    "model": "モデル",
+    "tokenUsage": "トークン使用量",
+    "input": "入力",
+    "output": "出力",
+    "cacheCreation": "キャッシュ作成",
+    "cacheRead": "キャッシュ読み取り",
+    "tier": "サービスティア"
+  },
+  "copyButton": {
+    "copy": "コピー",
+    "copying": "コピー中...",
+    "copied": "コピーしました！",
+    "error": "エラー"
+  },
+  "claudeSessionHistoryRenderer": {
+    "title": "Claudeセッション履歴",
+    "noValidMessages": "有効なメッセージが見つかりません",
+    "messageCount": "{{count}}件のメッセージ",
+    "user": "ユーザー",
+    "claude": "Claude",
+    "noContent": "コンテンツなし",
+    "tokenUsage": "トークン使用量:",
+    "model": "モデル:",
+    "parsingError": "パースエラー",
+    "parsingErrorDescription": "メッセージ内容のパースに失敗しました",
+    "viewOriginalData": "元のデータを表示"
+  },
+  "terminalStreamRenderer": {
+    "title": "ターミナルストリーム",
+    "exitCode": "終了コード:"
+  },
+  "webSearchRenderer": {
+    "title": "ウェブ検索結果",
+    "query": "クエリ:",
+    "searchTime": "検索時間:",
+    "seconds": "秒",
+    "results": "{{count}}件の結果",
+    "unknownResultFormat": "不明な結果形式",
+    "duration": "所要時間:"
+  },
+  "upToDateNotification": {
+    "upToDate": "既に最新です",
+    "currentVersionLatest": "現在のバージョン {{version}} が最新です"
   }
 }

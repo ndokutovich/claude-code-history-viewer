@@ -468,5 +468,108 @@
     "status": "状态:",
     "changedFiles": "已更改文件 ({{count}}个文件)",
     "viewDiff": "查看Diff"
+  },
+  "imageRenderer": {
+    "cannotLoadImage": "无法加载图片",
+    "image": "图片",
+    "viewFullscreen": "全屏查看",
+    "downloadImage": "下载图片"
+  },
+  "thinkingRenderer": {
+    "title": "思考过程"
+  },
+  "feedback": {
+    "title": "发送反馈",
+    "close": "关闭",
+    "type": "反馈类型",
+    "types": {
+      "bug": "错误报告",
+      "feature": "功能请求",
+      "improvement": "改进建议",
+      "other": "其他"
+    },
+    "subjectRequired": "主题 (必填)",
+    "subjectPlaceholder": "简要概述您的反馈",
+    "contentRequired": "内容 (必填)",
+    "placeholders": {
+      "bug": "请描述:\n1. 问题发生时您在做什么？\n2. 您期望会发生什么？\n3. 实际发生了什么？",
+      "feature": "请描述您希望添加的功能以及为什么它会有用。",
+      "default": "请提供详细的反馈。"
+    },
+    "includeSystemInfo": "包含系统信息",
+    "preview": "预览",
+    "systemInfoPreview": "系统信息:",
+    "appVersion": "应用版本: {{version}}",
+    "os": "操作系统: {{os}} {{version}}",
+    "architecture": "架构: {{arch}}",
+    "sendingEmail": "发送中...",
+    "sendEmail": "通过电子邮件发送",
+    "openGitHub": "打开GitHub Issues",
+    "tips": "更好的反馈提示:",
+    "tipBugReport": "对于错误报告,请包含重现问题的步骤",
+    "tipFeatureRequest": "对于功能请求,请解释使用场景",
+    "tipScreenshot": "截图或示例非常有帮助",
+    "systemInfoError": "无法加载系统信息",
+    "sendError": "发送反馈失败",
+    "openGitHubError": "无法打开GitHub"
+  },
+  "settings": {
+    "title": "设置",
+    "changeFolder": "更改Claude文件夹",
+    "checkUpdate": "检查更新",
+    "language": {
+      "title": "语言"
+    },
+    "theme": {
+      "title": "主题",
+      "light": "浅色",
+      "dark": "深色",
+      "system": "系统"
+    }
+  },
+  "assistantMessageDetails": {
+    "model": "模型",
+    "tokenUsage": "令牌使用量",
+    "input": "输入",
+    "output": "输出",
+    "cacheCreation": "缓存创建",
+    "cacheRead": "缓存读取",
+    "tier": "服务层级"
+  },
+  "copyButton": {
+    "copy": "复制",
+    "copying": "复制中...",
+    "copied": "已复制！",
+    "error": "错误"
+  },
+  "claudeSessionHistoryRenderer": {
+    "title": "Claude会话历史",
+    "noValidMessages": "未找到有效消息",
+    "messageCount": "{{count}}条消息",
+    "user": "用户",
+    "claude": "Claude",
+    "noContent": "无内容",
+    "tokenUsage": "令牌使用量:",
+    "model": "模型:",
+    "parsingError": "解析错误",
+    "parsingErrorDescription": "无法解析消息内容",
+    "viewOriginalData": "查看原始数据"
+  },
+  "terminalStreamRenderer": {
+    "title": "终端流",
+    "exitCode": "退出代码:"
+  },
+  "webSearchRenderer": {
+    "title": "网页搜索结果",
+    "query": "查询:",
+    "searchTime": "搜索时间:",
+    "seconds": "秒",
+    "results": "{{count}}个结果",
+    "unknownResultFormat": "未知结果格式",
+    "duration": "时长:"
+  },
+  "upToDateNotification": {
+    "upToDate": "已是最新版本",
+    "currentVersionLatest": "当前版本 {{version}} 为最新版本"
   }
 }

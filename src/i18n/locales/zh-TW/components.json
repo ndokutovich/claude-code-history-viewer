@@ -468,5 +468,108 @@
     "status": "狀態:",
     "changedFiles": "已變更檔案 ({{count}}個檔案)",
     "viewDiff": "查看Diff"
+  },
+  "imageRenderer": {
+    "cannotLoadImage": "無法載入圖片",
+    "image": "圖片",
+    "viewFullscreen": "全螢幕檢視",
+    "downloadImage": "下載圖片"
+  },
+  "thinkingRenderer": {
+    "title": "思考過程"
+  },
+  "feedback": {
+    "title": "傳送回饋",
+    "close": "關閉",
+    "type": "回饋類型",
+    "types": {
+      "bug": "錯誤報告",
+      "feature": "功能請求",
+      "improvement": "改進建議",
+      "other": "其他"
+    },
+    "subjectRequired": "主旨 (必填)",
+    "subjectPlaceholder": "簡要概述您的回饋",
+    "contentRequired": "內容 (必填)",
+    "placeholders": {
+      "bug": "請描述:\n1. 問題發生時您在做什麼？\n2. 您期望會發生什麼？\n3. 實際發生了什麼？",
+      "feature": "請描述您希望新增的功能以及為什麼它會有用。",
+      "default": "請提供詳細的回饋。"
+    },
+    "includeSystemInfo": "包含系統資訊",
+    "preview": "預覽",
+    "systemInfoPreview": "系統資訊:",
+    "appVersion": "應用程式版本: {{version}}",
+    "os": "作業系統: {{os}} {{version}}",
+    "architecture": "架構: {{arch}}",
+    "sendingEmail": "傳送中...",
+    "sendEmail": "透過電子郵件傳送",
+    "openGitHub": "開啟GitHub Issues",
+    "tips": "更好的回饋提示:",
+    "tipBugReport": "對於錯誤報告,請包含重現問題的步驟",
+    "tipFeatureRequest": "對於功能請求,請解釋使用情境",
+    "tipScreenshot": "螢幕截圖或範例非常有幫助",
+    "systemInfoError": "無法載入系統資訊",
+    "sendError": "傳送回饋失敗",
+    "openGitHubError": "無法開啟GitHub"
+  },
+  "settings": {
+    "title": "設定",
+    "changeFolder": "變更Claude資料夾",
+    "checkUpdate": "檢查更新",
+    "language": {
+      "title": "語言"
+    },
+    "theme": {
+      "title": "主題",
+      "light": "淺色",
+      "dark": "深色",
+      "system": "系統"
+    }
+  },
+  "assistantMessageDetails": {
+    "model": "模型",
+    "tokenUsage": "權杖使用量",
+    "input": "輸入",
+    "output": "輸出",
+    "cacheCreation": "快取建立",
+    "cacheRead": "快取讀取",
+    "tier": "服務層級"
+  },
+  "copyButton": {
+    "copy": "複製",
+    "copying": "複製中...",
+    "copied": "已複製！",
+    "error": "錯誤"
+  },
+  "claudeSessionHistoryRenderer": {
+    "title": "Claude會話歷史",
+    "noValidMessages": "未找到有效訊息",
+    "messageCount": "{{count}}則訊息",
+    "user": "使用者",
+    "claude": "Claude",
+    "noContent": "無內容",
+    "tokenUsage": "權杖使用量:",
+    "model": "模型:",
+    "parsingError": "解析錯誤",
+    "parsingErrorDescription": "無法解析訊息內容",
+    "viewOriginalData": "查看原始資料"
+  },
+  "terminalStreamRenderer": {
+    "title": "終端流",
+    "exitCode": "退出代碼:"
+  },
+  "webSearchRenderer": {
+    "title": "網頁搜尋結果",
+    "query": "查詢:",
+    "searchTime": "搜尋時間:",
+    "seconds": "秒",
+    "results": "{{count}}個結果",
+    "unknownResultFormat": "未知結果格式",
+    "duration": "時長:"
+  },
+  "upToDateNotification": {
+    "upToDate": "已是最新版本",
+    "currentVersionLatest": "目前版本 {{version}} 為最新版本"
   }
 }

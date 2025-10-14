@@ -21,6 +21,7 @@
   "settings": {
     "title": "설정",
     "changeFolder": "폴더 변경",
+    "checking": "확인 중...",
     "theme": {
       "title": "테마",
       "light": "라이트",

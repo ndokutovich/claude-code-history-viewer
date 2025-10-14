@@ -21,6 +21,7 @@
   "settings": {
     "title": "Settings",
     "changeFolder": "Change Folder",
+    "checking": "Checking...",
     "theme": {
       "title": "Theme",
       "light": "Light",
