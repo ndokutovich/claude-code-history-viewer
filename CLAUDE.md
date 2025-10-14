@@ -25,8 +25,38 @@ Claude Code History Viewer is a Tauri-based desktop application that allows user
 - `pnpm dev` - Start Vite dev server for frontend development
 - `pnpm tauri:dev` - Run full Tauri application in development mode
 - `pnpm build` - Build frontend with TypeScript checking
-- `pnpm tauri:build` - Build production desktop application
+- `pnpm tauri:build` - Build production desktop application for current platform
+- `pnpm tauri:build:mac` - Build production application for macOS (universal binary)
+- `pnpm tauri:build:windows` - Build production application for Windows (x86_64)
+- `pnpm tauri:build:linux` - Build production application for Linux (x86_64)
 - `pnpm lint` - Run ESLint on the codebase
+
+## Platform Support
+
+This application is **fully cross-platform** and runs on:
+- ✅ **Windows** (x86_64) - `.exe` installer via NSIS, `.msi` via WiX
+- ✅ **macOS** (Universal binary for Intel + Apple Silicon) - `.dmg`, `.app`
+- ✅ **Linux** (x86_64) - `.deb`, `.AppImage`
+
+### Windows-Specific Notes
+
+On Windows, the application:
+- Automatically detects the `.claude` folder in the user's home directory (`C:\Users\<username>\.claude`)
+- Uses the Windows WebView2 runtime (automatically downloaded if not present)
+- Supports Korean and English languages in the installer
+- Creates an uninstaller for easy removal
+- Bundled as both NSIS installer (`.exe`) and WiX installer (`.msi`)
+
+### Building for Windows
+
+To build on Windows:
+```bash
+pnpm tauri:build:windows
+```
+
+Build artifacts will be in `src-tauri/target/release/bundle/`:
+- `nsis/` - NSIS installer (.exe)
+- `msi/` - WiX installer (.msi)
 
 ## Architecture
 

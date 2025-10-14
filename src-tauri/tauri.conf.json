@@ -58,6 +58,21 @@
       "signingIdentity": null,
       "hardenedRuntime": true,
       "minimumSystemVersion": "10.13"
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
+      "wix": {
+        "language": ["en-US", "ko-KR"]
+      },
+      "nsis": {
+        "languages": ["English", "Korean"],
+        "displayLanguageSelector": true
+      }
     }
   }
 }
