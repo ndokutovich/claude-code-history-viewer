@@ -1,4 +1,6 @@
 {
+  "appName": "Claude Code 历史查看器",
+  "appDescription": "浏览和分析您的 Claude Code 对话历史",
   "loading": "加载中...",
   "error": "错误",
   "success": "成功",

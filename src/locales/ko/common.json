@@ -1,4 +1,6 @@
 {
+  "appName": "Claude Code 히스토리 뷰어",
+  "appDescription": "Claude Code 대화 기록 탐색 및 분석",
   "loading": "로딩 중...",
   "error": "오류",
   "success": "성공",

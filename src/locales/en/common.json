@@ -1,4 +1,6 @@
 {
+  "appName": "Claude Code History Viewer",
+  "appDescription": "Browse and analyze your Claude Code conversation history",
   "loading": "Loading...",
   "error": "Error",
   "success": "Success",
