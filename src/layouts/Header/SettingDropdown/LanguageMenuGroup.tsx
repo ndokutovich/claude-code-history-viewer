@@ -18,9 +18,9 @@ export const LanguageMenuGroup = () => {
         value={language}
         onValueChange={(value) => setLanguage(value as SupportedLanguage)}
       >
-        {Object.entries(supportedLanguages).map(([code, name]) => (
+        {supportedLanguages.map(({ code, label }) => (
           <DropdownMenuRadioItem key={code} value={code}>
-            <span>{name}</span>
+            <span>{label}</span>
           </DropdownMenuRadioItem>
         ))}
       </DropdownMenuRadioGroup>

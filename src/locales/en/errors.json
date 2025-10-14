@@ -1,0 +1,39 @@
+{
+  "title": "An error occurred",
+  "CLAUDE_FOLDER_NOT_FOUND": "Claude folder not found",
+  "PERMISSION_DENIED": "Access permission denied",
+  "TAURI_NOT_AVAILABLE": "Tauri API is not available. Please run in desktop app.",
+  "SCAN_PROJECTS_FAILED": "Failed to scan projects",
+  "LOAD_SESSIONS_FAILED": "Failed to load sessions",
+  "LOAD_MESSAGES_FAILED": "Failed to load messages",
+  "LOAD_TOKEN_STATS_FAILED": "Failed to load token statistics",
+  "UNKNOWN": "An unknown error occurred",
+  "errorBoundary": {
+    "title": "An unexpected error occurred",
+    "subtitle": "We apologize for the inconvenience. Please try the following methods to resolve the issue.",
+    "errorInfo": "Error Information",
+    "errorMessage": "Error Message",
+    "errorStack": "Error Stack",
+    "componentStack": "Component Stack",
+    "browserInfo": "Browser Information",
+    "occurredAt": "Occurred At",
+    "unknownError": "Unknown error",
+    "noStackTrace": "No stack trace",
+    "noComponentStack": "No component stack",
+    "showDetails": "Show Details",
+    "reportError": "Report Error",
+    "reportDescription": "If this error occurs repeatedly, please report it to the following email:",
+    "copyErrorInfo": "Copy Error Information",
+    "copied": "Copied!",
+    "restartApp": "Restart App",
+    "troubleshooting": "Troubleshooting",
+    "troubleshootingSteps": [
+      "Try completely closing and restarting the app",
+      "Check if the latest version of Claude Code History Viewer is installed",
+      "Try opening a different project to see if the problem persists",
+      "If the problem continues, copy the error information and report it to the developer"
+    ],
+    "emailSubject": "[Claude Code History Viewer] Error Report",
+    "emailBody": "Hello,\n\nThe following error occurred while using Claude Code History Viewer:\n\n[Please paste the copied error information here]\n\nAdditional Information:\n- What were you doing when the error occurred?\n- Does the error occur repeatedly?\n- Other notes:\n\nThank you."
+  }
+}

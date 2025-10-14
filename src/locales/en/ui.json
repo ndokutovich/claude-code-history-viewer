@@ -1,0 +1,449 @@
+{
+  "header": {
+    "title": "Claude Code History Viewer",
+    "subtitle": "Explore and analyze your Claude Code conversation history"
+  },
+  "settings": {
+    "title": "Settings",
+    "folder": "Change Folder",
+    "theme": "Theme",
+    "language": "Language",
+    "update": "Check for Updates"
+  },
+  "themes": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "languages": {
+    "ko": "한국어",
+    "en": "English",
+    "zh": "中文"
+  },
+  "navigation": {
+    "projects": "Projects",
+    "sessions": "Sessions",
+    "analytics": "Analytics Dashboard",
+    "tokenStats": "Token Statistics",
+    "messages": "View Messages"
+  },
+  "status": {
+    "projects": "Projects: {{count}}",
+    "sessions": "Sessions: {{count}}",
+    "messages": "Messages: {{current}}",
+    "messagesTotal": "Messages: {{current}} / {{total}}",
+    "sessionTokens": "Current Session Tokens: {{count, number}}",
+    "projectTokens": "Project Tokens: {{count, number}}"
+  },
+  "content": {
+    "selectSession": "Please select a session",
+    "selectSessionDesc": "Select a project and session from the left sidebar to view conversation content",
+    "conversation": "Conversation",
+    "analyticsTitle": "Analytics Dashboard",
+    "tokenStatsTitle": "Token Usage Statistics",
+    "sessionSummaryNotFound": "Session summary not found.",
+    "toolsUsed": "Tools used",
+    "normalChat": "Normal conversation",
+    "hasErrors": "Errors occurred"
+  },
+  "analytics": {
+    "title": "Analytics Dashboard",
+    "projectAnalysis": "Detailed project and session analysis",
+    "projectOverview": "Project overview statistics and activity analysis",
+    "tokenAnalysis": "Project token usage analysis and detailed session statistics",
+    "projectTab": "Project Overview",
+    "sessionTab": "Session Details",
+    "overview": {
+      "totalTokens": "Total Tokens",
+      "totalMessages": "Total Messages",
+      "totalSessions": "Total Sessions",
+      "averageTokensPerMessage": "Avg Tokens/Message",
+      "totalActiveHours": "Total Active Hours",
+      "averageSessionLength": "Avg Session Length"
+    },
+    "charts": {
+      "weeklyActivity": "Weekly Activity Trend",
+      "tokenUsage": "Token Usage",
+      "activityHeatmap": "Activity Heatmap",
+      "noData": "No data available",
+      "weeklyTrend": "Weekly Activity Trend",
+      "tokenDistribution": "Token Type Distribution",
+      "performanceInsights": "🎯 Performance Insights",
+      "sessionTimeline": "⏱️ Session Timeline",
+      "tokenAnalysis": "💾 Token Usage Analysis"
+    },
+    "heatmap": {
+      "days": [
+        "Sun",
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat"
+      ],
+      "lowActivity": "Low",
+      "highActivity": "High"
+    },
+    "toolUsage": {
+      "title": "Tool Usage Statistics",
+      "toolName": "Tool",
+      "usageCount": "Usage Count",
+      "successRate": "Success Rate",
+      "noTools": "No tool usage data available"
+    },
+    "sessionComparison": {
+      "title": "Session Comparison",
+      "vsAverage": "vs Project Average",
+      "higher": "{{percent}}% higher",
+      "lower": "{{percent}}% lower",
+      "same": "Same as average"
+    },
+    "labels": {
+      "dailyTokens": "Daily Avg Tokens",
+      "dailyMessages": "Daily Avg Messages",
+      "weeklyDays": "Weekly Active Days",
+      "today": "Today",
+      "highActivity": "High Activity",
+      "weekend": "Weekend",
+      "totalUsage": "Total Usage",
+      "aboveAverage": "Above Average",
+      "belowAverage": "Below Average",
+      "tokenRank": "Token Rank",
+      "top": "Top",
+      "projectShare": "Project Share",
+      "tokensPerMessage": "Tokens per Message",
+      "sessionDuration": "Session Duration",
+      "minutes": "minutes",
+      "rank": "Rank",
+      "startTime": "Start Time",
+      "duration": "Duration",
+      "endTime": "End Time",
+      "sessionRank": "Session Rank",
+      "avgSession": "Avg Session",
+      "activeHour": "Most Active Hour",
+      "hour": "{{hour}}:00"
+    },
+    "tools": {
+      "Bash": "🐚 Terminal",
+      "Read": "📖 File Read",
+      "Edit": "✏️ File Edit",
+      "Write": "📝 File Create",
+      "MultiEdit": "🔧 Multi Edit",
+      "Glob": "🔍 File Search",
+      "Grep": "🔎 Text Search",
+      "LS": "📁 Directory Browse",
+      "Task": "🎯 Task Execute",
+      "WebFetch": "🌐 Web Fetch",
+      "WebSearch": "🔍 Web Search",
+      "NotebookRead": "📚 Notebook Read",
+      "NotebookEdit": "📝 Notebook Edit",
+      "TodoRead": "📋 Todo Read",
+      "TodoWrite": "✅ Todo Write",
+      "exit_plan_mode": "🚪 Exit Plan Mode"
+    }
+  },
+  "loading": {
+    "tokenStats": "Loading token statistics...",
+    "projects": "Scanning projects...",
+    "sessions": "Loading sessions...",
+    "messages": "Loading messages...",
+    "initializing": "Initializing app..."
+  },
+  "messageViewer": {
+    "loadingMessages": "Loading messages...",
+    "noMessages": "No messages",
+    "noMessagesDesc": "Select a project and session from the left to view conversation content.",
+    "user": "User",
+    "assistant": "Claude",
+    "system": "System",
+    "branch": "Branch",
+    "toolResult": "Tool execution result:",
+    "loadingPrevious": "Loading previous messages... ({{current}}/{{total}})",
+    "loadMoreButton": "Load {{count}} more previous messages ({{current}}/{{total}})",
+    "allLoaded": "All messages loaded ({{total}})",
+    "renderError": "Message rendering error",
+    "renderErrorDesc": "Check console for detailed error information.",
+    "scrollToBottom": "Scroll to bottom",
+    "reply": "Reply (depth: {{depth}})",
+    "debug": {
+      "messages": "Messages",
+      "offset": "Offset",
+      "hasMore": "Has More",
+      "loading": "Loading",
+      "session": "Session",
+      "file": "File",
+      "firstMessage": "First Message",
+      "lastMessage": "Last Message"
+    }
+  },
+  "diff": {
+    "changes": "Changes:",
+    "advancedAnalysis": "Advanced Analysis",
+    "advancedTextAnalysis": "Advanced Text Analysis",
+    "comparisonMode": "Comparison Mode:",
+    "lines": "Line-based",
+    "trimmedLines": "Line-based (ignore whitespace)",
+    "chars": "Character-based",
+    "words": "Word-based",
+    "wordsWithSpace": "Word+Space-based",
+    "sentences": "Sentence-based",
+    "added": "Added",
+    "deleted": "Deleted",
+    "same": "Same",
+    "manyChanges": "Many changes. Click the 'Expand' button above to view the full content.",
+    "addedCode": "Added Code",
+    "changeStats": "{{count}} changes, {{total}} characters total"
+  },
+  "projectTree": {
+    "loading": "Loading...",
+    "noProjects": "No projects found",
+    "timeAgo": {
+      "minutes": "{{count}} minutes ago",
+      "hours": "{{count}} hours ago",
+      "days": "{{count}} days ago"
+    }
+  },
+  "tokenStats": {
+    "title": "Token Usage Statistics",
+    "sessionTitle": "Session Statistics",
+    "projectTitle": "Project Statistics",
+    "inputTokens": "Input Tokens",
+    "outputTokens": "Output Tokens",
+    "cacheCreation": "Cache Creation",
+    "cacheRead": "Cache Read",
+    "totalTokens": "Total Tokens",
+    "messages": "Messages",
+    "firstMessage": "First Message",
+    "lastMessage": "Last Message",
+    "duration": "Duration",
+    "averagePerMessage": "Average per Message",
+    "noData": "No token statistics available",
+    "topSessions": "Top Sessions by Token Usage",
+    "recentSessions": "Recent Sessions",
+    "projectOverview": "Project Overview",
+    "totalSessions": "Total Sessions",
+    "andMore": "and {{count}} more sessions",
+    "sessionsCount": "{{count}} sessions"
+  },
+  "time": {
+    "lessThanMinute": "< 1 minute",
+    "minutes": "{{count}} minutes",
+    "hours": "{{count}} hours",
+    "days": "{{count}} days"
+  },
+  "update": {
+    "versionUpdate": "Version {{version}} Update",
+    "currentVersion": "Current version: {{current}} → {{latest}}",
+    "newVersionAvailable": "A new version is available.",
+    "updateDeadline": "Update deadline: {{days}} days remaining",
+    "keyChanges": "Key Changes:",
+    "skipVersion": "Skip this version",
+    "postpone": "Later (7 days)",
+    "updateNow": "Update now",
+    "downloadUpdate": "Download update"
+  },
+  "folderSelector": {
+    "selectClaudeFolder": "Select .claude folder",
+    "folderSelectError": "Folder selection failed:",
+    "folderSelectErrorMessage": "An error occurred while selecting a folder.\n- Check folder access permissions.\n- Verify Claude app is running or restart the app.\n- Confirm the folder path is correct in the system.",
+    "validateError": "Could not find Claude data in the selected folder. Please select the .claude folder.",
+    "validationFailed": "An error occurred during folder validation.",
+    "goBack": "Go back",
+    "changeFolder": "Change Claude folder",
+    "folderNotFound": "Claude folder not found",
+    "changeFolderDesc": "Please select a new Claude folder or parent folder.",
+    "folderNotFoundDesc": "Could not find .claude folder in the home directory. Please select the .claude folder or a parent folder containing it.",
+    "validating": "Validating...",
+    "selectFolder": "Select folder",
+    "selectedPath": "Selected path: {{path}}",
+    "help": "Help",
+    "helpItems": [
+      "Claude Desktop app must be run at least once to create the folder",
+      "Windows: C:\\Users\\[username]\\.claude",
+      "macOS/Linux: ~/.claude or /Users/[username]/.claude",
+      "macOS: /Users/[username]/.claude",
+      "Windows: C:\\Users\\[username]\\.claude",
+      "Linux: /home/[username]/.claude"
+    ]
+  },
+  "upToDate": {
+    "title": "Up to date",
+    "message": "Current version {{version}} is the latest version."
+  },
+  "session": {
+    "title": "Session {{sessionId}}"
+  },
+  "file": {
+    "lineRange": "{{startLine}}-{{endLine}} / {{totalLines}} lines",
+    "path": "File Path:",
+    "content": "Content:",
+    "startLine": "Start Line: {{startLine}}",
+    "showingLines": "Showing {{current}}/{{total}} lines",
+    "viewMoreLines": "View {{count}} more lines",
+    "structure": "File Structure",
+    "editResult": "File Edit Result",
+    "originalContent": "Original File Content",
+    "updatedContent": "Updated File Content",
+    "searchResults": "File Search Results",
+    "listWithCount": "File List ({{count}} files)"
+  },
+  "chatHistory": {
+    "title": "Chat History",
+    "noValidMessages": "No valid chat messages.",
+    "titleWithCount": "Chat History ({{count}} messages)",
+    "userType": "User",
+    "assistantType": "Claude",
+    "parseError": "Chat History Parse Error",
+    "parseErrorMessage": "An error occurred while parsing chat data."
+  },
+  "toolResult": {
+    "title": "Tool Execution Result",
+    "executionTime": "Execution Time",
+    "totalTokens": "Total Tokens",
+    "toolUsageCount": "Tool Usage Count",
+    "interruptedStatus": "Interrupted Status",
+    "tokenUsage": "Token Usage:",
+    "imageResult": "Image Result",
+    "noOutput": "No output",
+    "completedNoOutput": "Execution complete (no output)",
+    "executionStatus": "Execution Status",
+    "claudeApiResponse": "Claude API Response",
+    "toolId": "Tool ID",
+    "executionError": "Tool Execution Error"
+  },
+  "output": {
+    "jsonOutput": "JSON Output",
+    "testResults": "Test Results",
+    "buildOutput": "Build Output",
+    "packageManagement": "Package Management",
+    "tableFormat": "Table Format Output",
+    "terminalOutput": "Terminal Output",
+    "stdout": "Output",
+    "error": "Error",
+    "imageResult": "Image Result",
+    "included": "Included",
+    "none": "None",
+    "noOutput": "No output",
+    "executionComplete": "Execution complete (no output)"
+  },
+  "status": {
+    "interrupted": "Interrupted",
+    "completed": "Completed",
+    "execution": "Execution Status"
+  },
+  "tokens": {
+    "input": "Input:",
+    "output": "Output:",
+    "cacheCreation": "Cache Creation:",
+    "cacheRead": "Cache Read:",
+    "unit": "{{value}} seconds"
+  },
+  "thinking": {
+    "title": "Claude's Thinking Process"
+  },
+  "command": {
+    "execution": "Command Execution",
+    "command": "Command:",
+    "arguments": "Arguments:",
+    "status": "Status:",
+    "errorOutput": "Error Output",
+    "executionResult": "Execution Result"
+  },
+  "imageViewer": {
+    "cannotLoad": "Cannot load image",
+    "title": "Image",
+    "viewFullscreen": "View Fullscreen",
+    "downloadImage": "Download Image"
+  },
+  "codebaseContext": {
+    "title": "Codebase Context",
+    "analyzedFiles": "Analyzed Files:",
+    "contextWindow": "Context Window:",
+    "relevantFiles": "Relevant Files ({{count}} files)",
+    "andMoreFiles": "...and {{count}} more files"
+  },
+  "gitWorkflow": {
+    "title": "Git Workflow",
+    "status": "Status:",
+    "changedFiles": "Changed Files ({{count}} files)",
+    "viewDiff": "View Diff"
+  },
+  "webSearch": {
+    "title": "Web Search Results",
+    "query": "Search Query:",
+    "duration": "Search Duration",
+    "results": "Search Results ({{count}} results):"
+  },
+  "mcp": {
+    "title": "MCP Tool Call",
+    "parameters": "Parameters",
+    "error": "Error:",
+    "result": "Execution Result"
+  },
+  "structuredPatch": {
+    "title": "File Changes (Patch)",
+    "filePath": "File Path:",
+    "changeStatistics": "Change Statistics:",
+    "areasChanged": "{{count}} areas",
+    "changesFound": "changes found in",
+    "updatedFile": "Updated File:",
+    "updatedContent": "Updated File Content"
+  },
+  "fileEdit": {
+    "title": "File Edit Result",
+    "copyChangedResult": "Copy Changed Result",
+    "copyOriginalFile": "Copy Original File",
+    "editType": "Edit Type",
+    "fullReplacement": "Full Replacement",
+    "partialReplacement": "Partial Replacement",
+    "userModified": "User Modified",
+    "hasModification": "Yes",
+    "noModification": "No"
+  },
+  "toolUse": {
+    "fileWriting": "File Writing",
+    "writtenContent": "Written Content",
+    "fileEditing": "File Editing",
+    "removedCode": "Removed Code",
+    "addedCode": "Added Code",
+    "inputParameters": "Tool Input Parameters",
+    "taskDescription": "📋 Task Description",
+    "detailedInstructions": "💬 Detailed Instructions"
+  },
+  "message": {
+    "copyMessage": "Copy Message",
+    "messagesCount": "{{count}} messages • "
+  },
+  "hardcoded": {
+    "lines": "lines",
+    "copyPath": "Copy Path",
+    "copyCode": "Copy Code",
+    "copyResult": "Copy Result",
+    "changes": "Changes",
+    "copyAfterCode": "Copy After Code",
+    "visualView": "Visual View",
+    "advancedAnalysis": "Advanced Analysis",
+    "updateCheckFailed": "Update check failed",
+    "todoListUpdate": "TODO List Update",
+    "currentStatus": "Current Status",
+    "typeUnknown": "Type Unknown",
+    "type": "Type",
+    "unknownResultFormat": "Unknown result format",
+    "sessionId": "Session ID",
+    "sessionSummaryNotFound": "Session summary not found",
+    "toolsUsed": "Tools used",
+    "errorOccurred": "Error occurred",
+    "actualSessionId": "Actual Session ID",
+    "terminal": "Terminal",
+    "unifiedView": "Unified View",
+    "splitView": "Split View",
+    "unified": "Unified",
+    "split": "Split",
+    "before": "Before",
+    "after": "After",
+    "unknownContentType": "Unknown content type",
+    "messagesCount": "{{count}} messages",
+    "filesCount": "{{count}} files"
+  }
+}

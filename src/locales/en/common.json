@@ -1,0 +1,77 @@
+{
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "close": "Close",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "search": "Search",
+  "refresh": "Refresh",
+  "retry": "Retry",
+  "copy": "Copy",
+  "copying": "Copying...",
+  "copied": "Copied",
+  "copyFailed": "Failed",
+  "clipboardCopyFailed": "Clipboard copy failed:",
+  "tokens": "Tokens",
+  "model": "Model",
+  "viewOriginalData": "View Original Data",
+  "noContent": "No content",
+  "included": "Included",
+  "none": "None",
+  "output": {
+    "imageResult": "Image Result",
+    "included": "Included",
+    "none": "None",
+    "stdout": "STDOUT",
+    "error": "Error",
+    "noOutput": "No output was generated.",
+    "executionComplete": "Execution completed without output."
+  },
+  "collapse": "Collapse ▲",
+  "expand": "Expand ▼",
+  "toolResult": {
+    "title": "Tool Result",
+    "toolId": "Tool ID"
+  },
+  "file": {
+    "structure": "File Structure",
+    "content": "File Content",
+    "viewMoreLines": "View {{count}} more lines",
+    "path": "File Path",
+    "searchResults": "File Search Results"
+  },
+  "status": {
+    "execution": "Execution Status",
+    "interrupted": "Interrupted",
+    "completed": "Completed"
+  },
+  "structuredPatch": {
+    "title": "Applying Structured Patch",
+    "filePath": "File Path",
+    "changeStatistics": "Change Statistics",
+    "areasChanged": "{{count}} changed area",
+    "areasChanged_plural": "{{count}} changed areas",
+    "changesFound": "found.",
+    "updatedFile": "Updated File",
+    "updatedContent": "Updated Content"
+  },
+  "toolUse": {
+    "fileWriting": "File Writing",
+    "writtenContent": "Written Content",
+    "task": "Task",
+    "taskDescription": "Task Description",
+    "detailedInstructions": "Detailed Instructions",
+    "inputParameters": "Input Parameters"
+  },
+  "hardcoded": {
+    "lines": "lines",
+    "changes": "Changes",
+    "copyAfterCode": "Copy After Code",
+    "visualView": "Visual View",
+    "advancedAnalysis": "Advanced Analysis"
+  }
+}
