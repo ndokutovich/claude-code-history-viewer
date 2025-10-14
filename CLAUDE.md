@@ -36,7 +36,36 @@ Claude Code History Viewer is a Tauri-based desktop application that allows user
 This application is **fully cross-platform** and runs on:
 - ✅ **Windows** (x86_64) - `.exe` installer via NSIS, `.msi` via WiX
 - ✅ **macOS** (Universal binary for Intel + Apple Silicon) - `.dmg`, `.app`
-- ✅ **Linux** (x86_64) - `.deb`, `.AppImage`
+- ✅ **Linux** (x86_64) - `.deb`, `.AppImage`, `.rpm`
+
+### macOS-Specific Notes
+
+On macOS, the application:
+- Automatically detects the `.claude` folder in the user's home directory (`~/.claude`)
+- Uses native WebKit for rendering (built into macOS)
+- Supports both Intel and Apple Silicon (M1/M2/M3) via universal binary
+- Bundled as `.dmg` (disk image) and `.app` (application bundle)
+- Code signing and notarization supported (requires Apple Developer account)
+
+### Building for macOS
+
+**Prerequisites:**
+- Xcode Command Line Tools: `xcode-select --install`
+- Rust toolchain with both architectures (for universal binary)
+
+**Build command:**
+```bash
+pnpm tauri:build:mac
+```
+
+This creates a **universal binary** that runs on both Intel and Apple Silicon Macs.
+
+Build artifacts will be in `src-tauri/target/release/bundle/`:
+- `dmg/` - Disk image installer (.dmg)
+- `macos/` - Application bundle (.app)
+
+**Installing:**
+Simply drag the `.app` from the `.dmg` to your Applications folder.
 
 ### Windows-Specific Notes
 
@@ -57,6 +86,76 @@ pnpm tauri:build:windows
 Build artifacts will be in `src-tauri/target/release/bundle/`:
 - `nsis/` - NSIS installer (.exe)
 - `msi/` - WiX installer (.msi)
+
+### Linux-Specific Notes
+
+On Linux, the application:
+- Automatically detects the `.claude` folder in the user's home directory (`~/.claude`)
+- Uses the system's WebKitGTK for rendering (ensure it's installed)
+- Supports both GTK-based desktop environments (GNOME, XFCE, etc.)
+- Bundled as `.deb` (Debian/Ubuntu), `.AppImage` (universal), and `.rpm` (Fedora/RHEL)
+
+### Building for Linux
+
+**Prerequisites:**
+```bash
+# Debian/Ubuntu
+sudo apt update
+sudo apt install libwebkit2gtk-4.1-dev \
+  build-essential \
+  curl \
+  wget \
+  file \
+  libxdo-dev \
+  libssl-dev \
+  libayatana-appindicator3-dev \
+  librsvg2-dev
+
+# Fedora
+sudo dnf install webkit2gtk4.1-devel \
+  openssl-devel \
+  curl \
+  wget \
+  file \
+  libappindicator-gtk3-devel \
+  librsvg2-devel
+
+# Arch Linux
+sudo pacman -S webkit2gtk-4.1 \
+  base-devel \
+  curl \
+  wget \
+  file \
+  openssl \
+  appmenu-gtk-module \
+  gtk3 \
+  libappindicator-gtk3 \
+  librsvg \
+  libvips
+```
+
+**Build command:**
+```bash
+pnpm tauri:build:linux
+```
+
+Build artifacts will be in `src-tauri/target/release/bundle/`:
+- `deb/` - Debian package (.deb) for Ubuntu/Debian
+- `appimage/` - Universal Linux binary (.AppImage)
+- `rpm/` - RPM package for Fedora/RHEL (if rpmbuild is installed)
+
+**Installing:**
+```bash
+# For .deb (Ubuntu/Debian)
+sudo dpkg -i src-tauri/target/release/bundle/deb/*.deb
+
+# For .AppImage (any distro)
+chmod +x *.AppImage
+./claude-code-history-viewer*.AppImage
+
+# For .rpm (Fedora/RHEL)
+sudo rpm -i src-tauri/target/release/bundle/rpm/*.rpm
+```
 
 ## Architecture
 
