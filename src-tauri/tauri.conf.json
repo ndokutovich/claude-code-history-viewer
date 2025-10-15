@@ -37,16 +37,16 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://github.com/jhlee0409/claude-code-history-viewer/releases/latest/download/latest.json"
+        "https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/latest.json"
       ],
       "dialog": false,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDg0RUExOEVGNTlEQzFDRDMKUldUVEhOeFo3eGpxaEZGYkZYcmFKTERPdys5dXh2c1Z5ZU1uTDREZ3RyWDF1bHhSc1JOeW05MzUK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI0QTRBQTVEOTgxMUJGNEEKUldSS3Z4R1lYYXFrSkRPUFl6T0ZLSndRdkUzbDdBcXhKVHUxZWZBbEhkRnd4SU0ra3g1NDY4KzgK"
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
-    "createUpdaterArtifacts": false,
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
