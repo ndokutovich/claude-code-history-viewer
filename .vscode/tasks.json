@@ -1,0 +1,84 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "tauri dev",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "tauri:dev"],
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "tauri build",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "tauri:build"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "vite dev",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "ui:dev",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "."
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE",
+          "endsPattern": "(Local|Network):.*"
+        }
+      }
+    },
+    {
+      "label": "rust:build-debug",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["build", "--manifest-path=src-tauri/Cargo.toml"],
+      "problemMatcher": ["$rustc"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "rust:build-release",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["build", "--release", "--manifest-path=src-tauri/Cargo.toml"],
+      "problemMatcher": ["$rustc"],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    }
+  ]
+}
