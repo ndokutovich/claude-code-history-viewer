@@ -11,6 +11,7 @@ lerna-debug.log*
 node_modules
 .pnp
 .pnp.js
+package-lock.json
 
 # Build outputs
 dist
@@ -26,6 +27,11 @@ src-tauri/gen/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/DEBUG.md
+.vscode/edge-debug/
+.vscode/chrome-debug/
 .idea
 .DS_Store
 *.suo
@@ -37,6 +43,7 @@ src-tauri/gen/
 # OS files
 .DS_Store
 Thumbs.db
+nul
 
 # Build artifacts
 *.tsbuildinfo
@@ -53,6 +60,11 @@ coverage
 *.lcov
 .nyc_output
 
+# Playwright
+playwright-report/
+test-results/
+e2e/.test-data/
+
 # Temporary files
 *.tmp
 *.temp
@@ -60,4 +72,7 @@ coverage
 
 # Debug
 debug.log*
+
+# Claude Code local data
+.claude/
 

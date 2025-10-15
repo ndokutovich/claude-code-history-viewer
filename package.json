@@ -15,7 +15,13 @@
     "test": "vitest",
     "test:run": "vitest run --reporter=verbose",
     "test:ui": "vitest --ui",
-    "test:simple": "vitest run simple"
+    "test:simple": "vitest run simple",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
+    "test:all": "vitest run && playwright test"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.0",
@@ -56,6 +62,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
+    "@playwright/test": "^1.49.1",
     "@tailwindcss/postcss": "^4.1.11",
     "@tauri-apps/cli": "^2.6.1",
     "@testing-library/jest-dom": "^6.4.2",
