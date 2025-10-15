@@ -6,7 +6,8 @@
       "Bash(git ls-tree:*)",
       "Bash(pnpm build)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git show-ref --tags)"
     ],
     "deny": [],
     "ask": []
