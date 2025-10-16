@@ -48,8 +48,8 @@ jobs:
               return existingRelease.id;
             } catch (error) {
               if (error.status === 404) {
-                // Release doesn't exist, create it
-                console.log(`Release doesn't exist for ${tagName}, creating new release...`);
+                // Release doesn't exist, create it as DRAFT
+                console.log(`Release doesn't exist for ${tagName}, creating new DRAFT release...`);
                 const { data } = await github.rest.repos.createRelease({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
@@ -57,10 +57,10 @@ jobs:
                   name: `Claude Code History Viewer v${process.env.PACKAGE_VERSION}`,
                   body: '🎉 새로운 버전이 출시되었습니다! 자세한 변경사항은 아래를 확인하세요.',
                   generate_release_notes: true,
-                  draft: false,
+                  draft: true,
                   prerelease: false,
                 });
-                console.log(`Created new release with ID: ${data.id}`);
+                console.log(`Created new DRAFT release with ID: ${data.id}`);
                 return data.id;
               }
 
@@ -298,3 +298,21 @@ jobs:
           gh release upload ${{ github.ref_name }} latest.json --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-release:
+    needs: [create-release, build-tauri, generate-updater-metadata]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Publish release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('Publishing release...');
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: ${{ needs.create-release.outputs.release_id }},
+              draft: false
+            });
+            console.log('✅ Release published successfully!');
