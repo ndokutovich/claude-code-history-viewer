@@ -72,13 +72,15 @@
       "wix": {
         "language": [
           "en-US",
-          "ko-KR"
+          "ko-KR",
+          "ru-RU"
         ]
       },
       "nsis": {
         "languages": [
           "English",
-          "Korean"
+          "Korean",
+          "Russian"
         ],
         "displayLanguageSelector": true
       }

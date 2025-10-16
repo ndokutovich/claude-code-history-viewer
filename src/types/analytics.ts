@@ -6,7 +6,13 @@
 import type { ProjectStatsSummary, SessionComparison } from './index';
 
 /**
- * Analytics 뷰 타입
+ * App-wide view types (unified view state)
+ * This is the single source of truth for what the user is currently viewing
+ */
+export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search';
+
+/**
+ * @deprecated Use AppView instead. Kept for backward compatibility during migration.
  */
 export type AnalyticsView = 'messages' | 'tokenStats' | 'analytics';
 export type AnalyticsViewType = AnalyticsView;

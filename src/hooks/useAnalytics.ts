@@ -1,269 +1,148 @@
 /**
  * Analytics Hook
  *
+ * Thin wrapper over useAppStore for analytics-related functionality.
+ * Provides backward compatibility while using the unified view state.
+ *
  * 높은 응집도: Analytics 관련 모든 비즈니스 로직을 한 곳에 집중
  * 낮은 결합도: 컴포넌트는 이 hook만 의존하면 됨
  * 가독성: 명확한 함수명과 예측 가능한 동작
  */
 
-import { useCallback, useMemo, useEffect } from "react";
+import { useCallback, useMemo } from "react";
 import { useAppStore } from "../store/useAppStore";
-import type { UseAnalyticsReturn } from "../types/analytics";
+import type { AppView } from "../types";
+
+export interface UseAnalyticsReturn {
+  // Current view
+  readonly currentView: AppView;
+
+  // Actions
+  readonly actions: {
+    switchToMessages: () => Promise<void>;
+    switchToTokenStats: () => Promise<void>;
+    switchToAnalytics: () => Promise<void>;
+    switchToSearch: () => Promise<void>;
+    refreshAnalytics: () => Promise<void>;
+    clearAll: () => void;
+  };
+
+  // Computed values
+  readonly computed: {
+    isTokenStatsView: boolean;
+    isAnalyticsView: boolean;
+    isMessagesView: boolean;
+    isSearchView: boolean;
+    hasAnyError: boolean;
+    isAnyLoading: boolean;
+  };
+}
 
 export const useAnalytics = (): UseAnalyticsReturn => {
   const {
-    // Store state
-    analytics,
+    // Root-level view state
+    currentView,
     selectedProject,
-    selectedSession,
+
+    // Loading states
     isLoadingTokenStats,
+    isLoadingProjectSummary,
+    isLoadingSessionComparison,
 
-    // Store actions
-    setAnalyticsCurrentView,
-    setAnalyticsProjectSummary,
-    setAnalyticsSessionComparison,
-    setAnalyticsLoadingProjectSummary,
-    setAnalyticsLoadingSessionComparison,
-    setAnalyticsProjectSummaryError,
-    setAnalyticsSessionComparisonError,
-    resetAnalytics,
-    clearAnalyticsErrors,
+    // Error states
+    projectSummaryError,
+    sessionComparisonError,
 
-    // Data loading actions
-    loadProjectTokenStats,
-    loadProjectStatsSummary,
-    loadSessionComparison,
-    loadSessionTokenStats,
+    // Actions
+    switchView,
     clearTokenStats,
+    clearAnalyticsData,
+    clearAnalyticsErrors,
   } = useAppStore();
 
   /**
    * 메시지 뷰로 전환
-   * 단순한 뷰 변경이므로 동기적 처리
    */
-  const switchToMessages = useCallback(() => {
-    setAnalyticsCurrentView("messages");
+  const switchToMessages = useCallback(async () => {
+    await switchView("messages");
     clearAnalyticsErrors();
-  }, [setAnalyticsCurrentView, clearAnalyticsErrors]);
+  }, [switchView, clearAnalyticsErrors]);
 
   /**
    * 토큰 통계 뷰로 전환
-   * 데이터 로딩이 필요하므로 비동기 처리
    */
   const switchToTokenStats = useCallback(async () => {
     if (!selectedProject) {
       throw new Error("프로젝트가 선택되지 않았습니다.");
     }
-
-    try {
-      setAnalyticsCurrentView("tokenStats");
-      clearAnalyticsErrors();
-
-      // 프로젝트 전체 통계 로드
-      await loadProjectTokenStats(selectedProject.path);
-
-      // 현재 세션 통계 로드 (선택된 경우)
-      if (selectedSession) {
-        await loadSessionTokenStats(selectedSession.file_path);
-      }
-    } catch (error) {
-      console.error("Failed to load token stats:", error);
-      throw error;
-    }
-  }, [
-    selectedProject,
-    selectedSession,
-    setAnalyticsCurrentView,
-    clearAnalyticsErrors,
-    loadProjectTokenStats,
-    loadSessionTokenStats,
-  ]);
+    await switchView("tokenStats");
+  }, [selectedProject, switchView]);
 
   /**
    * 분석 뷰로 전환
-   * 복잡한 데이터 로딩이 필요하므로 에러 핸들링 포함
    */
   const switchToAnalytics = useCallback(async () => {
     if (!selectedProject) {
       throw new Error("프로젝트가 선택되지 않았습니다.");
     }
+    await switchView("analytics");
+  }, [selectedProject, switchView]);
 
-    try {
-      setAnalyticsCurrentView("analytics");
-      clearAnalyticsErrors();
-
-      // 프로젝트 요약 로드
-      setAnalyticsLoadingProjectSummary(true);
-      try {
-        const summary = await loadProjectStatsSummary(selectedProject.path);
-        setAnalyticsProjectSummary(summary);
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "프로젝트 요약 로드 실패";
-        setAnalyticsProjectSummaryError(errorMessage);
-        throw error;
-      } finally {
-        setAnalyticsLoadingProjectSummary(false);
-      }
-
-      // 세션 비교 로드 (선택된 경우)
-      if (selectedSession) {
-        setAnalyticsLoadingSessionComparison(true);
-        try {
-          const comparison = await loadSessionComparison(
-            selectedSession.actual_session_id,
-            selectedProject.path
-          );
-          setAnalyticsSessionComparison(comparison);
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "세션 비교 로드 실패";
-          setAnalyticsSessionComparisonError(errorMessage);
-          // 세션 비교 실패는 치명적이지 않으므로 에러를 throw하지 않음
-        } finally {
-          setAnalyticsLoadingSessionComparison(false);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load analytics:", error);
-      throw error;
-    }
-  }, [
-    selectedProject,
-    selectedSession,
-    setAnalyticsCurrentView,
-    clearAnalyticsErrors,
-    setAnalyticsLoadingProjectSummary,
-    setAnalyticsLoadingSessionComparison,
-    setAnalyticsProjectSummary,
-    setAnalyticsSessionComparison,
-    setAnalyticsProjectSummaryError,
-    setAnalyticsSessionComparisonError,
-    loadProjectStatsSummary,
-    loadSessionComparison,
-  ]);
+  /**
+   * 검색 뷰로 전환
+   */
+  const switchToSearch = useCallback(async () => {
+    await switchView("search");
+  }, [switchView]);
 
   /**
    * 현재 뷰의 분석 데이터 새로고침
-   * 현재 뷰에 따라 적절한 데이터만 다시 로드
    */
   const refreshAnalytics = useCallback(async () => {
-    switch (analytics.currentView) {
-      case "tokenStats":
-        await switchToTokenStats();
-        break;
-      case "analytics":
-        await switchToAnalytics();
-        break;
-      case "messages":
-        // 메시지 뷰는 별도 새로고침 로직 없음
-        break;
-      default:
-        console.warn("Unknown analytics view:", analytics.currentView);
-    }
-  }, [analytics.currentView, switchToTokenStats, switchToAnalytics]);
+    // Simply re-invoke switchView with current view to reload data
+    await switchView(currentView);
+  }, [currentView, switchView]);
 
   /**
    * 모든 analytics 상태 초기화
    */
   const clearAll = useCallback(() => {
-    resetAnalytics();
+    clearAnalyticsData();
     clearTokenStats();
-  }, [resetAnalytics, clearTokenStats]);
+  }, [clearAnalyticsData, clearTokenStats]);
 
   /**
    * 계산된 값들 (메모이제이션으로 성능 최적화)
    */
   const computed = useMemo(
     () => ({
-      isTokenStatsView: analytics.currentView === "tokenStats",
-      isAnalyticsView: analytics.currentView === "analytics",
-      isMessagesView: analytics.currentView === "messages",
-      hasAnyError: !!(
-        analytics.projectSummaryError || analytics.sessionComparisonError
-      ),
+      isTokenStatsView: currentView === "tokenStats",
+      isAnalyticsView: currentView === "analytics",
+      isMessagesView: currentView === "messages",
+      isSearchView: currentView === "search",
+      hasAnyError: !!(projectSummaryError || sessionComparisonError),
       isAnyLoading:
-        analytics.isLoadingProjectSummary ||
-        analytics.isLoadingSessionComparison ||
+        isLoadingProjectSummary ||
+        isLoadingSessionComparison ||
         isLoadingTokenStats,
     }),
     [
-      analytics.currentView,
-      analytics.projectSummaryError,
-      analytics.sessionComparisonError,
-      analytics.isLoadingProjectSummary,
-      analytics.isLoadingSessionComparison,
+      currentView,
+      projectSummaryError,
+      sessionComparisonError,
+      isLoadingProjectSummary,
+      isLoadingSessionComparison,
       isLoadingTokenStats,
     ]
   );
 
-  /**
-   * 사이드 이팩트: 세션 변경 시 analytics 데이터 자동 새로고침
-   * analytics 뷰가 활성화되어 있을 때만 실행
-   */
-  useEffect(() => {
-    if (analytics.currentView === "analytics" && selectedProject && selectedSession) {
-      const updateSessionComparison = async () => {
-        try {
-          setAnalyticsLoadingSessionComparison(true);
-          const comparison = await loadSessionComparison(
-            selectedSession.actual_session_id,
-            selectedProject.path
-          );
-          setAnalyticsSessionComparison(comparison);
-          setAnalyticsSessionComparisonError(null);
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : "세션 비교 로드 실패";
-          setAnalyticsSessionComparisonError(errorMessage);
-          console.error("Failed to update session comparison:", error);
-        } finally {
-          setAnalyticsLoadingSessionComparison(false);
-        }
-      };
-
-      updateSessionComparison();
-    }
-  }, [
-    selectedSession?.actual_session_id,
-    selectedProject?.path,
-    selectedProject,
-    selectedSession,
-    analytics.currentView,
-    loadSessionComparison,
-    setAnalyticsLoadingSessionComparison,
-    setAnalyticsSessionComparison,
-    setAnalyticsSessionComparisonError,
-  ]);
-
-  /**
-   * 사이드 이팩트: 토큰 통계 뷰에서 세션 변경 시 세션 토큰 통계 자동 새로고침
-   */
-  useEffect(() => {
-    if (analytics.currentView === "tokenStats" && selectedSession) {
-      const updateSessionTokenStats = async () => {
-        try {
-          await loadSessionTokenStats(selectedSession.file_path);
-        } catch (error) {
-          console.error("Failed to update session token stats:", error);
-        }
-      };
-
-      updateSessionTokenStats();
-    }
-  }, [
-    selectedSession?.session_id,
-    selectedSession?.file_path,
-    selectedSession,
-    analytics.currentView,
-    loadSessionTokenStats,
-  ]);
-
   return {
-    state: analytics,
+    currentView,
     actions: {
       switchToMessages,
       switchToTokenStats,
       switchToAnalytics,
+      switchToSearch,
       refreshAnalytics,
       clearAll,
     },

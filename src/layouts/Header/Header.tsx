@@ -25,9 +25,7 @@ export const Header = () => {
     selectedProject,
     selectedSession,
     isLoadingMessages,
-    isSearchOpen,
     refreshCurrentSession,
-    setSearchOpen,
   } = useAppStore();
 
   const {
@@ -103,10 +101,16 @@ export const Header = () => {
           <div className="flex items-center space-x-2">
             <TooltipButton
               content={t("search.title")}
-              onClick={() => setSearchOpen(!isSearchOpen)}
+              onClick={() => {
+                if (computed.isSearchView) {
+                  analyticsActions.switchToMessages();
+                } else {
+                  analyticsActions.switchToSearch();
+                }
+              }}
               className={cn(
                 "p-2 rounded-lg transition-colors",
-                isSearchOpen
+                computed.isSearchView
                   ? COLORS.semantic.info.bgDark
                   : COLORS.ui.interactive.hover
               )}

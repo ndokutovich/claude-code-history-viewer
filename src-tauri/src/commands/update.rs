@@ -94,7 +94,7 @@ pub async fn check_for_updates() -> Result<UpdateInfo, String> {
 
 pub async fn fetch_release_info(client: &reqwest::Client) -> Result<GitHubRelease, String> {
     let response = client
-        .get("https://api.github.com/repos/jhlee0409/claude-code-history-viewer/releases/latest")
+        .get("https://api.github.com/repos/ndokutovich/claude-code-history-viewer/releases/latest")
         .header("User-Agent", "Claude-Code-History-Viewer")
         .header("Accept", "application/vnd.github.v3+json")
         .send()

@@ -37,16 +37,14 @@ function App() {
     error,
     sessionTokenStats,
     projectTokenStats,
-    isSearchOpen,
+    projectStatsSummary,
     initializeApp,
     selectProject,
     selectSession,
     loadMoreMessages,
-    setSearchOpen,
   } = useAppStore();
 
   const {
-    state: analyticsState,
     actions: analyticsActions,
     computed,
   } = useAnalytics();
@@ -80,17 +78,21 @@ function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "f") {
         e.preventDefault();
-        setSearchOpen(!isSearchOpen);
+        if (computed.isSearchView) {
+          analyticsActions.switchToMessages();
+        } else {
+          analyticsActions.switchToSearch();
+        }
       }
       // Escape to close search
-      if (e.key === "Escape" && isSearchOpen) {
-        setSearchOpen(false);
+      if (e.key === "Escape" && computed.isSearchView) {
+        analyticsActions.switchToMessages();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isSearchOpen, setSearchOpen]);
+  }, [computed.isSearchView, analyticsActions]);
 
   // i18n 언어 변경 감지
   useEffect(() => {
@@ -219,7 +221,7 @@ function App() {
 
           {/* Main Content Area */}
           <div className="w-full flex flex-col relative">
-            {isSearchOpen ? (
+            {computed.isSearchView ? (
               /* Search View - Full overlay */
               <SearchView />
             ) : (
@@ -364,10 +366,10 @@ function App() {
                   })}
                 </span>
               )}
-              {computed.isAnalyticsView && analyticsState.projectSummary && (
+              {computed.isAnalyticsView && projectStatsSummary && (
                 <span>
                   {tComponents("analytics.projectTokens", {
-                    count: analyticsState.projectSummary.total_tokens,
+                    count: projectStatsSummary.total_tokens,
                   })}
                 </span>
               )}

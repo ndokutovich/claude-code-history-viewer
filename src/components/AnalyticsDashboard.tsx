@@ -25,7 +25,6 @@ import { formatTime, formatDuration } from "../utils/time";
 import { COLORS } from "../constants/colors";
 import { cn } from "../utils/cn";
 import { useAppStore } from "../store/useAppStore";
-import { useAnalytics } from "../hooks/useAnalytics";
 
 /**
  * Analytics Dashboard Component
@@ -33,15 +32,19 @@ import { useAnalytics } from "../hooks/useAnalytics";
  * props 전달을 최소화하고 직접 store와 hook을 사용하여 의존성을 낮춤
  */
 export const AnalyticsDashboard: React.FC = () => {
-  const { selectedProject, selectedSession, sessionTokenStats } = useAppStore();
+  const {
+    selectedProject,
+    selectedSession,
+    sessionTokenStats,
+    projectStatsSummary,
+    sessionComparison,
+  } = useAppStore();
 
-  const { state: analyticsState } = useAnalytics();
   const { t } = useTranslation("components");
   const [activeTab, setActiveTab] = useState<"project" | "session">("project");
 
   // 컴포넌트 내부에서 사용할 데이터 정의
-  const projectSummary = analyticsState.projectSummary;
-  const sessionComparison = analyticsState.sessionComparison;
+  const projectSummary = projectStatsSummary;
   const sessionStats = sessionTokenStats;
 
   // Calculate growth rates

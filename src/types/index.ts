@@ -174,7 +174,16 @@ export interface AppError {
   message: string;
 }
 
+/**
+ * App-wide view type (unified view state)
+ */
+export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search';
+
 export interface AppState {
+  // Root-level view state (single source of truth)
+  currentView: AppView;
+
+  // Core state
   claudePath: string;
   projects: ClaudeProject[];
   selectedProject: ClaudeProject | null;
@@ -182,17 +191,31 @@ export interface AppState {
   selectedSession: ClaudeSession | null;
   messages: ClaudeMessage[];
   pagination: PaginationState;
+
+  // Search state
   searchQuery: string;
   searchResults: ClaudeMessage[];
   searchFilters: SearchFilters;
+
+  // Loading states
   isLoading: boolean; // 전체 앱 초기화용
   isLoadingProjects: boolean;
   isLoadingSessions: boolean;
   isLoadingMessages: boolean;
   isLoadingTokenStats: boolean;
+
+  // Error state
   error: AppError | null;
+
+  // Analytics data (separated from view state)
   sessionTokenStats: SessionTokenStats | null;
   projectTokenStats: SessionTokenStats[];
+  projectStatsSummary: ProjectStatsSummary | null;
+  sessionComparison: SessionComparison | null;
+  isLoadingProjectSummary: boolean;
+  isLoadingSessionComparison: boolean;
+  projectSummaryError: string | null;
+  sessionComparisonError: string | null;
 }
 
 export interface SessionTokenStats {

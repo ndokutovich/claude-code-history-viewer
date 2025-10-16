@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { load, type StoreOptions } from "@tauri-apps/plugin-store";
 import {
   type AppState,
+  type AppView,
   type ClaudeProject,
   type ClaudeSession,
   type ClaudeMessage,
@@ -14,11 +15,6 @@ import {
   type AppError,
   AppErrorType,
 } from "../types";
-import {
-  type AnalyticsState,
-  type AnalyticsViewType,
-  initialAnalyticsState,
-} from "../types/analytics";
 
 // Tauri API가 사용 가능한지 확인하는 함수
 const isTauriAvailable = () => {
@@ -34,13 +30,10 @@ interface AppStore extends AppState {
   // Filter state
   excludeSidechain: boolean;
 
-  // Analytics state
-  analytics: AnalyticsState;
+  // Actions - View Management
+  switchView: (view: AppView) => Promise<void>;
 
-  // Search state
-  isSearchOpen: boolean;
-
-  // Actions
+  // Actions - Data Loading
   initializeApp: () => Promise<void>;
   scanProjects: () => Promise<void>;
   selectProject: (project: ClaudeProject) => Promise<void>;
@@ -63,24 +56,25 @@ interface AppStore extends AppState {
   ) => Promise<SessionComparison>;
   clearTokenStats: () => void;
   setExcludeSidechain: (exclude: boolean) => void;
-  setSearchOpen: (isOpen: boolean) => void;
 
-  // Analytics actions
-  setAnalyticsCurrentView: (view: AnalyticsViewType) => void;
-  setAnalyticsProjectSummary: (summary: ProjectStatsSummary | null) => void;
-  setAnalyticsSessionComparison: (comparison: SessionComparison | null) => void;
-  setAnalyticsLoadingProjectSummary: (loading: boolean) => void;
-  setAnalyticsLoadingSessionComparison: (loading: boolean) => void;
-  setAnalyticsProjectSummaryError: (error: string | null) => void;
-  setAnalyticsSessionComparisonError: (error: string | null) => void;
-  resetAnalytics: () => void;
+  // Analytics data setters
+  setProjectSummary: (summary: ProjectStatsSummary | null) => void;
+  setSessionComparison: (comparison: SessionComparison | null) => void;
+  setLoadingProjectSummary: (loading: boolean) => void;
+  setLoadingSessionComparison: (loading: boolean) => void;
+  setProjectSummaryError: (error: string | null) => void;
+  setSessionComparisonError: (error: string | null) => void;
+  clearAnalyticsData: () => void;
   clearAnalyticsErrors: () => void;
 }
 
 const DEFAULT_PAGE_SIZE = 100; // 초기 로딩 시 100개 메시지 로드
 
 export const useAppStore = create<AppStore>((set, get) => ({
-  // Initial state
+  // Root-level view state (single source of truth)
+  currentView: "messages" as AppView,
+
+  // Core state
   claudePath: "",
   projects: [],
   selectedProject: null,
@@ -94,22 +88,34 @@ export const useAppStore = create<AppStore>((set, get) => ({
     hasMore: false,
     isLoadingMore: false,
   },
+
+  // Search state
   searchQuery: "",
   searchResults: [],
   searchFilters: {},
+
+  // Loading states
   isLoading: false,
   isLoadingProjects: false,
   isLoadingSessions: false,
   isLoadingMessages: false,
   isLoadingTokenStats: false,
+
+  // Error state
   error: null,
+
+  // Analytics data (separated from view state)
   sessionTokenStats: null,
   projectTokenStats: [],
-  excludeSidechain: true,
-  isSearchOpen: false,
+  projectStatsSummary: null,
+  sessionComparison: null,
+  isLoadingProjectSummary: false,
+  isLoadingSessionComparison: false,
+  projectSummaryError: null,
+  sessionComparisonError: null,
 
-  // Analytics state
-  analytics: initialAnalyticsState,
+  // Filter state
+  excludeSidechain: true,
 
   // Actions
   initializeApp: async () => {
@@ -364,7 +370,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   refreshCurrentSession: async () => {
-    const { selectedProject, selectedSession, pagination, analytics } = get();
+    const { selectedProject, selectedSession, pagination, currentView } = get();
 
     if (!selectedSession) {
       console.warn("No session selected for refresh");
@@ -391,41 +397,41 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       // 현재 세션을 다시 로드 (첫 페이지부터)
       await get().selectSession(selectedSession, pagination.pageSize);
-      
+
       // 분석 뷰일 때 분석 데이터도 새로고침
-      if (selectedProject && (analytics.currentView === "tokenStats" || analytics.currentView === "analytics")) {
-        console.log("분석 데이터 새로고침 시작:", analytics.currentView);
-        
-        if (analytics.currentView === "tokenStats") {
+      if (selectedProject && (currentView === "tokenStats" || currentView === "analytics")) {
+        console.log("분석 데이터 새로고침 시작:", currentView);
+
+        if (currentView === "tokenStats") {
           // 토큰 통계 새로고침
           await get().loadProjectTokenStats(selectedProject.path);
           if (selectedSession?.file_path) {
             await get().loadSessionTokenStats(selectedSession.file_path);
           }
-        } else if (analytics.currentView === "analytics") {
+        } else if (currentView === "analytics") {
           // 분석 대시보드 새로고침
           const projectSummary = await invoke<ProjectStatsSummary>(
             "get_project_stats_summary",
             { projectPath: selectedProject.path }
           );
-          get().setAnalyticsProjectSummary(projectSummary);
-          
+          get().setProjectSummary(projectSummary);
+
           // 세션 비교 데이터도 새로고침
           if (selectedSession) {
             const sessionComparison = await invoke<SessionComparison>(
               "get_session_comparison",
-              { 
+              {
                 sessionId: selectedSession.actual_session_id,
-                projectPath: selectedProject.path 
+                projectPath: selectedProject.path
               }
             );
-            get().setAnalyticsSessionComparison(sessionComparison);
+            get().setSessionComparison(sessionComparison);
           }
         }
-        
+
         console.log("분석 데이터 새로고침 완료");
       }
-      
+
       console.log("새로고침 완료");
     } catch (error) {
       console.error("새로고침 실패:", error);
@@ -541,89 +547,129 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
-  // Analytics actions
-  setAnalyticsCurrentView: (view: AnalyticsViewType) => {
-    set((state) => ({
-      analytics: {
-        ...state.analytics,
-        currentView: view,
-      },
-    }));
+  // Unified view switching
+  switchView: async (view: AppView) => {
+    const { currentView, selectedProject, selectedSession } = get();
+
+    // If already on this view and it's not messages, go back to messages
+    if (currentView === view && view !== 'messages') {
+      set({ currentView: 'messages' });
+      return;
+    }
+
+    // Set the new view
+    set({ currentView: view });
+
+    // Clear search results when leaving search view
+    if (view !== 'search') {
+      set({ searchQuery: "", searchResults: [] });
+    }
+
+    // Load data based on view
+    try {
+      switch (view) {
+        case 'tokenStats':
+          if (!selectedProject) {
+            throw new Error("프로젝트가 선택되지 않았습니다.");
+          }
+          // Load project token stats
+          await get().loadProjectTokenStats(selectedProject.path);
+          // Load session token stats if session selected
+          if (selectedSession) {
+            await get().loadSessionTokenStats(selectedSession.file_path);
+          }
+          break;
+
+        case 'analytics':
+          if (!selectedProject) {
+            throw new Error("프로젝트가 선택되지 않았습니다.");
+          }
+          // Load project summary
+          set({ isLoadingProjectSummary: true, projectSummaryError: null });
+          try {
+            const summary = await get().loadProjectStatsSummary(selectedProject.path);
+            set({ projectStatsSummary: summary });
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "프로젝트 요약 로드 실패";
+            set({ projectSummaryError: errorMessage });
+            throw error;
+          } finally {
+            set({ isLoadingProjectSummary: false });
+          }
+
+          // Load session comparison if session selected
+          if (selectedSession) {
+            set({ isLoadingSessionComparison: true, sessionComparisonError: null });
+            try {
+              const comparison = await get().loadSessionComparison(
+                selectedSession.actual_session_id,
+                selectedProject.path
+              );
+              set({ sessionComparison: comparison });
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : "세션 비교 로드 실패";
+              set({ sessionComparisonError: errorMessage });
+              // Session comparison failure is not critical
+            } finally {
+              set({ isLoadingSessionComparison: false });
+            }
+          }
+          break;
+
+        case 'search':
+          // Search view doesn't need to load data on open
+          break;
+
+        case 'messages':
+          // Messages view doesn't need to load data
+          break;
+      }
+    } catch (error) {
+      console.error("Failed to switch view:", error);
+      // Fallback to messages view on error
+      set({ currentView: 'messages' });
+      throw error;
+    }
   },
 
-  setAnalyticsProjectSummary: (summary: ProjectStatsSummary | null) => {
-    set((state) => ({
-      analytics: {
-        ...state.analytics,
-        projectSummary: summary,
-      },
-    }));
+  // Analytics data setters
+  setProjectSummary: (summary: ProjectStatsSummary | null) => {
+    set({ projectStatsSummary: summary });
   },
 
-  setAnalyticsSessionComparison: (comparison: SessionComparison | null) => {
-    set((state) => ({
-      analytics: {
-        ...state.analytics,
-        sessionComparison: comparison,
-      },
-    }));
+  setSessionComparison: (comparison: SessionComparison | null) => {
+    set({ sessionComparison: comparison });
   },
 
-  setAnalyticsLoadingProjectSummary: (loading: boolean) => {
-    set((state) => ({
-      analytics: {
-        ...state.analytics,
-        isLoadingProjectSummary: loading,
-      },
-    }));
+  setLoadingProjectSummary: (loading: boolean) => {
+    set({ isLoadingProjectSummary: loading });
   },
 
-  setAnalyticsLoadingSessionComparison: (loading: boolean) => {
-    set((state) => ({
-      analytics: {
-        ...state.analytics,
-        isLoadingSessionComparison: loading,
-      },
-    }));
+  setLoadingSessionComparison: (loading: boolean) => {
+    set({ isLoadingSessionComparison: loading });
   },
 
-  setAnalyticsProjectSummaryError: (error: string | null) => {
-    set((state) => ({
-      analytics: {
-        ...state.analytics,
-        projectSummaryError: error,
-      },
-    }));
+  setProjectSummaryError: (error: string | null) => {
+    set({ projectSummaryError: error });
   },
 
-  setAnalyticsSessionComparisonError: (error: string | null) => {
-    set((state) => ({
-      analytics: {
-        ...state.analytics,
-        sessionComparisonError: error,
-      },
-    }));
+  setSessionComparisonError: (error: string | null) => {
+    set({ sessionComparisonError: error });
   },
 
-  resetAnalytics: () => {
-    set({ analytics: initialAnalyticsState });
+  clearAnalyticsData: () => {
+    set({
+      sessionTokenStats: null,
+      projectTokenStats: [],
+      projectStatsSummary: null,
+      sessionComparison: null,
+    });
   },
 
   clearAnalyticsErrors: () => {
-    set((state) => ({
-      analytics: {
-        ...state.analytics,
-        projectSummaryError: null,
-        sessionComparisonError: null,
-      },
-    }));
-  },
-
-  setSearchOpen: (isOpen: boolean) => {
-    set({ isSearchOpen: isOpen });
-    if (!isOpen) {
-      // Clear search results when closing
-      set({ searchQuery: "", searchResults: [] });
-    }
+    set({
+      projectSummaryError: null,
+      sessionComparisonError: null,
+    });
   },
 }));

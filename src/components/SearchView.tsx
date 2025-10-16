@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Search, X, ChevronDown, ChevronRight, MessageSquare } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
@@ -26,9 +27,10 @@ export const SearchView = () => {
     searchMessages,
     selectSession,
     selectProject,
-    setSearchOpen,
     loadProjectSessions,
   } = useAppStore();
+
+  const { actions: analyticsActions } = useAnalytics();
 
   const [query, setQuery] = useState(searchQuery);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
@@ -202,8 +204,8 @@ export const SearchView = () => {
       }
 
       console.log("Closing search view");
-      // Close search view
-      setSearchOpen(false);
+      // Close search view and switch to messages view
+      await analyticsActions.switchToMessages();
 
       console.log("Loading session with full messages:", targetSession.session_id);
       // Load full conversation with large page size
