@@ -439,6 +439,7 @@ impl TryFrom<RawLogEntry> for ClaudeMessage {
             message_id,
             model,
             stop_reason,
+            project_path: None,
         })
     }
 }

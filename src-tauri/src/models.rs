@@ -72,6 +72,9 @@ pub struct ClaudeMessage {
     pub message_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
+    // Project path for search results
+    #[serde(skip_serializing_if = "Option::is_none", rename = "projectPath")]
+    pub project_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stop_reason: Option<String>,
 }

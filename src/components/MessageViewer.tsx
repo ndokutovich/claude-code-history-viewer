@@ -44,6 +44,7 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
 
   return (
     <div
+      id={`message-${message.uuid}`}
       className={cn(
         "w-full px-4 py-2",
         leftMargin,

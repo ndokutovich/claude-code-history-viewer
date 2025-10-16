@@ -30,3 +30,34 @@
   background-color: #1f2937;
   color: #e5e7eb;
 }
+
+/* Highlight animation for search result jump */
+.highlight-message {
+  animation: highlight-fade 2s ease-in-out;
+}
+
+@keyframes highlight-fade {
+  0% {
+    background-color: rgba(250, 204, 21, 0.3);
+    border-left: 4px solid rgb(234, 179, 8);
+  }
+  100% {
+    background-color: transparent;
+    border-left: 4px solid transparent;
+  }
+}
+
+.dark .highlight-message {
+  animation: highlight-fade-dark 2s ease-in-out;
+}
+
+@keyframes highlight-fade-dark {
+  0% {
+    background-color: rgba(234, 179, 8, 0.2);
+    border-left: 4px solid rgb(250, 204, 21);
+  }
+  100% {
+    background-color: transparent;
+    border-left: 4px solid transparent;
+  }
+}
