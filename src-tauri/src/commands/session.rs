@@ -94,6 +94,7 @@ pub async fn load_project_sessions(
                                 message_id,
                                 model,
                                 stop_reason,
+                                project_path: None,
                             };
                             messages.push(claude_message);
                         }
@@ -266,10 +267,10 @@ pub async fn load_project_sessions(
         }
     }
 
-    let elapsed = start_time.elapsed();
+    let _elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
-    println!("📊 load_project_sessions 성능: {}개 세션, {}ms 소요", 
-             sessions.len(), elapsed.as_millis());
+    println!("📊 load_project_sessions 성능: {}개 세션, {}ms 소요",
+             sessions.len(), _elapsed.as_millis());
 
     Ok(sessions)
 }
@@ -318,6 +319,7 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                             message_id: None,
                             model: None,
                             stop_reason: None,
+                            project_path: None,
                         };
                         messages.push(summary_message);
                     }
@@ -366,6 +368,7 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
                         message_id,
                         model,
                         stop_reason,
+                        project_path: None,
                     };
                     messages.push(claude_message);
                 }
@@ -442,6 +445,7 @@ pub async fn load_session_messages_paginated(
                         message_id,
                         model,
                         stop_reason,
+                        project_path: None,
                     };
                     all_messages.push(claude_message);
                 }
@@ -511,10 +515,10 @@ pub async fn load_session_messages_paginated(
     // has_more is true if there are still older messages to load
     let has_more = start_idx > 0;
     let next_offset = offset + messages.len();
-    
-    let elapsed = start_time.elapsed();
+
+    let _elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
-    eprintln!("📊 load_session_messages_paginated 성능: {}개 메시지, {}ms 소요", messages.len(), elapsed.as_millis());
+    eprintln!("📊 load_session_messages_paginated 성능: {}개 메시지, {}ms 소요", messages.len(), _elapsed.as_millis());
     #[cfg(debug_assertions)]
     eprintln!("Result: {} messages returned, has_more={}, next_offset={}", messages.len(), has_more, next_offset);
     
@@ -554,6 +558,97 @@ pub async fn get_session_message_count(
     Ok(count)
 }
 
+/// Parse search query to extract quoted phrases and individual words
+/// Example: `askmeevery "pricing update"` -> [(false, "askmeevery"), (true, "pricing update")]
+fn parse_search_query(query: &str) -> Vec<(bool, String)> {
+    let mut terms = Vec::new();
+    let mut current_term = String::new();
+    let mut in_quotes = false;
+    let mut chars = query.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        match ch {
+            // Handle both regular quotes and smart quotes (curly quotes)
+            '"' | '“' | '”' | '\'' | '‘' | '’' => {
+                if in_quotes {
+                    // End of quoted phrase
+                    if !current_term.is_empty() {
+                        terms.push((true, current_term.clone())); // true = quoted
+                        current_term.clear();
+                    }
+                    in_quotes = false;
+                } else {
+                    // Start of quoted phrase
+                    // Save any accumulated unquoted term first
+                    if !current_term.is_empty() {
+                        terms.push((false, current_term.trim().to_string()));
+                        current_term.clear();
+                    }
+                    in_quotes = true;
+                }
+            }
+            ' ' if !in_quotes => {
+                // Space outside quotes - word boundary
+                if !current_term.is_empty() {
+                    terms.push((false, current_term.trim().to_string()));
+                    current_term.clear();
+                }
+            }
+            _ => {
+                current_term.push(ch);
+            }
+        }
+    }
+
+    // Add any remaining term
+    if !current_term.is_empty() {
+        terms.push((in_quotes, current_term.trim().to_string()));
+    }
+
+    // Filter out empty strings
+    terms.into_iter().filter(|(_, s)| !s.is_empty()).collect()
+}
+
+/// Normalize quotes in text - converts all smart quotes to regular quotes
+fn normalize_quotes(text: &str) -> String {
+    text.chars()
+        .map(|ch| match ch {
+            '“' | '”' => '"',
+            '‘' | '’' => '\'',
+            _ => ch,
+        })
+        .collect()
+}
+
+/// Check if content matches all search terms
+/// Quoted terms must match exactly, unquoted terms must all appear somewhere
+fn matches_search_terms(content: &str, terms: &[(bool, String)]) -> bool {
+    // Normalize quotes in content so smart quotes match regular quotes
+    let normalized_content = normalize_quotes(content);
+    let content_lower = normalized_content.to_lowercase();
+
+    for (is_quoted, term) in terms {
+        let term_lower = term.to_lowercase();
+
+        if *is_quoted {
+            // Quoted term: must match exactly as substring
+            if !content_lower.contains(&term_lower) {
+                return false;
+            }
+        } else {
+            // Unquoted term: split by spaces and all words must appear
+            let words: Vec<&str> = term_lower.split_whitespace().collect();
+            for word in words {
+                if !content_lower.contains(word) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    true
+}
+
 #[tauri::command]
 pub async fn search_messages(
     claude_path: String,
@@ -567,11 +662,23 @@ pub async fn search_messages(
         return Ok(vec![]);
     }
 
+    // Parse the search query into terms
+    let search_terms = parse_search_query(&query);
+    if search_terms.is_empty() {
+        return Ok(vec![]);
+    }
+
     for entry in WalkDir::new(&projects_path)
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
     {
+        // Extract project path from file path
+        // Path format: ~/.claude/projects/[project_name]/[session].jsonl
+        let project_path = entry.path()
+            .parent() // Get parent directory (project folder)
+            .map(|p| p.to_string_lossy().to_string());
+
         if let Ok(content) = fs::read_to_string(entry.path()) {
             for (line_num, line) in content.lines().enumerate() {
                 if let Ok(log_entry) = serde_json::from_str::<RawLogEntry>(line) {
@@ -579,11 +686,23 @@ pub async fn search_messages(
                         if let Some(message_content) = &log_entry.message {
                             let content_str = match &message_content.content {
                                 serde_json::Value::String(s) => s.clone(),
-                                serde_json::Value::Array(arr) => serde_json::to_string(arr).unwrap_or_default(),
+                                serde_json::Value::Array(arr) => {
+                                    // Extract text from array content items
+                                    arr.iter()
+                                        .filter_map(|item| {
+                                            if let Some(text) = item.get("text") {
+                                                text.as_str().map(|s| s.to_string())
+                                            } else {
+                                                None
+                                            }
+                                        })
+                                        .collect::<Vec<String>>()
+                                        .join(" ")
+                                }
                                 _ => "".to_string(),
                             };
 
-                            if content_str.to_lowercase().contains(&query.to_lowercase()) {
+                            if matches_search_terms(&content_str, &search_terms) {
                                 let claude_message = ClaudeMessage {
                                     uuid: log_entry.uuid.unwrap_or_else(|| format!("{}-line-{}", Uuid::new_v4().to_string(), line_num + 1)),
                                     parent_uuid: log_entry.parent_uuid,
@@ -599,6 +718,7 @@ pub async fn search_messages(
                                     message_id: message_content.id.clone(),
                                     model: message_content.model.clone(),
                                     stop_reason: message_content.stop_reason.clone(),
+                                    project_path: project_path.clone(),
                                 };
                                 all_messages.push(claude_message);
                             }

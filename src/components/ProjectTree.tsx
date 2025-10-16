@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import type { ClaudeProject, ClaudeSession } from "../types";
 import { cn } from "../utils/cn";
 import { getLocale } from "../utils/time";
+import { getSessionTitle } from "../utils/sessionUtils";
 
 interface ProjectTreeProps {
   projects: ClaudeProject[];
@@ -142,19 +143,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                 <div className="flex items-center justify-between">
                                   <h3
                                     className="font-medium text-gray-800 dark:text-gray-200 text-xs truncate"
-                                    title={
-                                      session.summary ||
-                                      `${t(
-                                        "components:session.id",
-                                        "Session ID"
-                                      )} ${session.actual_session_id}`
-                                    }
+                                    title={getSessionTitle(session)}
                                   >
-                                    {session.summary ||
-                                      t(
-                                        "components:session.summaryNotFound",
-                                        "Summary not found"
-                                      )}
+                                    {getSessionTitle(session)}
                                   </h3>
                                   <div className="flex items-center space-x-1">
                                     {session.has_tool_use && (

@@ -4,8 +4,11 @@ import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { SimpleUpdateManager } from "./components/SimpleUpdateManager";
+import { SearchView } from "./components/SearchView";
+import { DebugConsole } from "./components/DebugConsole";
 import { useAppStore } from "./store/useAppStore";
 import { useAnalytics } from "./hooks/useAnalytics";
+import { getSessionTitle } from "./utils/sessionUtils";
 
 import { useTranslation } from "react-i18next";
 import { AppErrorType, type ClaudeSession, type ClaudeProject } from "./types";
@@ -34,10 +37,12 @@ function App() {
     error,
     sessionTokenStats,
     projectTokenStats,
+    isSearchOpen,
     initializeApp,
     selectProject,
     selectSession,
     loadMoreMessages,
+    setSearchOpen,
   } = useAppStore();
 
   const {
@@ -69,6 +74,23 @@ function App() {
         initializeApp();
       });
   }, [initializeApp, loadLanguage]);
+
+  // Cmd+F keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+        e.preventDefault();
+        setSearchOpen(!isSearchOpen);
+      }
+      // Escape to close search
+      if (e.key === "Escape" && isSearchOpen) {
+        setSearchOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSearchOpen, setSearchOpen]);
 
   // i18n 언어 변경 감지
   useEffect(() => {
@@ -197,106 +219,112 @@ function App() {
 
           {/* Main Content Area */}
           <div className="w-full flex flex-col relative">
-            {/* Content Header */}
-            {(selectedSession ||
-              computed.isTokenStatsView ||
-              computed.isAnalyticsView) && (
-              <div
-                className={cn(
-                  "p-4 border-b",
-                  COLORS.ui.background.secondary,
-                  COLORS.ui.border.light
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2
-                      className={cn(
-                        "text-lg font-semibold",
-                        COLORS.ui.text.primary
-                      )}
-                    >
-                      {computed.isAnalyticsView
-                        ? tComponents("analytics.dashboard")
-                        : computed.isTokenStatsView
-                        ? tMessages("tokenStats.title")
-                        : tComponents("message.conversation")}
-                    </h2>
-                    <span className={cn("text-sm", COLORS.ui.text.secondary)}>
-                      {selectedSession?.summary ||
-                        tComponents("session.summaryNotFound")}
-                    </span>
-                    {computed.isMessagesView && selectedSession && (
+            {isSearchOpen ? (
+              /* Search View - Full overlay */
+              <SearchView />
+            ) : (
+              <>
+                {/* Content Header */}
+                {(selectedSession ||
+                  computed.isTokenStatsView ||
+                  computed.isAnalyticsView) && (
+                  <div
+                    className={cn(
+                      "p-4 border-b",
+                      COLORS.ui.background.secondary,
+                      COLORS.ui.border.light
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
-                          {pagination.totalCount >= messages.length &&
-                            ` ${pagination.totalCount || "-"}개 • `}
-                          {selectedSession.has_tool_use
-                            ? tComponents("tools.toolUsed")
-                            : tComponents("tools.generalConversation")}
-                          {selectedSession.has_errors &&
-                            ` • ${tComponents("tools.errorOccurred")}`}
+                        <h2
+                          className={cn(
+                            "text-lg font-semibold",
+                            COLORS.ui.text.primary
+                          )}
+                        >
+                          {computed.isAnalyticsView
+                            ? tComponents("analytics.dashboard")
+                            : computed.isTokenStatsView
+                            ? tMessages("tokenStats.title")
+                            : tComponents("message.conversation")}
+                        </h2>
+                        <span className={cn("text-sm", COLORS.ui.text.secondary)}>
+                          {getSessionTitle(selectedSession, messages)}
+                        </span>
+                        {computed.isMessagesView && selectedSession && (
+                          <div>
+                            <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
+                              {pagination.totalCount >= messages.length &&
+                                ` ${pagination.totalCount || "-"}개 • `}
+                              {selectedSession.has_tool_use
+                                ? tComponents("tools.toolUsed")
+                                : tComponents("tools.generalConversation")}
+                              {selectedSession.has_errors &&
+                                ` • ${tComponents("tools.errorOccurred")}`}
+                            </p>
+                          </div>
+                        )}
+                        {computed.isTokenStatsView && (
+                          <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
+                            {tComponents("analytics.tokenUsageDetailed")}
+                          </p>
+                        )}
+                        {computed.isAnalyticsView && (
+                          <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
+                            {selectedSession
+                              ? tComponents("analytics.projectSessionAnalysis")
+                              : tComponents("analytics.projectOverallAnalysis")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Content */}
+                <div className="flex-1 overflow-hidden">
+                  {computed.isAnalyticsView ? (
+                    <div className="h-full overflow-y-auto">
+                      <AnalyticsDashboard />
+                    </div>
+                  ) : computed.isTokenStatsView ? (
+                    <div className="h-full overflow-y-auto p-6 space-y-8">
+                      <TokenStatsViewer
+                        title={tMessages("tokenStats.title")}
+                        sessionStats={sessionTokenStats}
+                        projectStats={projectTokenStats}
+                      />
+                    </div>
+                  ) : selectedSession ? (
+                    <MessageViewer
+                      messages={messages}
+                      pagination={pagination}
+                      isLoading={isLoading}
+                      selectedSession={selectedSession}
+                      onLoadMore={loadMoreMessages}
+                    />
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <div className={cn("text-center", COLORS.ui.text.muted)}>
+                        <MessageSquare
+                          className={cn(
+                            "w-16 h-16 mx-auto mb-4",
+                            COLORS.ui.text.disabledDark
+                          )}
+                        />
+                        <p className="text-lg mb-2">
+                          {tComponents("session.select")}
+                        </p>
+                        <p className="text-sm">
+                          {tComponents("session.selectDescription")}
                         </p>
                       </div>
-                    )}
-                    {computed.isTokenStatsView && (
-                      <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
-                        {tComponents("analytics.tokenUsageDetailed")}
-                      </p>
-                    )}
-                    {computed.isAnalyticsView && (
-                      <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
-                        {selectedSession
-                          ? tComponents("analytics.projectSessionAnalysis")
-                          : tComponents("analytics.projectOverallAnalysis")}
-                      </p>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </>
             )}
-
-            {/* Content */}
-            <div className="flex-1 overflow-hidden">
-              {computed.isAnalyticsView ? (
-                <div className="h-full overflow-y-auto">
-                  <AnalyticsDashboard />
-                </div>
-              ) : computed.isTokenStatsView ? (
-                <div className="h-full overflow-y-auto p-6 space-y-8">
-                  <TokenStatsViewer
-                    title={tMessages("tokenStats.title")}
-                    sessionStats={sessionTokenStats}
-                    projectStats={projectTokenStats}
-                  />
-                </div>
-              ) : selectedSession ? (
-                <MessageViewer
-                  messages={messages}
-                  pagination={pagination}
-                  isLoading={isLoading}
-                  selectedSession={selectedSession}
-                  onLoadMore={loadMoreMessages}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <div className={cn("text-center", COLORS.ui.text.muted)}>
-                    <MessageSquare
-                      className={cn(
-                        "w-16 h-16 mx-auto mb-4",
-                        COLORS.ui.text.disabledDark
-                      )}
-                    />
-                    <p className="text-lg mb-2">
-                      {tComponents("session.select")}
-                    </p>
-                    <p className="text-sm">
-                      {tComponents("session.selectDescription")}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
@@ -372,6 +400,9 @@ function App() {
 
       {/* Modals */}
       <ModalContainer />
+
+      {/* Debug Console */}
+      <DebugConsole />
     </>
   );
 }

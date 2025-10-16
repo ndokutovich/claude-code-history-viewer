@@ -68,5 +68,14 @@
     "now": "立即更新",
     "download": "下载更新",
     "upToDate": "已是最新版本"
+  },
+  "search": {
+    "title": "搜索",
+    "placeholder": "搜索消息...",
+    "searching": "搜索中...",
+    "noResults": "未找到结果",
+    "enterQuery": "输入搜索词以查找消息",
+    "foundResults": "在{{sessions}}个对话中找到{{count}}条消息",
+    "matches": "个匹配"
   }
 }
