@@ -1,7 +1,7 @@
 {
   "name": "claude-code-history-viewer",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
     "tauri:build:windows": "pnpm sync-version && tauri build --target x86_64-pc-windows-msvc",
     "tauri:build:linux": "pnpm sync-version && tauri build --target x86_64-unknown-linux-gnu",
     "sync-version": "node scripts/sync-version.cjs",
+    "release": "node scripts/release.cjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "test": "vitest",
