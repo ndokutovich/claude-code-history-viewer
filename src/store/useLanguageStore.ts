@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { load } from "@tauri-apps/plugin-store";
+import { load, type StoreOptions } from "@tauri-apps/plugin-store";
 import { locale } from "@tauri-apps/plugin-os";
 import i18n from "../i18n";
 import type { SupportedLanguage } from "../i18n";
@@ -44,7 +44,7 @@ export const useLanguageStore = create<LanguageStore>((set, get) => ({
       await i18n.changeLanguage(language);
       set({ language });
 
-      const store = await load("settings.json", { autoSave: true });
+      const store = await load("settings.json", { autoSave: true } as StoreOptions);
       await store.set("language", language);
       await store.save();
     } catch (e) {
@@ -64,7 +64,7 @@ export const useLanguageStore = create<LanguageStore>((set, get) => ({
 
       if (!language) {
         try {
-          const store = await load("settings.json", { autoSave: true });
+          const store = await load("settings.json", { autoSave: true } as StoreOptions);
           language = (await store.get("language")) as SupportedLanguage | null;
         } catch (e) {
           console.log("Tauri Store not available:", e);

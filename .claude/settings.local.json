@@ -11,7 +11,13 @@
       "WebFetch(domain:github.com)",
       "Bash(git remote add:*)",
       "Bash(git fetch:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(git push:*)",
+      "Bash(chmod:*)",
+      "Bash(pnpm release:*)",
+      "Bash(git show:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm list:*)"
     ],
     "deny": [],
     "ask": []

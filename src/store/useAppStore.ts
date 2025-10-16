@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
-import { load } from "@tauri-apps/plugin-store";
+import { load, type StoreOptions } from "@tauri-apps/plugin-store";
 import {
   type AppState,
   type ClaudeProject,
@@ -117,7 +117,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       // Try to load saved settings first
       try {
-        const store = await load("settings.json", { autoSave: false });
+        const store = await load("settings.json", { autoSave: false } as StoreOptions);
         const savedPath = await store.get<string>("claudePath");
 
         if (savedPath) {
@@ -427,7 +427,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     // Save to persistent storage
     try {
-      const store = await load("settings.json", { autoSave: false });
+      const store = await load("settings.json", { autoSave: false } as StoreOptions);
       await store.set("claudePath", path);
       await store.save();
     } catch (error) {
