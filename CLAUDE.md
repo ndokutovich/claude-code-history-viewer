@@ -9,7 +9,10 @@ The enhanced prompts will follow the language of the original prompt (e.g., Kore
 ## Principal
 
 First, You must use command "gemini -p {prompt}" and then use the result that returned response
-Use pnpm Package Manager
+
+**Package Manager Support**: This project supports **npm, pnpm, yarn, and bun**. All commands in this document use `pnpm` as the default, but you can substitute with your preferred package manager:
+- `pnpm <command>` → `npm run <command>` or `yarn <command>` or `bun run <command>`
+- The build system automatically detects your package manager via `scripts/run-with-pm.cjs`
 
 가독성이 높은 설계 추구
 예측 가능성이 높은 설계 추구
@@ -48,6 +51,14 @@ Claude Code History Viewer is a Tauri-based desktop application that allows user
 
 ### Code Quality
 - `pnpm lint` - Run ESLint on the codebase
+
+### Release Management
+- `pnpm release <version>` - **Create a new release** (updates versions, commits, tags)
+  - Example: `pnpm release 1.0.8`
+  - Automatically updates `package.json`, `Cargo.toml`, and `tauri.conf.json`
+  - Creates git commit and tag
+  - See "Release Process" section for full workflow
+- `pnpm sync-version` - Manually sync version from package.json to other files (rarely needed)
 
 ## Platform Support
 
@@ -766,11 +777,103 @@ Not Yet Supported:
 - Rollup bundle analyzer for optimization insights
 
 ### Release Process
-1. Update version in `package.json`
-2. Run `pnpm sync-version` to sync to `tauri.conf.json`
-3. Build with `pnpm tauri:build`
-4. GitHub Actions creates release with signed binaries
-5. Auto-updater checks release metadata from `latest.json`
+
+**IMPORTANT: Always use the `release` script for creating new releases. Do not manually update version files.**
+
+#### Automated Release Workflow
+
+1. **Run the release script** with the new version number:
+   ```bash
+   # Using pnpm (or npm/yarn/bun - all supported)
+   pnpm release 1.0.8
+   # npm run release 1.0.8
+   # yarn release 1.0.8
+   # bun run release 1.0.8
+   ```
+
+   This script (`scripts/release.cjs`) automatically:
+   - Updates version in `package.json`
+   - Updates version in `src-tauri/Cargo.toml`
+   - Updates version in `src-tauri/tauri.conf.json`
+   - Creates a git commit: `chore: bump version to X.X.X`
+   - Creates a git tag: `vX.X.X`
+   - Provides push instructions
+
+2. **Push to GitHub** to trigger automated builds:
+   ```bash
+   git push origin main && git push origin vX.X.X
+   ```
+
+3. **GitHub Actions automatically**:
+   - Creates GitHub Release with the tag
+   - Builds for all platforms (macOS, Windows, Linux)
+   - Uploads signed binaries (.dmg, .msi, .AppImage)
+   - Generates `latest.json` for Tauri auto-updater
+
+4. **Auto-updater** checks release metadata from `latest.json` and notifies users
+
+#### Release Script Details
+
+The `release` script is the **correct and complete** way to create releases (works with all package managers):
+
+```bash
+# Usage (choose your package manager)
+pnpm release <version>      # pnpm
+npm run release <version>   # npm
+yarn release <version>      # yarn
+bun run release <version>   # bun
+
+# Example
+pnpm release 1.0.8
+
+# Skip git operations (for testing)
+pnpm release 1.0.8 --no-git
+```
+
+**What it does:**
+- ✅ Synchronizes version across all 3 files
+- ✅ Creates standardized commit message
+- ✅ Creates properly formatted git tag
+- ✅ Validates semver format (major.minor.patch)
+
+**What it does NOT do (intentionally):**
+- ❌ Does NOT push automatically (safety: lets you review first)
+- ❌ Does NOT build binaries locally (GitHub Actions does this)
+- ❌ Does NOT create GitHub Release directly (GitHub Actions does this)
+
+#### GitHub Actions Workflow
+
+Triggered by pushing a version tag (`v*`), the workflow (`.github/workflows/updater-release.yml`):
+
+1. **create-release** job:
+   - Creates or retrieves GitHub Release
+
+2. **build-tauri** job (parallel for each platform):
+   - macOS: Universal binary (.dmg + .sig)
+   - Windows: Installer (.msi + .sig)
+   - Linux: AppImage (.AppImage + .sig)
+   - Uploads all artifacts to GitHub Release
+
+3. **generate-updater-metadata** job:
+   - Generates `latest.json` with platform-specific download URLs
+   - Includes signature verification data
+   - Uploads to GitHub Release for auto-updater
+
+#### Troubleshooting
+
+**If build fails:**
+- Check GitHub Actions logs: `https://github.com/<owner>/<repo>/actions`
+- Common issues:
+  - Rust compilation errors (check Cargo.toml dependencies)
+  - Missing secrets (TAURI_SIGNING_PRIVATE_KEY, etc.)
+  - Platform-specific build failures
+
+**Version conflicts:**
+- Always use the `release` script to avoid version mismatches
+- If versions are out of sync, run the `sync-version` script manually:
+  ```bash
+  pnpm sync-version  # or npm run sync-version, yarn sync-version, bun run sync-version
+  ```
 
 ## Known Issues and Limitations
 
