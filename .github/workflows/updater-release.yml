@@ -145,6 +145,7 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           releaseId: ${{ needs.create-release.outputs.release_id }}
+          args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
 
   generate-updater-metadata:
     needs: [create-release, build-tauri]
