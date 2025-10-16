@@ -22,6 +22,7 @@
     "title": "설정",
     "changeFolder": "폴더 변경",
     "checking": "확인 중...",
+    "updateSettings": "업데이트 설정",
     "theme": {
       "title": "테마",
       "light": "라이트",
@@ -67,7 +68,48 @@
     "later": "나중에 (7일)",
     "now": "지금 업데이트",
     "download": "업데이트 다운로드",
-    "upToDate": "최신 버전입니다"
+    "upToDate": "최신 버전입니다",
+    "newUpdateAvailable": "새 업데이트 사용 가능",
+    "important": "중요",
+    "currentVersion": "현재 버전",
+    "newVersion": "새 버전",
+    "downloading": "다운로드 중...",
+    "downloadingProgress": "다운로드 중... {{progress}}%",
+    "installing": "설치 중...",
+    "installingWaitRestart": "설치 중... 잠시 후 앱이 재시작됩니다.",
+    "errorOccurred": "오류가 발생했습니다: {{error}}",
+    "showDetails": "세부 정보 보기",
+    "hideDetails": "세부 정보 숨기기",
+    "releaseName": "릴리스명:",
+    "changelog": "변경사항:",
+    "viewOnGitHub": "GitHub에서 보기",
+    "downloadAndInstall": "다운로드 & 설치",
+    "postpone24h": "24시간 후 다시 알림",
+    "skipVersion": "이 버전 건너뛰기",
+    "intro": {
+      "title": "업데이트 시스템 안내",
+      "description": "Claude Code History Viewer는 더 나은 사용 경험을 위해 자동으로 업데이트를 확인합니다.",
+      "howItWorks": "작동 방식:",
+      "features": {
+        "backgroundCheck": "앱 시작 시 백그라운드에서 업데이트 확인",
+        "notification": "새 업데이트 발견 시 알림 모달 표시",
+        "userControl": "다운로드/설치는 사용자가 직접 선택",
+        "caching": "30분간 결과 캐시로 효율적 운영"
+      },
+      "benefits": "장점:",
+      "benefitsList": {
+        "security": "보안 패치 신속 적용",
+        "newFeatures": "새로운 기능 빠른 접근",
+        "offlineDisable": "오프라인 시 자동 비활성화",
+        "changeable": "설정에서 언제든 변경 가능"
+      },
+      "tip": "💡 설정 → 업데이트에서 자동 확인을 비활성화할 수 있습니다.",
+      "disableAutoCheck": "자동 확인 비활성화",
+      "understood": "이해했습니다"
+    },
+    "items": "개",
+    "itemCount": "{{count}}개",
+    "itemCount_plural": "{{count}}개"
   },
   "search": {
     "title": "검색",

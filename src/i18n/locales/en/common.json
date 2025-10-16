@@ -22,6 +22,7 @@
     "title": "Settings",
     "changeFolder": "Change Folder",
     "checking": "Checking...",
+    "updateSettings": "Update Settings",
     "theme": {
       "title": "Theme",
       "light": "Light",
@@ -67,7 +68,48 @@
     "later": "Later (7 days)",
     "now": "Update Now",
     "download": "Download Update",
-    "upToDate": "You have the latest version"
+    "upToDate": "You have the latest version",
+    "newUpdateAvailable": "New Update Available",
+    "important": "Important",
+    "currentVersion": "Current Version",
+    "newVersion": "New Version",
+    "downloading": "Downloading...",
+    "downloadingProgress": "Downloading... {{progress}}%",
+    "installing": "Installing...",
+    "installingWaitRestart": "Installing... The app will restart shortly.",
+    "errorOccurred": "An error occurred: {{error}}",
+    "showDetails": "Show Details",
+    "hideDetails": "Hide Details",
+    "releaseName": "Release Name:",
+    "changelog": "Changelog:",
+    "viewOnGitHub": "View on GitHub",
+    "downloadAndInstall": "Download & Install",
+    "postpone24h": "Remind in 24 hours",
+    "skipVersion": "Skip This Version",
+    "intro": {
+      "title": "Update System Guide",
+      "description": "Claude Code History Viewer automatically checks for updates to provide a better experience.",
+      "howItWorks": "How It Works:",
+      "features": {
+        "backgroundCheck": "Checks for updates in the background on app startup",
+        "notification": "Displays notification modal when new update is found",
+        "userControl": "Download/install is user-initiated",
+        "caching": "Efficient operation with 30-minute result caching"
+      },
+      "benefits": "Benefits:",
+      "benefitsList": {
+        "security": "Quick application of security patches",
+        "newFeatures": "Fast access to new features",
+        "offlineDisable": "Automatically disabled when offline",
+        "changeable": "Can be changed in settings at any time"
+      },
+      "tip": "💡 You can disable automatic checking in Settings → Updates.",
+      "disableAutoCheck": "Disable Auto Check",
+      "understood": "I Understand"
+    },
+    "items": " items",
+    "itemCount": "{{count}} item",
+    "itemCount_plural": "{{count}} items"
   },
   "search": {
     "title": "Search",

@@ -105,7 +105,7 @@ function App() {
       if (
         currentLang &&
         currentLang !== language &&
-        ["en", "ko", "ja", "zh-CN", "zh-TW"].includes(currentLang)
+        ["en", "ko", "ja", "zh-CN", "zh-TW", "ru"].includes(currentLang)
       ) {
         useLanguageStore.setState({
           language: currentLang as SupportedLanguage,
@@ -256,7 +256,7 @@ function App() {
                           <div>
                             <p className={cn("text-sm mt-1", COLORS.ui.text.muted)}>
                               {pagination.totalCount >= messages.length &&
-                                ` ${pagination.totalCount || "-"}개 • `}
+                                ` ${pagination.totalCount || "-"}${t("update.items")} • `}
                               {selectedSession.has_tool_use
                                 ? tComponents("tools.toolUsed")
                                 : tComponents("tools.generalConversation")}

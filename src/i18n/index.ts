@@ -22,12 +22,17 @@ import zhTWCommon from './locales/zh-TW/common.json';
 import zhTWComponents from './locales/zh-TW/components.json';
 import zhTWMessages from './locales/zh-TW/messages.json';
 
+import ruCommon from './locales/ru/common.json';
+import ruComponents from './locales/ru/components.json';
+import ruMessages from './locales/ru/messages.json';
+
 export const supportedLanguages = {
   en: 'English',
   ko: '한국어',
   ja: '日本語',
   'zh-CN': '简体中文',
   'zh-TW': '繁體中文',
+  ru: 'Русский',
 } as const;
 
 export type SupportedLanguage = keyof typeof supportedLanguages;
@@ -40,6 +45,7 @@ export const languageLocaleMap: Record<string, string> = {
   'zh-TW': 'zh-TW',
   'zh-HK': 'zh-HK',
   'zh-MO': 'zh-MO',
+  ru: 'ru-RU',
 };
 
 const resources = {
@@ -67,6 +73,11 @@ const resources = {
     common: zhTWCommon,
     components: zhTWComponents,
     messages: zhTWMessages,
+  },
+  ru: {
+    common: ruCommon,
+    components: ruComponents,
+    messages: ruMessages,
   },
 };
 

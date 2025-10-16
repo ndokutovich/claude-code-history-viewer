@@ -23,6 +23,10 @@ import zhTWCommon from './i18n/locales/zh-TW/common.json';
 import zhTWComponents from './i18n/locales/zh-TW/components.json';
 import zhTWMessages from './i18n/locales/zh-TW/messages.json';
 
+import ruCommon from './i18n/locales/ru/common.json';
+import ruComponents from './i18n/locales/ru/components.json';
+import ruMessages from './i18n/locales/ru/messages.json';
+
 // Define resources
 const resources = {
   en: {
@@ -50,6 +54,11 @@ const resources = {
     components: zhTWComponents,
     messages: zhTWMessages,
   },
+  ru: {
+    common: ruCommon,
+    components: ruComponents,
+    messages: ruMessages,
+  },
 };
 
 i18n
@@ -75,7 +84,7 @@ i18n
   });
 
 // Export types and constants
-export type SupportedLanguage = 'en' | 'ko' | 'ja' | 'zh-CN' | 'zh-TW';
+export type SupportedLanguage = 'en' | 'ko' | 'ja' | 'zh-CN' | 'zh-TW' | 'ru';
 
 export const supportedLanguages: { code: SupportedLanguage; label: string }[] = [
   { code: 'en', label: 'English' },
@@ -83,6 +92,7 @@ export const supportedLanguages: { code: SupportedLanguage; label: string }[] = 
   { code: 'ja', label: '日本語' },
   { code: 'zh-CN', label: '简体中文' },
   { code: 'zh-TW', label: '繁體中文' },
+  { code: 'ru', label: 'Русский' },
 ];
 
 export const languageLocaleMap: Record<string, string> = {
@@ -92,6 +102,7 @@ export const languageLocaleMap: Record<string, string> = {
   'zh-CN': 'zh-CN',
   'zh-TW': 'zh-TW',
   ja: 'ja-JP',
+  ru: 'ru-RU',
 };
 
 export default i18n;

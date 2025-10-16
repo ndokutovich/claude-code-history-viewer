@@ -1,0 +1,10 @@
+{
+  "tokenStats": {
+    "title": "Статистика токенов",
+    "existing": "Статистика токенов (существующие)"
+  },
+  "noMessages": "Нет сообщений",
+  "messageInfo": "Сообщения: {{current}}/{{total}}",
+  "offset": "Смещение: {{offset}}",
+  "hasMore": "Есть ещё: {{status}}"
+}
