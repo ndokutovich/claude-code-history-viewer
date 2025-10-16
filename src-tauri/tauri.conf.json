@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "node ../scripts/run-with-pm.cjs dev",
-    "beforeBuildCommand": "node ../scripts/run-with-pm.cjs build"
+    "beforeDevCommand": "node scripts/run-with-pm.cjs dev",
+    "beforeBuildCommand": "node scripts/run-with-pm.cjs build"
   },
   "app": {
     "windows": [
