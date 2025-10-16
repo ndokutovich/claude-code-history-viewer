@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "vadimcn.vscode-lldb",
+    "ms-vscode.cpptools",
+    "rust-lang.rust-analyzer",
+    "tauri-apps.tauri-vscode",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next",
+    "msjsdiag.debugger-for-chrome",
+    "ms-edgedevtools.vscode-edge-devtools"
+  ]
+}

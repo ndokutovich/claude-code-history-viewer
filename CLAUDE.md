@@ -16,19 +16,37 @@ Use pnpm Package Manager
 높은 응집도 설계 추구
 낮은 결합도 설계 추구
 
+**⚠️ Platform Note**: This application is officially tested and supported on **macOS only**. Windows and Linux builds may compile but functionality is not guaranteed. See "Platform and Deployment" section for details.
+
 ## Project Overview
 
 Claude Code History Viewer is a Tauri-based desktop application that allows users to browse and analyze their Claude Code conversation history stored in the `~/.claude` directory.
 
 ## Development Commands
 
+### Building and Running
 - `pnpm dev` - Start Vite dev server for frontend development
 - `pnpm tauri:dev` - Run full Tauri application in development mode
-- `pnpm build` - Build frontend with TypeScript checking
+- `pnpm build` - Build frontend with TypeScript checking and version sync
 - `pnpm tauri:build` - Build production desktop application for current platform
 - `pnpm tauri:build:mac` - Build production application for macOS (universal binary)
 - `pnpm tauri:build:windows` - Build production application for Windows (x86_64)
 - `pnpm tauri:build:linux` - Build production application for Linux (x86_64)
+- `pnpm sync-version` - Sync version between package.json and tauri.conf.json
+
+### Testing
+- `pnpm test` - Run unit tests in watch mode (Vitest)
+- `pnpm test:run` - Run unit tests once with verbose output
+- `pnpm test:ui` - Run unit tests with Vitest UI
+- `pnpm test:simple` - Run simple test suite
+- `pnpm test:e2e` - Run E2E tests with Playwright
+- `pnpm test:e2e:ui` - Run E2E tests in interactive UI mode
+- `pnpm test:e2e:headed` - Run E2E tests with visible browser
+- `pnpm test:e2e:debug` - Run E2E tests with debugger
+- `pnpm test:e2e:report` - Show E2E test report
+- `pnpm test:all` - Run all tests (unit + E2E)
+
+### Code Quality
 - `pnpm lint` - Run ESLint on the codebase
 
 ## Platform Support
@@ -162,23 +180,89 @@ sudo rpm -i src-tauri/target/release/bundle/rpm/*.rpm
 ### Frontend (React + TypeScript)
 
 - **State Management**: Uses Zustand store in `src/store/useAppStore.ts`
-- **Components**: Located in `src/components/`
-  - `MessageViewer.tsx` - Displays messages with virtual scrolling for performance
-  - `ProjectTree.tsx` - Shows project/session hierarchy
-  - `contentRenderer.tsx` - Handles rendering of different content types
-  - `messageRenderer.tsx` - Renders tool use, tool results, and message content
-- **API Integration**: Frontend communicates with Rust backend via Tauri's IPC commands
-- **Virtual Scrolling**: Uses react-window for efficient rendering of large message lists
+  - Main application state, project/session/message data
+  - Analytics state (token stats, activity heatmaps)
+  - Pagination state for infinite scrolling
+  - Language preferences in `src/store/useLanguageStore.ts`
+
+- **Component Organization**:
+  - `src/components/` - Core UI components
+    - `MessageViewer.tsx` - Main message display with virtual scrolling
+    - `ProjectTree.tsx` - Project/session tree navigation
+    - `AnalyticsDashboard.tsx` - Activity heatmaps and statistics
+    - `TokenStatsViewer.tsx` - Token usage visualization
+  - `src/components/contentRenderer/` - Content type renderers
+    - `ClaudeContentArrayRenderer.tsx` - Array content rendering
+    - `ThinkingRenderer.tsx` - Claude thinking blocks
+    - `CommandRenderer.tsx` - Slash command display
+  - `src/components/messageRenderer/` - Message component renderers
+    - `MessageContentDisplay.tsx` - Main message content router
+    - `ClaudeToolUseDisplay.tsx` - Tool use visualization
+    - `AssistantMessageDetails.tsx` - Token usage and metadata
+  - `src/components/toolResultRenderer/` - Tool result visualizations
+    - `WebSearchRenderer.tsx` - Web search results
+    - `FileEditRenderer.tsx` - File edit diffs
+    - `GitWorkflowRenderer.tsx` - Git operations
+    - `TodoUpdateRenderer.tsx` - Todo list changes
+    - `TerminalStreamRenderer.tsx` - Terminal output
+  - `src/components/modals/` - Modal dialogs
+  - `src/components/ui/` - Radix UI wrapper components
+
+- **Internationalization**:
+  - Uses i18next with react-i18next
+  - Supports: English, Korean, Japanese, Simplified Chinese, Traditional Chinese
+  - Language files in `src/i18n/locales/{lang}/`
+  - Auto-detection with localStorage persistence
+
+- **Theme System**:
+  - Context-based theme provider in `src/contexts/theme/`
+  - Supports light/dark mode with system preference detection
+
+- **API Integration**:
+  - Frontend communicates with Rust backend via Tauri's IPC commands using `@tauri-apps/api/core`
+  - All commands are async and return `Result<T, String>` from Rust
+
+- **Virtual Scrolling**:
+  - Uses `@tanstack/react-virtual` for efficient rendering
+  - Paginated message loading (20 messages initial, load more on scroll)
+  - Dynamic height calculation for variable content
 
 ### Backend (Rust + Tauri)
 
-- **Main Commands** (in `src-tauri/src/lib.rs`):
-  - `get_claude_folder_path` - Locates user's `.claude` directory
-  - `scan_projects` - Scans for all Claude projects
-  - `load_project_sessions` - Loads sessions for a specific project
-  - `load_session_messages` - Loads messages from a JSONL file
-  - `search_messages` - Searches across all messages
-- **Data Structure**: Reads JSONL files containing conversation history from `~/.claude/projects/`
+- **Command Organization** (in `src-tauri/src/commands/`):
+  - `project.rs` - Project discovery and validation
+    - `get_claude_folder_path` - Locates user's `.claude` directory
+    - `validate_claude_folder` - Validates Claude folder structure
+    - `scan_projects` - Scans for all Claude projects
+  - `session.rs` - Session and message management
+    - `load_project_sessions` - Loads sessions for a specific project
+    - `load_session_messages_paginated` - Paginated message loading
+    - `get_session_message_count` - Get total message count
+    - `search_messages` - Full-text message search
+  - `stats.rs` - Analytics and statistics
+    - `get_session_token_stats` - Session-level token usage
+    - `get_project_token_stats` - Project-level token aggregation
+    - `get_project_stats_summary` - Activity heatmaps and tool usage
+    - `get_session_comparison` - Session ranking and percentiles
+  - `update.rs` & `secure_update.rs` - Update checking and verification
+    - `check_for_updates` - Check GitHub releases
+    - `check_for_updates_secure` - Verify update metadata
+    - `verify_download_integrity` - SHA-256 checksum validation
+  - `feedback.rs` - User feedback
+    - `send_feedback` - Collect and store user feedback
+    - `get_system_info` - System information for bug reports
+    - `open_github_issues` - Open GitHub issues page
+
+- **Data Models** (in `src-tauri/src/models.rs`):
+  - Rust structs mirror TypeScript interfaces in `src/types/index.ts`
+  - All structs use `serde` for serialization/deserialization
+  - Nested `MessagePayload` structure matches JSONL format
+
+- **Data Flow**:
+  - Reads JSONL files from `~/.claude/projects/[project-name]/*.jsonl`
+  - Each line is parsed as a `RawClaudeMessage`
+  - Messages are filtered (exclude sidechain), sorted, and paginated
+  - Results are serialized to JSON and sent to frontend via IPC
 
 ## Raw Message Structure
 
@@ -241,24 +325,130 @@ Assistant messages contain additional metadata within the `message` object:
 
 ## Key Implementation Details
 
+### Data Flow and State Management
 - The app expects Claude conversation data in `~/.claude/projects/[project-name]/*.jsonl`
 - Each JSONL file represents a session with one JSON message per line
 - Messages can contain tool use results and error information
-- The UI is primarily in Korean.션, etc.)
-- Virtual scrolling is implemented for performance with large message lists
-- Pagination is used to load messages in batches (100 messages per page)
+- Initial page size is 20 messages for fast loading, then paginated on scroll
+- Sidechain messages can be filtered out via `excludeSidechain` flag
 - Message tree structure is flattened for virtual scrolling while preserving parent-child relationships
-- No test suite currently exists
+
+### Performance Optimizations
+- Virtual scrolling with `@tanstack/react-virtual` for large message lists
+- Message components are memoized to prevent unnecessary re-renders
+- Dynamic height calculation and caching for variable content sizes
+- Paginated loading to avoid loading entire sessions at once
+- Zustand state management for efficient re-renders
+
+### UI and Styling
+- Tailwind CSS v4 with custom Claude brand colors
+- Supports light/dark themes with system preference detection
+- Multilingual UI (English, Korean, Japanese, Simplified/Traditional Chinese)
+- Radix UI components for accessible dialogs, dropdowns, and tooltips
+- Syntax highlighting with Prism for code blocks
+
+### Update System
+- Auto-update checking via GitHub releases
+- SHA-256 checksum verification for download integrity
+- Supports force updates with deadline enforcement
+- Update metadata includes priority levels (critical/recommended/optional)
+- Update consent modal with user preferences stored in Tauri Store
 
 ## Important Patterns
 
-- Tauri commands are async and return `Result<T, String>`
-- Frontend uses `@tauri-apps/api/core` for invoking backend commands
-- All file paths must be absolute when passed to Rust commands
-- The app uses Tailwind CSS with custom Claude brand colors defined in `tailwind.config.js`
-- Message components are memoized for performance
-- AutoSizer is used for responsive virtual scrolling
-- Message height is dynamically calculated and cached for variable height scrolling
+### Rust Backend
+- All Tauri commands are async and return `Result<T, String>`
+- Commands use absolute file paths (never relative)
+- Error messages include type prefix for frontend parsing (e.g., `CLAUDE_FOLDER_NOT_FOUND:`)
+- Serde is used for all serialization/deserialization
+- JSONL parsing handles both string and array content types
+
+### Frontend
+- Components use `invoke` from `@tauri-apps/api/core` for backend calls
+- State updates should trigger appropriate loading states
+- Message adapters normalize data between Rust structs and frontend types
+- i18next translation keys use namespace pattern: `namespace:key`
+- Theme changes propagate via React Context
+
+### Testing
+
+**Unit Tests (Vitest)**
+- Vitest for unit tests with jsdom environment
+- Testing library for React component tests
+- Configuration in `vite.config.ts` (lines 129-139)
+- Currently minimal test coverage
+
+**E2E Tests (Playwright)**
+- Playwright tests for full application behavioral testing
+- Tests Tauri app via WebView2 + Chrome DevTools Protocol (CDP)
+- Test files in `e2e/tests/` directory
+- Configuration in `playwright.config.ts`
+- Fixtures:
+  - `e2e/fixtures/tauri.ts` - Launches Tauri with debugging port, connects Playwright
+  - `e2e/fixtures/mockClaudeData.ts` - Generates mock Claude conversation data
+- Test Suites:
+  - `app-initialization.spec.ts` - App startup, loading states, error handling
+  - `navigation.spec.ts` - Project/session navigation, view switching
+  - `ui-interactions.spec.ts` - Theme, language, settings, keyboard nav
+- **Platform**: Currently supports Windows only (WebView2 required)
+- **Setup**: Requires `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222`
+- **Documentation**: See `e2e/README.md` for detailed setup and usage
+
+## Missing Features and Implementation Gaps
+
+### ⚠️ Search Functionality (Backend Ready, UI Missing)
+
+**Current State:**
+- ✅ **Backend**: Fully implemented in `src-tauri/src/commands/session.rs:558-613`
+  - `search_messages` command searches across ALL projects in `~/.claude/projects/`
+  - Case-insensitive string matching in message content
+  - Returns full message objects with metadata (uuid, timestamp, content, etc.)
+- ✅ **Frontend Store**: Ready to use in `src/store/useAppStore.ts:324-344`
+  - `searchMessages()` action invokes backend command
+  - State includes `searchQuery`, `searchResults`, `searchFilters`
+  - `SearchFilters` interface defined in `src/types/index.ts:128-135`
+- ❌ **UI Components**: Completely missing
+  - No search bar in Header or anywhere else
+  - No search results display component
+  - No way for users to trigger search functionality
+  - README claims "Search and filter" feature exists, but UI is not implemented
+
+**Implementation Path for Future Development:**
+1. Add search input to Header component (with icon button)
+2. Create `SearchResults.tsx` component to display matches
+   - Show which project/session each result is from
+   - Allow clicking result to jump to that session
+   - Highlight search terms in results
+3. Add search filters UI (date range, project selector, message type)
+4. Wire search input to `useAppStore().searchMessages()`
+5. Display results in main content area or modal
+
+**Backend Search Capabilities:**
+- Searches through all JSONL files in `~/.claude/projects/`
+- Matches against both user and assistant message content
+- Supports string content and array content types
+- Returns results with full context (session ID, project, timestamp)
+
+### Navigation and Discovery
+
+**Current Session Visibility:**
+- ✅ Sessions are visible in `ProjectTree` component when project is expanded
+- ✅ Sessions sorted by `last_modified` (newest first)
+- ✅ Each session displays:
+  - Summary (from summary message or first user message)
+  - Message count
+  - Last modified time (relative: "2 hours ago", "3 days ago", etc.)
+  - Tool usage indicator (wrench icon)
+  - Error indicator (warning icon)
+  - Session ID (truncated, first 8 chars)
+
+**Missing Navigation Features:**
+- ❌ No search/filter within ProjectTree
+- ❌ No sorting options (currently fixed to last_modified descending)
+- ❌ No recently viewed sessions list
+- ❌ No favorites/bookmarks functionality
+- ❌ No session grouping or categorization
+- ❌ No quick jump to session by ID
 
 ## Claude Directory Structure Analysis
 
@@ -546,34 +736,336 @@ Not Yet Supported:
 - ❌ Thinking type (`type: "thinking`) - currently only supported as text tags
 - ❌ Image content - structure supports it via `isImage` flag but no rendering logic
 
-### Recent Updates
+## Platform and Deployment
 
-- **Data Structure & Type Correction (June 2025)**:
-  - Performed a deep analysis of `.jsonl` log files in the `~/.claude` directory to verify the exact data structure.
-  - Added a `Raw Message Structure` section to this document to accurately model the nested `message` object and include assistant-specific metadata (`id`, `model`, `stop_reason`, `usage`).
-  - Updated the corresponding Rust structs in `src-tauri/src/commands.rs` and TypeScript interfaces in `src/types/index.ts` to align with the true data format, enhancing type safety and preventing data loss during parsing.
-- **Virtual Scrolling Implementation**: Added react-window with VariableSizeList for efficient rendering of large message lists
-- **Performance Optimizations**:
-  - Messages are memoized to prevent unnecessary re-renders
-  - Dynamic height calculation for variable content sizes
-  - AutoSizer for responsive viewport handling
-  - Infinite scroll with react-window-infinite-loader
-- **Type System Updates**:
-  - Fixed ContentItem[] type support in ClaudeMessage interface
-  - Added proper TypeScript types for virtual scrolling components
-  - Updated messageAdapter to use type-only imports
+### Current Platform Support
+- **macOS**: Primary and officially supported platform
+  - Universal binary (Apple Silicon + Intel)
+  - Minimum version: 10.13 (High Sierra)
+  - Fully tested and production-ready
 
-### Dependencies Added
+- **Windows**: Experimental/Untested
+  - Build configuration exists (Tauri is cross-platform)
+  - **NOT officially tested or supported**
+  - May work but expect issues:
+    - Path handling differences (`~/.claude` vs Windows paths)
+    - File system permissions
+    - Auto-updater may not work
+    - UI rendering differences
+  - Community testing and contributions welcome
 
-- `react-window` - Virtual scrolling for performance
-- `react-window-infinite-loader` - Infinite scroll support
-- `react-virtualized-auto-sizer` - Responsive height calculation
-- `@types/react-window` - TypeScript definitions
-- `@types/react-window-infinite-loader` - TypeScript definitions
+- **Linux**: Planned but not yet implemented
+  - Build targets not configured
+  - No testing or packaging for Linux distributions
 
-### Known Issues
+### Build Configuration
+- Tauri v2 with auto-updater plugin enabled
+- Update signature verification via minisign
+- GitHub Actions workflow for automated releases
+- Version syncing between `package.json` and `tauri.conf.json`
+- Rollup bundle analyzer for optimization insights
 
-- The frontend expects content at the root level, but it's actually nested under `message.content`
-- Thinking content appears both as a separate type and as tags within text
-- Image support is defined in the data structure but not implemented in the UI
-- ESLint configuration uses deprecated .eslintignore (migrated to ignores in config)
+### Release Process
+1. Update version in `package.json`
+2. Run `pnpm sync-version` to sync to `tauri.conf.json`
+3. Build with `pnpm tauri:build`
+4. GitHub Actions creates release with signed binaries
+5. Auto-updater checks release metadata from `latest.json`
+
+## Known Issues and Limitations
+
+### Platform Issues
+- **Windows/Linux**: Not officially supported or tested
+  - macOS is the only supported platform currently
+  - Windows builds may compile but functionality not guaranteed
+  - Path resolution issues likely on Windows (`~/.claude` expansion)
+  - Linux builds not configured in Tauri
+  - See "Platform and Deployment" section for details
+
+### Missing Features (High Priority)
+- **Search UI**: Backend fully implemented, frontend UI completely missing
+  - Cannot search across conversations despite README claim
+  - Backend command `search_messages` exists and works
+  - Store actions ready but no UI components
+  - See "Missing Features and Implementation Gaps" section for details
+
+- **Session Navigation**: Limited discovery capabilities
+  - No filtering or sorting options in ProjectTree
+  - No search within sessions list
+  - No recently viewed history
+  - No bookmarks/favorites
+
+### Performance Issues
+- **Initial Load**: Large conversation histories (1000+ messages) slow to load
+  - First session load reads entire JSONL file
+  - Pagination helps but initial parse is still slow
+  - No indexing or caching layer
+
+- **Memory Usage**: All messages loaded into memory
+  - Virtual scrolling helps with rendering
+  - But full message list still in state
+  - Can cause issues with very large sessions (10k+ messages)
+
+### Content Rendering Gaps
+- **Thinking Blocks**: Render as plain text, no dedicated UI
+  - `type: "thinking"` content exists in data
+  - No syntax highlighting or collapsible sections
+  - Mixed with regular text in display
+
+- **Images**: Data structure supports it, no renderer
+  - `isImage` flag exists in tool results
+  - No image display component implemented
+  - Base64 images in JSONL not decoded/shown
+
+- **MCP Results**: Basic rendering only
+  - MCP (Model Context Protocol) tool results exist
+  - No specialized visualization for MCP responses
+  - Shown as raw JSON currently
+
+### Testing Coverage
+- **Unit Tests**: Minimal coverage
+  - Vitest configured but barely used
+  - Opportunity for contribution
+
+- **E2E Tests**: Comprehensive Playwright test suite ✅
+  - App initialization and startup
+  - Project and session navigation
+  - View switching (messages, analytics, tokens)
+  - Theme management (light/dark)
+  - Language switching (5 languages)
+  - Settings interactions
+  - Keyboard navigation basics
+  - **Missing E2E coverage**:
+    - Message rendering details
+    - Analytics visualizations
+    - Token statistics display
+    - Error scenarios
+    - Update system
+    - Search functionality (when UI added)
+
+### Auto-Update System
+- **Beta Status**: Update system still being tested
+  - Manual download may be safer
+  - Signature verification works but edge cases untested
+  - Force update mechanism not fully validated
+
+### Data Limitations
+- **Read-Only**: Cannot edit or delete conversations
+  - App only reads JSONL files
+  - No write capability to add notes/tags
+  - No export functionality besides raw JSONL
+
+### Internationalization
+- **Partial Coverage**: Some UI strings not internationalized
+  - Error messages often English-only
+  - Tool result labels may not translate
+  - Date/time formatting mostly internationalized
+
+## Planned Enhancements
+
+This section documents features that are planned or partially implemented, providing a roadmap for future development.
+
+### 🔍 Search and Discovery (High Priority)
+
+**Global Search UI** (Backend Ready ✅)
+- Add search bar to Header or as dedicated view
+- Create `SearchResults.tsx` component with result cards
+- Show matching text with highlights
+- Display project/session context for each result
+- Allow clicking result to navigate to that session
+- Add keyboard shortcuts (Cmd/Ctrl+K for search)
+
+**Advanced Search Filters**
+- Date range picker
+- Project selector (multi-select)
+- Message type filter (user/assistant/all)
+- Tool usage filter (messages with specific tools)
+- Error filter (messages with errors)
+- Token usage thresholds
+
+**Search Results Features**
+- Pagination for large result sets
+- Sort by relevance, date, project
+- Export search results
+- Save search queries for reuse
+
+### 📊 Enhanced Session Navigation
+
+**Session List Improvements**
+- Search/filter within ProjectTree
+- Multiple sorting options:
+  - Last modified (current default)
+  - Message count
+  - First created
+  - Tool usage frequency
+  - Token usage
+- Quick jump to session by ID input
+- Keyboard navigation in session list
+
+**Session History and Bookmarks**
+- Recently viewed sessions list (last 10)
+- Favorite/bookmark sessions
+- Pin important sessions to top
+- Session tags/labels
+- Custom session notes
+
+**Session Grouping**
+- Group by date (Today, Yesterday, This Week, etc.)
+- Group by tool usage type
+- Group by model used
+- Custom grouping rules
+
+### 🖼️ Content Rendering Enhancements
+
+**Thinking Blocks Visualization**
+- Dedicated collapsible component for thinking content
+- Syntax highlighting for code within thinking
+- Copy thinking content separately
+- Toggle visibility of thinking blocks globally
+
+**Image Support**
+- Decode and display base64 images from tool results
+- Image zoom/lightbox functionality
+- Image download capability
+- Support for multiple image formats
+
+**MCP Tool Results**
+- Specialized renderers for different MCP tools
+- Structured data visualization
+- JSON tree view with expand/collapse
+- Copy MCP results formatted
+
+### 🌐 Platform Support
+
+**Windows Support** (Partial ⚠️)
+- Test and fix path resolution on Windows
+- Handle Windows-specific file permissions
+- Test auto-updater on Windows
+- Create Windows installer/MSI package
+- Document Windows-specific setup
+
+**Linux Support**
+- Add Linux build targets to Tauri config
+- Test on major distros (Ubuntu, Fedora, Arch)
+- Create AppImage/Flatpak packages
+- Handle different home directory structures
+- Document Linux installation
+
+### 💾 Data Management
+
+**Export Functionality**
+- Export conversations to Markdown
+- Export to JSON with formatting
+- Export search results
+- Export analytics data to CSV
+- Batch export multiple sessions
+
+**Data Editing** (Read-Only Currently)
+- Add custom notes to sessions
+- Tag sessions with custom labels
+- Mark sessions as favorites
+- Archive old sessions (hide from view)
+
+**Data Sync**
+- Watch `~/.claude` for changes and auto-refresh
+- Notification when new conversations added
+- Automatic session list updates
+- Handle concurrent updates safely
+
+### 📈 Analytics Enhancements
+
+**More Visualizations**
+- Token usage trends over time (line charts)
+- Tool usage distribution (pie charts)
+- Model usage comparison
+- Cost estimation based on token usage
+- Session duration patterns
+
+**Comparative Analytics**
+- Compare projects side-by-side
+- Compare sessions within a project
+- Time-based comparisons (this month vs last month)
+- Model performance comparisons
+
+**Export Analytics**
+- Export charts as images
+- Export data to CSV/Excel
+- Generate usage reports
+- Custom date ranges for reports
+
+### 🧪 Testing and Quality
+
+**Test Coverage** (Partially Implemented ✅)
+- Unit tests for all components (TODO)
+- Integration tests for Tauri commands (TODO)
+- E2E tests with Playwright (✅ DONE - see `e2e/` directory)
+- Visual regression testing (TODO)
+- Performance benchmarks (TODO)
+
+**Code Quality**
+- Increase TypeScript strictness
+- Add more ESLint rules
+- Implement pre-commit hooks
+- CI/CD pipeline improvements
+
+### 🎨 UI/UX Improvements
+
+**Accessibility**
+- Full keyboard navigation
+- Screen reader support
+- High contrast mode
+- Configurable font sizes
+- ARIA labels for all interactive elements
+
+**Customization**
+- Custom color themes
+- Configurable layout (sidebar width, etc.)
+- Font family selection
+- Code syntax theme selection
+- Density options (compact/comfortable/spacious)
+
+**Performance**
+- Lazy loading for large sessions
+- Background indexing for search
+- Message content caching
+- Optimistic UI updates
+- Web worker for heavy computations
+
+### 🔐 Security and Privacy
+
+**Data Protection**
+- Optional encryption for sensitive sessions
+- Redact sensitive information in UI
+- Export with anonymization option
+- Secure deletion of conversations
+
+### 📱 Additional Features
+
+**Command Palette** (VS Code style)
+- Quick actions with Cmd/Ctrl+Shift+P
+- Navigate to sessions
+- Switch projects
+- Toggle views
+- Run analytics
+
+**Workspace Management**
+- Multiple `~/.claude` directory support
+- Profile switching
+- Workspace-specific settings
+- Import/export workspace configurations
+
+**Integration**
+- Share conversations via links
+- Integration with note-taking apps
+- Export to popular formats (Notion, Obsidian, etc.)
+- API for external tools
+
+## Contributing
+
+When implementing any of the planned enhancements:
+1. Check if backend functionality already exists (e.g., search)
+2. Review existing patterns in similar components
+3. Add TypeScript types to `src/types/index.ts`
+4. Add i18n translations for all UI strings
+5. Update this CLAUDE.md with implementation details
+6. Add tests for new functionality

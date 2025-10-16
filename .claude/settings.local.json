@@ -7,7 +7,11 @@
       "Bash(pnpm build)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git show-ref --tags)"
+      "Bash(git show-ref --tags)",
+      "WebFetch(domain:github.com)",
+      "Bash(git remote add:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": []
