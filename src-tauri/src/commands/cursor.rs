@@ -52,6 +52,22 @@ struct EditorInfo {
     resource: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct WorkspaceComposerData {
+    #[serde(rename = "allComposers")]
+    all_composers: Vec<ComposerMetadata>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ComposerMetadata {
+    #[serde(rename = "composerId")]
+    composer_id: String,
+    #[serde(rename = "lastUpdatedAt")]
+    last_updated_at: Option<i64>, // Unix timestamp in milliseconds
+    #[serde(rename = "createdAt")]
+    created_at: Option<i64>, // Unix timestamp in milliseconds
+}
+
 // ============================================================================
 // CURSOR PATH DETECTION
 // ============================================================================
@@ -166,52 +182,145 @@ pub async fn load_cursor_sessions(cursor_path: String, workspace_id: Option<Stri
     println!("  workspace_id: {:?}", workspace_id);
 
     let cursor_base = PathBuf::from(&cursor_path);
+
+    // Get workspace storage path to read composer metadata
+    let workspace_storage_path = if let Some(ref ws_id) = workspace_id {
+        cursor_base.join("User").join("workspaceStorage").join(ws_id).join("state.vscdb")
+    } else {
+        return Err("workspace_id is required".to_string());
+    };
+
+    println!("  📂 Reading workspace storage: {}", workspace_storage_path.display());
+
+    if !workspace_storage_path.exists() {
+        println!("  ✗ Workspace storage not found");
+        return Ok(vec![]);
+    }
+
+    // Open workspace database to get session list
+    let workspace_conn = Connection::open(&workspace_storage_path)
+        .map_err(|e| format!("Failed to open workspace database: {}", e))?;
+
+    // Read composer.composerData from ItemTable
+    let composer_data_json: String = workspace_conn
+        .query_row(
+            "SELECT value FROM ItemTable WHERE key = 'composer.composerData'",
+            params![],
+            |row| row.get(0)
+        )
+        .map_err(|e| format!("Failed to read composer.composerData: {}", e))?;
+
+    println!("  📋 Parsing composer data ({} chars)...", composer_data_json.len());
+
+    let workspace_composer_data: WorkspaceComposerData = serde_json::from_str(&composer_data_json)
+        .map_err(|e| format!("Failed to parse composer.composerData JSON: {}", e))?;
+
+    println!("  ✓ Found {} composers for this workspace", workspace_composer_data.all_composers.len());
+
     let session_dbs = find_cursor_session_dbs(&cursor_base);
 
-    println!("  📊 Found {} session database(s)", session_dbs.len());
-    for (i, db) in session_dbs.iter().enumerate() {
-        println!("    [{}] {}", i, db.display());
+    if session_dbs.is_empty() {
+        println!("  ✗ No session databases found");
+        return Ok(vec![]);
     }
 
     let mut sessions = Vec::new();
 
-    for session_db in session_dbs {
-        // Get file modification time
-        let last_modified = if let Ok(metadata) = session_db.metadata() {
-            if let Ok(modified) = metadata.modified() {
-                let dt: DateTime<Utc> = modified.into();
+    // Open the global database
+    for global_db in session_dbs {
+        println!("  📂 Opening global database: {}", global_db.display());
+
+        let conn = Connection::open(&global_db)
+            .map_err(|e| format!("Failed to open global database: {}", e))?;
+
+        // Create a map of session_id -> message_count from global database
+        let mut session_message_counts: HashMap<String, usize> = HashMap::new();
+
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT \
+                SUBSTR(key, 10, INSTR(SUBSTR(key, 10), ':') - 1) as session_id, \
+                COUNT(*) as msg_count \
+             FROM cursorDiskKV \
+             WHERE key LIKE 'bubbleId:%' \
+             GROUP BY session_id"
+        ).map_err(|e| format!("Failed to prepare session query: {}", e))?;
+
+        let session_rows = stmt.query_map(params![], |row| {
+            Ok((
+                row.get::<_, String>(0)?, // session_id
+                row.get::<_, i64>(1)?,    // message count
+            ))
+        }).map_err(|e| format!("Failed to query sessions: {}", e))?;
+
+        for row_result in session_rows {
+            let (session_id, message_count) = row_result
+                .map_err(|e| format!("Failed to read session row: {}", e))?;
+            session_message_counts.insert(session_id, message_count as usize);
+        }
+
+        println!("  📊 Found {} sessions in global DB:", session_message_counts.len());
+        for (sid, count) in session_message_counts.iter().take(5) {
+            println!("      - {}: {} messages", sid, count);
+        }
+        if session_message_counts.len() > 5 {
+            println!("      ... and {} more", session_message_counts.len() - 5);
+        }
+
+        println!("  📋 Processing {} workspace composers:", workspace_composer_data.all_composers.len());
+
+        // Process only sessions from this workspace
+        for composer in &workspace_composer_data.all_composers {
+            let session_id = &composer.composer_id;
+            let message_count = session_message_counts.get(session_id).copied().unwrap_or(0);
+
+            if message_count == 0 {
+                println!("    ✗ Session {} has no messages in global DB, skipping", session_id);
+                continue;
+            }
+
+            // Use real timestamps from workspace metadata
+            let last_modified_timestamp = if let Some(last_updated_ms) = composer.last_updated_at {
+                // Convert milliseconds to seconds
+                let dt = chrono::DateTime::from_timestamp(last_updated_ms / 1000, ((last_updated_ms % 1000) * 1_000_000) as u32)
+                    .unwrap_or_else(|| Utc::now());
+                dt.to_rfc3339()
+            } else if let Some(created_ms) = composer.created_at {
+                let dt = chrono::DateTime::from_timestamp(created_ms / 1000, ((created_ms % 1000) * 1_000_000) as u32)
+                    .unwrap_or_else(|| Utc::now());
                 dt.to_rfc3339()
             } else {
                 Utc::now().to_rfc3339()
-            }
-        } else {
-            Utc::now().to_rfc3339()
-        };
+            };
 
-        // Count messages in this session
-        let message_count = count_cursor_messages(&session_db).unwrap_or(0);
+            println!("    ✓ Session: {} ({} messages, timestamp={})",
+                     session_id,
+                     message_count,
+                     last_modified_timestamp);
 
-        if message_count == 0 {
-            continue; // Skip empty sessions
+            // Encode session ID and timestamp in db_path
+            // Format: <db-path>#session=<session-id>#timestamp=<iso-timestamp>
+            let db_path_with_session = format!(
+                "{}#session={}#timestamp={}",
+                global_db.to_string_lossy(),
+                session_id,
+                last_modified_timestamp
+            );
+
+            sessions.push(CursorSession {
+                id: session_id.clone(),
+                workspace_id: workspace_id.clone().unwrap_or_else(|| "unknown".to_string()),
+                project_name: "Cursor Chat".to_string(),
+                db_path: db_path_with_session,
+                message_count,
+                last_modified: last_modified_timestamp,
+            });
         }
-
-        let session_id = session_db
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("unknown")
-            .to_string();
-
-        sessions.push(CursorSession {
-            id: session_id.clone(),
-            workspace_id: workspace_id.clone().unwrap_or_else(|| "unknown".to_string()),
-            project_name: "Cursor Chat".to_string(), // Will be enriched later
-            db_path: session_db.to_string_lossy().to_string(),
-            message_count,
-            last_modified,
-        });
     }
 
-    // Sort by last modified (newest first)
+    println!("  ✅ Total sessions loaded: {}", sessions.len());
+
+    // Sort by last_modified timestamp (newest first)
+    // Sessions are already created with rowid-based timestamps, so this will sort correctly
     sessions.sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
 
     Ok(sessions)
@@ -223,20 +332,56 @@ pub async fn load_cursor_sessions(cursor_path: String, workspace_id: Option<Stri
 
 #[tauri::command]
 pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<UniversalMessage>, String> {
-    let db_path = PathBuf::from(&session_db_path);
+    println!("🔍 [Rust] load_cursor_messages called:");
+    println!("  session_db_path: {}", session_db_path);
+
+    // Parse session ID and timestamp from db_path
+    // Format: <db-path>#session=<session-id>#timestamp=<iso-timestamp>
+    let (db_path_str, session_id, session_timestamp) = if let Some(session_pos) = session_db_path.find("#session=") {
+        let db_path = &session_db_path[..session_pos];
+        let after_session = &session_db_path[session_pos + 9..]; // Skip "#session="
+
+        // Look for timestamp
+        if let Some(timestamp_pos) = after_session.find("#timestamp=") {
+            let session_id = &after_session[..timestamp_pos];
+            let timestamp_str = &after_session[timestamp_pos + 11..]; // Skip "#timestamp="
+
+            // Parse the ISO timestamp
+            let session_time = chrono::DateTime::parse_from_rfc3339(timestamp_str)
+                .map(|dt| dt.with_timezone(&Utc))
+                .unwrap_or_else(|_| Utc::now());
+
+            (db_path, session_id.to_string(), session_time)
+        } else {
+            // No timestamp encoded, use current time as fallback
+            (db_path, after_session.to_string(), Utc::now())
+        }
+    } else {
+        return Err("Session ID not found in db_path. Expected format: <path>#session=<id>#timestamp=<timestamp>".to_string());
+    };
+
+    println!("  📂 Database: {}", db_path_str);
+    println!("  🆔 Session ID: {}", session_id);
+    println!("  ⏰ Session timestamp: {}", session_timestamp.format("%Y-%m-%d %H:%M:%S"));
+
+    let db_path = PathBuf::from(db_path_str);
 
     if !db_path.exists() {
-        return Err(format!("Session database not found: {}", session_db_path));
+        return Err(format!("Session database not found: {}", db_path_str));
     }
 
     let conn = Connection::open(&db_path)
         .map_err(|e| format!("Failed to open database: {}", e))?;
 
-    let mut stmt = conn.prepare("SELECT rowid, key, value FROM cursorDiskKV WHERE key LIKE 'bubbleId:%'")
+    // Filter messages by session ID: bubbleId:<session-id>:<message-id>
+    let query_pattern = format!("bubbleId:{}:%", session_id);
+    println!("  🔎 Query pattern: {}", query_pattern);
+
+    let mut stmt = conn.prepare("SELECT rowid, key, value FROM cursorDiskKV WHERE key LIKE ?1 ORDER BY rowid")
         .map_err(|e| format!("Failed to prepare query: {}", e))?;
 
     let mut messages = Vec::new();
-    let rows = stmt.query_map(params![], |row| {
+    let rows = stmt.query_map(params![query_pattern], |row| {
         Ok((
             row.get::<_, i64>(0)?, // rowid
             row.get::<_, String>(1)?, // key
@@ -244,12 +389,32 @@ pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<Univers
         ))
     }).map_err(|e| format!("Failed to query messages: {}", e))?;
 
-    for (sequence_number, row_result) in rows.enumerate() {
-        let (rowid, key, value_str) = row_result.map_err(|e| format!("Row error: {}", e))?;
+    // Collect rows first to get min/max rowid for timestamp calculation
+    let row_vec: Vec<(i64, String, String)> = rows.filter_map(|r| r.ok()).collect();
+
+    if row_vec.is_empty() {
+        println!("  ✗ No messages found for session {}", session_id);
+        return Ok(messages);
+    }
+
+    let min_rowid = row_vec.first().map(|(rid, _, _)| *rid).unwrap_or(0);
+    let max_rowid = row_vec.last().map(|(rid, _, _)| *rid).unwrap_or(0);
+    let rowid_range = max_rowid - min_rowid;
+
+    println!("  📨 Processing {} messages (rowid range: {} to {}):",
+             row_vec.len(), min_rowid, max_rowid);
+
+    // Calculate message timestamps: spread them backwards from session timestamp
+    // Assume messages span a conversation (estimate based on length)
+    // For each 10 messages, assume ~5 minutes average
+    let estimated_duration_minutes = (row_vec.len() as i64) * 5 / 10;
+    let base_time = session_timestamp; // Use session's actual timestamp as end time
+
+    for (sequence_number, (rowid, key, value_str)) in row_vec.iter().enumerate() {
 
         // Parse bubble JSON
         let bubble: CursorBubble = serde_json::from_str(&value_str)
-            .map_err(|e| format!("Failed to parse bubble JSON: {}", e))?;
+            .map_err(|e| format!("Failed to parse bubble JSON for key {}: {}", key, e))?;
 
         if bubble.text.trim().is_empty() {
             continue;
@@ -262,17 +427,32 @@ pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<Univers
             MessageRole::Assistant
         };
 
+        // Calculate estimated timestamp for this message
+        let message_timestamp = if rowid_range > 0 {
+            let ratio = (*rowid - min_rowid) as f64 / rowid_range as f64;
+            let minutes_offset = (ratio * estimated_duration_minutes as f64) as i64;
+            base_time - chrono::Duration::minutes(estimated_duration_minutes - minutes_offset)
+        } else {
+            base_time
+        };
+
+        println!("    [{}] {:?}: {} chars @ {}",
+                 sequence_number,
+                 role,
+                 bubble.text.len(),
+                 message_timestamp.format("%H:%M:%S"));
+
         // Create universal message
         let message = UniversalMessage {
             // CORE IDENTITY
             id: key.clone(), // Use bubbleId as message ID
-            session_id: session_db_path.clone(),
+            session_id: session_id.clone(),
             project_id: "".to_string(), // Will be filled by caller
             source_id: "".to_string(), // Will be filled by caller
             provider_id: "cursor".to_string(),
 
             // TEMPORAL
-            timestamp: Utc::now().to_rfc3339(), // Cursor doesn't store timestamps per message
+            timestamp: message_timestamp.to_rfc3339(),
             sequence_number: sequence_number as i32,
 
             // ROLE & TYPE
@@ -310,12 +490,15 @@ pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<Univers
                 let mut map = HashMap::new();
                 map.insert("rowid".to_string(), serde_json::json!(rowid));
                 map.insert("bubble_type".to_string(), serde_json::json!(bubble.bubble_type));
+                map.insert("session_id".to_string(), serde_json::json!(session_id.clone()));
                 map
             },
         };
 
         messages.push(message);
     }
+
+    println!("  ✅ Loaded {} messages for session {}", messages.len(), session_id);
 
     Ok(messages)
 }
@@ -334,83 +517,50 @@ fn find_cursor_session_dbs(cursor_base: &PathBuf) -> Vec<PathBuf> {
 
     println!("🔍 [Rust] Searching for session databases:");
 
-    // NEW APPROACH: Cursor stores chat data in workspace state.vscdb files
-    // Each workspace has its own state.vscdb that contains the chat history
-    let workspace_storage = cursor_base.join("User").join("workspaceStorage");
+    // CORRECT APPROACH: Cursor stores ALL chat messages in global storage
+    // User/globalStorage/state.vscdb contains ALL chat data shared across workspaces
+    // Format: bubbleId:<session-id>:<message-id>
+    let global_storage_db = cursor_base.join("User").join("globalStorage").join("state.vscdb");
 
-    println!("  📂 Checking workspaceStorage: {}", workspace_storage.display());
-    if !workspace_storage.exists() {
-        println!("    ✗ workspaceStorage doesn't exist");
+    println!("  📂 Checking global storage: {}", global_storage_db.display());
+
+    if !global_storage_db.exists() {
+        println!("    ✗ Global storage database doesn't exist");
         return session_dbs;
     }
 
-    println!("    ✓ workspaceStorage exists, scanning for state.vscdb files...");
+    println!("    ✓ Global storage exists, checking for chat data...");
 
-    // Scan each workspace directory for state.vscdb
-    for entry in WalkDir::new(&workspace_storage)
-        .min_depth(2)
-        .max_depth(2)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_file())
-    {
-        let path = entry.path();
-        if path.file_name() == Some(std::ffi::OsStr::new("state.vscdb")) {
-            println!("    📄 Checking: {}", path.display());
+    // Check if this database contains chat data
+    if let Ok(conn) = Connection::open(&global_storage_db) {
+        // Verify cursorDiskKV table exists
+        if let Ok(mut stmt) = conn.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='cursorDiskKV'") {
+            if let Ok(table_exists) = stmt.query_row(params![], |row| row.get::<_, String>(0)) {
+                println!("      ✓ cursorDiskKV table found");
 
-            // Check if this database contains chat data by looking for cursorDiskKV table
-            if let Ok(conn) = Connection::open(&path) {
-                // List all tables to debug
-                if let Ok(mut stmt) = conn.prepare("SELECT name FROM sqlite_master WHERE type='table'") {
-                    print!("      Tables: ");
-                    if let Ok(tables) = stmt.query_map(params![], |row| row.get::<_, String>(0)) {
-                        let table_names: Vec<String> = tables.filter_map(|r| r.ok()).collect();
-                        println!("{}", table_names.join(", "));
+                // Count bubble messages
+                let bubble_count = conn
+                    .prepare("SELECT COUNT(*) FROM cursorDiskKV WHERE key LIKE 'bubbleId:%'")
+                    .and_then(|mut stmt| stmt.query_row(params![], |row| row.get::<_, i64>(0)))
+                    .unwrap_or(0);
 
-                        // Check for cursorDiskKV table
-                        if table_names.contains(&"cursorDiskKV".to_string()) {
-                            // Try to query for bubble data
-                            let has_chat_data = conn
-                                .prepare("SELECT COUNT(*) FROM cursorDiskKV WHERE key LIKE 'bubbleId:%'")
-                                .and_then(|mut stmt| stmt.query_row(params![], |row| row.get::<_, i64>(0)))
-                                .unwrap_or(0);
+                println!("      📊 Total bubble messages: {}", bubble_count);
 
-                            println!("      cursorDiskKV found! Bubble count: {}", has_chat_data);
-
-                            // DEBUG: Show what keys DO exist (first 5)
-                            if has_chat_data == 0 {
-                                if let Ok(mut stmt) = conn.prepare("SELECT key FROM cursorDiskKV LIMIT 5") {
-                                    if let Ok(keys) = stmt.query_map(params![], |row| row.get::<_, String>(0)) {
-                                        let sample_keys: Vec<String> = keys.filter_map(|r| r.ok()).collect();
-                                        if !sample_keys.is_empty() {
-                                            println!("      Sample keys: {}", sample_keys.join(", "));
-                                        } else {
-                                            println!("      ✗ Table is empty");
-                                        }
-                                    }
-                                }
-                            }
-
-                            if has_chat_data > 0 {
-                                println!("      ✓ Has chat messages!");
-                                session_dbs.push(path.to_path_buf());
-                            } else {
-                                println!("      ✗ No bubble messages with pattern 'bubbleId:%'");
-                            }
-                        } else {
-                            println!("      ✗ No cursorDiskKV table");
-                        }
-                    }
+                if bubble_count > 0 {
+                    println!("      ✓ Has chat messages!");
+                    session_dbs.push(global_storage_db);
                 } else {
-                    println!("      ✗ Failed to query tables");
+                    println!("      ✗ No bubble messages found");
                 }
             } else {
-                println!("      ✗ Failed to open database");
+                println!("      ✗ cursorDiskKV table not found");
             }
         }
+    } else {
+        println!("      ✗ Failed to open global storage database");
     }
 
-    println!("  📊 Total workspace databases with chat data: {}", session_dbs.len());
+    println!("  📊 Total session databases: {}", session_dbs.len());
     session_dbs
 }
 
