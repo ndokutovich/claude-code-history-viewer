@@ -1,4 +1,4 @@
-# GitHub Releases에서 Tauri 업데이터를 위한 메타데이터 자동 생성
+# Automatically generate updater metadata from GitHub Releases for Tauri
 name: Release with Updater Metadata
 
 on:
@@ -55,7 +55,7 @@ jobs:
                   repo: context.repo.repo,
                   tag_name: tagName,
                   name: `Claude Code History Viewer v${process.env.PACKAGE_VERSION}`,
-                  body: '🎉 새로운 버전이 출시되었습니다! 자세한 변경사항은 아래를 확인하세요.',
+                  body: '🎉 A new version has been released! Check the detailed changes below.',
                   generate_release_notes: true,
                   draft: true,
                   prerelease: false,
@@ -154,7 +154,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 'latest' 대신 ID로 특정 릴리스를 조회하여 Race Condition을 방지하고 안정성을 높입니다.
+      # Query specific release by ID instead of 'latest' to prevent race conditions and improve stability.
       - name: Get specific release info by ID
         id: release
         run: |
@@ -166,7 +166,7 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${{ github.repository }}/releases/${{ needs.create-release.outputs.release_id }}")
 
-          # curl 호출이 실패했거나 유효한 JSON이 아닌 경우 워크플로우를 중단시킵니다.
+          # Abort workflow if curl call fails or returns invalid JSON.
           if ! echo "$RELEASE_INFO" | jq . > /dev/null 2>&1; then
             echo "::error::Failed to fetch or parse release information from GitHub API."
             echo "Response was: $RELEASE_INFO"
@@ -176,7 +176,7 @@ jobs:
           echo "✅ Successfully fetched release information"
           echo "🏷️ Release tag: $(echo "$RELEASE_INFO" | jq -r '.tag_name')"
 
-          # 셸 인용 문제를 피하기 위해 heredoc 문법으로 안전하게 출력을 설정합니다.
+          # Use heredoc syntax to safely set output and avoid shell quoting issues.
           echo "release_info<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_INFO" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -187,7 +187,7 @@ jobs:
           script: |
             const fs = require('fs');
 
-            // GitHub API로 안전하게 릴리스 정보 가져오기
+            // Safely fetch release information via GitHub API
             const release = await github.rest.repos.getRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -201,7 +201,7 @@ jobs:
             console.log(`Processing release version: ${version}`);
             console.log(`Publish date: ${pubDate}`);
 
-            // 플랫폼별 에셋 찾기
+            // Find platform-specific assets
             const platforms = {};
 
             // macOS (darwin-universal)
@@ -282,7 +282,7 @@ jobs:
               console.log(`Linux AppImage: ${appImageAsset.browser_download_url}`);
             }
 
-            // latest.json 생성
+            // Generate latest.json
             const latestJson = {
               version: version,
               notes: releaseData.body || '',
