@@ -71,6 +71,14 @@ export interface DetectionPattern {
 // ENUMS
 // ============================================================================
 
+export enum ProviderID {
+  CLAUDE_CODE = 'claude-code',
+  CURSOR = 'cursor',
+  COPILOT = 'copilot',
+  CLINE = 'cline',
+  AIDER = 'aider',
+}
+
 export enum MessageRole {
   USER = 'user',
   ASSISTANT = 'assistant',

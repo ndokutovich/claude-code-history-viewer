@@ -7,6 +7,7 @@ import { SimpleUpdateManager } from "./components/SimpleUpdateManager";
 import { SearchView } from "./components/SearchView";
 import { DebugConsole } from "./components/DebugConsole";
 import { useAppStore } from "./store/useAppStore";
+import { useSourceStore } from "./store/useSourceStore";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { getSessionTitle } from "./utils/sessionUtils";
 
@@ -55,6 +56,14 @@ function App() {
   const { t: tMessages } = useTranslation("messages");
   const { language, loadLanguage } = useLanguageStore();
 
+  // Source store for multi-source management
+  const {
+    sources,
+    initializeSources,
+    isLoadingSources,
+    error: sourceError,
+  } = useSourceStore();
+
   // Maintain current view when session is selected (automatic data update handled in useAnalytics hook)
   const handleSessionSelect = async (session: ClaudeSession | null) => {
     await selectSession(session);
@@ -62,17 +71,20 @@ function App() {
   };
 
   useEffect(() => {
-    // Initialize app after loading language settings
+    // Initialize sources and app after loading language settings
     loadLanguage()
-      .then(() => {
-        initializeApp();
+      .then(async () => {
+        // Initialize sources first (this will auto-detect Claude folder if needed)
+        await initializeSources();
+        // Then initialize app with legacy behavior for backwards compatibility
+        await initializeApp();
       })
       .catch((error) => {
         console.error("Failed to load language:", error);
-        // Proceed with app initialization using default language
-        initializeApp();
+        // Proceed with initialization using default language
+        initializeSources().then(() => initializeApp());
       });
-  }, [initializeApp, loadLanguage]);
+  }, [initializeApp, initializeSources, loadLanguage]);
 
   // Cmd+F keyboard shortcut
   useEffect(() => {

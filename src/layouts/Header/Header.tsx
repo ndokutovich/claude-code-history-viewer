@@ -5,11 +5,14 @@ import {
   MessageSquare,
   Activity,
   Search,
+  Database,
 } from "lucide-react";
+import { useState } from "react";
 
 import { TooltipButton } from "@/shared/TooltipButton";
 import { useAppStore } from "@/store/useAppStore";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { SourcesModal } from "@/components/modals/SourcesModal";
 
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
@@ -20,6 +23,8 @@ export const Header = () => {
   const { t } = useTranslation("common");
   const { t: tComponents } = useTranslation("components");
   const { t: tMessages } = useTranslation("messages");
+
+  const [isSourcesModalOpen, setIsSourcesModalOpen] = useState(false);
 
   const {
     selectedProject,
@@ -99,6 +104,18 @@ export const Header = () => {
           )}
 
           <div className="flex items-center space-x-2">
+            {/* Sources Button */}
+            <TooltipButton
+              content="Data Sources"
+              onClick={() => setIsSourcesModalOpen(true)}
+              className={cn(
+                "p-2 rounded-lg transition-colors",
+                COLORS.ui.interactive.hover
+              )}
+            >
+              <Database className={cn("w-5 h-5", COLORS.ui.text.primary)} />
+            </TooltipButton>
+
             <TooltipButton
               content={t("search.title")}
               onClick={() => {
@@ -226,6 +243,12 @@ export const Header = () => {
           </div>
         </div>
       </div>
+
+      {/* Sources Modal */}
+      <SourcesModal
+        open={isSourcesModalOpen}
+        onOpenChange={setIsSourcesModalOpen}
+      />
     </header>
   );
 };
