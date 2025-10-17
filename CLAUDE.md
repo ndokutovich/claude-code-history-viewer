@@ -14,10 +14,11 @@ First, You must use command "gemini -p {prompt}" and then use the result that re
 - `pnpm <command>` → `npm run <command>` or `yarn <command>` or `bun run <command>`
 - The build system automatically detects your package manager via `scripts/run-with-pm.cjs`
 
-가독성이 높은 설계 추구
-예측 가능성이 높은 설계 추구
-높은 응집도 설계 추구
-낮은 결합도 설계 추구
+**Design Principles:**
+- Pursue highly readable design
+- Pursue highly predictable design
+- Pursue high cohesion design
+- Pursue low coupling design
 
 **⚠️ Platform Note**: This application is officially tested and supported on **macOS only**. Windows and Linux builds may compile but functionality is not guaranteed. See "Platform and Deployment" section for details.
 
