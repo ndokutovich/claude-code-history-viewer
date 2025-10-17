@@ -1,5 +1,5 @@
 // src/components/ProjectTree.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Folder,
   Wrench,
@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronRight,
   MessageCircle,
+  X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ClaudeProject, ClaudeSession } from "../types";
@@ -19,21 +20,36 @@ interface ProjectTreeProps {
   sessions: ClaudeSession[];
   selectedProject: ClaudeProject | null;
   selectedSession: ClaudeSession | null;
-  onProjectSelect: (project: ClaudeProject) => void;
-  onSessionSelect: (session: ClaudeSession) => void;
+  onProjectSelect: (project: ClaudeProject | null) => void;
+  onSessionSelect: (session: ClaudeSession | null) => void;
+  onClearSelection: () => void;
   isLoading: boolean;
 }
 
 export const ProjectTree: React.FC<ProjectTreeProps> = ({
   projects,
   sessions,
+  selectedProject,
   selectedSession,
   onProjectSelect,
   onSessionSelect,
+  onClearSelection,
   isLoading,
 }) => {
   const [expandedProject, setExpandedProject] = useState("");
   const { t, i18n } = useTranslation();
+
+  // ESC key to clear selection
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClearSelection();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClearSelection]);
 
   const formatTimeAgo = (dateStr: string) => {
     try {
@@ -73,6 +89,31 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
   return (
     <div className="max-w-80 w-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col h-full">
+      {/* Selection Header with Clear Button */}
+      {(selectedProject || selectedSession) && (
+        <div className="px-4 py-2 border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex items-center justify-between">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {selectedSession
+                ? t("components:session.selected", "Selected session")
+                : t("components:project.selected", "Selected project")}
+            </p>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+              {selectedSession
+                ? getSessionTitle(selectedSession)
+                : selectedProject?.name}
+            </p>
+          </div>
+          <button
+            onClick={onClearSelection}
+            className="ml-2 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            title={t("components:selection.clear", "Clear selection (ESC)")}
+          >
+            <X className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+          </button>
+        </div>
+      )}
+
       {/* Projects List */}
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         {projects.length === 0 ? (
@@ -127,8 +168,12 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                           <button
                             key={session.session_id}
                             onClick={() => {
-                              if (isSessionSelected) return;
-                              onSessionSelect(session);
+                              // Toggle: click selected session to deselect
+                              if (isSessionSelected) {
+                                onSessionSelect(null);
+                              } else {
+                                onSessionSelect(session);
+                              }
                             }}
                             className={cn(
                               "w-full text-left p-3 rounded-lg transition-colors",

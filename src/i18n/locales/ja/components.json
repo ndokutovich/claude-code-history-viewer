@@ -3,7 +3,8 @@
     "title": "プロジェクト：",
     "notFound": "プロジェクトが見つかりません",
     "selectToView": "分析を表示するにはプロジェクトを選択してください",
-    "count": "プロジェクト：{{count}}件"
+    "count": "プロジェクト：{{count}}件",
+    "selected": "選択されたプロジェクト"
   },
   "session": {
     "title": "セッション：",
@@ -15,7 +16,8 @@
     "refresh": "セッションを更新",
     "scanning": "プロジェクトをスキャン中...",
     "loading": "セッションを読み込み中...",
-    "count": "セッション：{{count}}件"
+    "count": "セッション：{{count}}件",
+    "selected": "選択されたセッション"
   },
   "message": {
     "user": "ユーザー",
@@ -570,5 +572,8 @@
   "upToDateNotification": {
     "upToDate": "既に最新です",
     "currentVersionLatest": "現在のバージョン {{version}} が最新です"
+  },
+  "selection": {
+    "clear": "選択をクリア (ESC)"
   }
 }

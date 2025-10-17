@@ -36,9 +36,10 @@ interface AppStore extends AppState {
   // Actions - Data Loading
   initializeApp: () => Promise<void>;
   scanProjects: () => Promise<void>;
-  selectProject: (project: ClaudeProject) => Promise<void>;
+  selectProject: (project: ClaudeProject | null) => Promise<void>;
   loadProjectSessions: (projectPath: string, excludeSidechain?: boolean) => Promise<ClaudeSession[]>;
-  selectSession: (session: ClaudeSession, pageSize?: number) => Promise<void>;
+  selectSession: (session: ClaudeSession | null, pageSize?: number) => Promise<void>;
+  clearSelection: () => void;
   loadMoreMessages: () => Promise<void>;
   refreshCurrentSession: () => Promise<void>;
   searchMessages: (query: string, filters?: SearchFilters) => Promise<void>;
@@ -205,7 +206,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
-  selectProject: async (project: ClaudeProject) => {
+  selectProject: async (project: ClaudeProject | null) => {
+    // Clear selection if null is passed
+    if (project === null) {
+      set({
+        selectedProject: null,
+        sessions: [],
+        selectedSession: null,
+        messages: [],
+      });
+      return;
+    }
+
     set({
       selectedProject: project,
       sessions: [],
@@ -241,9 +253,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   selectSession: async (
-    session: ClaudeSession,
+    session: ClaudeSession | null,
     pageSize = DEFAULT_PAGE_SIZE
   ) => {
+    // Clear selection if null is passed
+    if (session === null) {
+      set({
+        selectedSession: null,
+        messages: [],
+        pagination: {
+          currentOffset: 0,
+          pageSize,
+          totalCount: 0,
+          hasMore: false,
+          isLoadingMore: false,
+        },
+      });
+      return;
+    }
+
     set({
       selectedSession: session,
       messages: [],
@@ -290,6 +318,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
         isLoadingMessages: false,
       });
     }
+  },
+
+  clearSelection: () => {
+    set({
+      selectedProject: null,
+      selectedSession: null,
+      sessions: [],
+      messages: [],
+      pagination: {
+        currentOffset: 0,
+        pageSize: DEFAULT_PAGE_SIZE,
+        totalCount: 0,
+        hasMore: false,
+        isLoadingMore: false,
+      },
+    });
   },
 
   loadMoreMessages: async () => {

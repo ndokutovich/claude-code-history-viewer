@@ -41,6 +41,7 @@ function App() {
     initializeApp,
     selectProject,
     selectSession,
+    clearSelection,
     loadMoreMessages,
   } = useAppStore();
 
@@ -55,7 +56,7 @@ function App() {
   const { language, loadLanguage } = useLanguageStore();
 
   // Maintain current view when session is selected (automatic data update handled in useAnalytics hook)
-  const handleSessionSelect = async (session: ClaudeSession) => {
+  const handleSessionSelect = async (session: ClaudeSession | null) => {
     await selectSession(session);
     // Data update is automatically handled in useAnalytics hook's useEffect
   };
@@ -122,7 +123,13 @@ function App() {
   }, [language, i18nInstance]);
 
   // Project selection handler (includes analytics state reset)
-  const handleProjectSelect = async (project: ClaudeProject) => {
+  const handleProjectSelect = async (project: ClaudeProject | null) => {
+    // If null, just clear selection
+    if (project === null) {
+      await selectProject(null);
+      return;
+    }
+
     const wasAnalyticsOpen = computed.isAnalyticsView;
     const wasTokenStatsOpen = computed.isTokenStatsView;
 
@@ -216,6 +223,7 @@ function App() {
             selectedSession={selectedSession}
             onProjectSelect={handleProjectSelect}
             onSessionSelect={handleSessionSelect}
+            onClearSelection={clearSelection}
             isLoading={isLoadingProjects || isLoadingSessions}
           />
 

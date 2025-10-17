@@ -3,7 +3,8 @@
     "title": "專案：",
     "notFound": "未找到專案",
     "selectToView": "選擇專案以查看分析",
-    "count": "專案：{{count}}個"
+    "count": "專案：{{count}}個",
+    "selected": "已選專案"
   },
   "session": {
     "title": "會話：",
@@ -15,7 +16,8 @@
     "refresh": "重新整理會話",
     "scanning": "正在掃描專案...",
     "loading": "正在載入會話...",
-    "count": "會話：{{count}}個"
+    "count": "會話：{{count}}個",
+    "selected": "已選會話"
   },
   "message": {
     "user": "使用者",
@@ -585,5 +587,8 @@
   "upToDateNotification": {
     "upToDate": "已是最新版本",
     "currentVersionLatest": "目前版本 {{version}} 為最新版本"
+  },
+  "selection": {
+    "clear": "清除選擇 (ESC)"
   }
 }

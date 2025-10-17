@@ -3,7 +3,8 @@
     "title": "Проект:",
     "notFound": "Проект не найден",
     "selectToView": "Выберите проект для просмотра аналитики",
-    "count": "Проектов: {{count}}"
+    "count": "Проектов: {{count}}",
+    "selected": "Выбранный проект"
   },
   "session": {
     "title": "Сеанс:",
@@ -15,7 +16,8 @@
     "refresh": "Обновить сеансы",
     "scanning": "Сканирование проектов...",
     "loading": "Загрузка сеансов...",
-    "count": "Сеансов: {{count}}"
+    "count": "Сеансов: {{count}}",
+    "selected": "Выбранная сессия"
   },
   "message": {
     "user": "Пользователь",
@@ -570,5 +572,8 @@
   "upToDateNotification": {
     "upToDate": "Уже обновлено",
     "currentVersionLatest": "Текущая версия {{version}} является последней"
+  },
+  "selection": {
+    "clear": "Очистить выбор (ESC)"
   }
 }

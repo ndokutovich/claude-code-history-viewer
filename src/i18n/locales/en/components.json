@@ -3,7 +3,8 @@
     "title": "Project:",
     "notFound": "Project not found",
     "selectToView": "Select a project to view analytics",
-    "count": "Projects: {{count}}"
+    "count": "Projects: {{count}}",
+    "selected": "Selected project"
   },
   "session": {
     "title": "Session:",
@@ -15,7 +16,11 @@
     "refresh": "Refresh Sessions",
     "scanning": "Scanning projects...",
     "loading": "Loading sessions...",
-    "count": "Sessions: {{count}}"
+    "count": "Sessions: {{count}}",
+    "selected": "Selected session"
+  },
+  "selection": {
+    "clear": "Clear selection (ESC)"
   },
   "message": {
     "user": "User",
