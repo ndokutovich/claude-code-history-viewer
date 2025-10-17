@@ -510,7 +510,21 @@
       "light": "Светлая",
       "dark": "Тёмная",
       "system": "Системная"
-    }
+    },
+    "updateSettings": "Настройки обновлений",
+    "autoUpdateCheck": "Автоматическая проверка обновлений",
+    "checkInterval": "Интервал проверки",
+    "everyAppStartup": "При каждом запуске приложения",
+    "onceADay": "Один раз в день",
+    "onceAWeek": "Один раз в неделю",
+    "disableWhenOffline": "Отключить проверку в автономном режиме",
+    "criticalUpdateNotifications": "Уведомления о критических обновлениях",
+    "skippedVersions": "Пропущенные версии",
+    "clearAll": "Очистить всё",
+    "checkingForUpdates": "Проверка обновлений...",
+    "checkForUpdatesNow": "Проверить обновления сейчас",
+    "clearCache": "Очистить кэш",
+    "cacheCleared": "Кэш обновлений очищен."
   },
   "assistantMessageDetails": {
     "model": "Модель",
