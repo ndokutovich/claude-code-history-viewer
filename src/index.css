@@ -90,6 +90,115 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: rgb(107 114 128);
   }
+
+  /* Command output markdown styling - Success (Green) */
+  [data-command-output="success"] code,
+  .command-output-success code {
+    background-color: rgb(187 247 208) !important; /* green-200 */
+    color: rgb(20 83 45) !important; /* green-900 */
+    padding: 0.125rem 0.25rem !important;
+    border-radius: 0.25rem !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  }
+
+  [data-command-output="success"] strong,
+  .command-output-success strong {
+    color: rgb(20 83 45) !important; /* green-900 */
+    font-weight: 600 !important;
+  }
+
+  [data-command-output="success"] h1,
+  [data-command-output="success"] h2,
+  [data-command-output="success"] h3,
+  .command-output-success h1,
+  .command-output-success h2,
+  .command-output-success h3 {
+    color: rgb(20 83 45) !important; /* green-900 */
+    font-weight: 700 !important;
+  }
+
+  [data-command-output="success"] a,
+  .command-output-success a {
+    color: rgb(22 101 52) !important; /* green-800 */
+    text-decoration: underline !important;
+  }
+
+  /* Command output markdown styling - Error (Red) */
+  [data-command-output="error"] code,
+  .command-output-error code {
+    background-color: rgb(254 202 202) !important; /* red-200 */
+    color: rgb(127 29 29) !important; /* red-900 */
+    padding: 0.125rem 0.25rem !important;
+    border-radius: 0.25rem !important;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  }
+
+  [data-command-output="error"] strong,
+  .command-output-error strong {
+    color: rgb(127 29 29) !important; /* red-900 */
+    font-weight: 600 !important;
+  }
+
+  [data-command-output="error"] h1,
+  [data-command-output="error"] h2,
+  [data-command-output="error"] h3,
+  .command-output-error h1,
+  .command-output-error h2,
+  .command-output-error h3 {
+    color: rgb(127 29 29) !important; /* red-900 */
+    font-weight: 700 !important;
+  }
+
+  [data-command-output="error"] a,
+  .command-output-error a {
+    color: rgb(153 27 27) !important; /* red-800 */
+    text-decoration: underline !important;
+  }
+
+  /* Dark mode variants */
+  .dark [data-command-output="success"] code,
+  .dark .command-output-success code {
+    background-color: rgb(22 101 52) !important; /* green-800 */
+    color: rgb(220 252 231) !important; /* green-100 */
+  }
+
+  .dark [data-command-output="success"] strong,
+  .dark [data-command-output="success"] h1,
+  .dark [data-command-output="success"] h2,
+  .dark [data-command-output="success"] h3,
+  .dark .command-output-success strong,
+  .dark .command-output-success h1,
+  .dark .command-output-success h2,
+  .dark .command-output-success h3 {
+    color: rgb(220 252 231) !important; /* green-100 */
+  }
+
+  .dark [data-command-output="success"] a,
+  .dark .command-output-success a {
+    color: rgb(134 239 172) !important; /* green-300 */
+  }
+
+  .dark [data-command-output="error"] code,
+  .dark .command-output-error code {
+    background-color: rgb(153 27 27) !important; /* red-800 */
+    color: rgb(254 226 226) !important; /* red-100 */
+  }
+
+  .dark [data-command-output="error"] strong,
+  .dark [data-command-output="error"] h1,
+  .dark [data-command-output="error"] h2,
+  .dark [data-command-output="error"] h3,
+  .dark .command-output-error strong,
+  .dark .command-output-error h1,
+  .dark .command-output-error h2,
+  .dark .command-output-error h3 {
+    color: rgb(254 226 226) !important; /* red-100 */
+  }
+
+  .dark [data-command-output="error"] a,
+  .dark .command-output-error a {
+    color: rgb(252 165 165) !important; /* red-300 */
+  }
 }
 
 @theme inline {

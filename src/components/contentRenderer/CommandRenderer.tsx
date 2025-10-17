@@ -1,6 +1,5 @@
 import { Terminal, CheckCircle, AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import Markdown from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "../../utils/cn";
@@ -87,9 +86,6 @@ export const CommandRenderer = ({ text }: Props) => {
     }
   }
 
-  console.log("Extracted command group:", commandGroup);
-  console.log("Extracted output tags:", outputTags);
-
   // 모든 태그 제거
   const withoutCommands = text
     .replace(commandNameRegex, "")
@@ -160,11 +156,24 @@ export const CommandRenderer = ({ text }: Props) => {
       {/* 출력 태그들 */}
       {outputTags.map((output, index) => {
         const isError = output.type === "stderr";
-        const bgColor = isError ? "bg-red-50" : "bg-green-50";
-        const borderColor = isError ? "border-red-200" : "border-green-200";
-        const textColor = isError ? "text-red-800" : "text-green-800";
-        const contentBg = isError ? "bg-red-100" : "bg-green-100";
-        const contentText = isError ? "text-red-700" : "text-green-700";
+
+        // Light and dark mode compatible colors
+        const bgColor = isError
+          ? "bg-red-50 dark:bg-red-900/30"
+          : "bg-green-50 dark:bg-green-900/30";
+        const borderColor = isError
+          ? "border-red-200 dark:border-red-700"
+          : "border-green-200 dark:border-green-700";
+        const textColor = isError
+          ? "text-red-800 dark:text-red-300"
+          : "text-green-800 dark:text-green-300";
+        const contentBg = isError
+          ? "bg-red-100 dark:bg-red-900/40"
+          : "bg-green-100 dark:bg-green-900/40";
+        const contentText = isError
+          ? "text-red-700 dark:text-red-200"
+          : "text-green-700 dark:text-green-200";
+
         const Icon = isError ? AlertCircle : CheckCircle;
         const label = isError
           ? t("commandRenderer.errorOutput")
@@ -183,13 +192,18 @@ export const CommandRenderer = ({ text }: Props) => {
             </div>
 
             <div
+              data-command-output={isError ? "error" : "success"}
               className={cn(
                 `p-2 rounded max-h-80 overflow-y-auto text-sm`,
                 contentBg,
-                contentText
+                contentText,
+                // Use custom CSS classes for markdown element styling (defined in index.css)
+                isError ? "command-output-error" : "command-output-success"
               )}
             >
-              <Markdown remarkPlugins={[remarkGfm]}>{output.content}</Markdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {output.content}
+              </ReactMarkdown>
             </div>
           </div>
         );
