@@ -10,7 +10,7 @@ export type { DetectionResult } from './registry/AdapterRegistry';
 
 // Providers (as implemented):
 export { ClaudeCodeAdapter } from './providers/ClaudeCodeAdapter';
+export { CursorAdapter } from './providers/CursorAdapter';
 
 // Future providers:
-// export { CursorAdapter } from './providers/CursorAdapter';
 // export { GitHubCopilotAdapter } from './providers/GitHubCopilotAdapter';

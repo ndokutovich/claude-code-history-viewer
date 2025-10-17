@@ -161,8 +161,17 @@ pub async fn scan_cursor_workspaces(cursor_path: String) -> Result<Vec<CursorWor
 
 #[tauri::command]
 pub async fn load_cursor_sessions(cursor_path: String, workspace_id: Option<String>) -> Result<Vec<CursorSession>, String> {
+    println!("🔍 [Rust] load_cursor_sessions called:");
+    println!("  cursor_path: {}", cursor_path);
+    println!("  workspace_id: {:?}", workspace_id);
+
     let cursor_base = PathBuf::from(&cursor_path);
     let session_dbs = find_cursor_session_dbs(&cursor_base);
+
+    println!("  📊 Found {} session database(s)", session_dbs.len());
+    for (i, db) in session_dbs.iter().enumerate() {
+        println!("    [{}] {}", i, db.display());
+    }
 
     let mut sessions = Vec::new();
 
@@ -323,33 +332,85 @@ struct ProjectInfo {
 fn find_cursor_session_dbs(cursor_base: &PathBuf) -> Vec<PathBuf> {
     let mut session_dbs = Vec::new();
 
-    // Possible locations for session databases
-    let extension_dirs = vec![
-        cursor_base.join("User").join("globalStorage").join("cursor.cursor"),
-        cursor_base.join("User").join("globalStorage").join("cursor"),
-    ];
+    println!("🔍 [Rust] Searching for session databases:");
 
-    for extension_dir in extension_dirs {
-        if !extension_dir.exists() {
-            continue;
-        }
+    // NEW APPROACH: Cursor stores chat data in workspace state.vscdb files
+    // Each workspace has its own state.vscdb that contains the chat history
+    let workspace_storage = cursor_base.join("User").join("workspaceStorage");
 
-        // Find all .sqlite files
-        for entry in WalkDir::new(&extension_dir)
-            .max_depth(1)
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().is_file())
-        {
-            let path = entry.path();
-            if let Some(ext) = path.extension() {
-                if ext == "sqlite" || ext == "db" || ext == "sqlite3" {
-                    session_dbs.push(path.to_path_buf());
+    println!("  📂 Checking workspaceStorage: {}", workspace_storage.display());
+    if !workspace_storage.exists() {
+        println!("    ✗ workspaceStorage doesn't exist");
+        return session_dbs;
+    }
+
+    println!("    ✓ workspaceStorage exists, scanning for state.vscdb files...");
+
+    // Scan each workspace directory for state.vscdb
+    for entry in WalkDir::new(&workspace_storage)
+        .min_depth(2)
+        .max_depth(2)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_type().is_file())
+    {
+        let path = entry.path();
+        if path.file_name() == Some(std::ffi::OsStr::new("state.vscdb")) {
+            println!("    📄 Checking: {}", path.display());
+
+            // Check if this database contains chat data by looking for cursorDiskKV table
+            if let Ok(conn) = Connection::open(&path) {
+                // List all tables to debug
+                if let Ok(mut stmt) = conn.prepare("SELECT name FROM sqlite_master WHERE type='table'") {
+                    print!("      Tables: ");
+                    if let Ok(tables) = stmt.query_map(params![], |row| row.get::<_, String>(0)) {
+                        let table_names: Vec<String> = tables.filter_map(|r| r.ok()).collect();
+                        println!("{}", table_names.join(", "));
+
+                        // Check for cursorDiskKV table
+                        if table_names.contains(&"cursorDiskKV".to_string()) {
+                            // Try to query for bubble data
+                            let has_chat_data = conn
+                                .prepare("SELECT COUNT(*) FROM cursorDiskKV WHERE key LIKE 'bubbleId:%'")
+                                .and_then(|mut stmt| stmt.query_row(params![], |row| row.get::<_, i64>(0)))
+                                .unwrap_or(0);
+
+                            println!("      cursorDiskKV found! Bubble count: {}", has_chat_data);
+
+                            // DEBUG: Show what keys DO exist (first 5)
+                            if has_chat_data == 0 {
+                                if let Ok(mut stmt) = conn.prepare("SELECT key FROM cursorDiskKV LIMIT 5") {
+                                    if let Ok(keys) = stmt.query_map(params![], |row| row.get::<_, String>(0)) {
+                                        let sample_keys: Vec<String> = keys.filter_map(|r| r.ok()).collect();
+                                        if !sample_keys.is_empty() {
+                                            println!("      Sample keys: {}", sample_keys.join(", "));
+                                        } else {
+                                            println!("      ✗ Table is empty");
+                                        }
+                                    }
+                                }
+                            }
+
+                            if has_chat_data > 0 {
+                                println!("      ✓ Has chat messages!");
+                                session_dbs.push(path.to_path_buf());
+                            } else {
+                                println!("      ✗ No bubble messages with pattern 'bubbleId:%'");
+                            }
+                        } else {
+                            println!("      ✗ No cursorDiskKV table");
+                        }
+                    }
+                } else {
+                    println!("      ✗ Failed to query tables");
                 }
+            } else {
+                println!("      ✗ Failed to open database");
             }
         }
     }
 
+    println!("  📊 Total workspace databases with chat data: {}", session_dbs.len());
     session_dbs
 }
 

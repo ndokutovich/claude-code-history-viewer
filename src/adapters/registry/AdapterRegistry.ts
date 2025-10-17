@@ -4,6 +4,7 @@
 import type { IConversationAdapter } from '../base/IAdapter';
 import type { DetectionScore, ProviderDefinition } from '../../types/providers';
 import { ClaudeCodeAdapter } from '../providers/ClaudeCodeAdapter';
+import { CursorAdapter } from '../providers/CursorAdapter';
 
 // ============================================================================
 // DETECTION RESULT
@@ -79,7 +80,7 @@ export class AdapterRegistry {
     // Built-in adapters
     const adapters: IConversationAdapter[] = [
       new ClaudeCodeAdapter(), // ✅ Phase 4 COMPLETE
-      // new CursorAdapter(),      // Phase 6 (TODO)
+      new CursorAdapter(),     // ✅ v2.0.0 COMPLETE
     ];
 
     for (const adapter of adapters) {

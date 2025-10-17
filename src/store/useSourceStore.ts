@@ -133,26 +133,61 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
   // ------------------------------------------------------------------------
 
   autoDetectDefaultSource: async () => {
-    try {
-      // Try to get default Claude Code folder
-      const claudePath = await invoke<string>('get_claude_folder_path');
+    console.log('🔍 Auto-detecting conversation data sources...');
+    const detectedSources: string[] = [];
 
-      // Validate it
+    // Try to detect Claude Code folder
+    try {
+      const claudePath = await invoke<string>('get_claude_folder_path');
       const validation = await get().validatePath(claudePath);
 
-      if (validation.isValid && validation.providerId) {
-        // Add as default source
-        const source = await get().addSource(claudePath, 'Default (Auto-detected)');
-        await get().setDefaultSource(source.id);
-
-        console.log('✅ Auto-detected and added default Claude Code source');
-      } else {
-        throw new Error('Auto-detected path is not valid');
+      if (validation.isValid && validation.providerId === 'claude-code') {
+        console.log(`  ✓ Found Claude Code at: ${claudePath}`);
+        detectedSources.push(claudePath);
       }
     } catch (error) {
-      console.warn('Auto-detection failed:', error);
-      throw error;
+      console.log('  ✗ Claude Code not found:', (error as Error).message);
     }
+
+    // Try to detect Cursor folder
+    try {
+      const cursorPath = await invoke<string>('get_cursor_path');
+      const validation = await get().validatePath(cursorPath);
+
+      if (validation.isValid && validation.providerId === 'cursor') {
+        console.log(`  ✓ Found Cursor at: ${cursorPath}`);
+        detectedSources.push(cursorPath);
+      }
+    } catch (error) {
+      console.log('  ✗ Cursor not found:', (error as Error).message);
+    }
+
+    // Add all detected sources
+    if (detectedSources.length === 0) {
+      console.warn('⚠️  No conversation data sources found');
+      throw new Error('No conversation data sources found. Please add a source manually.');
+    }
+
+    console.log(`📦 Adding ${detectedSources.length} detected source(s)...`);
+
+    for (let i = 0; i < detectedSources.length; i++) {
+      const path = detectedSources[i];
+      if (!path) continue; // Skip undefined paths
+
+      try {
+        const source = await get().addSource(path, `Auto-detected (${i + 1})`);
+
+        // Set first source as default
+        if (i === 0) {
+          await get().setDefaultSource(source.id);
+          console.log(`  ✓ Set ${source.name} as default source`);
+        }
+      } catch (error) {
+        console.error(`  ✗ Failed to add source ${path}:`, error);
+      }
+    }
+
+    console.log(`✅ Auto-detection complete: ${detectedSources.length} source(s) added`);
   },
 
   // ------------------------------------------------------------------------
