@@ -4,11 +4,11 @@ export type ModalType = "feedback" | "folderSelector";
 export type FolderSelectorMode = "notFound" | "change";
 
 interface ModalContextValue {
-  // 상태
+  // State
   isOpen: (modal: ModalType) => boolean;
   folderSelectorMode: FolderSelectorMode;
 
-  // 액션
+  // Actions
   openModal: (
     modal: ModalType,
     options?: { mode?: FolderSelectorMode }

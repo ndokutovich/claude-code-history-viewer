@@ -1,36 +1,36 @@
-// 업데이트 설정 타입 정의
+// Update settings type definition
 export interface UpdateSettings {
-  // 자동 체크 활성화 여부 (체크까지는 자동, 모달도 자동 표시)
+  // Whether automatic checking is enabled (checks automatically and shows modal automatically)
   autoCheck: boolean;
-  
-  // 체크 주기
+
+  // Check interval
   checkInterval: 'startup' | 'daily' | 'weekly' | 'never';
-  
-  // 건너뛴 버전들
+
+  // Skipped versions
   skippedVersions: string[];
-  
-  // 마지막 연기 시간
+
+  // Last postponed timestamp
   lastPostponedAt?: number;
-  
-  // 연기 주기 (시간 단위)
-  postponeInterval: number; // 기본 24시간
-  
-  // 첫 실행 여부 (사용자에게 안내했는지)
+
+  // Postpone interval (in milliseconds)
+  postponeInterval: number; // Default 24 hours
+
+  // Whether the introduction has been shown to the user
   hasSeenIntroduction: boolean;
-  
-  // 오프라인 시 체크 비활성화
+
+  // Disable checking when offline
   respectOfflineStatus: boolean;
-  
-  // 중요 업데이트는 강제 표시
+
+  // Always show critical updates
   allowCriticalUpdates: boolean;
 }
 
 export const DEFAULT_UPDATE_SETTINGS: UpdateSettings = {
-  autoCheck: true, // 기본적으로 자동 체크 활성화
+  autoCheck: true, // Automatic checking enabled by default
   checkInterval: 'startup',
   skippedVersions: [],
-  postponeInterval: 24 * 60 * 60 * 1000, // 24시간
+  postponeInterval: 24 * 60 * 60 * 1000, // 24 hours
   hasSeenIntroduction: false,
   respectOfflineStatus: true,
-  allowCriticalUpdates: true, // 중요 업데이트는 항상 표시
+  allowCriticalUpdates: true, // Critical updates are always shown
 };

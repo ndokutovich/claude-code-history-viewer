@@ -78,7 +78,7 @@ export const AdvancedTextDiff = ({
       title = t("advancedTextDiff.unchanged");
     }
 
-    // 긴 텍스트는 줄바꿈 허용
+    // Allow line breaks for long text
     const content =
       currentMode === "lines" || currentMode === "trimmedLines"
         ? part.value

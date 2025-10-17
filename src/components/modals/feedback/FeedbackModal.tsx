@@ -49,17 +49,17 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 입력값 검증 강화
+    // Enhanced input validation
     const trimmedSubject = subject.trim();
     const trimmedBody = body.trim();
 
     if (!trimmedSubject || !trimmedBody) {
-      // 토스트 메시지로 알림
+      // Notify via toast message
       return;
     }
 
     if (trimmedSubject.length > 100 || trimmedBody.length > 1000) {
-      // 길이 제한 초과 알림
+      // Notify length limit exceeded
       return;
     }
 
@@ -74,7 +74,7 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
 
       await invoke("send_feedback", { feedback: feedbackData });
 
-      // 성공 후 초기화
+      // Reset after success
       setSubject("");
       setBody("");
       onClose();
@@ -114,7 +114,7 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* 피드백 타입 선택 */}
+            {/* Feedback type selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t("feedback.type")}
@@ -132,7 +132,7 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
               </select>
             </div>
 
-            {/* 제목 */}
+            {/* Subject */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t("feedback.subjectRequired")}
@@ -147,7 +147,7 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
               />
             </div>
 
-            {/* 내용 */}
+            {/* Content */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t("feedback.contentRequired")}
@@ -168,7 +168,7 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
               />
             </div>
 
-            {/* 시스템 정보 포함 옵션 */}
+            {/* Include system information option */}
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -194,7 +194,7 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
               )}
             </div>
 
-            {/* 시스템 정보 미리보기 */}
+            {/* System information preview */}
             {includeSystemInfo && systemInfo && (
               <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded text-xs">
                 <div className="font-medium mb-1">
@@ -217,7 +217,7 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
               </div>
             )}
 
-            {/* 버튼들 */}
+            {/* Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <button
                 type="submit"
@@ -239,7 +239,7 @@ export const FeedbackModal = ({ isOpen, onClose }: FeedbackModalProps) => {
             </div>
           </form>
 
-          {/* 도움말 */}
+          {/* Help text */}
           <div className="mt-6 text-xs text-gray-500 dark:text-gray-400">
             <div className="mb-2">{t("feedback.tips")}</div>
             <ul className="list-disc list-inside space-y-1 ml-4">

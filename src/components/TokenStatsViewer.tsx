@@ -29,7 +29,7 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
   title,
 }) => {
   const { t } = useTranslation("components");
-  // 단일 세션 통계 표시
+  // Display single session statistics
   const renderSessionStats = (
     stats: SessionTokenStats,
     showSessionId = false
@@ -191,7 +191,7 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
     </div>
   );
 
-  // 프로젝트 전체 통계 표시
+  // Display overall project statistics
   const renderProjectStats = () => {
     if (!projectStats.length) return null;
 
@@ -219,7 +219,7 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
 
     return (
       <div className="space-y-4">
-        {/* 프로젝트 전체 요약 */}
+        {/* Overall project summary */}
         <div
           className={cn(
             "bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 p-4 rounded-lg border",
@@ -327,7 +327,7 @@ export const TokenStatsViewer: React.FC<TokenStatsViewerProps> = ({
           </div>
         </div>
 
-        {/* 개별 세션 통계 */}
+        {/* Individual session statistics */}
         <div className="space-y-3">
           <h4 className={cn("text-md font-medium", COLORS.ui.text.secondary)}>
             {t("analytics.sessionStatsDetail")}

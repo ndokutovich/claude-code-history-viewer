@@ -17,7 +17,7 @@ export function UpToDateNotification({
 }: UpToDateNotificationProps) {
   const { t } = useTranslation("components");
 
-  // 3초 후 자동으로 사라지기
+  // Automatically disappear after 3 seconds
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(() => {

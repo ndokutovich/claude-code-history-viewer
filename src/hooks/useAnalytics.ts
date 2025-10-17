@@ -4,9 +4,9 @@
  * Thin wrapper over useAppStore for analytics-related functionality.
  * Provides backward compatibility while using the unified view state.
  *
- * 높은 응집도: Analytics 관련 모든 비즈니스 로직을 한 곳에 집중
- * 낮은 결합도: 컴포넌트는 이 hook만 의존하면 됨
- * 가독성: 명확한 함수명과 예측 가능한 동작
+ * High cohesion: All analytics-related business logic is concentrated in one place
+ * Low coupling: Components only need to depend on this hook
+ * Readability: Clear function names and predictable behavior
  */
 
 import { useCallback, useMemo } from "react";
@@ -61,7 +61,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
   } = useAppStore();
 
   /**
-   * 메시지 뷰로 전환
+   * Switch to messages view
    */
   const switchToMessages = useCallback(async () => {
     await switchView("messages");
@@ -69,34 +69,34 @@ export const useAnalytics = (): UseAnalyticsReturn => {
   }, [switchView, clearAnalyticsErrors]);
 
   /**
-   * 토큰 통계 뷰로 전환
+   * Switch to token statistics view
    */
   const switchToTokenStats = useCallback(async () => {
     if (!selectedProject) {
-      throw new Error("프로젝트가 선택되지 않았습니다.");
+      throw new Error("No project selected.");
     }
     await switchView("tokenStats");
   }, [selectedProject, switchView]);
 
   /**
-   * 분석 뷰로 전환
+   * Switch to analytics view
    */
   const switchToAnalytics = useCallback(async () => {
     if (!selectedProject) {
-      throw new Error("프로젝트가 선택되지 않았습니다.");
+      throw new Error("No project selected.");
     }
     await switchView("analytics");
   }, [selectedProject, switchView]);
 
   /**
-   * 검색 뷰로 전환
+   * Switch to search view
    */
   const switchToSearch = useCallback(async () => {
     await switchView("search");
   }, [switchView]);
 
   /**
-   * 현재 뷰의 분석 데이터 새로고침
+   * Refresh analytics data for the current view
    */
   const refreshAnalytics = useCallback(async () => {
     // Simply re-invoke switchView with current view to reload data
@@ -104,7 +104,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
   }, [currentView, switchView]);
 
   /**
-   * 모든 analytics 상태 초기화
+   * Clear all analytics state
    */
   const clearAll = useCallback(() => {
     clearAnalyticsData();
@@ -112,7 +112,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
   }, [clearAnalyticsData, clearTokenStats]);
 
   /**
-   * 계산된 값들 (메모이제이션으로 성능 최적화)
+   * Computed values (performance optimization with memoization)
    */
   const computed = useMemo(
     () => ({

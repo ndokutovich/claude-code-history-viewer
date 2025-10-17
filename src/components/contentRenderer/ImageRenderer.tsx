@@ -21,7 +21,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
 
   const handleDownload = () => {
     if (imageUrl.startsWith("data:image/")) {
-      // base64 이미지 다운로드
+      // Download base64 image
       const link = document.createElement("a");
       link.href = imageUrl;
       link.download = `claude-image-${Date.now()}.png`;
@@ -29,7 +29,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
       link.click();
       document.body.removeChild(link);
     } else {
-      // 외부 URL 이미지
+      // External URL image
       window.open(imageUrl, "_blank");
     }
   };
@@ -53,7 +53,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
 
   return (
     <>
-      {/* 이미지 컨테이너 */}
+      {/* Image container */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 my-2">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
@@ -81,7 +81,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
           </div>
         </div>
 
-        {/* 이미지 미리보기 */}
+        {/* Image preview */}
         <div className="relative group">
           <img
             src={imageUrl}
@@ -92,7 +92,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
             style={{ maxHeight: "400px", objectFit: "contain" }}
           />
 
-          {/* 호버 오버레이 */}
+          {/* Hover overlay */}
           <div
             onClick={openModal}
             className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100"
@@ -104,11 +104,11 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
         </div>
       </div>
 
-      {/* 모달 */}
+      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
           <div className="relative max-w-(--breakpoint-lg) max-h-screen-lg">
-            {/* 닫기 버튼 */}
+            {/* Close button */}
             <button
               onClick={closeModal}
               className="absolute top-4 right-4 bg-white bg-opacity-90 rounded-full p-2 hover:bg-opacity-100 transition-all z-10"
@@ -116,7 +116,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
               <X className="w-5 h-5 text-gray-700" />
             </button>
 
-            {/* 다운로드 버튼 */}
+            {/* Download button */}
             <button
               onClick={handleDownload}
               className="absolute top-4 right-16 bg-white bg-opacity-90 rounded-full p-2 hover:bg-opacity-100 transition-all z-10"
@@ -124,7 +124,7 @@ export const ImageRenderer: React.FC<ImageRendererProps> = ({
               <Download className="w-5 h-5 text-gray-700" />
             </button>
 
-            {/* 전체 화면 이미지 */}
+            {/* Fullscreen image */}
             <img
               src={imageUrl}
               alt={alt}

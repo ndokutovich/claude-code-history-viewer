@@ -11,7 +11,7 @@ export const CommandOutputDisplay: React.FC<CommandOutputDisplayProps> = ({
   stdout,
 }) => {
   const { t } = useTranslation("components");
-  // 다양한 출력 유형 감지
+  // Detect various output types
   const isTestOutput =
     stdout.includes("Test Suites:") ||
     stdout.includes("jest") ||
@@ -31,7 +31,7 @@ export const CommandOutputDisplay: React.FC<CommandOutputDisplayProps> = ({
     stdout.includes("-") &&
     stdout.split("\n").length > 2;
 
-  // JSON 출력 처리
+  // Handle JSON output
   if (isJsonOutput) {
     try {
       const parsed = JSON.parse(stdout);
@@ -70,11 +70,11 @@ export const CommandOutputDisplay: React.FC<CommandOutputDisplayProps> = ({
         </div>
       );
     } catch {
-      // JSON 파싱 실패시 일반 텍스트로 처리
+      // Treat as plain text if JSON parsing fails
     }
   }
 
-  // 테스트 출력 처리
+  // Handle test output
   if (isTestOutput) {
     return (
       <div className="bg-white rounded border">
@@ -93,7 +93,7 @@ export const CommandOutputDisplay: React.FC<CommandOutputDisplayProps> = ({
     );
   }
 
-  // 빌드 출력 처리
+  // Handle build output
   if (isBuildOutput) {
     return (
       <div className="bg-white rounded border">
@@ -114,7 +114,7 @@ export const CommandOutputDisplay: React.FC<CommandOutputDisplayProps> = ({
     );
   }
 
-  // 패키지 매니저 출력 처리
+  // Handle package manager output
   if (isPackageOutput) {
     return (
       <div className="bg-white rounded border">
@@ -135,7 +135,7 @@ export const CommandOutputDisplay: React.FC<CommandOutputDisplayProps> = ({
     );
   }
 
-  // 테이블 형태 출력 처리
+  // Handle table format output
   if (isTableOutput) {
     return (
       <div className="bg-white rounded border">
@@ -156,7 +156,7 @@ export const CommandOutputDisplay: React.FC<CommandOutputDisplayProps> = ({
     );
   }
 
-  // 기본 출력 (bash/shell)
+  // Default output (bash/shell)
   return (
     <div className="bg-white rounded border">
       <div className="bg-gray-800 px-3 py-1 text-xs text-gray-300 flex items-center space-x-2">

@@ -49,7 +49,7 @@ export const ClaudeContentArrayRenderer = ({ content }: Props) => {
             return null;
 
           case "image":
-            // Claude API 형태의 이미지 객체 처리
+            // Handle Claude API format image objects
             if (item.source && typeof item.source === "object") {
               const source = item.source as Record<string, unknown>;
               if (
@@ -76,7 +76,7 @@ export const ClaudeContentArrayRenderer = ({ content }: Props) => {
             return <ClaudeToolResultItem toolResult={item} index={index} />;
 
           default:
-            // 기본 JSON 렌더링
+            // Default JSON rendering
             return (
               <div
                 key={index}

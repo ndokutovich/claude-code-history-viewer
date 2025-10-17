@@ -32,7 +32,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     setOpenRender(!openRender);
   };
 
-  // 파일 확장자로 언어 감지 - Write 도구에서만 사용
+  // Detect language from file extension - used only for Write tool
   const getLanguageFromPath = (path: string): string => {
     const ext = path.split(".").pop()?.toLowerCase();
     switch (ext) {
@@ -61,7 +61,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     }
   };
 
-  // Claude Assistant 프롬프트 형태인지 확인
+  // Check if it's a Claude Assistant prompt format
   const isAssistantPrompt = (input: unknown): boolean => {
     if (typeof input !== "object" || input === null) return false;
     const obj = input as Record<string, unknown>;
@@ -73,7 +73,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     );
   };
 
-  // Write 도구인지 확인
+  // Check if it's a Write tool
   const isWriteTool =
     toolName === "Write" ||
     (typeof toolInput === "object" &&
@@ -81,7 +81,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
       "file_path" in toolInput &&
       "content" in toolInput);
 
-  // Edit 도구인지 확인
+  // Check if it's an Edit tool
   const isEditTool =
     toolName === "Edit" ||
     (typeof toolInput === "object" &&
@@ -90,7 +90,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
       "old_string" in toolInput &&
       "new_string" in toolInput);
 
-  // Write 도구 전용 렌더링
+  // Write tool specific rendering
   if (isWriteTool && typeof toolInput === "object" && toolInput !== null) {
     const writeToolInput = toolInput as Record<string, unknown>;
     const filePath = (writeToolInput.file_path as string) || "";
@@ -125,7 +125,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
           )}
         </div>
 
-        {/* 파일 경로 */}
+        {/* File path */}
         <div
           className={cn(
             "mb-3 p-2 rounded border",
@@ -143,7 +143,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
           </div>
         </div>
 
-        {/* 파일 내용 */}
+        {/* File content */}
         <div>
           <div
             className={cn(
@@ -196,7 +196,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     );
   }
 
-  // Claude Assistant 프롬프트 전용 렌더링
+  // Claude Assistant prompt specific rendering
   if (isAssistantPrompt(toolInput)) {
     const promptInput = toolInput as { description: string; prompt: string };
 
@@ -208,7 +208,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
           COLORS.semantic.info.border
         )}
       >
-        {/* 헤더 */}
+        {/* Header */}
         <div
           className={cn(
             "flex items-center justify-between",
@@ -275,7 +275,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
               </div>
             </div>
 
-            {/* 프롬프트 섹션 */}
+            {/* Prompt section */}
             <div>
               <div
                 className={cn(
@@ -309,7 +309,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     );
   }
 
-  // Edit 도구 전용 렌더링 - FileEditRenderer 사용
+  // Edit tool specific rendering - uses FileEditRenderer
   if (isEditTool && typeof toolInput === "object" && toolInput !== null) {
     const editToolInput = toolInput as Record<string, unknown>;
     const filePath = (editToolInput.file_path as string) || "";
@@ -317,20 +317,20 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     const newString = (editToolInput.new_string as string) || "";
     const replaceAll = (editToolInput.replace_all as boolean) || false;
 
-    // FileEditRenderer가 기대하는 형식으로 데이터 변환
+    // Convert data to format expected by FileEditRenderer
     const toolResult = {
       filePath,
       oldString,
       newString,
       replaceAll,
-      originalFile: "", // 원본 파일 내용은 tool use에서는 제공되지 않음
-      userModified: false, // tool use 단계에서는 아직 사용자 수정이 없음
+      originalFile: "", // Original file content not provided in tool use
+      userModified: false, // No user modifications yet in tool use stage
     };
 
     return <FileEditRenderer toolResult={toolResult} />;
   }
 
-  // 기본 도구 렌더링
+  // Default tool rendering
   return (
     <Renderer
       className={cn(COLORS.semantic.info.bg, COLORS.semantic.info.border)}

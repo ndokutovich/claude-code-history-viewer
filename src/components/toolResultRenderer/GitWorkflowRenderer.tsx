@@ -5,7 +5,7 @@ type Props = {
   gitData: Record<string, unknown>;
 };
 
-// Git 워크플로우 결과 렌더링
+// Render Git workflow results
 export const GitWorkflowRenderer = ({ gitData }: Props) => {
   const { t } = useTranslation('components');
   const command = gitData.command || "";

@@ -22,21 +22,21 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
   const content = toolResult.content || "";
   const isError = toolResult.is_error === true;
 
-  // 줄 번호가 붙은 파일 내용인지 감지하는 함수
+  // Function to detect if content has numbered lines (file content)
   const isNumberedFileContent = (text: string): boolean => {
     if (typeof text !== "string") return false;
 
-    // 멀티라인에서 "숫자→" 패턴이 있는지 확인
+    // Check if there's "number→" pattern in multiline
     const hasNumberedLines = /^\s*\d+→/m.test(text);
-    // 여러 줄이 있는지 확인
+    // Check if there are multiple lines
     const hasMultipleLines = text.split("\n").length > 1;
-    // 최소 2개 이상의 줄 번호가 있는지 확인
+    // Check if there are at least 2 line numbers
     const numberedLineCount = (text.match(/^\s*\d+→/gm) || []).length;
 
     return hasNumberedLines && hasMultipleLines && numberedLineCount >= 2;
   };
 
-  // system-reminder 태그와 기타 시스템 메시지를 분리하는 함수
+  // Function to separate system-reminder tags and other system messages
   const separateSystemContent = (
     text: string
   ): {
@@ -49,7 +49,7 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
     const systemMessages: Array<{ type: string; content: string }> = [];
     let codeContent = text;
 
-    // system-reminder 태그 추출
+    // Extract system-reminder tags
     const systemReminderMatch = text.match(
       /<system-reminder>(.*?)<\/system-reminder>/s
     );
@@ -68,21 +68,21 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
     return { codeContent, systemMessages };
   };
 
-  // 줄 번호를 제거하고 원본 코드를 추출하는 함수
+  // Function to remove line numbers and extract original code
   const extractCodeFromNumberedLines = (
     text: string
   ): { code: string; language: string; description: string } => {
     const lines = text.split("\n");
     const codeLines: string[] = [];
     const descriptionLines: string[] = [];
-    let detectedLanguage = "text"; // 기본값
+    let detectedLanguage = "text"; // Default value
 
     for (const line of lines) {
       const match = line.match(/^\s*\d+→(.*)$/);
       if (match && match[1] !== undefined) {
         codeLines.push(match[1]);
       } else if (line.trim()) {
-        // 줄 번호가 없는 줄은 설명 텍스트로 분류
+        // Lines without line numbers are classified as description text
         descriptionLines.push(line.trim());
       }
     }
@@ -90,7 +90,7 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
     const code = codeLines.join("\n");
     const description = descriptionLines.join(" ");
 
-    // 코드 내용으로부터 언어 감지
+    // Detect language from code content
     if (
       code.includes("import ") &&
       (code.includes("from ") || code.includes("require("))
@@ -120,7 +120,7 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
     return { code, language: detectedLanguage, description };
   };
 
-  // 시스템 메시지를 렌더링하는 함수
+  // Function to render system messages
   const renderSystemMessages = (
     messages: Array<{ type: string; content: string }>
   ) => {
@@ -151,14 +151,14 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
     );
   };
 
-  // 파일 검색 결과인지 감지하는 함수
+  // Function to detect if it's a file search result
   const isFileSearchResult = (text: string): boolean => {
     if (typeof text !== "string") return false;
 
     const lines = text.trim().split("\n");
     if (lines.length < 2) return false;
 
-    // "Found X files" 패턴이나 파일 경로들이 있는지 확인
+    // Check if there's "Found X files" pattern or file paths
     const hasFoundPattern = /^Found \d+ files?/i.test(lines[0] ?? "");
     const hasFilePaths = lines
       .slice(1)
@@ -183,7 +183,7 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
     return hasFoundPattern || (lines.length >= 3 && hasFilePaths);
   };
 
-  // 파일 검색 결과를 렌더링하는 함수
+  // Function to render file search results
   const renderFileSearchResult = (text: string) => {
     const lines = text.trim().split("\n");
     const headerLine = lines[0];
@@ -191,7 +191,7 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
 
     return (
       <div className="space-y-2">
-        {/* 헤더 */}
+        {/* Header */}
         <div
           className={cn(
             "flex items-center space-x-2 mb-1 p-2 rounded",
@@ -203,7 +203,7 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
           <span className={cn(COLORS.semantic.info.text)}>{headerLine}</span>
         </div>
 
-        {/* 파일 목록 */}
+        {/* File list */}
         <div className="space-y-1">
           {filePaths.map((filePath, idx) => {
             const pathParts = filePath.split("/");
@@ -247,8 +247,8 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
     );
   };
 
-  // content 처리
-  // 줄 번호가 붙은 파일 내용 처리 (우선순위 높음)
+  // Process content
+  // Handle numbered file content (high priority)
   if (typeof content === "string" && isNumberedFileContent(content)) {
     const { codeContent, systemMessages } = separateSystemContent(content);
     const { code, language, description } =
@@ -286,7 +286,7 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
           }
         />
         <Renderer.Content>
-          {/* 설명 텍스트 */}
+          {/* Description text */}
           {description && (
             <div
               className={cn(
@@ -349,14 +349,14 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
               )}
             </Highlight>
           </div>
-          {/* 시스템 메시지들 렌더링 */}
+          {/* Render system messages */}
           {renderSystemMessages(systemMessages)}
         </Renderer.Content>
       </Renderer>
     );
   }
 
-  // 파일 검색 결과 처리 (줄 번호가 붙은 파일 내용 이후)
+  // Handle file search results (after numbered file content)
   if (typeof content === "string" && isFileSearchResult(content)) {
     const { codeContent: cleanContent, systemMessages } =
       separateSystemContent(content);
@@ -404,7 +404,7 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
     );
   }
 
-  // 기본 처리 (기존 로직)
+  // Default handling (existing logic)
   return (
     <Renderer
       className={cn(COLORS.semantic.success.bg, COLORS.semantic.success.border)}
@@ -438,13 +438,13 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
               </ReactMarkdown>
             </div>
           ) : Array.isArray(content) ? (
-            // 배열 내용을 처리
+            // Process array content
             <div className="space-y-2">
               {content.map((item: unknown, idx: number) => {
                 if (item && typeof item === "object") {
                   const contentItem = item as Record<string, unknown>;
 
-                  // text 타입 항목 처리
+                  // Handle text type items
                   if (
                     contentItem.type === "text" &&
                     typeof contentItem.text === "string"
@@ -458,7 +458,7 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
                     );
                   }
 
-                  // 기타 객체 항목 처리
+                  // Handle other object items
                   return (
                     <pre
                       key={idx}
@@ -472,7 +472,7 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
                   );
                 }
 
-                // 단순 값 처리
+                // Handle simple values
                 return (
                   <div key={idx} className={cn(COLORS.ui.text.secondary)}>
                     {String(item)}

@@ -1,6 +1,6 @@
 /**
- * Analytics 관련 타입 정의
- * 가독성과 예측 가능성을 위한 명확한 타입 구조
+ * Analytics-related type definitions
+ * Clear type structure for readability and predictability
  */
 
 import type { ProjectStatsSummary, SessionComparison } from './index';
@@ -18,59 +18,59 @@ export type AnalyticsView = 'messages' | 'tokenStats' | 'analytics';
 export type AnalyticsViewType = AnalyticsView;
 
 /**
- * Analytics 상태 인터페이스
- * - 높은 응집도: 관련된 상태들을 하나로 묶음
- * - 낮은 결합도: 각 상태는 독립적으로 관리 가능
+ * Analytics state interface
+ * - High cohesion: Groups related states together
+ * - Low coupling: Each state can be managed independently
  */
 export interface AnalyticsState {
-  // 현재 활성 뷰
+  // Currently active view
   currentView: AnalyticsView;
-  
-  // 데이터 상태
+
+  // Data state
   projectSummary: ProjectStatsSummary | null;
   sessionComparison: SessionComparison | null;
-  
-  // 로딩 상태
+
+  // Loading states
   isLoadingProjectSummary: boolean;
   isLoadingSessionComparison: boolean;
-  
-  // 에러 상태
+
+  // Error states
   projectSummaryError: string | null;
   sessionComparisonError: string | null;
 }
 
 /**
- * Analytics 액션 인터페이스
- * 단일 책임 원칙을 따라 각 액션은 하나의 역할만 수행
+ * Analytics action interface
+ * Each action performs a single responsibility following the Single Responsibility Principle
  */
 export interface AnalyticsActions {
-  // 뷰 변경
+  // View transitions
   setCurrentView: (view: AnalyticsView) => void;
-  
-  // 데이터 설정
+
+  // Data setters
   setProjectSummary: (summary: ProjectStatsSummary | null) => void;
   setSessionComparison: (comparison: SessionComparison | null) => void;
-  
-  // 로딩 상태 관리
+
+  // Loading state management
   setLoadingProjectSummary: (loading: boolean) => void;
   setLoadingSessionComparison: (loading: boolean) => void;
-  
-  // 에러 상태 관리
+
+  // Error state management
   setProjectSummaryError: (error: string | null) => void;
   setSessionComparisonError: (error: string | null) => void;
-  
-  // 복합 액션 (비즈니스 로직)
+
+  // Composite actions (business logic)
   switchToMessages: () => void;
   switchToTokenStats: () => void;
   switchToAnalytics: () => void;
-  
-  // 초기화
+
+  // Reset actions
   resetAnalytics: () => void;
   clearErrors: () => void;
 }
 
 /**
- * Analytics 초기 상태
+ * Initial analytics state
  */
 export const initialAnalyticsState: AnalyticsState = {
   currentView: 'messages',
@@ -83,14 +83,14 @@ export const initialAnalyticsState: AnalyticsState = {
 };
 
 /**
- * Analytics Hook 리턴 타입
- * 컴포넌트에서 필요한 최소한의 인터페이스만 노출
+ * Analytics hook return type
+ * Exposes only the minimal interface needed by components
  */
 export interface UseAnalyticsReturn {
-  // 상태 (읽기 전용)
+  // State (read-only)
   readonly state: AnalyticsState;
-  
-  // 액션 (예측 가능한 이름)
+
+  // Actions (with predictable names)
   readonly actions: {
     switchToMessages: () => void;
     switchToTokenStats: () => Promise<void>;
@@ -98,8 +98,8 @@ export interface UseAnalyticsReturn {
     refreshAnalytics: () => Promise<void>;
     clearAll: () => void;
   };
-  
-  // 계산된 값들
+
+  // Computed values
   readonly computed: {
     isTokenStatsView: boolean;
     isAnalyticsView: boolean;
@@ -110,8 +110,8 @@ export interface UseAnalyticsReturn {
 }
 
 /**
- * Analytics 컨텍스트 타입
- * 프로젝트와 세션 정보를 담는 컨텍스트
+ * Analytics context type
+ * Context containing project and session information
  */
 export interface AnalyticsContext {
   selectedProject: {

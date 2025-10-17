@@ -15,14 +15,14 @@ type Props = {
 
 export const StringRenderer = ({ result }: Props) => {
   const { t } = useTranslation("components");
-  // 파일 트리나 디렉토리 구조인지 확인
+  // Check if it's a file tree or directory structure
   const isFileTree =
     result.includes("/") &&
     (result.includes("- ") || result.includes("├") || result.includes("└"));
 
-  // 접기/펼치기 상태 관리
+  // Manage collapse/expand state
   const [isExpanded, setIsExpanded] = useState(false);
-  const MAX_LINES = 15; // 최대 표시 줄 수
+  const MAX_LINES = 15; // Maximum number of lines to display
   const resultLines = result.split("\n");
   const shouldCollapse = resultLines.length > MAX_LINES;
   const displayResult =

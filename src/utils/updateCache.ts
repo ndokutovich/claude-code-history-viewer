@@ -1,4 +1,4 @@
-// 업데이트 체크 결과 캐싱 유틸리티
+// Update check result caching utility
 import type { GitHubRelease } from '../hooks/useGitHubUpdater';
 
 interface CachedUpdateResult {
@@ -9,7 +9,7 @@ interface CachedUpdateResult {
 }
 
 const CACHE_KEY = 'update_check_cache';
-const CACHE_DURATION = 30 * 60 * 1000; // 30분
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
 export function getCachedUpdateResult(currentVersion: string): CachedUpdateResult | null {
   try {
@@ -17,8 +17,8 @@ export function getCachedUpdateResult(currentVersion: string): CachedUpdateResul
     if (!cached) return null;
 
     const result: CachedUpdateResult = JSON.parse(cached);
-    
-    // 버전이 다르거나 캐시가 만료된 경우 무효화
+
+    // Invalidate if version changed or cache expired
     if (
       result.currentVersion !== currentVersion ||
       Date.now() - result.timestamp > CACHE_DURATION
@@ -29,7 +29,7 @@ export function getCachedUpdateResult(currentVersion: string): CachedUpdateResul
 
     return result;
   } catch {
-    // 파싱 오류 시 캐시 삭제
+    // Clear cache on parsing error
     localStorage.removeItem(CACHE_KEY);
     return null;
   }
@@ -47,10 +47,10 @@ export function setCachedUpdateResult(
       timestamp: Date.now(),
       currentVersion,
     };
-    
+
     localStorage.setItem(CACHE_KEY, JSON.stringify(result));
   } catch (error) {
-    console.warn('업데이트 캐시 저장 실패:', error);
+    console.warn('Failed to save update cache:', error);
   }
 }
 

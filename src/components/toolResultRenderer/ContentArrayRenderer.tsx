@@ -38,7 +38,7 @@ export const ContentArrayRenderer = ({ toolResult }: Props) => {
         <span className="font-medium text-indigo-800 dark:text-indigo-200">{t("contentArray.claudeApiResponse")}</span>
       </div>
 
-      {/* 메타데이터 정보 */}
+      {/* Metadata information */}
       <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
         {totalDurationMs && (
           <div className="bg-white dark:bg-gray-800 p-2 rounded border dark:border-gray-600">
@@ -74,7 +74,7 @@ export const ContentArrayRenderer = ({ toolResult }: Props) => {
         )}
       </div>
 
-      {/* 사용량 정보 */}
+      {/* Usage information */}
       {usage && (
         <div className="mb-3">
           <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
@@ -119,7 +119,7 @@ export const ContentArrayRenderer = ({ toolResult }: Props) => {
         </div>
       )}
 
-      {/* 콘텐츠 */}
+      {/* Content */}
       {content.length > 0 && (
         <div>
           <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{t("contentArray.content")}</div>

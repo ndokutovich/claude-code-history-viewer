@@ -19,7 +19,7 @@ export const UpdateSettingsContainer = () => {
 
   const handleManualCheck = () => {
     window.dispatchEvent(new Event("manual-update-check"));
-    smartUpdater.smartCheckForUpdates(true); // 강제 체크
+    smartUpdater.smartCheckForUpdates(true); // Force check
   };
 
   return (

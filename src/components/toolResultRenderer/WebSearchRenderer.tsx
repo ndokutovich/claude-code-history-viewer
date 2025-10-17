@@ -23,7 +23,7 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
         <span className="font-medium text-blue-800">{t('webSearchRenderer.title')}</span>
       </div>
 
-      {/* 검색 정보 */}
+      {/* Search information */}
       <div className="mb-3">
         <div className="text-xs font-medium text-gray-600 mb-1">{t('webSearchRenderer.query')}</div>
         <code className="text-sm bg-gray-100 px-2 py-1 rounded text-gray-800 block">
@@ -31,7 +31,7 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
         </code>
       </div>
 
-      {/* 메타데이터 */}
+      {/* Metadata */}
       {durationSeconds && (
         <div className="mb-3 text-xs">
           <div className="bg-white p-2 rounded border">
@@ -43,7 +43,7 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
         </div>
       )}
 
-      {/* 검색 결과 */}
+      {/* Search results */}
       {results.length > 0 && (
         <div>
           <div className="text-xs font-medium text-gray-600 mb-2">
@@ -57,7 +57,7 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
               >
                 {typeof result === "string" ? (
                   (() => {
-                    // 문자열이 JSON인지 확인하고 파싱 시도
+                    // Check if string is JSON and attempt to parse
                     try {
                       const trimmed = result.trim();
                       if (
@@ -66,7 +66,7 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
                       ) {
                         const parsed = JSON.parse(trimmed);
 
-                        // 파싱된 객체가 웹 검색 결과 구조인지 확인
+                        // Check if parsed object is web search result structure
                         if (parsed && typeof parsed === "object") {
                           const title =
                             typeof parsed.title === "string"
@@ -123,10 +123,10 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
                         }
                       }
                     } catch {
-                      // JSON 파싱 실패시 일반 텍스트로 처리
+                      // Treat as plain text if JSON parsing fails
                     }
 
-                    // 일반 마크다운 텍스트로 처리
+                    // Treat as plain markdown text
                     return (
                       <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-code:text-red-600 prose-code:bg-gray-100">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -153,7 +153,7 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
                           ? resultObj.description
                           : null;
 
-                      // 웹 검색 결과 구조인지 확인
+                      // Check if it's web search result structure
                       if (title || url || description) {
                         return (
                           <div className="space-y-2">
@@ -196,7 +196,7 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
                         );
                       }
 
-                      // 다른 구조화된 결과 처리
+                      // Handle other structured results
                       if (
                         "content" in resultObj &&
                         Array.isArray(resultObj.content)
@@ -229,7 +229,7 @@ export const WebSearchRenderer = ({ searchData }: Props) => {
                         );
                       }
 
-                      // 일반적인 객체 표시
+                      // Display generic object
                       return (
                         <pre className="text-xs text-gray-600 overflow-x-auto bg-gray-50 p-2 rounded">
                           {JSON.stringify(result, null, 2)}

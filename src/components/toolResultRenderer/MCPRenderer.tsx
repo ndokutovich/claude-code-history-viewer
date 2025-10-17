@@ -6,7 +6,7 @@ type Props = {
   mcpData: Record<string, unknown>;
 };
 
-// MCP 도구 호출 결과 렌더링
+// Render MCP tool call results
 export const MCPRenderer = ({ mcpData }: Props) => {
   const { t } = useTranslation('components');
   const server = mcpData.server || "unknown";
@@ -28,7 +28,7 @@ export const MCPRenderer = ({ mcpData }: Props) => {
       </div>
 
       <div className="space-y-2">
-        {/* 매개변수 */}
+        {/* Parameters */}
         <details className="text-sm">
           <summary className="cursor-pointer text-purple-700 font-medium">
             {t('mcpRenderer.parameters')}
@@ -38,7 +38,7 @@ export const MCPRenderer = ({ mcpData }: Props) => {
           </pre>
         </details>
 
-        {/* 결과 */}
+        {/* Result */}
         {error ? (
           <div className="p-2 bg-red-100 border border-red-200 rounded">
             <div className="text-xs font-medium text-red-800 mb-1">{t('mcpRenderer.error')}</div>

@@ -49,7 +49,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
     currentVersion: "",
   });
 
-  // 현재 버전 가져오기
+  // Get current version
   useEffect(() => {
     getVersion().then((version) => {
       setState((prev) => ({ ...prev, currentVersion: version }));
@@ -59,7 +59,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
   const fetchGitHubRelease =
     useCallback(async (): Promise<GitHubRelease | null> => {
       try {
-        // AbortController로 타임아웃 제어 (10초)
+        // Timeout control with AbortController (10 seconds)
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -78,16 +78,16 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          throw new Error(`GitHub API 오류: ${response.status}`);
+          throw new Error(`GitHub API error: ${response.status}`);
         }
 
         const release = (await response.json()) as GitHubRelease;
         return release;
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
-          console.warn("GitHub API 요청 타임아웃 (10초)");
+          console.warn("GitHub API request timeout (10 seconds)");
         } else {
-          console.error("GitHub 릴리즈 정보 가져오기 실패:", error);
+          console.error("Failed to fetch GitHub release info:", error);
         }
         return null;
       }
@@ -97,7 +97,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
     try {
       setState((prev) => ({ ...prev, isChecking: true, error: null }));
 
-      // 강제 체크가 아니면 캐시 확인
+      // Check cache if not a forced check
       if (!forceCheck && state.currentVersion) {
         const cached = getCachedUpdateResult(state.currentVersion);
         if (cached) {
@@ -105,30 +105,30 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
             ...prev,
             isChecking: false,
             hasUpdate: cached.hasUpdate,
-            updateInfo: null, // Tauri 업데이트 객체는 캐시하지 않음
+            updateInfo: null, // Don't cache Tauri update object
             releaseInfo: cached.releaseInfo,
           }));
           return;
         }
       }
 
-      // GitHub API로 릴리즈 정보 가져오기
+      // Fetch release info from GitHub API
       const releaseInfo = await fetchGitHubRelease();
 
       if (!releaseInfo) {
-        throw new Error("릴리즈 정보를 가져올 수 없습니다.");
+        throw new Error("Could not fetch release information.");
       }
       
       if (process.env.NODE_ENV === 'development') {
         console.log('Release info:', releaseInfo);
       }
 
-      // Tauri 업데이터로 업데이트 확인
+      // Check for updates with Tauri updater
       const update = await check();
 
       const hasUpdate = !!update;
 
-      // 결과 캐싱 (현재 버전이 있을 때만)
+      // Cache the result (only when current version is available)
       if (state.currentVersion) {
         setCachedUpdateResult(hasUpdate, releaseInfo, state.currentVersion);
       }
@@ -141,14 +141,14 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
         releaseInfo,
       }));
     } catch (error) {
-      console.error("업데이트 확인 실패:", error);
+      console.error("Update check failed:", error);
       setState((prev) => ({
         ...prev,
         isChecking: false,
         error:
           error instanceof Error
             ? error.message
-            : "업데이트 확인 중 오류가 발생했습니다.",
+            : "An error occurred while checking for updates.",
       }));
     }
   }, [fetchGitHubRelease, state.currentVersion]);
@@ -159,7 +159,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
     try {
       setState((prev) => ({ ...prev, isDownloading: true, error: null }));
 
-      // 다운로드 진행률 리스너
+      // Download progress listener
       await state.updateInfo.downloadAndInstall((event) => {
         switch (event.event) {
           case "Started":
@@ -183,7 +183,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
         }
       });
 
-      // 설치 완료 후 앱 재시작
+      // Relaunch app after installation completes
       await relaunch();
     } catch (error) {
       setState((prev) => ({
@@ -193,7 +193,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
         error:
           error instanceof Error
             ? error.message
-            : "업데이트 설치 중 오류가 발생했습니다.",
+            : "An error occurred while installing the update.",
       }));
     }
   }, [state.updateInfo]);
@@ -208,7 +208,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
     }));
   }, []);
 
-  // 자동 실행은 SmartUpdater에서 관리하므로 여기서는 제거
+  // Auto-execution is managed by SmartUpdater, removed from here
 
   return {
     state,

@@ -9,10 +9,10 @@ interface CopyState {
 
 export const useCopyButton = () => {
   const { t } = useTranslation('components');
-  // 클립보드 복사 상태 관리
+  // Clipboard copy state management
   const [copyStates, setCopyStates] = useState<CopyState>({});
 
-  // 클립보드 복사 헬퍼 함수
+  // Clipboard copy helper function
   const copyToClipboard = async (text: string, id: string) => {
     setCopyStates((prev) => ({ ...prev, [id]: "copying" }));
 
@@ -20,22 +20,22 @@ export const useCopyButton = () => {
       await navigator.clipboard.writeText(text);
       setCopyStates((prev) => ({ ...prev, [id]: "success" }));
 
-      // 2초 후 상태 초기화
+      // Reset state after 2 seconds
       setTimeout(() => {
         setCopyStates((prev) => ({ ...prev, [id]: "idle" }));
       }, 2000);
     } catch (error) {
-      console.error("클립보드 복사 실패:", error);
+      console.error("Clipboard copy failed:", error);
       setCopyStates((prev) => ({ ...prev, [id]: "error" }));
 
-      // 2초 후 상태 초기화
+      // Reset state after 2 seconds
       setTimeout(() => {
         setCopyStates((prev) => ({ ...prev, [id]: "idle" }));
       }, 2000);
     }
   };
 
-  // 복사 버튼 렌더링 헬퍼
+  // Copy button rendering helper
   const renderCopyButton = (
     text: string,
     id: string,

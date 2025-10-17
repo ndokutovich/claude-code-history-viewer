@@ -39,7 +39,7 @@ export const TerminalStreamRenderer = ({
       </div>
 
       <div className="relative">
-        {/* 스트림 타입 표시 */}
+        {/* Stream type indicator */}
         <div className="flex items-center space-x-2 mb-1">
           <span
             className={`text-xs px-2 py-1 rounded ${
@@ -63,7 +63,7 @@ export const TerminalStreamRenderer = ({
           )}
         </div>
 
-        {/* 출력 내용 */}
+        {/* Output content */}
         <pre className="text-sm text-gray-100 whitespace-pre-wrap bg-gray-800 p-2 rounded overflow-auto max-h-80">
           {String(output)}
         </pre>

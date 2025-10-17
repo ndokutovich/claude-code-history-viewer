@@ -10,7 +10,7 @@ export function SimpleUpdateManager() {
   const [showUpToDate, setShowUpToDate] = useState(false);
   const [manualCheck, setManualCheck] = useState(false);
 
-  // 수동 체크 결과 처리
+  // Handle manual check results
   useEffect(() => {
     if (
       !updater.state.isChecking &&
@@ -29,11 +29,11 @@ export function SimpleUpdateManager() {
     manualCheck,
   ]);
 
-  // 수동 업데이트 체크 이벤트 리스너
+  // Manual update check event listener
   useEffect(() => {
     const handleManualCheck = () => {
       setManualCheck(true);
-      updater.smartCheckForUpdates(true); // 강제 체크
+      updater.smartCheckForUpdates(true); // Force check
     };
 
     window.addEventListener("manual-update-check", handleManualCheck);
@@ -48,20 +48,20 @@ export function SimpleUpdateManager() {
 
   return (
     <>
-      {/* 업데이트 시스템 안내 모달 (첫 실행 시) */}
+      {/* Update system introduction modal (first run) */}
       <UpdateIntroModal
         isOpen={updater.showIntroModal}
         onClose={updater.onIntroClose}
       />
 
-      {/* 개선된 업데이트 모달 */}
+      {/* Improved update modal */}
       <SimpleUpdateModal
         updater={updater}
         isVisible={showUpdateModal && updater.shouldShowUpdateModal}
         onClose={handleCloseUpdateModal}
       />
 
-      {/* 최신 버전 알림 (수동 체크 시) */}
+      {/* Latest version notification (manual check) */}
       <UpToDateNotification
         currentVersion={updater.state.currentVersion}
         onClose={() => setShowUpToDate(false)}

@@ -26,7 +26,7 @@ export const SettingDropdown = () => {
   const { t: tComponents } = useTranslation("components");
   const { openModal } = useModal();
 
-  // 자동 또는 수동 업데이트 체크 중인지 확인
+  // Check if automatic or manual update check is in progress
   const isCheckingForUpdates = manualUpdater.state.isChecking || smartUpdater.state.isChecking;
 
   return (
@@ -77,7 +77,7 @@ export const SettingDropdown = () => {
           <DropdownMenuItem
             onClick={() => {
               window.dispatchEvent(new Event("manual-update-check"));
-              manualUpdater.checkForUpdates(true); // 강제 체크
+              manualUpdater.checkForUpdates(true); // Force check
             }}
             disabled={manualUpdater.state.isChecking}
           >

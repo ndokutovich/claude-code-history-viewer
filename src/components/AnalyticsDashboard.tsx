@@ -29,7 +29,7 @@ import { useAppStore } from "../store/useAppStore";
 /**
  * Analytics Dashboard Component
  *
- * props 전달을 최소화하고 직접 store와 hook을 사용하여 의존성을 낮춤
+ * Minimizes prop drilling by using store and hooks directly to reduce dependencies
  */
 export const AnalyticsDashboard: React.FC = () => {
   const {
@@ -43,7 +43,7 @@ export const AnalyticsDashboard: React.FC = () => {
   const { t } = useTranslation("components");
   const [activeTab, setActiveTab] = useState<"project" | "session">("project");
 
-  // 컴포넌트 내부에서 사용할 데이터 정의
+  // Define data to be used within component
   const projectSummary = projectStatsSummary;
   const sessionStats = sessionTokenStats;
 
@@ -60,18 +60,18 @@ export const AnalyticsDashboard: React.FC = () => {
     return num.toString();
   };
 
-  // 7일간의 일별 데이터 생성 (누락된 날짜 채우기)
+  // Generate daily data for 7 days (fill in missing dates)
   const generateDailyData = () => {
     if (!projectSummary?.daily_stats) return [];
 
-    // 최근 7일 날짜 배열 생성
+    // Create array of last 7 days
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() - (6 - i));
       return date.toISOString().split("T")[0];
     });
 
-    // 날짜별 데이터 집계
+    // Aggregate data by date
     const dailyData = last7Days.map((date) => {
       const dayStats = projectSummary.daily_stats.find(
         (stat) => stat.date === date
@@ -547,7 +547,7 @@ export const AnalyticsDashboard: React.FC = () => {
                               )}
                               style={{ height: `${height}%`, minHeight: "4px" }}
                             >
-                              {/* 사용 토큰수 */}
+                              {/* Token count */}
                               {stat.total_tokens > 0 && (
                                 <div className="text-xs text-center absolute left-0 mb-4 right-0  flex items-center justify-center text-white">
                                   {formatNumber(stat.total_tokens)}

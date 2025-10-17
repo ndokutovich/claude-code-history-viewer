@@ -36,7 +36,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     setOpenRender(!openRender);
   };
 
-  // 파일 확장자로 언어 감지
+  // Detect language from file extension
   const getLanguageFromPath = (path: string): string => {
     const ext = path.split(".").pop()?.toLowerCase();
     switch (ext) {
@@ -95,7 +95,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     }
   };
 
-  // Edit 도구인지 확인
+  // Check if it's an Edit tool
   const isEditTool = (
     input: unknown
   ): input is { file_path: string; old_string: string; new_string: string } => {
@@ -107,7 +107,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     );
   };
 
-  // Write 도구인지 확인
+  // Check if it's a Write tool
   const isWriteTool = (
     input: unknown
   ): input is { file_path: string; content: string } => {
@@ -120,7 +120,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     );
   };
 
-  // Claude Assistant 프롬프트인지 확인
+  // Check if it's a Claude Assistant prompt
   const isAssistantPrompt = (
     input: unknown
   ): input is { description: string; prompt: string } => {
@@ -132,7 +132,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     );
   };
 
-  // Write 도구 전용 렌더링
+  // Write tool specific rendering
   if (isWriteTool(toolInput)) {
     const { file_path: filePath, content } = toolInput;
     const language = getLanguageFromPath(filePath);
@@ -157,7 +157,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
           )}
         </div>
 
-        {/* 파일 경로 */}
+        {/* File path */}
         <div
           className={`mb-3 p-2 ${COLORS.ui.background.primary} rounded border`}
         >
@@ -169,7 +169,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
           </div>
         </div>
 
-        {/* 파일 내용 */}
+        {/* File content */}
         <div>
           <div
             className={`text-xs font-medium ${COLORS.tools.file.icon} mb-2 flex items-center space-x-1`}
@@ -198,7 +198,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     );
   }
 
-  // Claude Assistant 프롬프트 전용 렌더링
+  // Claude Assistant prompt specific rendering
   if (isAssistantPrompt(toolInput)) {
     const promptInput = toolInput as { description: string; prompt: string };
 
@@ -206,7 +206,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
       <div
         className={`mt-2 p-3 bg-linear-to-r from-purple-50 to-blue-50 border ${COLORS.tools.search.border} rounded-lg`}
       >
-        {/* 헤더 */}
+        {/* Header */}
         <div
           className={`flex items-center justify-between ${
             openRender ? "mb-4" : ""
@@ -252,7 +252,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
               </div>
             </div>
 
-            {/* 프롬프트 섹션 */}
+            {/* Prompt section */}
             <div>
               <div
                 className={`text-sm font-semibold ${COLORS.tools.search.text} mb-2`}
@@ -275,7 +275,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     );
   }
 
-  // Edit 도구 전용 렌더링
+  // Edit tool specific rendering
   if (isEditTool(toolInput)) {
     const {
       file_path: filePath,
@@ -304,7 +304,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
           )}
         </div>
 
-        {/* 파일 경로 */}
+        {/* File path */}
         <div
           className={`mb-3 p-2 ${COLORS.ui.background.primary} rounded border`}
         >
@@ -316,9 +316,9 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
           </div>
         </div>
 
-        {/* 변경 내용 표시 */}
+        {/* Display changes */}
         <div className="space-y-3">
-          {/* 이전 코드 */}
+          {/* Previous code */}
           <div>
             <div
               className={`text-xs font-medium ${COLORS.semantic.error.icon} mb-1 flex items-center space-x-1`}
@@ -344,7 +344,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
             </div>
           </div>
 
-          {/* 새로운 코드 */}
+          {/* New code */}
           <div>
             <div
               className={`text-xs font-medium ${COLORS.tools.file.icon} mb-1 flex items-center space-x-1`}
@@ -374,7 +374,7 @@ export const ToolUseRenderer = ({ toolUse }: Props) => {
     );
   }
 
-  // 기본 도구 렌더링
+  // Default tool rendering
   return (
     <Renderer className={`${COLORS.tools.code.bg} ${COLORS.tools.code.border}`}>
       <Renderer.Header

@@ -21,7 +21,7 @@ export function useUpdateChecker() {
 
   const shouldCheck = useCallback(() => {
     const lastCheck = localStorage.getItem("last_update_check");
-    const checkInterval = 24 * 60 * 60 * 1000; // 24시간
+    const checkInterval = 24 * 60 * 60 * 1000; // 24 hours
     return !lastCheck || Date.now() - parseInt(lastCheck) > checkInterval;
   }, []);
 
@@ -55,7 +55,7 @@ export function useUpdateChecker() {
       try {
         const updateInfo = await invoke<UpdateInfo>("check_for_updates");
 
-        // 업데이트가 있지만 연기되었거나 건너뛴 버전인지 확인
+        // Check if update exists but is postponed or skipped
         const shouldShowModal = Boolean(
           updateInfo.has_update &&
             updateInfo.latest_version &&
@@ -63,7 +63,7 @@ export function useUpdateChecker() {
             !isVersionSkipped(updateInfo.latest_version)
         );
 
-        // 강제 체크인 경우 업데이트가 있으면 모달, 없으면 최신 버전 알림
+        // For forced checks: show modal if update available, otherwise show up-to-date notification
         const finalShowModal = forceCheck
           ? Boolean(updateInfo.has_update)
           : shouldShowModal;
@@ -81,7 +81,7 @@ export function useUpdateChecker() {
           saveLastCheckTime();
         }
       } catch (error) {
-        console.error("업데이트 확인 실패:", error);
+        console.error("Update check failed:", error);
         setState((prev) => ({
           ...prev,
           error: error as string,
@@ -123,7 +123,7 @@ export function useUpdateChecker() {
     [closeModal]
   );
 
-  // 앱 시작 시 자동 체크
+  // Auto-check on app startup
   useEffect(() => {
     const initCheck = async () => {
       await checkForUpdates();

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * package.json의 버전을 src-tauri/Cargo.toml에 동기화하는 스크립트
+ * Script to sync version from package.json to src-tauri/Cargo.toml
  *
- * 사용법:
+ * Usage:
  *   node scripts/sync-version.js
- *   (또는 package.json scripts에서 "sync-version": "node scripts/sync-version.js")
+ *   (or in package.json scripts: "sync-version": "node scripts/sync-version.js")
  */
 
 const fs = require("fs");
@@ -14,26 +14,26 @@ const path = require("path");
 const packageJsonPath = path.join(process.cwd(), "package.json");
 const cargoTomlPath = path.join(process.cwd(), "src-tauri", "Cargo.toml");
 
-// 1. package.json에서 버전 읽기
+// 1. Read version from package.json
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 const version = packageJson.version;
 
-console.log(`[sync-version] package.json 버전: ${version}`);
+console.log(`[sync-version] package.json version: ${version}`);
 
-// 2. Cargo.toml 읽기
+// 2. Read Cargo.toml
 let cargoToml = fs.readFileSync(cargoTomlPath, "utf8");
 
-// 3. version = "..." 라인 찾아서 교체
+// 3. Find and replace version = "..." line
 const versionRegex = /^version\s*=\s*"[^\"]*"/m;
 if (!versionRegex.test(cargoToml)) {
   console.error(
-    "[sync-version] Cargo.toml에서 version 라인을 찾을 수 없습니다."
+    "[sync-version] Could not find version line in Cargo.toml."
   );
   process.exit(1);
 }
 
 cargoToml = cargoToml.replace(versionRegex, `version = "${version}"`);
 
-// 4. 파일에 다시 쓰기
+// 4. Write back to file
 fs.writeFileSync(cargoTomlPath, cargoToml);
-console.log(`[sync-version] Cargo.toml 버전이 ${version}로 동기화되었습니다.`);
+console.log(`[sync-version] Cargo.toml version synced to ${version}.`);

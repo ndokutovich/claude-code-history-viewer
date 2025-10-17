@@ -58,7 +58,7 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
         }
       />
       <Renderer.Content>
-        {/* 파일 경로 */}
+        {/* File path */}
         <div className="mb-3">
           <div
             className={cn("text-xs font-medium mb-1", COLORS.ui.text.tertiary)}
@@ -76,7 +76,7 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
           </code>
         </div>
 
-        {/* 편집 정보 */}
+        {/* Edit information */}
         <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
           <div
             className={cn(
@@ -111,7 +111,7 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
           </div>
         </div>
 
-        {/* 변경 내용 - Enhanced Diff Viewer 사용 */}
+        {/* Changed content - using Enhanced Diff Viewer */}
         {oldString && newString && (
           <EnhancedDiffViewer
             oldText={oldString}
@@ -121,7 +121,7 @@ export const FileEditRenderer = ({ toolResult }: Props) => {
           />
         )}
 
-        {/* 원본 파일 내용 (접기/펼치기 가능) */}
+        {/* Original file content (collapsible) */}
         {originalFile && (
           <div>
             <FileContent

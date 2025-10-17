@@ -32,7 +32,7 @@ export const FileContent = ({
   const totalLines =
     typeof fileData.totalLines === "number" ? fileData.totalLines : 0;
 
-  // 파일 확장자에 따른 언어 결정
+  // Determine language based on file extension
   const getLanguageFromPath = (path: string) => {
     const ext = path.split(".").pop()?.toLowerCase();
     const fileName = path.split("/").pop()?.toLowerCase() || "";
@@ -114,7 +114,7 @@ export const FileContent = ({
       case "log":
         return "text";
       default:
-        // 파일명으로 특수 케이스 처리
+        // Handle special cases by filename
         if (fileName.includes("dockerfile")) return "dockerfile";
         if (fileName.includes("makefile")) return "makefile";
         if (fileName.includes("package.json")) return "json";
@@ -126,9 +126,9 @@ export const FileContent = ({
 
   const language = getLanguageFromPath(filePath);
 
-  // 접기/펼치기 상태 관리
+  // Collapse/expand state management
   const [isExpanded, setIsExpanded] = useState(false);
-  const MAX_LINES = 20; // 최대 표시 줄 수
+  const MAX_LINES = 20; // Maximum number of lines to display
   const contentLines = content.split("\n");
   const shouldCollapse = contentLines.length > MAX_LINES;
   const displayContent =
@@ -147,7 +147,7 @@ export const FileContent = ({
         titleClassName={cn(COLORS.semantic.info.text)}
         rightContent={
           <div className="flex items-center space-x-2">
-            {/* 파일 내용 복사 버튼 */}
+            {/* Copy file content button */}
             {content &&
               renderCopyButton(
                 content,

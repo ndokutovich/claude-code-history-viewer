@@ -70,7 +70,7 @@ i18n
     debug: false,
 
     interpolation: {
-      escapeValue: false, // React already does escaping
+      escapeValue: false, // React already handles escaping
     },
 
     detection: {

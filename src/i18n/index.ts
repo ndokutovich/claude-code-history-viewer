@@ -96,7 +96,7 @@ i18n
 
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
-      caches: ['localStorage'], // localStorage에 저장
+      caches: ['localStorage'], // Save to localStorage
     },
   });
 

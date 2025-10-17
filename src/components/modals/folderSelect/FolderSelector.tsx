@@ -48,7 +48,7 @@ export function FolderSelector({
     setValidationError("");
 
     try {
-      // 선택한 폴더가 .claude 폴더인지 또는 .claude 폴더를 포함하는지 확인
+      // Check if selected folder is .claude folder or contains .claude folder
       const isValid = await invoke<boolean>("validate_claude_folder", { path });
 
       if (isValid) {

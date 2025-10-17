@@ -5,7 +5,7 @@ type Props = {
   contextData: Record<string, unknown>;
 };
 
-// 코드베이스 컨텍스트 정보 렌더링
+// Render codebase context information
 export const CodebaseContextRenderer = ({ contextData }: Props) => {
   const { t } = useTranslation('components');
   const filesAnalyzed =

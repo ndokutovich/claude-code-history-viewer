@@ -12,11 +12,11 @@ export function useSmartUpdater() {
   const [showIntroModal, setShowIntroModal] = useState(false);
   const [introModalShown, setIntroModalShown] = useState(false);
 
-  // 초기 안내 모달 표시 확인
+  // Check whether to show initial introduction modal
   useEffect(() => {
     const settings = getUpdateSettings();
     if (!settings.hasSeenIntroduction && !introModalShown) {
-      // 앱 시작 후 2초 후에 안내 모달 표시 (UX 개선)
+      // Show introduction modal 2 seconds after app startup (UX improvement)
       const timer = setTimeout(() => {
         setShowIntroModal(true);
         setIntroModalShown(true);
@@ -26,19 +26,19 @@ export function useSmartUpdater() {
     }
   }, [introModalShown]);
 
-  // 스마트 업데이트 체크
+  // Smart update check
   const smartCheckForUpdates = useCallback(async (forceCheck = false) => {
-    // 강제 체크가 아닐 때 조건 확인
+    // Check conditions when not forced
     if (!forceCheck) {
-      // 오프라인 상태 확인
+      // Check offline status
       if (!isOnline()) {
-        console.log('오프라인 상태로 업데이트 체크 건너뜀');
+        console.log('Skipping update check due to offline status');
         return;
       }
 
-      // 사용자 설정 확인
+      // Check user settings
       if (!shouldCheckForUpdates()) {
-        console.log('사용자 설정에 의해 업데이트 체크 건너뜀');
+        console.log('Skipping update check per user settings');
         return;
       }
     }
@@ -46,33 +46,33 @@ export function useSmartUpdater() {
     await githubUpdater.checkForUpdates(forceCheck);
   }, [githubUpdater]);
 
-  // 자동 체크 (개선된 버전)
+  // Auto-check (improved version)
   useEffect(() => {
     const settings = getUpdateSettings();
-    
-    // 자동 체크가 비활성화되어 있으면 체크하지 않음
+
+    // Don't check if auto-check is disabled
     if (!settings.autoCheck) {
       return;
     }
 
-    let delay = 5000; // 기본 5초
+    let delay = 5000; // Default 5 seconds
 
-    // 체크 주기에 따른 지연 시간 조정
+    // Adjust delay based on check interval
     switch (settings.checkInterval) {
       case 'startup':
-        delay = 5000; // 5초
+        delay = 5000; // 5 seconds
         break;
       case 'daily':
-        // 마지막 체크가 24시간 전인지 확인
-        // (구현 복잡성으로 인해 startup과 동일하게 처리)
+        // Check if last check was 24 hours ago
+        // (Treated same as startup due to implementation complexity)
         delay = 5000;
         break;
       case 'weekly':
-        // 주간 체크는 첫 실행 시만
+        // Weekly check only on first run
         delay = 5000;
         break;
       case 'never':
-        return; // 체크하지 않음
+        return; // Don't check
     }
 
     const timer = setTimeout(() => {
@@ -82,7 +82,7 @@ export function useSmartUpdater() {
     return () => clearTimeout(timer);
   }, [smartCheckForUpdates]);
 
-  // 업데이트 모달 표시 조건 개선
+  // Improved update modal display conditions
   const shouldShowUpdateModal = useCallback(() => {
     if (!githubUpdater.state.hasUpdate || !githubUpdater.state.releaseInfo) {
       return false;
@@ -94,8 +94,8 @@ export function useSmartUpdater() {
 
   const handleIntroClose = useCallback(() => {
     setShowIntroModal(false);
-    
-    // 안내를 본 후 자동 체크가 활성화되어 있다면 잠시 후 체크
+
+    // If auto-check is enabled after viewing intro, check after a moment
     const settings = getUpdateSettings();
     if (settings.autoCheck) {
       setTimeout(() => {

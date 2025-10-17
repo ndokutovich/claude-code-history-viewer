@@ -1,6 +1,6 @@
 import i18n, { languageLocaleMap } from "../i18n";
 
-// 현재 언어에 따른 로케일 반환
+// Returns the locale based on the current language
 export const getLocale = (language: string): string => {
   return languageLocaleMap[language] || "en-US";
 };

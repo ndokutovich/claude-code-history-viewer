@@ -33,7 +33,7 @@ export const Header = () => {
     computed,
   } = useAnalytics();
 
-  // 토큰 통계 로드
+  // Load token statistics
   const handleLoadTokenStats = async () => {
     if (!selectedProject) return;
 
@@ -44,7 +44,7 @@ export const Header = () => {
     }
   };
 
-  // 분석 대시보드 로드
+  // Load analytics dashboard
   const handleLoadAnalytics = async () => {
     if (!selectedProject) return;
 
@@ -52,7 +52,7 @@ export const Header = () => {
       await analyticsActions.switchToAnalytics();
     } catch (error) {
       console.error("Failed to load analytics:", error);
-      // TODO: 토스트 메시지나 에러 상태 표시
+      // TODO: Display toast message or error state
       // toast.error(t("errors.failedToLoadAnalytics"));
     }
   };
@@ -221,7 +221,7 @@ export const Header = () => {
               </>
             )}
 
-            {/* // 여기 다시 드롭다운 */}
+            {/* Dropdown here again */}
             <SettingDropdown />
           </div>
         </div>

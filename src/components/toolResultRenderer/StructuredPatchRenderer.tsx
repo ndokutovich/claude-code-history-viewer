@@ -70,7 +70,7 @@ export const StructuredPatchRenderer = ({ toolResult }: Props) => {
         </span>
       </div>
 
-      {/* 파일 정보 */}
+      {/* File information */}
       <div className="mb-3">
         <div
           className={cn("text-xs font-medium mb-1", COLORS.ui.text.tertiary)}
@@ -88,7 +88,7 @@ export const StructuredPatchRenderer = ({ toolResult }: Props) => {
         </code>
       </div>
 
-      {/* 변경 통계 */}
+      {/* Change statistics */}
       {patches.length > 0 && (
         <div className="mb-3">
           <div
@@ -118,7 +118,7 @@ export const StructuredPatchRenderer = ({ toolResult }: Props) => {
         />
       )}
 
-      {/* 전체 파일 내용 */}
+      {/* Full file content */}
       {content && (
         <div>
           <div

@@ -255,7 +255,7 @@ export const ToolExecutionResultRouter: React.FC<
   const isImage =
     typeof toolResult.isImage === "boolean" ? toolResult.isImage : null;
 
-  // 메타데이터가 있는지 확인
+  // Check if metadata exists
   const hasMetadata = interrupted !== null || isImage !== null;
   const hasOutput =
     stdout.length > 0 || stderr.length > 0 || filePath.length > 0;
@@ -276,7 +276,7 @@ export const ToolExecutionResultRouter: React.FC<
         icon={<Check className={cn("w-4 h-4", COLORS.semantic.success.icon)} />}
       />
       <Renderer.Content>
-        {/* 메타데이터 정보 */}
+        {/* Metadata information */}
         {hasMetadata && (
           <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
             {interrupted !== null && (
@@ -357,12 +357,12 @@ export const ToolExecutionResultRouter: React.FC<
           </div>
         )}
 
-        {/* 출력이 없을 때 상태 표시 */}
+        {/* Display status when there's no output */}
         {!hasOutput && hasMetadata && (
           <div className={cn(COLORS.ui.text.muted)}>{t("toolResult.noOutput")}</div>
         )}
 
-        {/* 완전히 빈 결과일 때 */}
+        {/* When result is completely empty */}
         {!hasOutput && !hasMetadata && (
           <div className={cn(COLORS.ui.text.muted)}>{t("toolResult.executionComplete")}</div>
         )}

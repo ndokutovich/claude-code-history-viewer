@@ -54,21 +54,21 @@ function App() {
   const { t: tMessages } = useTranslation("messages");
   const { language, loadLanguage } = useLanguageStore();
 
-  // 세션 선택 시 현재 뷰 유지 (useAnalytics hook에서 자동 데이터 업데이트 처리)
+  // Maintain current view when session is selected (automatic data update handled in useAnalytics hook)
   const handleSessionSelect = async (session: ClaudeSession) => {
     await selectSession(session);
-    // useAnalytics hook의 useEffect에서 자동으로 데이터 업데이트 처리
+    // Data update is automatically handled in useAnalytics hook's useEffect
   };
 
   useEffect(() => {
-    // 언어 설정 로드 후 앱 초기화
+    // Initialize app after loading language settings
     loadLanguage()
       .then(() => {
         initializeApp();
       })
       .catch((error) => {
         console.error("Failed to load language:", error);
-        // 기본 언어로 앱 초기화 진행
+        // Proceed with app initialization using default language
         initializeApp();
       });
   }, [initializeApp, loadLanguage]);
@@ -94,10 +94,10 @@ function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [computed.isSearchView, analyticsActions]);
 
-  // i18n 언어 변경 감지
+  // Detect i18n language changes
   useEffect(() => {
     const handleLanguageChange = (lng: string) => {
-      // 스토어의 언어와 다르면 업데이트
+      // Update if different from store's language
       const currentLang = lng.startsWith("zh")
         ? lng.includes("TW") || lng.includes("HK")
           ? "zh-TW"
@@ -121,20 +121,20 @@ function App() {
     };
   }, [language, i18nInstance]);
 
-  // 프로젝트 선택 핸들러 (분석 상태 초기화 포함)
+  // Project selection handler (includes analytics state reset)
   const handleProjectSelect = async (project: ClaudeProject) => {
     const wasAnalyticsOpen = computed.isAnalyticsView;
     const wasTokenStatsOpen = computed.isTokenStatsView;
 
-    // 기존 분석 데이터 초기화
+    // Reset existing analytics data
     if (!computed.isMessagesView) {
       analyticsActions.switchToMessages();
     }
 
-    // 프로젝트 선택
+    // Select project
     await selectProject(project);
 
-    // 분석 탭이 열려있었다면 새 프로젝트의 분석 데이터 자동 로드
+    // Auto-load analytics data for new project if analytics tab was open
     if (wasAnalyticsOpen) {
       try {
         await analyticsActions.switchToAnalytics();
@@ -143,7 +143,7 @@ function App() {
       }
     }
 
-    // 토큰 통계 탭이 열려있었다면 새 프로젝트의 토큰 통계 자동 로드
+    // Auto-load token stats for new project if token stats tab was open
     if (wasTokenStatsOpen) {
       try {
         await analyticsActions.switchToTokenStats();

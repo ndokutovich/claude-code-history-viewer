@@ -23,7 +23,7 @@ interface OutputTag {
 export const CommandRenderer = ({ text }: Props) => {
   const { t } = useTranslation("components");
 
-  // Command 그룹 (name, message, args) 추출
+  // Extract Command group (name, message, args)
   const commandNameRegex = /<command-name>\s*(.*?)\s*<\/command-name>/gs;
   const commandMessageRegex =
     /<command-message>\s*(.*?)\s*<\/command-message>/gs;
@@ -52,17 +52,17 @@ export const CommandRenderer = ({ text }: Props) => {
     args: extractedArgs && extractedArgs.length > 0 ? extractedArgs : undefined,
   };
 
-  // 출력 태그들 (stdout, stderr 등) 추출 - 더 포괄적인 패턴 사용
+  // Extract output tags (stdout, stderr, etc.) - using comprehensive patterns
   const outputTags: OutputTag[] = [];
 
-  // stdout 계열: stdout, output이 포함된 모든 태그
+  // stdout family: all tags containing stdout or output
   const stdoutRegex = /<([^>]*(?:stdout|output)[^>]*)\s*>\s*(.*?)\s*<\/\1>/gs;
-  // stderr 계열: stderr, error가 포함된 모든 태그
+  // stderr family: all tags containing stderr or error
   const stderrRegex = /<([^>]*(?:stderr|error)[^>]*)\s*>\s*(.*?)\s*<\/\1>/gs;
 
   let match;
 
-  // stdout 계열 태그들
+  // stdout family tags
   while ((match = stdoutRegex.exec(text)) !== null) {
     const [, tagName, content] = match;
     if (content && content.trim()) {
@@ -74,7 +74,7 @@ export const CommandRenderer = ({ text }: Props) => {
     }
   }
 
-  // stderr 계열 태그들
+  // stderr family tags
   while ((match = stderrRegex.exec(text)) !== null) {
     const [, tagName, content] = match;
     if (content && content.trim()) {
@@ -86,14 +86,14 @@ export const CommandRenderer = ({ text }: Props) => {
     }
   }
 
-  // 모든 태그 제거
+  // Remove all tags
   const withoutCommands = text
     .replace(commandNameRegex, "")
     .replace(commandMessageRegex, "")
     .replace(commandArgsRegex, "")
     .replace(stdoutRegex, "")
     .replace(stderrRegex, "")
-    .replace(/^\s*\n/gm, "") // 빈 줄 제거
+    .replace(/^\s*\n/gm, "") // Remove empty lines
     .trim();
 
   const hasCommandGroup =
@@ -106,7 +106,7 @@ export const CommandRenderer = ({ text }: Props) => {
 
   return (
     <div className="space-y-2">
-      {/* Command Group - 한 묶음으로 처리 */}
+      {/* Command Group - processed as a unit */}
       {hasCommandGroup && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
           <div className="flex items-center space-x-2 mb-2">
@@ -153,7 +153,7 @@ export const CommandRenderer = ({ text }: Props) => {
         </div>
       )}
 
-      {/* 출력 태그들 */}
+      {/* Output tags */}
       {outputTags.map((output, index) => {
         const isError = output.type === "stderr";
 
@@ -209,7 +209,7 @@ export const CommandRenderer = ({ text }: Props) => {
         );
       })}
 
-      {/* 나머지 텍스트 */}
+      {/* Remaining text */}
       {withoutCommands && (
         <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-code:text-red-600 prose-code:bg-gray-100">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>

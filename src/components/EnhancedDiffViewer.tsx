@@ -37,7 +37,7 @@ export const EnhancedDiffViewer = ({
   const [splitView, setSplitView] = useState(true);
   const { renderCopyButton } = useCopyButton();
 
-  // 파일 확장자에 따른 언어 결정
+  // Determine language based on file extension
   const getLanguageFromPath = (path: string) => {
     const ext = path.split(".").pop()?.toLowerCase();
     const fileName = path.split("/").pop()?.toLowerCase() || "";
@@ -80,12 +80,12 @@ export const EnhancedDiffViewer = ({
   const language = getLanguageFromPath(filePath);
 
   /**
-   * Syntax highlighting 함수 - ReactDiffViewer의 renderContent용
-   * @param str - 하이라이팅할 문자열 (undefined, null, empty string 처리)
+   * Syntax highlighting function - for ReactDiffViewer's renderContent
+   * @param str - String to highlight (handles undefined, null, empty string)
    * @returns React Element
    */
   const highlightSyntax = (str: string | undefined | null) => {
-    // 초기 안전성 검사
+    // Initial safety check
     if (str === null || str === undefined) {
       return <span style={{ display: "inline" }}></span>;
     }
@@ -103,7 +103,7 @@ export const EnhancedDiffViewer = ({
       return <span style={{ display: "inline" }}></span>;
     }
 
-    // 텍스트 언어인 경우 하이라이팅 없이 반환
+    // Return without highlighting for text language
     if (language === "text") {
       return <span style={{ display: "inline" }}>{str}</span>;
     }
@@ -128,7 +128,7 @@ export const EnhancedDiffViewer = ({
           ? "bash"
           : "markup";
 
-      // Prism 언어 지원 확인
+      // Check Prism language support
       const lang = Prism.languages[prismLanguage];
       if (!lang) {
         console.warn(
@@ -137,13 +137,13 @@ export const EnhancedDiffViewer = ({
         return <span style={{ display: "inline" }}>{str}</span>;
       }
 
-      // 문자열 검증 (trim이 있는지 확인)
+      // Validate string (check if trim exists)
       const trimmedStr = str.trim();
       if (trimmedStr.length === 0) {
         return <span style={{ display: "inline" }}>{str}</span>;
       }
 
-      // syntax highlighting 실행
+      // Execute syntax highlighting
       const highlightedHtml = Prism.highlight(str, lang, prismLanguage);
       return (
         <span
@@ -160,7 +160,7 @@ export const EnhancedDiffViewer = ({
         "for text:",
         str.substring(0, 50) + "..."
       );
-      // 에러 발생 시 원본 텍스트 반환
+      // Return original text on error
       return <span style={{ display: "inline" }}>{str}</span>;
     }
   };
@@ -172,7 +172,7 @@ export const EnhancedDiffViewer = ({
           {t("diffViewer.changes")}
         </div>
         <div className="flex items-center space-x-2">
-          {/* 이후 코드 복사 버튼 */}
+          {/* Copy after code button */}
           {renderCopyButton(
             newText,
             `diff-new-${filePath || "content"}`,

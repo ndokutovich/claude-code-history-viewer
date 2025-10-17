@@ -62,7 +62,7 @@ export function useNativeUpdater(): UseNativeUpdaterReturn {
     try {
       setState((prev) => ({ ...prev, isDownloading: true, error: null }));
 
-      // 다운로드 진행률 리스너 (Tauri 업데이터 플러그인이 지원하는 경우)
+      // Download progress listener (if supported by Tauri updater plugin)
       await state.updateInfo.downloadAndInstall((event) => {
         switch (event.event) {
           case "Started":
@@ -87,7 +87,7 @@ export function useNativeUpdater(): UseNativeUpdaterReturn {
         }
       });
 
-      // 설치 완료 후 앱 재시작
+      // Relaunch app after installation completes
       await relaunch();
     } catch (error) {
       setState((prev) => ({
@@ -111,7 +111,7 @@ export function useNativeUpdater(): UseNativeUpdaterReturn {
     }));
   }, []);
 
-  // 앱 시작 시 자동으로 업데이트 확인 (5초 후)
+  // Auto-check for updates on app startup (after 5 seconds)
   useEffect(() => {
     const timer = setTimeout(() => {
       checkForUpdates();

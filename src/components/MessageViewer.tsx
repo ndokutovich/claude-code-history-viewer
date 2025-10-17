@@ -39,7 +39,7 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
   if (message.isSidechain) {
     return null;
   }
-  // depth에 따른 왼쪽 margin 적용
+  // Apply left margin based on depth
   const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, 16)}` : "";
 
   return (
@@ -52,14 +52,14 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
       )}
     >
       <div className="max-w-4xl mx-auto">
-        {/* depth 표시 (개발 모드에서만) */}
+        {/* Show depth (only in development mode) */}
         {import.meta.env.DEV && depth > 0 && (
           <div className="text-xs text-gray-400 dark:text-gray-600 mb-1">
             └─ {t("messageViewer.reply", { depth })}
           </div>
         )}
 
-        {/* 메시지 헤더 */}
+        {/* Message header */}
         <div
           className={`flex items-center space-x-2 mb-1 text-md text-gray-500 dark:text-gray-400 ${
             message.type === "user" ? "justify-end" : "justify-start"
@@ -88,7 +88,7 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
           )}
         </div>
 
-        {/* 메시지 내용 */}
+        {/* Message content */}
         <div className="w-full">
           {/* Message Content */}
           <MessageContentDisplay
@@ -139,7 +139,7 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
   );
 };
 
-// 타입 안전한 parent UUID 추출 함수
+// Type-safe parent UUID extraction function
 const getParentUuid = (message: ClaudeMessage): string | null | undefined => {
   const msgWithParent = message as ClaudeMessage & {
     parentUuid?: string;
@@ -159,18 +159,18 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLength = useRef(messages.length);
 
-  // 무한 렌더링 방지를 위한 ref
+  // Ref to prevent infinite rendering
   const isProcessingLoadMore = useRef(false);
   const lastPaginationCall = useRef<number>(0);
 
-  // 메시지 변화 감지 및 스크롤 위치 조정 (최적화됨)
+  // Detect message changes and adjust scroll position (optimized)
   useEffect(() => {
     const prevLength = prevMessagesLength.current;
     const currentLength = messages.length;
 
-    // 메시지 길이가 변했고, 처리 중이 아닐 때만 실행
+    // Only execute when message length changed and not currently processing
     if (prevLength !== currentLength && !isProcessingLoadMore.current) {
-      // 더보기로 인한 메시지 추가인 경우만 스크롤 조정
+      // Adjust scroll only when messages are added via load more
       if (prevLength > 0 && currentLength > prevLength) {
         isProcessingLoadMore.current = true;
 
@@ -187,7 +187,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 
           prevScrollHeight.current = currentScrollHeight;
 
-          // 처리 완료
+          // Processing complete
           requestAnimationFrame(() => {
             if (scrollElement.style.overflow === "hidden") {
               scrollElement.style.overflow = "auto";
@@ -203,18 +203,18 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     }
   }, [messages.length]);
 
-  // 메시지 트리 구조 메모이제이션 (성능 최적화)
+  // Memoize message tree structure (performance optimization)
   const { rootMessages, uniqueMessages } = useMemo(() => {
     if (messages.length === 0) {
       return { rootMessages: [], uniqueMessages: [] };
     }
 
-    // 중복 제거
+    // Remove duplicates
     const uniqueMessages = Array.from(
       new Map(messages.map((msg) => [msg.uuid, msg])).values()
     );
 
-    // 루트 메시지 찾기
+    // Find root messages
     const roots: ClaudeMessage[] = [];
     uniqueMessages.forEach((msg) => {
       const parentUuid = getParentUuid(msg);
@@ -226,14 +226,14 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     return { rootMessages: roots, uniqueMessages };
   }, [messages]);
 
-  // 이전 세션 ID를 추적
+  // Track previous session ID
   const prevSessionIdRef = useRef<string | null>(null);
 
-  // 맨 아래로 스크롤하는 함수
+  // Function to scroll to bottom
   const scrollToBottom = useCallback(() => {
     if (scrollContainerRef.current) {
       const element = scrollContainerRef.current;
-      // 여러 번 시도하여 확실히 맨 아래로 이동
+      // Multiple attempts to ensure scrolling to bottom
       const attemptScroll = (attempts = 0) => {
         element.scrollTop = element.scrollHeight;
         if (
@@ -247,39 +247,39 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     }
   }, []);
 
-  // 새로운 세션 선택 시 스크롤을 맨 아래로 이동 (채팅 스타일)
+  // Scroll to bottom when new session is selected (chat style)
   useEffect(() => {
-    // 세션이 실제로 변경되었고, 메시지가 로드된 경우에만 실행
+    // Execute only when session actually changed and messages are loaded
     if (
       selectedSession &&
       prevSessionIdRef.current !== selectedSession.session_id &&
       messages.length > 0 &&
       !isLoading
     ) {
-      // 이전 세션 ID 업데이트
+      // Update previous session ID
       prevSessionIdRef.current = selectedSession.session_id;
 
-      // DOM이 완전히 업데이트된 후 스크롤 실행
+      // Execute scroll after DOM is fully updated
       setTimeout(() => scrollToBottom(), 100);
     }
   }, [selectedSession, messages.length, isLoading, scrollToBottom]);
 
-  // 페이지네이션이 리셋될 때 (새 세션 or 새로고침) 스크롤을 맨 아래로
+  // Scroll to bottom when pagination is reset (new session or refresh)
   useEffect(() => {
     if (pagination.currentOffset === 0 && messages.length > 0 && !isLoading) {
       setTimeout(() => scrollToBottom(), 50);
     }
   }, [pagination.currentOffset, messages.length, isLoading, scrollToBottom]);
 
-  // 채팅 스타일: 이전 메시지 로드 후 스크롤 위치 유지
+  // Chat style: maintain scroll position after loading previous messages
   const prevScrollHeight = useRef<number>(0);
   const prevScrollTop = useRef<number>(0);
 
-  // 더보기 버튼 최적화 (중복 호출 방지)
+  // Optimize load more button (prevent duplicate calls)
   const handleLoadMoreWithScroll = useCallback(() => {
     const now = Date.now();
 
-    // 중복 클릭 방지 (1초 내 중복 호출 차단)
+    // Prevent duplicate clicks (block duplicate calls within 1 second)
     if (
       !pagination.hasMore ||
       pagination.isLoadingMore ||
@@ -310,10 +310,10 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     }
   }, [pagination.hasMore, pagination.isLoadingMore, isLoading, onLoadMore]);
 
-  // 스크롤 위치 상태 추가
+  // Add scroll position state
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
-  // 스크롤 이벤트 최적화 (쓰로틀링 적용)
+  // Optimize scroll event (apply throttling)
   useEffect(() => {
     let throttleTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -382,7 +382,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     visitedIds = new Set<string>(),
     keyPrefix = ""
   ): React.ReactNode[] => {
-    // 순환 참조 방지
+    // Prevent circular references
     if (visitedIds.has(message.uuid)) {
       console.warn(`Circular reference detected for message: ${message.uuid}`);
       return [];
@@ -394,15 +394,15 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       return parentUuid === message.uuid;
     });
 
-    // 고유한 키 생성
+    // Generate unique key
     const uniqueKey = keyPrefix ? `${keyPrefix}-${message.uuid}` : message.uuid;
 
-    // 현재 메시지를 먼저 추가하고, 자식 메시지들을 이어서 추가
+    // Add current message first, then child messages
     const result: React.ReactNode[] = [
       <ClaudeMessageNode key={uniqueKey} message={message} depth={depth} />,
     ];
 
-    // 자식 메시지들을 재귀적으로 추가 (depth 증가)
+    // Recursively add child messages (increase depth)
     children.forEach((child, index) => {
       const childNodes = renderMessageTree(
         child,
@@ -421,9 +421,9 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       <div
         ref={scrollContainerRef}
         className="flex-1 h-full overflow-y-auto scrollbar-thin"
-        style={{ scrollBehavior: "auto" }} // smooth 대신 auto로 즉각적인 스크롤
+        style={{ scrollBehavior: "auto" }} // Use auto instead of smooth for immediate scroll
       >
-        {/* 디버깅 정보 */}
+        {/* Debugging information */}
         {import.meta.env.DEV && (
           <div className="bg-yellow-50 p-2 text-xs text-yellow-800 border-b space-y-1">
             <div>
@@ -470,7 +470,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           </div>
         )}
         <div className="max-w-4xl mx-auto">
-          {/* 이전 메시지 로드 버튼 (상단) - 채팅 스타일 */}
+          {/* Load previous messages button (top) - chat style */}
           {pagination.hasMore && (
             <div className="flex items-center justify-center py-4">
               {pagination.isLoadingMore ? (
@@ -509,7 +509,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
             </div>
           )}
 
-          {/* 로딩 완료 메시지 (상단) */}
+          {/* Loading complete message (top) */}
           {!pagination.hasMore && messages.length > 0 && (
             <div className="flex items-center justify-center py-4">
               <div className="text-gray-400 text-sm">
@@ -520,19 +520,19 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
             </div>
           )}
 
-          {/* 메시지 목록 */}
+          {/* Message list */}
           {(() => {
             try {
               if (rootMessages.length > 0) {
-                // 트리 구조 렌더링
+                // Render tree structure
                 return rootMessages
                   .map((message) => renderMessageTree(message, 0, new Set()))
                   .flat();
               } else {
-                // 평면 구조 렌더링
+                // Render flat structure
 
                 return uniqueMessages.map((message, index) => {
-                  // 고유 키 생성: UUID가 없거나 중복될 경우 인덱스와 타임스탬프 사용
+                  // Generate unique key: use index and timestamp if UUID is missing or duplicated
                   const uniqueKey =
                     message.uuid && message.uuid !== "unknown-session"
                       ? `${message.uuid}-${index}`
@@ -557,7 +557,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                 lastMessage: messages[messages.length - 1],
               });
 
-              // 에러 발생 시 안전한 fallback 렌더링
+              // Safe fallback rendering on error
               return (
                 <div
                   key="error-fallback"
@@ -583,7 +583,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           })()}
         </div>
 
-        {/* 플로팅 맨 아래로 버튼 */}
+        {/* Floating scroll to bottom button */}
         {showScrollToBottom && (
           <button
             onClick={scrollToBottom}

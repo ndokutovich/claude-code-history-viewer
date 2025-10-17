@@ -16,10 +16,10 @@ import {
   AppErrorType,
 } from "../types";
 
-// Tauri API가 사용 가능한지 확인하는 함수
+// Function to check if Tauri API is available
 const isTauriAvailable = () => {
   try {
-    // Tauri v2에서는 invoke 함수가 바로 사용 가능합니다
+    // In Tauri v2, the invoke function is directly available
     return typeof window !== "undefined" && typeof invoke === "function";
   } catch {
     return false;
@@ -68,7 +68,7 @@ interface AppStore extends AppState {
   clearAnalyticsErrors: () => void;
 }
 
-const DEFAULT_PAGE_SIZE = 100; // 초기 로딩 시 100개 메시지 로드
+const DEFAULT_PAGE_SIZE = 100; // Load 100 messages on initial loading
 
 export const useAppStore = create<AppStore>((set, get) => ({
   // Root-level view state (single source of truth)
@@ -123,7 +123,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       if (!isTauriAvailable()) {
         throw new Error(
-          "Tauri API를 사용할 수 없습니다. 데스크톱 앱에서 실행해주세요."
+          "Tauri API is not available. Please run in the desktop app."
         );
       }
 
@@ -192,7 +192,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         console.log(
           `🚀 [Frontend] scanProjects: ${
             projects.length
-          }개 프로젝트, ${duration.toFixed(1)}ms`
+          } projects, ${duration.toFixed(1)}ms`
         );
       }
 
@@ -261,7 +261,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // Use file_path from session directly
       const sessionPath = session.file_path;
 
-      // 첫 페이지 로드
+      // Load first page
       const messagePage = await invoke<MessagePage>(
         "load_session_messages_paginated",
         {
@@ -326,7 +326,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       );
 
       set({
-        messages: [...messagePage.messages, ...messages], // 더 오래된 메시지를 앞에 추가 (채팅 스타일)
+        messages: [...messagePage.messages, ...messages], // Add older messages to the front (chat style)
         pagination: {
           ...pagination,
           currentOffset: messagePage.next_offset,
@@ -377,13 +377,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return;
     }
 
-    console.log("새로고침 시작:", selectedSession.session_id);
+    console.log("Refresh started:", selectedSession.session_id);
 
-    // 로딩 상태 설정 (selectSession이 내부적으로 isLoadingMessages를 관리함)
+    // Set loading state (selectSession internally manages isLoadingMessages)
     set({ error: null });
 
     try {
-      // 프로젝트 세션 목록도 새로고침하여 message_count 업데이트
+      // Refresh project session list to update message_count
       if (selectedProject) {
         const sessions = await invoke<ClaudeSession[]>(
           "load_project_sessions",
@@ -395,28 +395,28 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set({ sessions });
       }
 
-      // 현재 세션을 다시 로드 (첫 페이지부터)
+      // Reload current session (from first page)
       await get().selectSession(selectedSession, pagination.pageSize);
 
-      // 분석 뷰일 때 분석 데이터도 새로고침
+      // Refresh analytics data when in analytics view
       if (selectedProject && (currentView === "tokenStats" || currentView === "analytics")) {
-        console.log("분석 데이터 새로고침 시작:", currentView);
+        console.log("Analytics data refresh started:", currentView);
 
         if (currentView === "tokenStats") {
-          // 토큰 통계 새로고침
+          // Refresh token statistics
           await get().loadProjectTokenStats(selectedProject.path);
           if (selectedSession?.file_path) {
             await get().loadSessionTokenStats(selectedSession.file_path);
           }
         } else if (currentView === "analytics") {
-          // 분석 대시보드 새로고침
+          // Refresh analytics dashboard
           const projectSummary = await invoke<ProjectStatsSummary>(
             "get_project_stats_summary",
             { projectPath: selectedProject.path }
           );
           get().setProjectSummary(projectSummary);
 
-          // 세션 비교 데이터도 새로고침
+          // Refresh session comparison data
           if (selectedSession) {
             const sessionComparison = await invoke<SessionComparison>(
               "get_session_comparison",
@@ -429,12 +429,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
           }
         }
 
-        console.log("분석 데이터 새로고침 완료");
+        console.log("Analytics data refresh completed");
       }
 
-      console.log("새로고침 완료");
+      console.log("Refresh completed");
     } catch (error) {
-      console.error("새로고침 실패:", error);
+      console.error("Refresh failed:", error);
       set({ error: { type: AppErrorType.UNKNOWN, message: String(error) } });
     }
   },
@@ -536,10 +536,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setExcludeSidechain: (exclude: boolean) => {
     set({ excludeSidechain: exclude });
-    // 필터 변경 시 현재 프로젝트와 세션 새로고침
+    // Refresh current project and session when filter changes
     const { selectedProject, selectedSession } = get();
     if (selectedProject) {
-      // 프로젝트 다시 로드하여 세션 목록의 message_count 업데이트
+      // Reload project to update session list's message_count
       get().selectProject(selectedProject);
     }
     if (selectedSession) {
@@ -570,7 +570,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       switch (view) {
         case 'tokenStats':
           if (!selectedProject) {
-            throw new Error("프로젝트가 선택되지 않았습니다.");
+            throw new Error("No project selected.");
           }
           // Load project token stats
           await get().loadProjectTokenStats(selectedProject.path);
@@ -582,7 +582,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
         case 'analytics':
           if (!selectedProject) {
-            throw new Error("프로젝트가 선택되지 않았습니다.");
+            throw new Error("No project selected.");
           }
           // Load project summary
           set({ isLoadingProjectSummary: true, projectSummaryError: null });
@@ -590,7 +590,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             const summary = await get().loadProjectStatsSummary(selectedProject.path);
             set({ projectStatsSummary: summary });
           } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "프로젝트 요약 로드 실패";
+            const errorMessage = error instanceof Error ? error.message : "Failed to load project summary";
             set({ projectSummaryError: errorMessage });
             throw error;
           } finally {
@@ -607,7 +607,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
               );
               set({ sessionComparison: comparison });
             } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : "세션 비교 로드 실패";
+              const errorMessage = error instanceof Error ? error.message : "Failed to load session comparison";
               set({ sessionComparisonError: errorMessage });
               // Session comparison failure is not critical
             } finally {
