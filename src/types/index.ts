@@ -130,6 +130,7 @@ export interface ClaudeSession {
 export interface SearchFilters {
   dateRange?: [Date, Date];
   projects?: string[];
+  sessionId?: string;
   messageType?: "user" | "assistant" | "all";
   hasToolCalls?: boolean;
   hasErrors?: boolean;

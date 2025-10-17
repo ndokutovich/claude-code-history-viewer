@@ -347,18 +347,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   searchMessages: async (query: string, filters: SearchFilters = {}) => {
-    const { claudePath } = get();
+    const { claudePath, selectedProject, selectedSession } = get();
     if (!claudePath || !query.trim()) {
       set({ searchResults: [], searchQuery: "" });
       return;
     }
 
-    set({ isLoadingMessages: true, searchQuery: query });
+    // Auto-populate filters with selected project and session if not already specified
+    const effectiveFilters: SearchFilters = {
+      ...filters,
+      // If no projects filter specified and we have a selected project, use it
+      projects: filters.projects || (selectedProject ? [selectedProject.path] : undefined),
+      // If no session filter specified and we have a selected session, use it
+      sessionId: filters.sessionId || (selectedSession ? selectedSession.file_path : undefined),
+    };
+
+    set({ isLoadingMessages: true, searchQuery: query, searchFilters: effectiveFilters });
     try {
       const results = await invoke<ClaudeMessage[]>("search_messages", {
         claudePath,
         query,
-        filters,
+        filters: effectiveFilters,
       });
       set({ searchResults: results });
     } catch (error) {

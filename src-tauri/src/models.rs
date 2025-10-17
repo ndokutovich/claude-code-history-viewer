@@ -185,3 +185,20 @@ pub struct SessionComparison {
     pub rank_by_duration: usize,
     pub is_above_average: bool,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SearchFilters {
+    #[serde(rename = "dateRange")]
+    pub date_range: Option<Vec<String>>,
+    pub projects: Option<Vec<String>>,
+    #[serde(rename = "sessionId")]
+    pub session_id: Option<String>,
+    #[serde(rename = "messageType")]
+    pub message_type: Option<String>,
+    #[serde(rename = "hasToolCalls")]
+    pub has_tool_calls: Option<bool>,
+    #[serde(rename = "hasErrors")]
+    pub has_errors: Option<bool>,
+    #[serde(rename = "hasFileChanges")]
+    pub has_file_changes: Option<bool>,
+}

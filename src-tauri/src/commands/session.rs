@@ -653,7 +653,7 @@ fn matches_search_terms(content: &str, terms: &[(bool, String)]) -> bool {
 pub async fn search_messages(
     claude_path: String,
     query: String,
-    _filters: serde_json::Value
+    filters: SearchFilters
 ) -> Result<Vec<ClaudeMessage>, String> {
     let projects_path = PathBuf::from(&claude_path).join("projects");
     let mut all_messages = Vec::new();
@@ -668,6 +668,19 @@ pub async fn search_messages(
         return Ok(vec![]);
     }
 
+    // Parse date range if provided
+    let date_range = if let Some(ref dates) = filters.date_range {
+        if dates.len() == 2 {
+            let start = DateTime::parse_from_rfc3339(&dates[0]).ok();
+            let end = DateTime::parse_from_rfc3339(&dates[1]).ok();
+            start.zip(end)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
     for entry in WalkDir::new(&projects_path)
         .into_iter()
         .filter_map(|e| e.ok())
@@ -679,11 +692,80 @@ pub async fn search_messages(
             .parent() // Get parent directory (project folder)
             .map(|p| p.to_string_lossy().to_string());
 
+        // Filter by project if specified
+        if let Some(ref project_filters) = filters.projects {
+            if let Some(ref path) = project_path {
+                // Check if this project path is in the allowed list
+                if !project_filters.iter().any(|p| path.contains(p)) {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+        }
+
+        // Filter by session if specified
+        if let Some(ref session_filter) = filters.session_id {
+            let file_path = entry.path().to_string_lossy().to_string();
+            if !file_path.contains(session_filter) {
+                continue;
+            }
+        }
+
         if let Ok(content) = fs::read_to_string(entry.path()) {
             for (line_num, line) in content.lines().enumerate() {
                 if let Ok(log_entry) = serde_json::from_str::<RawLogEntry>(line) {
+                    // Filter by message type
+                    if let Some(ref msg_type_filter) = filters.message_type {
+                        if msg_type_filter != "all" && log_entry.message_type != *msg_type_filter {
+                            continue;
+                        }
+                    }
+
                     if log_entry.message_type == "user" || log_entry.message_type == "assistant" {
                         if let Some(message_content) = &log_entry.message {
+                            // Filter by date range
+                            if let (Some((start, end)), Some(ref timestamp)) = (date_range, &log_entry.timestamp) {
+                                if let Ok(msg_time) = DateTime::parse_from_rfc3339(timestamp) {
+                                    if msg_time < start || msg_time > end {
+                                        continue;
+                                    }
+                                } else {
+                                    continue;
+                                }
+                            }
+
+                            // Filter by tool calls
+                            if let Some(has_tool_calls_filter) = filters.has_tool_calls {
+                                let has_tool_calls = log_entry.tool_use.is_some() ||
+                                    log_entry.tool_use_result.is_some() ||
+                                    (if let serde_json::Value::Array(arr) = &message_content.content {
+                                        arr.iter().any(|item| {
+                                            item.get("type").and_then(|v| v.as_str()) == Some("tool_use")
+                                        })
+                                    } else {
+                                        false
+                                    });
+
+                                if has_tool_calls != has_tool_calls_filter {
+                                    continue;
+                                }
+                            }
+
+                            // Filter by errors
+                            if let Some(has_errors_filter) = filters.has_errors {
+                                let has_errors = if let Some(ref result) = log_entry.tool_use_result {
+                                    result.get("stderr").and_then(|s| s.as_str()).map(|s| !s.is_empty()).unwrap_or(false) ||
+                                    result.get("is_error").and_then(|e| e.as_bool()).unwrap_or(false)
+                                } else {
+                                    false
+                                };
+
+                                if has_errors != has_errors_filter {
+                                    continue;
+                                }
+                            }
+
                             let content_str = match &message_content.content {
                                 serde_json::Value::String(s) => s.clone(),
                                 serde_json::Value::Array(arr) => {
