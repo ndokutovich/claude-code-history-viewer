@@ -1,5 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+// ============================================================================
+// UNIVERSAL TYPES MODULE (v2.0.0)
+// ============================================================================
+pub mod universal;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TokenUsage {
     pub input_tokens: Option<u32>,

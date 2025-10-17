@@ -314,3 +314,14 @@ export interface UpdateInfo {
   is_forced: boolean;
   days_until_deadline?: number;
 }
+
+// ============================================================================
+// UNIVERSAL TYPES (v2.0.0 - Multi-Provider Support)
+// ============================================================================
+
+// Re-export all universal types
+export * from './universal';
+export * from './providers';
+
+// Legacy types remain for backwards compatibility
+// New code should use Universal* types from './universal'
