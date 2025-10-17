@@ -58,12 +58,12 @@ Claude Code は会話履歴を`~/.claude/projects/`フォルダ内の JSONL フ�
 
 ### ダウンロード
 
-[Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases)から最新版を入手してください。
+[Releases](https://github.com/ndokutovich/claude-code-history-viewer/releases)から最新版を入手してください。
 
 ### ソースからビルド
 
 ```bash
-git clone https://github.com/jhlee0409/claude-code-history-viewer.git
+git clone https://github.com/ndokutovich/claude-code-history-viewer.git
 cd claude-code-history-viewer
 pnpm install
 pnpm tauri:build
@@ -126,4 +126,4 @@ MIT ライセンス - [LICENSE](LICENSE)ファイルを参照。
 
 ---
 
-**質問や問題がありますか？** 設定と発生した問題について詳しく説明して[issue を作成](https://github.com/jhlee0409/claude-code-history-viewer/issues)してください。
+**質問や問題がありますか？** 設定と発生した問題について詳しく説明して[issue を作成](https://github.com/ndokutovich/claude-code-history-viewer/issues)してください。

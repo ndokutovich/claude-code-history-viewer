@@ -2,6 +2,17 @@
   "name": "claude-code-history-viewer",
   "private": true,
   "version": "1.1.1",
+  "description": "Desktop application for browsing and analyzing Claude Code conversation history",
+  "author": "JaeHyeok Lee, ndokutovich, and others (see commits history)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ndokutovich/claude-code-history-viewer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ndokutovich/claude-code-history-viewer/issues"
+  },
+  "homepage": "https://github.com/ndokutovich/claude-code-history-viewer#readme",
   "type": "module",
   "scripts": {
     "dev": "vite",

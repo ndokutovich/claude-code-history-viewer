@@ -56,12 +56,12 @@ The app also handles large conversation histories without freezing up, and auto-
 
 ### Download
 
-Get the latest version from [Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases).
+Get the latest version from [Releases](https://github.com/ndokutovich/claude-code-history-viewer/releases).
 
 ### Build from source
 
 ```bash
-git clone https://github.com/jhlee0409/claude-code-history-viewer.git
+git clone https://github.com/ndokutovich/claude-code-history-viewer.git
 cd claude-code-history-viewer
 pnpm install
 pnpm tauri:build
@@ -124,4 +124,4 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
-**Questions or issues?** [Open an issue](https://github.com/jhlee0409/claude-code-history-viewer/issues) with details about your setup and what went wrong.
+**Questions or issues?** [Open an issue](https://github.com/ndokutovich/claude-code-history-viewer/issues) with details about your setup and what went wrong.

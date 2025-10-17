@@ -58,12 +58,12 @@ Claude Code는 대화 기록을 `~/.claude/projects/` 폴더에 JSONL 파일로 
 
 ### 다운로드
 
-[Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases)에서 최신 버전을 받으세요.
+[Releases](https://github.com/ndokutovich/claude-code-history-viewer/releases)에서 최신 버전을 받으세요.
 
 ### 직접 빌드
 
 ```bash
-git clone https://github.com/jhlee0409/claude-code-history-viewer.git
+git clone https://github.com/ndokutovich/claude-code-history-viewer.git
 cd claude-code-history-viewer
 pnpm install
 pnpm tauri:build
@@ -126,4 +126,4 @@ MIT 라이선스 - [LICENSE](LICENSE) 파일 참조.
 
 ---
 
-**질문이나 문제 있으시면?** 설정과 어떤 문제가 발생했는지 자세히 적어서 [이슈를 등록](https://github.com/jhlee0409/claude-code-history-viewer/issues)해주세요.
+**질문이나 문제 있으시면?** 설정과 어떤 문제가 발생했는지 자세히 적어서 [이슈를 등록](https://github.com/ndokutovich/claude-code-history-viewer/issues)해주세요.

@@ -58,12 +58,12 @@ Claude Code 将对话历史保存在 `~/.claude/projects/` 文件夹的 JSONL �
 
 ### 下载
 
-从 [Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases) 获取最新版本。
+从 [Releases](https://github.com/ndokutovich/claude-code-history-viewer/releases) 获取最新版本。
 
 ### 从源码构建
 
 ```bash
-git clone https://github.com/jhlee0409/claude-code-history-viewer.git
+git clone https://github.com/ndokutovich/claude-code-history-viewer.git
 cd claude-code-history-viewer
 pnpm install
 pnpm tauri:build
@@ -126,4 +126,4 @@ MIT 许可证 - 见 [LICENSE](LICENSE) 文件。
 
 ---
 
-**有问题或疑问？** 请详细描述您的设置和遇到的问题，[创建 issue](https://github.com/jhlee0409/claude-code-history-viewer/issues)。
+**有问题或疑问？** 请详细描述您的设置和遇到的问题，[创建 issue](https://github.com/ndokutovich/claude-code-history-viewer/issues)。
