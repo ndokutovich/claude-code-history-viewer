@@ -510,7 +510,21 @@
       "light": "ライト",
       "dark": "ダーク",
       "system": "システム"
-    }
+    },
+    "updateSettings": "アップデート設定",
+    "autoUpdateCheck": "自動アップデート確認",
+    "checkInterval": "確認間隔",
+    "everyAppStartup": "アプリ起動時毎回",
+    "onceADay": "1日に1回",
+    "onceAWeek": "週に1回",
+    "disableWhenOffline": "オフライン時は確認無効",
+    "criticalUpdateNotifications": "重要なアップデート通知",
+    "skippedVersions": "スキップされたバージョン",
+    "clearAll": "すべてクリア",
+    "checkingForUpdates": "アップデートを確認中...",
+    "checkForUpdatesNow": "今すぐアップデートを確認",
+    "clearCache": "キャッシュをクリア",
+    "cacheCleared": "アップデートキャッシュがクリアされました。"
   },
   "assistantMessageDetails": {
     "model": "モデル",

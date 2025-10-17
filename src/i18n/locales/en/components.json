@@ -510,7 +510,21 @@
       "light": "Light",
       "dark": "Dark",
       "system": "System"
-    }
+    },
+    "updateSettings": "Update Settings",
+    "autoUpdateCheck": "Auto Update Check",
+    "checkInterval": "Check Interval",
+    "everyAppStartup": "Every app startup",
+    "onceADay": "Once a day",
+    "onceAWeek": "Once a week",
+    "disableWhenOffline": "Disable check when offline",
+    "criticalUpdateNotifications": "Critical update notifications",
+    "skippedVersions": "Skipped versions",
+    "clearAll": "Clear all",
+    "checkingForUpdates": "Checking for updates...",
+    "checkForUpdatesNow": "Check for updates now",
+    "clearCache": "Clear cache",
+    "cacheCleared": "Update cache has been cleared."
   },
   "assistantMessageDetails": {
     "model": "Model",

@@ -526,7 +526,21 @@
       "light": "라이트",
       "dark": "다크",
       "system": "시스템"
-    }
+    },
+    "updateSettings": "업데이트 설정",
+    "autoUpdateCheck": "자동 업데이트 확인",
+    "checkInterval": "확인 주기",
+    "everyAppStartup": "앱 시작시마다",
+    "onceADay": "하루에 한 번",
+    "onceAWeek": "일주일에 한 번",
+    "disableWhenOffline": "오프라인일 때 확인 비활성화",
+    "criticalUpdateNotifications": "중요 업데이트 알림",
+    "skippedVersions": "건너뛴 버전",
+    "clearAll": "모두 지우기",
+    "checkingForUpdates": "업데이트 확인 중...",
+    "checkForUpdatesNow": "지금 업데이트 확인",
+    "clearCache": "캐시 지우기",
+    "cacheCleared": "업데이트 캐시가 지워졌습니다."
   },
   "assistantMessageDetails": {
     "model": "모델",

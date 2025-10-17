@@ -525,7 +525,21 @@
       "light": "浅色",
       "dark": "深色",
       "system": "系统"
-    }
+    },
+    "updateSettings": "更新设置",
+    "autoUpdateCheck": "自动更新检查",
+    "checkInterval": "检查间隔",
+    "everyAppStartup": "每次启动应用时",
+    "onceADay": "每天一次",
+    "onceAWeek": "每周一次",
+    "disableWhenOffline": "离线时禁用检查",
+    "criticalUpdateNotifications": "关键更新通知",
+    "skippedVersions": "跳过的版本",
+    "clearAll": "全部清除",
+    "checkingForUpdates": "正在检查更新...",
+    "checkForUpdatesNow": "立即检查更新",
+    "clearCache": "清除缓存",
+    "cacheCleared": "更新缓存已清除。"
   },
   "assistantMessageDetails": {
     "model": "模型",
