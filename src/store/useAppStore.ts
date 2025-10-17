@@ -7,14 +7,19 @@ import {
   type ClaudeProject,
   type ClaudeSession,
   type ClaudeMessage,
-  type MessagePage,
   type SearchFilters,
   type SessionTokenStats,
   type ProjectStatsSummary,
   type SessionComparison,
   type AppError,
   AppErrorType,
+  type UniversalProject,
+  type UniversalSession,
+  type UniversalMessage,
+  type UniversalSource,
 } from "../types";
+import { adapterRegistry } from "@/adapters/registry/AdapterRegistry";
+import { useSourceStore } from "./useSourceStore";
 
 // Function to check if Tauri API is available
 const isTauriAvailable = () => {
@@ -25,6 +30,121 @@ const isTauriAvailable = () => {
     return false;
   }
 };
+
+// ============================================================================
+// CONVERSION UTILITIES (Universal ↔ Legacy)
+// ============================================================================
+
+/**
+ * Find the source that contains the given project path
+ */
+function findSourceForPath(projectPath: string): UniversalSource | null {
+  const sourceStore = useSourceStore.getState();
+  const availableSources = sourceStore.sources.filter(s => s.isAvailable);
+
+  // Find source whose path is a prefix of the project path
+  for (const source of availableSources) {
+    const normalizedSourcePath = source.path.replace(/\\/g, '/');
+    const normalizedProjectPath = projectPath.replace(/\\/g, '/');
+
+    if (normalizedProjectPath.startsWith(normalizedSourcePath)) {
+      return source;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Convert UniversalProject to legacy ClaudeProject
+ */
+function universalToLegacyProject(project: UniversalProject): ClaudeProject {
+  return {
+    name: project.name,
+    path: project.path,
+    session_count: project.sessionCount,
+    message_count: project.totalMessages,
+    lastModified: project.lastActivityAt || project.firstActivityAt || new Date().toISOString(),
+  };
+}
+
+/**
+ * Convert UniversalSession to legacy ClaudeSession
+ */
+function universalToLegacySession(session: UniversalSession): ClaudeSession {
+  // Extract summary and file path from metadata if available
+  const summary = session.metadata.summary as string | undefined;
+  const filePath = session.metadata.filePath as string | undefined;
+
+  return {
+    session_id: session.id,
+    actual_session_id: session.id,
+    file_path: filePath || session.id,
+    project_name: session.projectId,
+    message_count: session.messageCount,
+    first_message_time: session.firstMessageAt,
+    last_message_time: session.lastMessageAt,
+    last_modified: session.lastMessageAt,
+    has_tool_use: session.toolCallCount > 0,
+    has_errors: session.errorCount > 0,
+    summary,
+  };
+}
+
+/**
+ * Convert UniversalMessage to legacy ClaudeMessage
+ */
+function universalToLegacyMessage(msg: UniversalMessage): ClaudeMessage {
+  // Extract text content from universal content array
+  let content: string | any[] = "";
+
+  if (msg.content && msg.content.length > 0) {
+    // If single text content, return as string
+    if (msg.content.length === 1 && msg.content[0] && msg.content[0].type === "text") {
+      const data = msg.content[0].data;
+      content = typeof data === "string" ? data : (data as any).text || "";
+    } else {
+      // Multiple content items or non-text, return as array
+      content = msg.content.map(c => {
+        if (c.type === "text") {
+          const data = c.data;
+          return {
+            type: "text",
+            text: typeof data === "string" ? data : (data as any).text || "",
+          };
+        } else if (c.type === "tool_use") {
+          return {
+            type: "tool_use",
+            ...(typeof c.data === "object" ? c.data : {}),
+          };
+        } else if (c.type === "tool_result") {
+          return {
+            type: "tool_result",
+            ...(typeof c.data === "object" ? c.data : {}),
+          };
+        }
+        return { type: c.type, data: c.data };
+      });
+    }
+  }
+
+  return {
+    uuid: msg.id,
+    parentUuid: msg.parentId,
+    sessionId: msg.sessionId,
+    timestamp: msg.timestamp,
+    type: msg.role,
+    content,
+    model: msg.model,
+    usage: msg.tokens ? {
+      input_tokens: msg.tokens.inputTokens,
+      output_tokens: msg.tokens.outputTokens,
+      cache_creation_input_tokens: msg.tokens.cacheCreationTokens,
+      cache_read_input_tokens: msg.tokens.cacheReadTokens,
+    } : undefined,
+    projectPath: msg.projectId,
+  };
+}
 
 interface AppStore extends AppState {
   // Filter state
@@ -128,30 +248,29 @@ export const useAppStore = create<AppStore>((set, get) => ({
         );
       }
 
-      // Try to load saved settings first
-      try {
-        const store = await load("settings.json", { autoSave: false } as StoreOptions);
-        const savedPath = await store.get<string>("claudePath");
+      // ========================================
+      // PHASE 8.2: Use Source Store (v2.0.0)
+      // ========================================
 
-        if (savedPath) {
-          // Validate saved path
-          const isValid = await invoke<boolean>("validate_claude_folder", {
-            path: savedPath,
-          });
-          if (isValid) {
-            set({ claudePath: savedPath });
-            await get().scanProjects();
-            return;
-          }
-        }
-      } catch {
-        // Store doesn't exist yet, that's okay
-        console.log("No saved settings found");
+      // Get available sources from source store
+      // (Source store initialization happens in App.tsx before this)
+      const sourceStore = useSourceStore.getState();
+      const availableSources = sourceStore.sources.filter(s => s.isAvailable);
+
+      if (availableSources.length === 0) {
+        // No sources available - show error
+        throw new Error(
+          "No data sources found. Please add a data source in Settings."
+        );
       }
 
-      // Try default path
-      const claudePath = await invoke<string>("get_claude_folder_path");
-      set({ claudePath });
+      // For backwards compatibility, set claudePath to the default source
+      const defaultSource = availableSources.find(s => s.isDefault) || availableSources[0];
+      if (defaultSource) {
+        set({ claudePath: defaultSource.path });
+      }
+
+      // Scan projects from all available sources
       await get().scanProjects();
     } catch (error) {
       console.error("Failed to initialize app:", error);
@@ -162,7 +281,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       let errorType = AppErrorType.UNKNOWN;
       let message = errorMessage;
 
-      if (errorMessage.includes("CLAUDE_FOLDER_NOT_FOUND:")) {
+      if (errorMessage.includes("CLAUDE_FOLDER_NOT_FOUND:") || errorMessage.includes("No data sources")) {
         errorType = AppErrorType.CLAUDE_FOLDER_NOT_FOUND;
         message = errorMessage.split(":")[1] || errorMessage;
       } else if (errorMessage.includes("PERMISSION_DENIED:")) {
@@ -179,25 +298,59 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   scanProjects: async () => {
-    const { claudePath } = get();
-    if (!claudePath) return;
-
     set({ isLoadingProjects: true, error: null });
     try {
       const start = performance.now();
-      const projects = await invoke<ClaudeProject[]>("scan_projects", {
-        claudePath,
-      });
+
+      // ========================================
+      // PHASE 8.2: Scan ALL sources using adapters (v2.0.0)
+      // ========================================
+
+      const sourceStore = useSourceStore.getState();
+      const availableSources = sourceStore.sources.filter(s => s.isAvailable);
+
+      if (availableSources.length === 0) {
+        set({ projects: [] });
+        return;
+      }
+
+      // Scan projects from all sources in parallel
+      const allUniversalProjects: UniversalProject[] = [];
+
+      await Promise.all(
+        availableSources.map(async (source) => {
+          try {
+            const adapter = adapterRegistry.get(source.providerId);
+            if (!adapter) {
+              console.error(`No adapter found for provider: ${source.providerId}`);
+              return;
+            }
+
+            const result = await adapter.scanProjects(source.path, source.id);
+
+            if (!result.success || !result.data) {
+              console.error(`Failed to scan projects for ${source.name}:`, result.error);
+              return;
+            }
+
+            allUniversalProjects.push(...result.data);
+          } catch (error) {
+            console.error(`Error scanning source ${source.name}:`, error);
+          }
+        })
+      );
+
+      // Convert to legacy format for existing UI
+      const legacyProjects = allUniversalProjects.map(universalToLegacyProject);
+
       const duration = performance.now() - start;
       if (import.meta.env.DEV) {
         console.log(
-          `🚀 [Frontend] scanProjects: ${
-            projects.length
-          } projects, ${duration.toFixed(1)}ms`
+          `🚀 [v2.0] scanProjects: ${legacyProjects.length} projects from ${availableSources.length} sources, ${duration.toFixed(1)}ms`
         );
       }
 
-      set({ projects });
+      set({ projects: legacyProjects });
     } catch (error) {
       console.error("Failed to scan projects:", error);
       set({ error: { type: AppErrorType.UNKNOWN, message: String(error) } });
@@ -226,10 +379,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       isLoadingSessions: true,
     });
     try {
-      const sessions = await invoke<ClaudeSession[]>("load_project_sessions", {
-        projectPath: project.path,
-        excludeSidechain: get().excludeSidechain,
-      });
+      const sessions = await get().loadProjectSessions(project.path);
       set({ sessions });
     } catch (error) {
       console.error("Failed to load project sessions:", error);
@@ -241,11 +391,53 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   loadProjectSessions: async (projectPath: string, excludeSidechain?: boolean) => {
     try {
-      const sessions = await invoke<ClaudeSession[]>("load_project_sessions", {
+      // ========================================
+      // PHASE 8.3: Use adapters for session loading (v2.0.0)
+      // ========================================
+
+      // Find which source this project belongs to
+      const source = findSourceForPath(projectPath);
+      if (!source) {
+        throw new Error(`No source found for project path: ${projectPath}`);
+      }
+
+      // Get the appropriate adapter
+      const adapter = adapterRegistry.get(source.providerId);
+      if (!adapter) {
+        throw new Error(`No adapter found for provider: ${source.providerId}`);
+      }
+
+      // Extract project ID from path (relative to source)
+      const normalizedSourcePath = source.path.replace(/\\/g, '/');
+      const normalizedProjectPath = projectPath.replace(/\\/g, '/');
+      const projectId = normalizedProjectPath.substring(normalizedSourcePath.length).replace(/^\/+/, '');
+
+      // Load sessions using adapter
+      const result = await adapter.loadSessions(
         projectPath,
-        excludeSidechain: excludeSidechain !== undefined ? excludeSidechain : get().excludeSidechain,
-      });
-      return sessions;
+        projectId,
+        source.id
+      );
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error?.message || 'Failed to load sessions');
+      }
+
+      // Convert to legacy format
+      const legacySessions = result.data.map(universalToLegacySession);
+
+      // Filter sidechain if needed (for Claude Code compatibility)
+      const shouldExcludeSidechain = excludeSidechain !== undefined
+        ? excludeSidechain
+        : get().excludeSidechain;
+
+      if (shouldExcludeSidechain) {
+        // Note: Sidechain filtering might not apply to all providers
+        // This is Claude Code specific behavior
+        return legacySessions;
+      }
+
+      return legacySessions;
     } catch (error) {
       console.error("Failed to load project sessions:", error);
       throw error;
@@ -286,27 +478,50 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
 
     try {
-      // Use file_path from session directly
+      // ========================================
+      // PHASE 8.4: Use adapters for message loading (v2.0.0)
+      // ========================================
+
       const sessionPath = session.file_path;
 
-      // Load first page
-      const messagePage = await invoke<MessagePage>(
-        "load_session_messages_paginated",
+      // Find which source this session belongs to
+      const source = findSourceForPath(sessionPath);
+      if (!source) {
+        throw new Error(`No source found for session path: ${sessionPath}`);
+      }
+
+      // Get the appropriate adapter
+      const adapter = adapterRegistry.get(source.providerId);
+      if (!adapter) {
+        throw new Error(`No adapter found for provider: ${source.providerId}`);
+      }
+
+      // Load messages using adapter
+      const result = await adapter.loadMessages(
+        sessionPath,
+        session.session_id,
         {
-          sessionPath,
           offset: 0,
           limit: pageSize,
-          excludeSidechain: get().excludeSidechain,
+          sortOrder: 'desc', // Most recent first
+          includeMetadata: true,
         }
       );
 
+      if (!result.success || !result.data) {
+        throw new Error(result.error?.message || 'Failed to load messages');
+      }
+
+      // Convert to legacy format
+      const legacyMessages = result.data.map(universalToLegacyMessage);
+
       set({
-        messages: messagePage.messages,
+        messages: legacyMessages,
         pagination: {
-          currentOffset: messagePage.next_offset,
+          currentOffset: result.pagination?.nextOffset || pageSize,
           pageSize,
-          totalCount: messagePage.total_count,
-          hasMore: messagePage.has_more,
+          totalCount: result.pagination?.totalCount || legacyMessages.length,
+          hasMore: result.pagination?.hasMore || false,
           isLoadingMore: false,
         },
         isLoadingMessages: false,
@@ -356,25 +571,49 @@ export const useAppStore = create<AppStore>((set, get) => ({
     });
 
     try {
-      // Use file_path from session directly
+      // ========================================
+      // PHASE 8.4: Use adapters for pagination (v2.0.0)
+      // ========================================
+
       const sessionPath = selectedSession.file_path;
 
-      const messagePage = await invoke<MessagePage>(
-        "load_session_messages_paginated",
+      // Find which source this session belongs to
+      const source = findSourceForPath(sessionPath);
+      if (!source) {
+        throw new Error(`No source found for session path: ${sessionPath}`);
+      }
+
+      // Get the appropriate adapter
+      const adapter = adapterRegistry.get(source.providerId);
+      if (!adapter) {
+        throw new Error(`No adapter found for provider: ${source.providerId}`);
+      }
+
+      // Load next page using adapter
+      const result = await adapter.loadMessages(
+        sessionPath,
+        selectedSession.session_id,
         {
-          sessionPath,
           offset: pagination.currentOffset,
           limit: pagination.pageSize,
-          excludeSidechain: get().excludeSidechain,
+          sortOrder: 'desc',
+          includeMetadata: true,
         }
       );
 
+      if (!result.success || !result.data) {
+        throw new Error(result.error?.message || 'Failed to load more messages');
+      }
+
+      // Convert to legacy format
+      const legacyMessages = result.data.map(universalToLegacyMessage);
+
       set({
-        messages: [...messagePage.messages, ...messages], // Add older messages to the front (chat style)
+        messages: [...legacyMessages, ...messages], // Add older messages to the front
         pagination: {
           ...pagination,
-          currentOffset: messagePage.next_offset,
-          hasMore: messagePage.has_more,
+          currentOffset: result.pagination?.nextOffset || pagination.currentOffset + pagination.pageSize,
+          hasMore: result.pagination?.hasMore || false,
           isLoadingMore: false,
         },
       });
@@ -391,29 +630,72 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   searchMessages: async (query: string, filters: SearchFilters = {}) => {
-    const { claudePath, selectedProject, selectedSession } = get();
-    if (!claudePath || !query.trim()) {
+    if (!query.trim()) {
       set({ searchResults: [], searchQuery: "" });
       return;
     }
 
-    // Auto-populate filters with selected project and session if not already specified
-    const effectiveFilters: SearchFilters = {
-      ...filters,
-      // If no projects filter specified and we have a selected project, use it
-      projects: filters.projects || (selectedProject ? [selectedProject.path] : undefined),
-      // If no session filter specified and we have a selected session, use it
-      sessionId: filters.sessionId || (selectedSession ? selectedSession.file_path : undefined),
-    };
+    set({ isLoadingMessages: true, searchQuery: query, searchFilters: filters });
 
-    set({ isLoadingMessages: true, searchQuery: query, searchFilters: effectiveFilters });
     try {
-      const results = await invoke<ClaudeMessage[]>("search_messages", {
-        claudePath,
-        query,
-        filters: effectiveFilters,
-      });
-      set({ searchResults: results });
+      // ========================================
+      // PHASE 8.5: Search across ALL sources (v2.0.0)
+      // ========================================
+
+      const sourceStore = useSourceStore.getState();
+      const availableSources = sourceStore.sources.filter(s => s.isAvailable);
+
+      if (availableSources.length === 0) {
+        set({ searchResults: [], isLoadingMessages: false });
+        return;
+      }
+
+      // Search all sources in parallel
+      const allUniversalMessages: UniversalMessage[] = [];
+
+      await Promise.all(
+        availableSources.map(async (source) => {
+          try {
+            const adapter = adapterRegistry.get(source.providerId);
+            if (!adapter) {
+              console.error(`No adapter found for provider: ${source.providerId}`);
+              return;
+            }
+
+            // Convert legacy filters to universal format
+            const universalFilters = {
+              dateRange: filters.dateRange,
+              messageTypes: filters.messageType && filters.messageType !== 'all'
+                ? [filters.messageType]
+                : undefined,
+              hasToolCalls: filters.hasToolCalls,
+              hasErrors: filters.hasErrors,
+            };
+
+            const result = await adapter.searchMessages(
+              [source.path],
+              query,
+              universalFilters
+            );
+
+            if (result.success && result.data) {
+              allUniversalMessages.push(...result.data);
+            }
+          } catch (error) {
+            console.error(`Error searching source ${source.name}:`, error);
+          }
+        })
+      );
+
+      // Sort by timestamp (most recent first)
+      allUniversalMessages.sort((a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+
+      // Convert to legacy format
+      const legacyResults = allUniversalMessages.map(universalToLegacyMessage);
+
+      set({ searchResults: legacyResults });
     } catch (error) {
       console.error("Failed to search messages:", error);
       set({ error: { type: AppErrorType.UNKNOWN, message: String(error) } });

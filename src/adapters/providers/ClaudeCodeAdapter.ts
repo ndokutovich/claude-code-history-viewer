@@ -4,7 +4,7 @@
 // Adapter for Claude Code CLI conversation history (.claude/projects/*.jsonl)
 // Implements IConversationAdapter to enable multi-provider support
 
-import {
+import type {
   IConversationAdapter,
   ValidationResult,
   DetectionScore,
@@ -16,27 +16,27 @@ import {
   HealthStatus,
   ErrorRecovery,
   ErrorContext,
-  classifyError,
 } from '../base/IAdapter';
-import {
+import { classifyError } from '../base/IAdapter';
+import type {
   UniversalProject,
   UniversalSession,
   UniversalMessage,
-  MessageRole,
-  MessageType,
-  ContentType,
   UniversalContent,
   ToolCall,
   ThinkingBlock,
-  TokenUsage,
-  ErrorCode,
 } from '../../types/universal';
 import {
+  MessageRole as MsgRole,
+  MessageType as MsgType,
+  ContentType as ContType,
+  MessageRole,
+  MessageType,
+} from '../../types/universal';
+import type {
   ProviderDefinition,
-  ProviderCapabilities,
-  ProviderID,
-  DetectionPattern,
 } from '../../types/providers';
+import { ProviderID, ErrorCode } from '../../types/providers';
 import { invoke } from '@tauri-apps/api/core';
 
 // Legacy types for backwards compatibility (will be phased out)
@@ -79,19 +79,19 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       {
         type: 'directory',
         pattern: '.claude',
-        location: 'root',
+        weight: 90,
         required: true,
       },
       {
         type: 'directory',
         pattern: 'projects',
-        location: '.claude',
+        weight: 90,
         required: true,
       },
       {
         type: 'file',
         pattern: '*.jsonl',
-        location: '.claude/projects/*',
+        weight: 70,
         required: false,
       },
     ],
@@ -140,13 +140,18 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       if (!isValid) {
         return {
           isValid: false,
-          errors: ['Not a valid Claude Code folder (missing .claude/projects structure)'],
+          confidence: 0,
+          errors: [{
+            code: ErrorCode.INVALID_FORMAT,
+            message: 'Not a valid Claude Code folder (missing .claude/projects structure)',
+          }],
           warnings: [],
         };
       }
 
       return {
         isValid: true,
+        confidence: 100,
         errors: [],
         warnings: [],
       };
@@ -154,9 +159,12 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       const errorCode = classifyError(error as Error);
       return {
         isValid: false,
-        errors: [`Validation failed: ${(error as Error).message}`],
+        confidence: 0,
+        errors: [{
+          code: errorCode,
+          message: `Validation failed: ${(error as Error).message}`,
+        }],
         warnings: [],
-        errorCode,
       };
     }
   }
@@ -170,23 +178,23 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
           canHandle: false,
           confidence: 0,
           matchedPatterns: [],
-          reason: validation.errors.join('; '),
+          missingPatterns: ['.claude directory', 'projects directory'],
         };
       }
 
       // High confidence for valid Claude folders
       return {
         canHandle: true,
-        confidence: 0.95,
+        confidence: 95,
         matchedPatterns: ['.claude/projects directory structure'],
-        reason: 'Valid Claude Code conversation history folder',
+        missingPatterns: [],
       };
     } catch (error) {
       return {
         canHandle: false,
         confidence: 0,
         matchedPatterns: [],
-        reason: `Detection failed: ${(error as Error).message}`,
+        missingPatterns: [],
       };
     }
   }
@@ -212,19 +220,20 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       return {
         success: true,
         data: universalProjects,
-        count: universalProjects.length,
-        errors: [],
-        warnings: [],
+        metadata: {
+          scanDuration: 0,
+          itemsFound: universalProjects.length,
+          itemsSkipped: 0,
+        },
       };
     } catch (error) {
-      const errorCode = classifyError(error as Error);
       return {
         success: false,
-        data: [],
-        count: 0,
-        errors: [(error as Error).message],
-        warnings: [],
-        errorCode,
+        error: {
+          code: classifyError(error as Error),
+          message: (error as Error).message,
+          recoverable: true,
+        },
       };
     }
   }
@@ -251,19 +260,20 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       return {
         success: true,
         data: universalSessions,
-        count: universalSessions.length,
-        errors: [],
-        warnings: [],
+        metadata: {
+          scanDuration: 0,
+          itemsFound: universalSessions.length,
+          itemsSkipped: 0,
+        },
       };
     } catch (error) {
-      const errorCode = classifyError(error as Error);
       return {
         success: false,
-        data: [],
-        count: 0,
-        errors: [(error as Error).message],
-        warnings: [],
-        errorCode,
+        error: {
+          code: classifyError(error as Error),
+          message: (error as Error).message,
+          recoverable: true,
+        },
       };
     }
   }
@@ -296,25 +306,20 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       return {
         success: true,
         data: universalMessages,
-        count: universalMessages.length,
-        totalCount: messagePage.total_count,
-        hasMore: messagePage.has_more,
-        nextOffset: messagePage.next_offset,
-        errors: [],
-        warnings: [],
+        pagination: {
+          hasMore: messagePage.has_more,
+          nextOffset: messagePage.next_offset,
+          totalCount: messagePage.total_count,
+        },
       };
     } catch (error) {
-      const errorCode = classifyError(error as Error);
       return {
         success: false,
-        data: [],
-        count: 0,
-        totalCount: 0,
-        hasMore: false,
-        nextOffset: 0,
-        errors: [(error as Error).message],
-        warnings: [],
-        errorCode,
+        error: {
+          code: classifyError(error as Error),
+          message: (error as Error).message,
+          recoverable: true,
+        },
       };
     }
   }
@@ -344,42 +349,36 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
         claudePath: sourcePaths[0],
         query,
         filters: {
-          projects: filters.projectIds,
-          session_id: filters.sessionIds?.[0],
-          message_type: filters.messageTypes?.[0],
+          projects: filters.projects,
+          session_id: filters.sessionId,
+          message_type: filters.messageType,
           has_tool_calls: filters.hasToolCalls,
           has_errors: filters.hasErrors,
           date_range: filters.dateRange
-            ? [filters.dateRange.start, filters.dateRange.end]
+            ? [filters.dateRange[0], filters.dateRange[1]]
             : undefined,
         },
       });
 
       // Convert to universal format
       const universalMessages: UniversalMessage[] = legacyMessages.map((msg, index) =>
-        this.convertLegacyMessage(msg, msg.session_id, index)
+        this.convertLegacyMessage(msg, msg.sessionId, index)
       );
 
       return {
         success: true,
         data: universalMessages,
-        count: universalMessages.length,
-        query,
-        filters,
-        errors: [],
-        warnings: [],
+        totalMatches: universalMessages.length,
+        searchDuration: 0,
       };
     } catch (error) {
-      const errorCode = classifyError(error as Error);
       return {
         success: false,
-        data: [],
-        count: 0,
-        query,
-        filters,
-        errors: [(error as Error).message],
-        warnings: [],
-        errorCode,
+        error: {
+          code: classifyError(error as Error),
+          message: (error as Error).message,
+          recoverable: true,
+        },
       };
     }
   }
@@ -393,19 +392,19 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       const validation = await this.validate(sourcePath);
 
       if (!validation.isValid) {
-        return HealthStatus.OFFLINE;
+        return 'offline';
       }
 
       // Try to scan projects as a health check
       const scanResult = await this.scanProjects(sourcePath, 'health-check');
 
       if (!scanResult.success) {
-        return HealthStatus.DEGRADED;
+        return 'degraded';
       }
 
-      return HealthStatus.HEALTHY;
+      return 'healthy';
     } catch {
-      return HealthStatus.OFFLINE;
+      return 'offline';
     }
   }
 
@@ -413,63 +412,79 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
   // ERROR RECOVERY (REQUIRED)
   // ------------------------------------------------------------------------
 
-  handleError(error: Error, context: ErrorContext): ErrorRecovery {
+  handleError(error: Error, _context: ErrorContext): ErrorRecovery {
     const errorCode = classifyError(error);
 
     switch (errorCode) {
       case ErrorCode.PATH_NOT_FOUND:
         return {
-          canRecover: false,
-          suggestedAction: 'retry',
-          userMessage: 'The Claude folder or file was not found. Please check the path.',
-          shouldRetry: false,
-          retryAfterMs: 0,
+          recoverable: false,
+          retry: {
+            shouldRetry: false,
+            maxAttempts: 0,
+            delayMs: 0,
+          },
+          message: 'The Claude folder or file was not found. Please check the path.',
         };
 
       case ErrorCode.ACCESS_DENIED:
         return {
-          canRecover: false,
-          suggestedAction: 'manual',
-          userMessage: 'Permission denied. Please check file permissions.',
-          shouldRetry: false,
-          retryAfterMs: 0,
+          recoverable: false,
+          retry: {
+            shouldRetry: false,
+            maxAttempts: 0,
+            delayMs: 0,
+          },
+          message: 'Permission denied. Please check file permissions.',
         };
 
       case ErrorCode.INVALID_FORMAT:
       case ErrorCode.PARSE_ERROR:
         return {
-          canRecover: true,
-          suggestedAction: 'skip',
-          userMessage: 'Some messages have invalid format and will be skipped.',
-          shouldRetry: false,
-          retryAfterMs: 0,
+          recoverable: true,
+          retry: {
+            shouldRetry: false,
+            maxAttempts: 0,
+            delayMs: 0,
+          },
+          message: 'Some messages have invalid format and will be skipped.',
+          suggestion: 'Try reloading or check the data integrity.',
         };
 
       case ErrorCode.CORRUPT_DATA:
         return {
-          canRecover: true,
-          suggestedAction: 'skip',
-          userMessage: 'Some data is corrupted and will be skipped.',
-          shouldRetry: false,
-          retryAfterMs: 0,
+          recoverable: true,
+          retry: {
+            shouldRetry: false,
+            maxAttempts: 0,
+            delayMs: 0,
+          },
+          message: 'Some data is corrupted and will be skipped.',
+          suggestion: 'Check the source files for corruption.',
         };
 
-      case ErrorCode.NETWORK_ERROR:
+      case ErrorCode.OPERATION_TIMEOUT:
         return {
-          canRecover: true,
-          suggestedAction: 'retry',
-          userMessage: 'Network error. Retrying...',
-          shouldRetry: true,
-          retryAfterMs: 2000,
+          recoverable: true,
+          retry: {
+            shouldRetry: true,
+            maxAttempts: 3,
+            delayMs: 2000,
+            backoffMultiplier: 1.5,
+          },
+          message: 'Operation timed out. Retrying...',
         };
 
       default:
         return {
-          canRecover: false,
-          suggestedAction: 'manual',
-          userMessage: `Unexpected error: ${error.message}`,
-          shouldRetry: false,
-          retryAfterMs: 0,
+          recoverable: false,
+          retry: {
+            shouldRetry: false,
+            maxAttempts: 0,
+            delayMs: 0,
+          },
+          message: `Unexpected error: ${error.message}`,
+          suggestion: 'Please report this issue if it persists.',
         };
     }
   }
@@ -486,14 +501,12 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       name: legacy.name,
       path: legacy.path,
       sessionCount: legacy.session_count,
-      messageCount: legacy.message_count,
-      firstSessionAt: legacy.last_modified, // Approximate
-      lastSessionAt: legacy.last_modified,
-      totalTokens: undefined, // Not available in legacy format
-      toolCallCount: 0, // Not available in legacy format
-      errorCount: 0, // Not available in legacy format
-      metadata: {},
-      checksum: this.generateChecksum(legacy.path + legacy.last_modified),
+      totalMessages: legacy.message_count,
+      firstActivityAt: legacy.lastModified, // Approximate
+      lastActivityAt: legacy.lastModified,
+      metadata: {
+        checksum: this.generateChecksum(legacy.path + legacy.lastModified),
+      },
     };
   }
 
@@ -530,10 +543,10 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
     sequenceNumber: number
   ): UniversalMessage {
     // Determine role
-    const role = this.mapRole(legacy.role || legacy.message_type);
+    const role = this.mapRole(legacy.type);
 
     // Determine message type
-    const messageType = this.mapMessageType(legacy.message_type);
+    const messageType = this.mapMessageType(legacy.type);
 
     // Convert content
     const content = this.convertContent(legacy);
@@ -579,7 +592,7 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       content,
 
       // HIERARCHY (OPTIONAL)
-      parentId: legacy.parent_uuid || undefined,
+      parentId: legacy.parentUuid || undefined,
 
       // METADATA (OPTIONAL)
       model: legacy.model || undefined,
@@ -590,10 +603,9 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       // RAW PRESERVATION (REQUIRED)
       originalFormat: 'claude-code-jsonl',
       providerMetadata: {
-        messageId: legacy.message_id,
         stopReason: legacy.stop_reason,
-        isSidechain: legacy.is_sidechain,
-        projectPath: legacy.project_path,
+        isSidechain: legacy.isSidechain,
+        projectPath: legacy.projectPath,
       },
     };
   }
@@ -608,8 +620,10 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
     // Handle string content
     if (typeof legacy.content === 'string') {
       contents.push({
-        type: ContentType.TEXT,
-        text: legacy.content,
+        type: ContType.TEXT,
+        data: { text: legacy.content },
+        encoding: 'plain',
+        mimeType: 'text/plain',
       });
       return contents;
     }
@@ -619,8 +633,10 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       for (const item of legacy.content) {
         if (typeof item === 'string') {
           contents.push({
-            type: ContentType.TEXT,
-            text: item,
+            type: ContType.TEXT,
+            data: { text: item },
+            encoding: 'plain',
+            mimeType: 'text/plain',
           });
         } else if (typeof item === 'object' && item !== null) {
           const contentType = (item as any).type;
@@ -628,48 +644,58 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
           switch (contentType) {
             case 'text':
               contents.push({
-                type: ContentType.TEXT,
-                text: (item as any).text || '',
+                type: ContType.TEXT,
+                data: { text: (item as any).text || '' },
+                encoding: 'plain',
+                mimeType: 'text/plain',
               });
               break;
 
             case 'tool_use':
               contents.push({
-                type: ContentType.TOOL_USE,
-                toolUse: {
+                type: ContType.TOOL_USE,
+                data: {
                   id: (item as any).id,
                   name: (item as any).name,
                   input: (item as any).input,
                 },
+                encoding: 'json',
+                mimeType: 'application/json',
               });
               break;
 
             case 'tool_result':
               contents.push({
-                type: ContentType.TOOL_RESULT,
-                toolResult: {
+                type: ContType.TOOL_RESULT,
+                data: {
                   toolUseId: (item as any).tool_use_id,
                   content: (item as any).content,
                   isError: (item as any).is_error || false,
                 },
+                encoding: 'json',
+                mimeType: 'application/json',
               });
               break;
 
             case 'thinking':
               contents.push({
-                type: ContentType.THINKING,
-                thinking: {
+                type: ContType.THINKING,
+                data: {
                   content: (item as any).thinking || '',
                   signature: (item as any).signature,
                 },
+                encoding: 'plain',
+                mimeType: 'text/plain',
               });
               break;
 
             default:
               // Unknown content type - preserve as metadata
               contents.push({
-                type: ContentType.TEXT,
-                text: JSON.stringify(item),
+                type: ContType.TEXT,
+                data: { text: JSON.stringify(item) },
+                encoding: 'json',
+                mimeType: 'application/json',
               });
           }
         }
@@ -679,8 +705,10 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
     // Handle JSON object content
     if (typeof legacy.content === 'object' && !Array.isArray(legacy.content)) {
       contents.push({
-        type: ContentType.TEXT,
-        text: JSON.stringify(legacy.content),
+        type: ContType.TEXT,
+        data: { text: JSON.stringify(legacy.content) },
+        encoding: 'json',
+        mimeType: 'application/json',
       });
     }
 
@@ -698,16 +726,17 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
             id: (item as any).id,
             name: (item as any).name,
             input: (item as any).input,
-            result: undefined, // Will be filled from tool_use_result
+            output: undefined, // Will be filled from tool_use_result
+            status: 'pending',
           });
         }
       }
     }
 
-    // Extract from tool_use field
-    if (legacy.tool_use) {
-      // Handle tool_use structure (if different from content)
-      // TODO: Parse legacy.tool_use structure if needed
+    // Extract from toolUse field
+    if (legacy.toolUse) {
+      // Handle toolUse structure (if different from content)
+      // TODO: Parse legacy.toolUse structure if needed
     }
 
     return toolCalls;
@@ -732,26 +761,26 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
   private mapRole(role: string | undefined): MessageRole {
     switch (role?.toLowerCase()) {
       case 'user':
-        return MessageRole.USER;
+        return MsgRole.USER;
       case 'assistant':
-        return MessageRole.ASSISTANT;
+        return MsgRole.ASSISTANT;
       case 'system':
-        return MessageRole.SYSTEM;
+        return MsgRole.SYSTEM;
       case 'function':
-        return MessageRole.FUNCTION;
+        return MsgRole.FUNCTION;
       default:
-        return MessageRole.USER; // Default fallback
+        return MsgRole.USER; // Default fallback
     }
   }
 
   private mapMessageType(type: string): MessageType {
     switch (type.toLowerCase()) {
       case 'summary':
-        return MessageType.SUMMARY;
+        return MsgType.SUMMARY;
       case 'sidechain':
-        return MessageType.SIDECHAIN;
+        return MsgType.SIDECHAIN;
       default:
-        return MessageType.MESSAGE;
+        return MsgType.MESSAGE;
     }
   }
 

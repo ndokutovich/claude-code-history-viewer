@@ -3,7 +3,7 @@
 // ============================================================================
 // Modal dialog for managing data sources
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { SourceManager } from '../SourceManager';
 

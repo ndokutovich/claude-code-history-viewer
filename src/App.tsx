@@ -58,10 +58,7 @@ function App() {
 
   // Source store for multi-source management
   const {
-    sources,
     initializeSources,
-    isLoadingSources,
-    error: sourceError,
   } = useSourceStore();
 
   // Maintain current view when session is selected (automatic data update handled in useAnalytics hook)

@@ -7,13 +7,7 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { load, type StoreOptions } from '@tauri-apps/plugin-store';
-import {
-  UniversalSource,
-  HealthStatus,
-  SourceStats,
-  ErrorCode,
-} from '../types/universal';
-import { ProviderID } from '../types/providers';
+import type { UniversalSource } from '../types/universal';
 import { adapterRegistry } from '../adapters';
 
 // Simple UUID v4 generator (RFC 4122 compliant)
@@ -43,6 +37,7 @@ interface SourceStoreState {
 
   // Actions - Initialization
   initializeSources: () => Promise<void>;
+  autoDetectDefaultSource: () => Promise<void>;
 
   // Actions - Source CRUD
   addSource: (path: string, name?: string) => Promise<UniversalSource>;
@@ -62,6 +57,9 @@ interface SourceStoreState {
   // Actions - Error handling
   setError: (error: string | null) => void;
   clearErrors: () => void;
+
+  // Actions - Persistence (internal)
+  persistSources: () => Promise<void>;
 }
 
 // ============================================================================
@@ -190,19 +188,16 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
         providerId: validation.providerId,
         isDefault: existingSources.length === 0, // First source is default
         isAvailable: true,
-        healthStatus: HealthStatus.HEALTHY,
+        healthStatus: 'healthy',
+        lastValidation: new Date().toISOString(),
         stats: {
           projectCount: 0,
           sessionCount: 0,
           messageCount: 0,
-          totalTokens: 0,
-          oldestMessageAt: new Date().toISOString(),
-          newestMessageAt: new Date().toISOString(),
-          lastSyncedAt: new Date().toISOString(),
+          totalSize: 0,
         },
         addedAt: new Date().toISOString(),
-        lastAccessedAt: new Date().toISOString(),
-        metadata: {
+        providerConfig: {
           providerName: adapter.providerDefinition.name,
           providerVersion: adapter.providerDefinition.version,
         },
@@ -211,10 +206,10 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       // Scan projects to get initial stats (in background)
       try {
         const scanResult = await adapter.scanProjects(path, sourceId);
-        if (scanResult.success) {
-          source.stats.projectCount = scanResult.count;
+        if (scanResult.success && scanResult.data) {
+          source.stats.projectCount = scanResult.metadata?.itemsFound || scanResult.data.length;
           source.stats.messageCount = scanResult.data.reduce(
-            (sum, p) => sum + p.messageCount,
+            (sum, p) => sum + (p.totalMessages || 0),
             0
           );
           source.stats.sessionCount = scanResult.data.reduce(
@@ -264,7 +259,7 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       const updatedSources = sources.filter((s) => s.id !== sourceId);
 
       // If removed source was default, make first source default
-      if (sourceToRemove.isDefault && updatedSources.length > 0) {
+      if (sourceToRemove.isDefault && updatedSources.length > 0 && updatedSources[0]) {
         updatedSources[0].isDefault = true;
       }
 
@@ -295,7 +290,7 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       }
 
       // Update source
-      const updatedSource = { ...sources[index], ...updates };
+      const updatedSource = { ...sources[index], ...updates } as UniversalSource;
       const updatedSources = [...sources];
       updatedSources[index] = updatedSource;
 
@@ -354,22 +349,21 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       const scanResult = await adapter.scanProjects(source.path, sourceId);
 
       // Update stats
-      const updatedSource: UniversalSource = {
-        ...source,
-        isAvailable: healthStatus === HealthStatus.HEALTHY || healthStatus === HealthStatus.DEGRADED,
+      const updatedSource: Partial<UniversalSource> = {
+        isAvailable: healthStatus === 'healthy' || healthStatus === 'degraded',
         healthStatus,
+        lastValidation: new Date().toISOString(),
         stats: {
           ...source.stats,
-          projectCount: scanResult.success ? scanResult.count : 0,
-          sessionCount: scanResult.success
+          projectCount: scanResult.success && scanResult.metadata ? scanResult.metadata.itemsFound : 0,
+          sessionCount: scanResult.success && scanResult.data
             ? scanResult.data.reduce((sum, p) => sum + p.sessionCount, 0)
             : 0,
-          messageCount: scanResult.success
-            ? scanResult.data.reduce((sum, p) => sum + p.messageCount, 0)
+          messageCount: scanResult.success && scanResult.data
+            ? scanResult.data.reduce((sum, p) => sum + (p.totalMessages || 0), 0)
             : 0,
-          lastSyncedAt: new Date().toISOString(),
         },
-        lastAccessedAt: new Date().toISOString(),
+        lastScanAt: new Date().toISOString(),
       };
 
       // Update state
@@ -383,7 +377,7 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       if (source) {
         await get().updateSource(sourceId, {
           isAvailable: false,
-          healthStatus: HealthStatus.OFFLINE,
+          healthStatus: 'offline',
         });
       }
     }

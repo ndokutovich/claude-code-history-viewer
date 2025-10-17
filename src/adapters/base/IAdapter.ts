@@ -1,20 +1,24 @@
 // Base adapter interface - ALL providers MUST implement this
 // FAIL FAST: Throw errors immediately on invalid data or states
 
-import {
+import type {
   UniversalMessage,
   UniversalSession,
   UniversalProject,
-  UniversalSource,
   SearchFilters,
   HealthStatus,
 } from '../../types/universal';
-import {
+import type {
   ProviderDefinition,
   ValidationResult,
   DetectionScore,
-  ErrorCode,
 } from '../../types/providers';
+import { ErrorCode } from '../../types/providers';
+
+// Re-export types that consumers need
+export type { ValidationResult, DetectionScore, SearchFilters, HealthStatus } from '../../types/universal';
+export type { ProviderDefinition } from '../../types/providers';
+export { ErrorCode } from '../../types/providers';
 
 // ============================================================================
 // MAIN ADAPTER INTERFACE
@@ -90,9 +94,11 @@ export interface LoadResult<T> {
   success: boolean;
   data?: T[];
   error?: AdapterError;
-  hasMore?: boolean;
-  nextOffset?: number;
-  totalCount?: number;
+  pagination?: {
+    hasMore: boolean;
+    nextOffset: number;
+    totalCount: number;
+  };
 }
 
 export interface SearchResult<T> {
@@ -112,6 +118,7 @@ export interface LoadOptions {
   limit?: number;
   excludeSidechain?: boolean;
   includeRaw?: boolean; // Include originalFormat field
+  includeMetadata?: boolean; // Include full metadata
   sortOrder?: 'asc' | 'desc';
 }
 

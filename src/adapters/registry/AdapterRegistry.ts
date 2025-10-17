@@ -1,8 +1,8 @@
 // Adapter Registry - Central management for all conversation adapters
 // FAIL FAST: Strict validation, no silent failures
 
-import { IConversationAdapter } from '../base/IAdapter';
-import { DetectionScore, ProviderDefinition } from '../../types/providers';
+import type { IConversationAdapter } from '../base/IAdapter';
+import type { DetectionScore, ProviderDefinition } from '../../types/providers';
 import { ClaudeCodeAdapter } from '../providers/ClaudeCodeAdapter';
 
 // ============================================================================
@@ -265,6 +265,14 @@ export class AdapterRegistry {
 
     // Return best match
     const best = scores[0];
+
+    if (!best) {
+      return {
+        success: false,
+        error: 'No providers available',
+      };
+    }
+
     console.log(`✅ Best match: ${best.adapter.providerId} (${best.score.confidence}%)`);
 
     return {

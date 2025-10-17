@@ -5,7 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSourceStore } from '../store/useSourceStore';
-import { UniversalSource, HealthStatus } from '../types/universal';
+import type { UniversalSource, HealthStatus } from '../types/universal';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Input } from './ui/input';
@@ -127,11 +127,11 @@ export const SourceManager: React.FC = () => {
   // Render health status icon
   const renderHealthIcon = (status: HealthStatus) => {
     switch (status) {
-      case HealthStatus.HEALTHY:
+      case 'healthy':
         return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      case HealthStatus.DEGRADED:
+      case 'degraded':
         return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-      case HealthStatus.OFFLINE:
+      case 'offline':
         return <XCircle className="h-4 w-4 text-red-500" />;
       default:
         return <Clock className="h-4 w-4 text-gray-400" />;

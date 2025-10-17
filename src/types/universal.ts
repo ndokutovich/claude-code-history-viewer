@@ -216,3 +216,10 @@ export interface SearchFilters {
   hasFileChanges?: boolean;
   model?: string;
 }
+
+// ============================================================================
+// RE-EXPORTS (for convenience)
+// ============================================================================
+
+export { MessageRole, MessageType, ContentType } from './providers';
+export type { ValidationResult, DetectionScore, ValidationError } from './providers';
