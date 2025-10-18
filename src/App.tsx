@@ -6,6 +6,7 @@ import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { SimpleUpdateManager } from "./components/SimpleUpdateManager";
 import { SearchView } from "./components/SearchView";
 import { DebugConsole } from "./components/DebugConsole";
+import { SplashScreen } from "./components/SplashScreen";
 import { useAppStore } from "./store/useAppStore";
 import { useSourceStore } from "./store/useSourceStore";
 import { useAnalytics } from "./hooks/useAnalytics";
@@ -39,11 +40,13 @@ function App() {
     sessionTokenStats,
     projectTokenStats,
     projectStatsSummary,
+    loadingProgress,
     initializeApp,
     selectProject,
     selectSession,
     clearSelection,
     loadMoreMessages,
+    setLoadingProgress,
   } = useAppStore();
 
   const {
@@ -69,19 +72,75 @@ function App() {
 
   useEffect(() => {
     // Initialize sources and app after loading language settings
-    loadLanguage()
-      .then(async () => {
-        // Initialize sources first (this will auto-detect Claude folder if needed)
+    const initialize = async () => {
+      try {
+        // Stage 1: Initializing (0-20%)
+        setLoadingProgress({
+          stage: 'initializing',
+          message: 'Initializing application',
+          progress: 5,
+        });
+
+        await loadLanguage();
+
+        setLoadingProgress({
+          stage: 'initializing',
+          message: 'Loading language settings',
+          progress: 15,
+        });
+
+        // Stage 2: Detecting sources (20-40%)
+        setLoadingProgress({
+          stage: 'detecting-sources',
+          message: 'Detecting conversation sources',
+          progress: 25,
+        });
+
         await initializeSources();
-        // Then initialize app with legacy behavior for backwards compatibility
+
+        setLoadingProgress({
+          stage: 'loading-adapters',
+          message: 'Loading adapters',
+          progress: 45,
+        });
+
+        // Stage 3: Scanning projects (40-80%)
+        setLoadingProgress({
+          stage: 'scanning-projects',
+          message: 'Scanning projects',
+          progress: 65,
+        });
+
         await initializeApp();
-      })
-      .catch((error) => {
-        console.error("Failed to load language:", error);
-        // Proceed with initialization using default language
-        initializeSources().then(() => initializeApp());
-      });
-  }, [initializeApp, initializeSources, loadLanguage]);
+
+        setLoadingProgress({
+          stage: 'scanning-projects',
+          message: 'Finalizing',
+          progress: 90,
+        });
+
+        // Stage 4: Complete (80-100%)
+        setLoadingProgress({
+          stage: 'complete',
+          message: 'Ready',
+          progress: 100,
+        });
+
+        // Remove splash screen after a short delay
+        setTimeout(() => {
+          setLoadingProgress(null);
+        }, 300);
+      } catch (error) {
+        console.error("Failed to initialize:", error);
+        // Clear splash screen even on error so user can see the error message
+        setLoadingProgress(null);
+      }
+    };
+
+    // Start initialization immediately
+    initialize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps to run only once on mount
 
   // Cmd+F keyboard shortcut
   useEffect(() => {
@@ -172,8 +231,12 @@ function App() {
     }
   };
 
-  // Show folder selector if needed
+  // Show splash screen during initialization
+  if (loadingProgress) {
+    return <SplashScreen progress={loadingProgress} />;
+  }
 
+  // Show folder selector if needed
   if (error && error.type !== AppErrorType.CLAUDE_FOLDER_NOT_FOUND) {
     return (
       <div

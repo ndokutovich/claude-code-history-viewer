@@ -1,5 +1,5 @@
 // src/components/ProjectTree.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Folder,
   Wrench,
@@ -14,6 +14,9 @@ import type { ClaudeProject, ClaudeSession } from "../types";
 import { cn } from "../utils/cn";
 import { getLocale } from "../utils/time";
 import { getSessionTitle } from "../utils/sessionUtils";
+import { ProjectListControls } from "./ProjectListControls";
+import { useAppStore } from "../store/useAppStore";
+import { ProviderIcon, getProviderColorClass } from "./icons/ProviderIcons";
 
 interface ProjectTreeProps {
   projects: ClaudeProject[];
@@ -38,6 +41,81 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 }) => {
   const [expandedProject, setExpandedProject] = useState("");
   const { t, i18n } = useTranslation();
+  const { projectListPreferences } = useAppStore();
+
+  // Apply filtering and sorting to projects
+  const filteredAndSortedProjects = useMemo(() => {
+    let result = [...projects];
+
+    console.log('🔍 Filter Debug:', {
+      hideEmptyProjects: projectListPreferences.hideEmptyProjects,
+      totalProjects: projects.length,
+      projectsWithCounts: projects.map(p => ({ name: p.name, session_count: p.session_count }))
+    });
+
+    // Filter: Hide empty projects
+    if (projectListPreferences.hideEmptyProjects) {
+      const beforeFilter = result.length;
+      result = result.filter((p) => p.session_count > 0);
+      console.log(`📊 Filtered projects: ${beforeFilter} -> ${result.length} (removed ${beforeFilter - result.length} empty)`);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      let comparison = 0;
+      if (projectListPreferences.sortBy === "name") {
+        comparison = a.name.localeCompare(b.name);
+      } else {
+        // Sort by date (lastModified)
+        comparison = new Date(a.lastModified).getTime() - new Date(b.lastModified).getTime();
+      }
+
+      // Apply sort order
+      return projectListPreferences.sortOrder === "asc" ? comparison : -comparison;
+    });
+
+    return result;
+  }, [projects, projectListPreferences]);
+
+  // Apply filtering to sessions
+  const filteredSessions = useMemo(() => {
+    console.log('🔍 Session Filter Debug:', {
+      hideEmptySessions: projectListPreferences.hideEmptySessions,
+      totalSessions: sessions.length,
+      sessionsWithCounts: sessions.slice(0, 5).map(s => ({
+        summary: s.summary?.substring(0, 30),
+        message_count: s.message_count
+      }))
+    });
+
+    if (!projectListPreferences.hideEmptySessions) {
+      return sessions;
+    }
+
+    const beforeFilter = sessions.length;
+    const filtered = sessions.filter((s) => s.message_count > 0);
+    console.log(`📊 Filtered sessions: ${beforeFilter} -> ${filtered.length} (removed ${beforeFilter - filtered.length} empty)`);
+
+    return filtered;
+  }, [sessions, projectListPreferences.hideEmptySessions]);
+
+  // Group projects by source if needed
+  const groupedProjects = useMemo(() => {
+    if (projectListPreferences.groupBy !== "source") {
+      return { ungrouped: filteredAndSortedProjects };
+    }
+
+    const groups: Record<string, ClaudeProject[]> = {};
+    filteredAndSortedProjects.forEach((project) => {
+      const groupName = project.providerName || "Unknown";
+      if (!groups[groupName]) {
+        groups[groupName] = [];
+      }
+      groups[groupName].push(project);
+    });
+
+    return groups;
+  }, [filteredAndSortedProjects, projectListPreferences.groupBy]);
 
   // ESC key to clear selection
   useEffect(() => {
@@ -89,6 +167,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
   return (
     <div className="max-w-80 w-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col h-full">
+      {/* Project List Controls */}
+      <ProjectListControls />
+
       {/* Selection Header with Clear Button */}
       {(selectedProject || selectedSession) && (
         <div className="px-4 py-2 border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex items-center justify-between">
@@ -116,7 +197,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
       {/* Projects List */}
       <div className="flex-1 overflow-y-auto scrollbar-thin">
-        {projects.length === 0 ? (
+        {filteredAndSortedProjects.length === 0 ? (
           <div className="p-4 text-center text-gray-400 dark:text-gray-600 h-full flex items-center">
             <div className="flex flex-col justify-center w-full">
               <div className="mb-2">
@@ -129,26 +210,41 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
           </div>
         ) : (
           <div className="space-y-2">
-            {projects.map((project) => {
-              const isExpanded = expandedProject === project.path;
+            {Object.entries(groupedProjects).map(([groupName, groupProjects]) => (
+              <div key={groupName}>
+                {/* Group Header (only if grouped by source) */}
+                {projectListPreferences.groupBy === "source" && (
+                  <div className="px-3 py-2 bg-gray-200 dark:bg-gray-750 border-b border-gray-300 dark:border-gray-600">
+                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                      {groupName}
+                    </p>
+                  </div>
+                )}
 
-              return (
-                <div key={project.path}>
-                  {/* Project Header */}
-                  <button
-                    onClick={() => {
-                      onProjectSelect(project);
-                      toggleProject(project.path);
-                    }}
-                    className="text-left w-full p-3 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
-                  >
+                {/* Projects in this group */}
+                {groupProjects.map((project) => {
+                  const isExpanded = expandedProject === project.path;
+
+                  return (
+                    <div key={project.path}>
+                      {/* Project Header */}
+                      <button
+                        onClick={() => {
+                          onProjectSelect(project);
+                          toggleProject(project.path);
+                        }}
+                        className="text-left w-full p-3 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
+                      >
                     <div className="flex items-center space-x-2">
                       {isExpanded ? (
                         <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                       ) : (
                         <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                       )}
-                      <Folder className="w-4 h-4 text-blue-400" />
+                      <ProviderIcon
+                        providerId={project.providerId || ""}
+                        className={cn("w-4 h-4", getProviderColorClass(project.providerId))}
+                      />
                       <div className="min-w-0 flex-1 flex items-center">
                         <p className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm max-w-56">
                           {project.name}
@@ -158,9 +254,20 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                   </button>
 
                   {/* Sessions for expanded project */}
-                  {isExpanded && sessions.length > 0 && !isLoading && (
-                    <div className="ml-6 space-y-1">
-                      {sessions.map((session) => {
+                  {isExpanded && (() => {
+                    // Debug: Check if sessions match this project
+                    const isSelectedProject = selectedProject?.path === project.path;
+                    console.log(`📂 Project "${project.name}" expanded:`, {
+                      isSelectedProject,
+                      projectSessionCount: project.session_count,
+                      filteredSessionsLength: filteredSessions.length,
+                      selectedProjectName: selectedProject?.name,
+                      firstSessionProject: filteredSessions[0]?.project_name,
+                    });
+
+                    return filteredSessions.length > 0 && !isLoading && (
+                      <div className="ml-6 space-y-1">
+                        {filteredSessions.map((session) => {
                         const isSessionSelected =
                           selectedSession?.session_id === session.session_id;
 
@@ -248,10 +355,13 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                         );
                       })}
                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
               );
             })}
+          </div>
+        ))}
           </div>
         )}
       </div>

@@ -103,6 +103,8 @@ export interface ClaudeMessage {
   };
   // Search metadata
   projectPath?: string;
+  // Provider-specific metadata (tool results, file attachments, etc.)
+  provider_metadata?: Record<string, unknown>;
 }
 
 export interface ClaudeProject {
@@ -111,6 +113,10 @@ export interface ClaudeProject {
   session_count: number;
   message_count: number;
   lastModified: string;
+  // Source/Provider information
+  sourceId?: string;
+  providerId?: string;
+  providerName?: string; // Human-readable name like "Claude Code" or "Cursor IDE"
 }
 
 export interface ClaudeSession {
@@ -125,6 +131,9 @@ export interface ClaudeSession {
   has_tool_use: boolean;
   has_errors: boolean;
   summary?: string;
+  // Provider information
+  providerId?: string;
+  providerName?: string;
 }
 
 export interface SearchFilters {
@@ -180,9 +189,36 @@ export interface AppError {
  */
 export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search';
 
+/**
+ * Loading progress tracking
+ */
+export interface LoadingProgress {
+  stage: 'initializing' | 'detecting-sources' | 'loading-adapters' | 'scanning-projects' | 'complete';
+  message: string;
+  progress: number; // 0-100
+  details?: string;
+}
+
+/**
+ * Project list display preferences
+ */
+export interface ProjectListPreferences {
+  groupBy: 'source' | 'none';
+  sortBy: 'name' | 'date';
+  sortOrder: 'asc' | 'desc';
+  hideEmptyProjects: boolean;
+  hideEmptySessions: boolean;
+}
+
 export interface AppState {
   // Root-level view state (single source of truth)
   currentView: AppView;
+
+  // Loading progress
+  loadingProgress: LoadingProgress | null;
+
+  // Project list preferences
+  projectListPreferences: ProjectListPreferences;
 
   // Core state
   claudePath: string;

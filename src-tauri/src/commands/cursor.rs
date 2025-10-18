@@ -4,6 +4,7 @@
 // Tauri commands for reading Cursor IDE conversation history from SQLite databases
 
 use crate::models::universal::*;
+use crate::models::universal::TokenUsage;
 use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -38,8 +39,47 @@ pub struct CursorSession {
 #[derive(Debug, Serialize, Deserialize)]
 struct CursorBubble {
     #[serde(rename = "type")]
-    bubble_type: i32, // 1 = user, other = assistant
+    bubble_type: i32, // 1 = user, 2 = assistant
     text: String,
+
+    // Tool and context data
+    #[serde(rename = "toolResults", default)]
+    tool_results: Vec<serde_json::Value>,
+
+    #[serde(rename = "relevantFiles", default)]
+    relevant_files: Vec<serde_json::Value>,
+
+    #[serde(rename = "attachedCodeChunks", default)]
+    attached_code_chunks: Vec<serde_json::Value>,
+
+    #[serde(rename = "assistantSuggestedDiffs", default)]
+    assistant_suggested_diffs: Vec<serde_json::Value>,
+
+    #[serde(rename = "gitDiffs", default)]
+    git_diffs: Vec<serde_json::Value>,
+
+    #[serde(rename = "interpreterResults", default)]
+    interpreter_results: Vec<serde_json::Value>,
+
+    #[serde(rename = "consoleLogs", default)]
+    console_logs: Vec<serde_json::Value>,
+
+    #[serde(rename = "allThinkingBlocks", default)]
+    all_thinking_blocks: Vec<serde_json::Value>,
+
+    #[serde(rename = "tokenCount", default)]
+    token_count: Option<TokenCount>,
+
+    #[serde(rename = "attachedFileCodeChunksMetadataOnly", default)]
+    attached_file_metadata: Vec<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct TokenCount {
+    #[serde(rename = "inputTokens")]
+    input_tokens: i32,
+    #[serde(rename = "outputTokens")]
+    output_tokens: i32,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -436,19 +476,68 @@ pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<Univers
             base_time
         };
 
-        println!("    [{}] {:?}: {} chars @ {}",
+        // Build content array with text + tool results + attachments
+        let mut content_items = vec![
+            UniversalContent {
+                content_type: ContentType::Text,
+                data: serde_json::json!({
+                    "text": bubble.text
+                }),
+                encoding: None,
+                mime_type: Some("text/plain".to_string()),
+                size: Some(bubble.text.len()),
+                hash: None,
+            }
+        ];
+
+        // Add tool results if present
+        for tool_result in &bubble.tool_results {
+            content_items.push(UniversalContent {
+                content_type: ContentType::ToolResult,
+                data: tool_result.clone(),
+                encoding: None,
+                mime_type: Some("application/json".to_string()),
+                size: None,
+                hash: None,
+            });
+        }
+
+        // Add console logs if present
+        for console_log in &bubble.console_logs {
+            content_items.push(UniversalContent {
+                content_type: ContentType::Text,
+                data: serde_json::json!({
+                    "type": "console_log",
+                    "content": console_log
+                }),
+                encoding: None,
+                mime_type: Some("text/plain".to_string()),
+                size: None,
+                hash: None,
+            });
+        }
+
+        // Count total items for logging
+        let tool_count = bubble.tool_results.len();
+        let file_count = bubble.relevant_files.len() + bubble.attached_file_metadata.len();
+        let diff_count = bubble.assistant_suggested_diffs.len() + bubble.git_diffs.len();
+
+        println!("    [{}] {:?}: {} chars @ {} (tools:{} files:{} diffs:{})",
                  sequence_number,
                  role,
                  bubble.text.len(),
-                 message_timestamp.format("%H:%M:%S"));
+                 message_timestamp.format("%H:%M:%S"),
+                 tool_count,
+                 file_count,
+                 diff_count);
 
         // Create universal message
         let message = UniversalMessage {
             // CORE IDENTITY
-            id: key.clone(), // Use bubbleId as message ID
+            id: key.clone(),
             session_id: session_id.clone(),
-            project_id: "".to_string(), // Will be filled by caller
-            source_id: "".to_string(), // Will be filled by caller
+            project_id: "".to_string(),
+            source_id: "".to_string(),
             provider_id: "cursor".to_string(),
 
             // TEMPORAL
@@ -460,16 +549,7 @@ pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<Univers
             message_type: MessageType::Message,
 
             // CONTENT
-            content: vec![UniversalContent {
-                content_type: ContentType::Text,
-                data: serde_json::json!({
-                    "text": bubble.text
-                }),
-                encoding: None,
-                mime_type: Some("text/plain".to_string()),
-                size: Some(bubble.text.len()),
-                hash: None,
-            }],
+            content: content_items,
 
             // HIERARCHY
             parent_id: None,
@@ -478,10 +558,17 @@ pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<Univers
 
             // METADATA
             model: None,
-            tokens: None,
-            tool_calls: None,
-            thinking: None,
-            attachments: None,
+            tokens: bubble.token_count.as_ref().map(|tc| TokenUsage {
+                input_tokens: tc.input_tokens,
+                output_tokens: tc.output_tokens,
+                total_tokens: tc.input_tokens + tc.output_tokens,
+                cache_creation_tokens: None,
+                cache_read_tokens: None,
+                service_tier: None,
+            }),
+            tool_calls: None, // Will be in provider_metadata
+            thinking: None, // Will be in provider_metadata
+            attachments: None, // Will be in provider_metadata
             errors: None,
 
             // RAW PRESERVATION
@@ -491,6 +578,44 @@ pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<Univers
                 map.insert("rowid".to_string(), serde_json::json!(rowid));
                 map.insert("bubble_type".to_string(), serde_json::json!(bubble.bubble_type));
                 map.insert("session_id".to_string(), serde_json::json!(session_id.clone()));
+
+                // Add tool results
+                if !bubble.tool_results.is_empty() {
+                    map.insert("tool_results".to_string(), serde_json::json!(bubble.tool_results));
+                }
+
+                // Add thinking blocks
+                if !bubble.all_thinking_blocks.is_empty() {
+                    map.insert("thinking_blocks".to_string(), serde_json::json!(bubble.all_thinking_blocks));
+                }
+
+                // Add file attachments
+                if !bubble.relevant_files.is_empty() {
+                    map.insert("relevant_files".to_string(), serde_json::json!(bubble.relevant_files));
+                }
+                if !bubble.attached_code_chunks.is_empty() {
+                    map.insert("attached_code_chunks".to_string(), serde_json::json!(bubble.attached_code_chunks));
+                }
+                if !bubble.attached_file_metadata.is_empty() {
+                    map.insert("attached_file_metadata".to_string(), serde_json::json!(bubble.attached_file_metadata));
+                }
+
+                // Add diffs
+                if !bubble.assistant_suggested_diffs.is_empty() {
+                    map.insert("suggested_diffs".to_string(), serde_json::json!(bubble.assistant_suggested_diffs));
+                }
+                if !bubble.git_diffs.is_empty() {
+                    map.insert("git_diffs".to_string(), serde_json::json!(bubble.git_diffs));
+                }
+
+                // Add execution results
+                if !bubble.interpreter_results.is_empty() {
+                    map.insert("interpreter_results".to_string(), serde_json::json!(bubble.interpreter_results));
+                }
+                if !bubble.console_logs.is_empty() {
+                    map.insert("console_logs".to_string(), serde_json::json!(bubble.console_logs));
+                }
+
                 map
             },
         };

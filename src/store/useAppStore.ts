@@ -17,6 +17,8 @@ import {
   type UniversalSession,
   type UniversalMessage,
   type UniversalSource,
+  type ProjectListPreferences,
+  type LoadingProgress,
 } from "../types";
 import { adapterRegistry } from "@/adapters/registry/AdapterRegistry";
 import { useSourceStore } from "./useSourceStore";
@@ -59,12 +61,19 @@ function findSourceForPath(projectPath: string): UniversalSource | null {
  * Convert UniversalProject to legacy ClaudeProject
  */
 function universalToLegacyProject(project: UniversalProject): ClaudeProject {
+  // Get provider name from adapter registry
+  const adapter = adapterRegistry.tryGet(project.providerId);
+  const providerName = adapter?.providerDefinition.name || project.providerId;
+
   return {
     name: project.name,
     path: project.path,
     session_count: project.sessionCount,
     message_count: project.totalMessages,
     lastModified: project.lastActivityAt || project.firstActivityAt || new Date().toISOString(),
+    sourceId: project.sourceId,
+    providerId: project.providerId,
+    providerName,
   };
 }
 
@@ -75,6 +84,10 @@ function universalToLegacySession(session: UniversalSession): ClaudeSession {
   // Extract summary and file path from metadata if available
   const summary = session.metadata.summary as string | undefined;
   const filePath = session.metadata.filePath as string | undefined;
+
+  // Get provider name from adapter registry
+  const adapter = adapterRegistry.tryGet(session.providerId);
+  const providerName = adapter?.providerDefinition.name || session.providerId;
 
   return {
     session_id: session.id,
@@ -88,6 +101,8 @@ function universalToLegacySession(session: UniversalSession): ClaudeSession {
     has_tool_use: session.toolCallCount > 0,
     has_errors: session.errorCount > 0,
     summary,
+    providerId: session.providerId,
+    providerName,
   };
 }
 
@@ -143,6 +158,7 @@ function universalToLegacyMessage(msg: UniversalMessage): ClaudeMessage {
       cache_read_input_tokens: msg.tokens.cacheReadTokens,
     } : undefined,
     projectPath: msg.projectId,
+    provider_metadata: msg.providerMetadata, // Preserve provider-specific metadata
   };
 }
 
@@ -187,6 +203,12 @@ interface AppStore extends AppState {
   setSessionComparisonError: (error: string | null) => void;
   clearAnalyticsData: () => void;
   clearAnalyticsErrors: () => void;
+
+  // Project list preferences
+  setProjectListPreferences: (preferences: Partial<ProjectListPreferences>) => void;
+
+  // Loading progress
+  setLoadingProgress: (progress: LoadingProgress | null) => void;
 }
 
 const DEFAULT_PAGE_SIZE = 100; // Load 100 messages on initial loading
@@ -194,6 +216,22 @@ const DEFAULT_PAGE_SIZE = 100; // Load 100 messages on initial loading
 export const useAppStore = create<AppStore>((set, get) => ({
   // Root-level view state (single source of truth)
   currentView: "messages" as AppView,
+
+  // Loading progress - Start with initializing state
+  loadingProgress: {
+    stage: 'initializing',
+    message: 'Starting application...',
+    progress: 0,
+  },
+
+  // Project list preferences
+  projectListPreferences: {
+    groupBy: 'source',
+    sortBy: 'date',
+    sortOrder: 'desc',
+    hideEmptyProjects: false,
+    hideEmptySessions: false,
+  },
 
   // Core state
   claudePath: "",
@@ -1006,5 +1044,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
       projectSummaryError: null,
       sessionComparisonError: null,
     });
+  },
+
+  // Project list preferences
+  setProjectListPreferences: (preferences: Partial<ProjectListPreferences>) => {
+    set((state) => ({
+      projectListPreferences: {
+        ...state.projectListPreferences,
+        ...preferences,
+      },
+    }));
+  },
+
+  // Loading progress
+  setLoadingProgress: (progress: LoadingProgress | null) => {
+    set({ loadingProgress: progress });
   },
 }));

@@ -14,6 +14,7 @@ import {
   ToolExecutionResultRouter,
   MessageContentDisplay,
   AssistantMessageDetails,
+  ProviderMetadataDisplay,
 } from "./messageRenderer";
 import { extractClaudeMessageContent } from "../utils/messageUtils";
 import { cn } from "../utils/cn";
@@ -31,9 +32,10 @@ interface MessageViewerProps {
 interface MessageNodeProps {
   message: ClaudeMessage;
   depth: number;
+  providerName: string;
 }
 
-const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
+const ClaudeMessageNode = ({ message, depth, providerName }: MessageNodeProps) => {
   const { t } = useTranslation("components");
 
   if (message.isSidechain) {
@@ -72,7 +74,7 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
             {message.type === "user"
               ? t("messageViewer.user")
               : message.type === "assistant"
-              ? t("messageViewer.claude")
+              ? providerName
               : t("messageViewer.system")}
           </span>
           <span className="whitespace-nowrap">
@@ -131,6 +133,11 @@ const ClaudeMessageNode = ({ message, depth }: MessageNodeProps) => {
             />
           )}
 
+          {/* Provider-specific Metadata (file attachments, etc.) */}
+          {message.provider_metadata && (
+            <ProviderMetadataDisplay metadata={message.provider_metadata} />
+          )}
+
           {/* Assistant Metadata */}
           <AssistantMessageDetails message={message} />
         </div>
@@ -155,6 +162,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   selectedSession,
   onLoadMore,
 }) => {
+  // Get provider name for displaying in messages
+  const providerName = selectedSession?.providerName || "Claude Code";
   const { t } = useTranslation("components");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLength = useRef(messages.length);
@@ -399,7 +408,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 
     // Add current message first, then child messages
     const result: React.ReactNode[] = [
-      <ClaudeMessageNode key={uniqueKey} message={message} depth={depth} />,
+      <ClaudeMessageNode key={uniqueKey} message={message} depth={depth} providerName={providerName} />,
     ];
 
     // Recursively add child messages (increase depth)
@@ -543,6 +552,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                       key={uniqueKey}
                       message={message}
                       depth={0}
+                      providerName={providerName}
                     />
                   );
                 });
