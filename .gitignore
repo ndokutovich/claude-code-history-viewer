@@ -22,6 +22,8 @@ dist-ssr
 src-tauri/target/
 src-tauri/Cargo.lock
 src-tauri/gen/
+src-tauri/src/bin/
+src-tauri/**/*.db
 
 # Editor directories and files
 .vscode/*
