@@ -237,7 +237,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   claudePath: "",
   projects: [],
   selectedProject: null,
-  sessions: [],
+  sessions: [], // Legacy: for selected project only
+  sessionsByProject: {}, // NEW: Cache sessions per-project
   selectedSession: null,
   messages: [],
   pagination: {
@@ -400,6 +401,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   selectProject: async (project: ClaudeProject | null) => {
     // Clear selection if null is passed
     if (project === null) {
+      console.log('🔄 selectProject: Clearing selection');
       set({
         selectedProject: null,
         sessions: [],
@@ -409,18 +411,40 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return;
     }
 
+    console.log('🔄 selectProject: Loading sessions for project:', project.name, {
+      path: project.path,
+      providerId: project.providerId,
+    });
+
     set({
       selectedProject: project,
       sessions: [],
       selectedSession: null,
       messages: [],
       isLoadingSessions: true,
+      // Always clear analytics data when switching projects
+      sessionTokenStats: null,
+      projectTokenStats: [],
+      projectStatsSummary: null,
+      sessionComparison: null,
+      isLoadingTokenStats: false,
+      isLoadingProjectSummary: false,
+      isLoadingSessionComparison: false,
     });
     try {
       const sessions = await get().loadProjectSessions(project.path);
-      set({ sessions });
+      console.log(`✅ selectProject: Loaded ${sessions.length} sessions for ${project.name}`);
+
+      // Update both legacy sessions array AND cache in sessionsByProject
+      set((state) => ({
+        sessions,
+        sessionsByProject: {
+          ...state.sessionsByProject,
+          [project.path]: sessions,
+        },
+      }));
     } catch (error) {
-      console.error("Failed to load project sessions:", error);
+      console.error("❌ selectProject: Failed to load project sessions:", error);
       set({ error: { type: AppErrorType.UNKNOWN, message: String(error) } });
     } finally {
       set({ isLoadingSessions: false });
@@ -429,6 +453,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   loadProjectSessions: async (projectPath: string, excludeSidechain?: boolean) => {
     try {
+      // Check cache first
+      const cached = get().sessionsByProject[projectPath];
+      if (cached) {
+        console.log(`💾 Using cached sessions for ${projectPath} (${cached.length} sessions)`);
+        return cached;
+      }
+
+      console.log(`📥 Loading sessions from backend for ${projectPath}`);
+
       // ========================================
       // PHASE 8.3: Use adapters for session loading (v2.0.0)
       // ========================================
@@ -469,13 +502,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ? excludeSidechain
         : get().excludeSidechain;
 
-      if (shouldExcludeSidechain) {
-        // Note: Sidechain filtering might not apply to all providers
-        // This is Claude Code specific behavior
-        return legacySessions;
-      }
+      const finalSessions = shouldExcludeSidechain ? legacySessions : legacySessions;
 
-      return legacySessions;
+      // Cache the result
+      set((state) => ({
+        sessionsByProject: {
+          ...state.sessionsByProject,
+          [projectPath]: finalSessions,
+        },
+      }));
+
+      console.log(`✅ Cached ${finalSessions.length} sessions for ${projectPath}`);
+
+      return finalSessions;
     } catch (error) {
       console.error("Failed to load project sessions:", error);
       throw error;
@@ -513,6 +552,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
         isLoadingMore: false,
       },
       isLoadingMessages: true,
+      // Always clear analytics data when switching sessions
+      sessionTokenStats: null,
+      sessionComparison: null,
+      isLoadingTokenStats: false,
+      isLoadingSessionComparison: false,
     });
 
     try {
@@ -586,6 +630,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
         hasMore: false,
         isLoadingMore: false,
       },
+      // Clear analytics data as well
+      sessionTokenStats: null,
+      projectTokenStats: [],
+      projectStatsSummary: null,
+      sessionComparison: null,
+      isLoadingTokenStats: false,
+      isLoadingProjectSummary: false,
+      isLoadingSessionComparison: false,
     });
   },
 
@@ -777,28 +829,34 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
         if (currentView === "tokenStats") {
           // Refresh token statistics
-          await get().loadProjectTokenStats(selectedProject.path);
+          if (selectedProject.providerId !== 'cursor') {
+            // Claude Code project stats (Cursor project-level stats not yet implemented)
+            await get().loadProjectTokenStats(selectedProject.path);
+          }
+          // Load session token stats (works for both Claude Code and Cursor)
           if (selectedSession?.file_path) {
             await get().loadSessionTokenStats(selectedSession.file_path);
           }
         } else if (currentView === "analytics") {
-          // Refresh analytics dashboard
-          const projectSummary = await invoke<ProjectStatsSummary>(
-            "get_project_stats_summary",
-            { projectPath: selectedProject.path }
-          );
-          get().setProjectSummary(projectSummary);
-
-          // Refresh session comparison data
-          if (selectedSession) {
-            const sessionComparison = await invoke<SessionComparison>(
-              "get_session_comparison",
-              {
-                sessionId: selectedSession.actual_session_id,
-                projectPath: selectedProject.path
-              }
+          // Refresh analytics dashboard (only for Claude Code)
+          if (selectedProject.providerId !== 'cursor') {
+            const projectSummary = await invoke<ProjectStatsSummary>(
+              "get_project_stats_summary",
+              { projectPath: selectedProject.path }
             );
-            get().setSessionComparison(sessionComparison);
+            get().setProjectSummary(projectSummary);
+
+            // Refresh session comparison data
+            if (selectedSession) {
+              const sessionComparison = await invoke<SessionComparison>(
+                "get_session_comparison",
+                {
+                  sessionId: selectedSession.actual_session_id,
+                  projectPath: selectedProject.path
+                }
+              );
+              get().setSessionComparison(sessionComparison);
+            }
           }
         }
 
@@ -836,10 +894,33 @@ export const useAppStore = create<AppStore>((set, get) => ({
   loadSessionTokenStats: async (sessionPath: string) => {
     try {
       set({ isLoadingTokenStats: true, error: null });
-      const stats = await invoke<SessionTokenStats>("get_session_token_stats", {
+
+      // Get selected session to determine provider
+      const { selectedSession } = get();
+
+      console.log('📊 loadSessionTokenStats called:', {
         sessionPath,
+        providerId: selectedSession?.providerId,
+        sessionId: selectedSession?.session_id,
       });
-      set({ sessionTokenStats: stats });
+
+      if (selectedSession?.providerId === 'cursor') {
+        // Use universal command for Cursor
+        console.log('🎯 Calling get_universal_session_token_stats for Cursor session');
+        const stats = await invoke<SessionTokenStats>("get_universal_session_token_stats", {
+          providerId: selectedSession.providerId,
+          sourcePath: sessionPath,
+          sessionId: selectedSession.session_id,
+        });
+        console.log('✅ Token stats loaded for Cursor session:', stats);
+        set({ sessionTokenStats: stats });
+      } else {
+        // Use legacy command for Claude Code
+        const stats = await invoke<SessionTokenStats>("get_session_token_stats", {
+          sessionPath,
+        });
+        set({ sessionTokenStats: stats });
+      }
     } catch (error) {
       console.error("Failed to load session token stats:", error);
       set({
@@ -945,9 +1026,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
           if (!selectedProject) {
             throw new Error("No project selected.");
           }
-          // Load project token stats
-          await get().loadProjectTokenStats(selectedProject.path);
-          // Load session token stats if session selected
+          // Load project token stats (only for Claude Code)
+          if (selectedProject.providerId !== 'cursor') {
+            await get().loadProjectTokenStats(selectedProject.path);
+          }
+          // Load session token stats if session selected (works for both providers)
           if (selectedSession) {
             await get().loadSessionTokenStats(selectedSession.file_path);
           }
@@ -957,24 +1040,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
           if (!selectedProject) {
             throw new Error("No project selected.");
           }
-          // Load project summary
-          set({ isLoadingProjectSummary: true, projectSummaryError: null });
-          try {
-            const summary = await get().loadProjectStatsSummary(selectedProject.path);
-            set({ projectStatsSummary: summary });
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Failed to load project summary";
-            set({ projectSummaryError: errorMessage });
-            throw error;
-          } finally {
-            set({ isLoadingProjectSummary: false });
-          }
-
-          // Load session comparison if session selected
-          if (selectedSession) {
-            set({ isLoadingSessionComparison: true, sessionComparisonError: null });
+          // Load project summary (only for Claude Code - Cursor analytics not yet implemented)
+          if (selectedProject.providerId !== 'cursor') {
+            set({ isLoadingProjectSummary: true, projectSummaryError: null });
             try {
-              const comparison = await get().loadSessionComparison(
+              const summary = await get().loadProjectStatsSummary(selectedProject.path);
+              set({ projectStatsSummary: summary });
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : "Failed to load project summary";
+              set({ projectSummaryError: errorMessage });
+              throw error;
+            } finally {
+              set({ isLoadingProjectSummary: false });
+            }
+
+            // Load session comparison if session selected
+            if (selectedSession) {
+              set({ isLoadingSessionComparison: true, sessionComparisonError: null });
+              try {
+                const comparison = await get().loadSessionComparison(
                 selectedSession.actual_session_id,
                 selectedProject.path
               );
@@ -986,6 +1070,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             } finally {
               set({ isLoadingSessionComparison: false });
             }
+          }
           }
           break;
 

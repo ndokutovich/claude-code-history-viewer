@@ -20,7 +20,8 @@ import { ProviderIcon, getProviderColorClass } from "./icons/ProviderIcons";
 
 interface ProjectTreeProps {
   projects: ClaudeProject[];
-  sessions: ClaudeSession[];
+  sessions: ClaudeSession[]; // Legacy: sessions for selected project only
+  sessionsByProject: Record<string, ClaudeSession[]>; // NEW: Cache sessions per-project for multi-expansion
   selectedProject: ClaudeProject | null;
   selectedSession: ClaudeSession | null;
   onProjectSelect: (project: ClaudeProject | null) => void;
@@ -32,6 +33,7 @@ interface ProjectTreeProps {
 export const ProjectTree: React.FC<ProjectTreeProps> = ({
   projects,
   sessions,
+  sessionsByProject,
   selectedProject,
   selectedSession,
   onProjectSelect,
@@ -39,17 +41,47 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   onClearSelection,
   isLoading,
 }) => {
-  const [expandedProject, setExpandedProject] = useState("");
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const { t, i18n } = useTranslation();
-  const { projectListPreferences } = useAppStore();
+  const { projectListPreferences, loadProjectSessions } = useAppStore();
 
   // Apply filtering and sorting to projects
   const filteredAndSortedProjects = useMemo(() => {
     let result = [...projects];
 
+    // Debug: Log Cursor workspace IDs
+    const cursorWorkspaces = result.filter(p => p.providerId === 'cursor');
+    if (cursorWorkspaces.length > 0) {
+      console.log(`📋 Total Cursor workspaces: ${cursorWorkspaces.length}`);
+      const workspaceIds = cursorWorkspaces.map(p => {
+        // Extract workspace ID from path
+        const parts = p.path.split(/[\/\\]/);
+        return parts[parts.length - 1];
+      });
+      console.log(`🔍 Looking for workspaces with sessions:`, [
+        'ea03cc824f69e685537a85dc8126102b',
+        '27ee40ff632647d1e5a6b71371940336',
+        '4f08bcab4c2ac89c37d3c199ff4917fc'
+      ]);
+      const found = workspaceIds.filter(id =>
+        id === 'ea03cc824f69e685537a85dc8126102b' ||
+        id === '27ee40ff632647d1e5a6b71371940336' ||
+        id === '4f08bcab4c2ac89c37d3c199ff4917fc'
+      );
+      console.log(`✅ Found ${found.length} target workspaces:`, found);
+    }
+
     // Filter: Hide empty projects
     if (projectListPreferences.hideEmptyProjects) {
-      result = result.filter((p) => p.session_count > 0);
+      result = result.filter((p) => {
+        // For Cursor projects, always show them because session_count is unreliable
+        // (sessions are in global DB, not workspace-specific)
+        if (p.providerId === 'cursor') {
+          return true;
+        }
+        // For Claude Code projects, filter by session_count
+        return p.session_count > 0;
+      });
     }
 
     // Sort
@@ -71,7 +103,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     return result;
   }, [projects, projectListPreferences]);
 
-  // Apply filtering to sessions
+  // Apply filtering to sessions (global filter only - per-project filtering happens in render)
   const filteredSessions = useMemo(() => {
     if (!projectListPreferences.hideEmptySessions) {
       return sessions;
@@ -79,6 +111,36 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
     return sessions.filter((s) => s.message_count > 0);
   }, [sessions, projectListPreferences.hideEmptySessions]);
+
+  // Helper function to get sessions for a specific project
+  const getSessionsForProject = (projectPath: string): ClaudeSession[] => {
+    // Try cache first (new multi-project architecture)
+    const cachedSessions = sessionsByProject[projectPath];
+
+    if (cachedSessions && cachedSessions.length > 0) {
+      // Debug logging for Cursor projects
+      if (projectPath.includes('workspaceStorage')) {
+        const parts = projectPath.split(/[\/\\]/);
+        const wsId = parts[parts.length - 1];
+        console.log(`📂 Project ${wsId}: Using ${cachedSessions.length} cached sessions`);
+      }
+
+      // Apply hide empty sessions filter
+      if (projectListPreferences.hideEmptySessions) {
+        return cachedSessions.filter((s) => s.message_count > 0);
+      }
+      return cachedSessions;
+    }
+
+    // Fallback to legacy behavior for backward compatibility
+    // If this is the selected project, return filteredSessions
+    if (selectedProject?.path === projectPath) {
+      return filteredSessions;
+    }
+
+    // No sessions loaded for this project yet
+    return [];
+  };
 
   // Group projects by source if needed
   const groupedProjects = useMemo(() => {
@@ -143,8 +205,86 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   };
 
   const toggleProject = (projectPath: string) => {
-    setExpandedProject((prev) => (prev === projectPath ? "" : projectPath));
+    setExpandedProjects((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(projectPath)) {
+        newSet.delete(projectPath);
+      } else {
+        newSet.add(projectPath);
+      }
+      return newSet;
+    });
   };
+
+  // Load sessions for multiple projects in parallel (without selecting them)
+  const loadSessionsForProjects = async (projectPaths: string[]) => {
+    console.log(`📥 Loading sessions for ${projectPaths.length} projects in parallel...`);
+
+    // Load all projects' sessions in parallel
+    // Use loadProjectSessions directly to avoid changing selectedProject
+    const loadPromises = projectPaths.map(async (path) => {
+      try {
+        await loadProjectSessions(path);
+        console.log(`  ✅ Loaded sessions for ${path}`);
+      } catch (error) {
+        console.error(`  ❌ Failed to load sessions for ${path}:`, error);
+      }
+    });
+
+    await Promise.all(loadPromises);
+    console.log(`✅ Finished loading sessions for ${projectPaths.length} projects`);
+  };
+
+  // Expose expand/collapse functions via custom event for ProjectListControls
+  useEffect(() => {
+    const handleExpandAll = async () => {
+      console.log('🔽 handleExpandAll triggered, expanding', filteredAndSortedProjects.length, 'projects');
+      const allPaths = new Set(filteredAndSortedProjects.map(p => p.path));
+      console.log('🔽 Setting expanded projects:', allPaths.size);
+      setExpandedProjects(allPaths);
+
+      // Load sessions for all projects
+      await loadSessionsForProjects(Array.from(allPaths));
+    };
+
+    const handleCollapseAll = () => {
+      console.log('🔼 handleCollapseAll triggered');
+      setExpandedProjects(new Set());
+    };
+
+    const handleExpandWithSessions = async () => {
+      console.log('🎯 Expanding ONLY workspaces with sessions');
+      const targetWorkspaces = [
+        'ea03cc824f69e685537a85dc8126102b',
+        '27ee40ff632647d1e5a6b71371940336',
+        '4f08bcab4c2ac89c37d3c199ff4917fc'
+      ];
+
+      const pathsToExpand = filteredAndSortedProjects
+        .filter(p => {
+          const parts = p.path.split(/[\/\\]/);
+          const wsId = parts[parts.length - 1];
+          return wsId && targetWorkspaces.includes(wsId);
+        })
+        .map(p => p.path);
+
+      console.log('🎯 Expanding', pathsToExpand.length, 'target workspaces:', pathsToExpand);
+      setExpandedProjects(new Set(pathsToExpand));
+
+      // Load sessions for target workspaces
+      await loadSessionsForProjects(pathsToExpand);
+    };
+
+    window.addEventListener('expandAllProjects', handleExpandAll);
+    window.addEventListener('collapseAllProjects', handleCollapseAll);
+    window.addEventListener('expandWithSessions', handleExpandWithSessions);
+
+    return () => {
+      window.removeEventListener('expandAllProjects', handleExpandAll);
+      window.removeEventListener('collapseAllProjects', handleCollapseAll);
+      window.removeEventListener('expandWithSessions', handleExpandWithSessions);
+    };
+  }, [filteredAndSortedProjects]);
 
   return (
     <div className="max-w-80 w-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col h-full">
@@ -204,15 +344,41 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
                 {/* Projects in this group */}
                 {groupProjects.map((project) => {
-                  const isExpanded = expandedProject === project.path;
+                  const isExpanded = expandedProjects.has(project.path);
 
                   return (
                     <div key={project.path}>
                       {/* Project Header */}
                       <button
                         onClick={() => {
+                          const wasExpanded = isExpanded;
+                          const isAlreadySelected = selectedProject?.path === project.path;
+
+                          console.log(`🖱️ Clicked project: ${project.name}`, {
+                            path: project.path,
+                            wasExpanded,
+                            isAlreadySelected,
+                          });
+
+                          // Always select/load sessions for this project
                           onProjectSelect(project);
-                          toggleProject(project.path);
+
+                          // Expansion logic:
+                          // - If already selected and expanded, allow toggle (collapse)
+                          // - If not expanded, expand to show sessions
+                          // - If expanded but not selected, keep expanded (we just selected it)
+                          if (isAlreadySelected && wasExpanded) {
+                            // Clicking selected project again: toggle collapse
+                            console.log(`  🔽 Toggling collapse (already selected)`);
+                            toggleProject(project.path);
+                          } else if (!wasExpanded) {
+                            // Collapsed project: expand it
+                            console.log(`  🔼 Expanding (was collapsed)`);
+                            toggleProject(project.path);
+                          } else {
+                            console.log(`  ✅ Keeping expanded (newly selected)`);
+                          }
+                          // else: already expanded, newly selected - keep expanded
                         }}
                         className="text-left w-full p-3 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
                       >
@@ -235,9 +401,14 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                   </button>
 
                   {/* Sessions for expanded project */}
-                  {isExpanded && filteredSessions.length > 0 && !isLoading && (
-                    <div className="ml-6 space-y-1">
-                      {filteredSessions.map((session) => {
+                  {isExpanded && !isLoading && (() => {
+                    const projectSessions = getSessionsForProject(project.path);
+                    if (projectSessions.length === 0) {
+                      return null;
+                    }
+                    return (
+                      <div className="ml-6 space-y-1">
+                        {projectSessions.map((session) => {
                         const isSessionSelected =
                           selectedSession?.session_id === session.session_id;
 
@@ -324,8 +495,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                           </button>
                         );
                       })}
-                    </div>
-                  )}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })}

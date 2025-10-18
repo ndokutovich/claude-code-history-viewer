@@ -39,7 +39,13 @@ pub fn run() {
             validate_cursor_folder,
             scan_cursor_workspaces,
             load_cursor_sessions,
-            load_cursor_messages
+            load_cursor_messages,
+            search_cursor_messages,
+            // Universal Analytics (v2.1.0 - works with both Claude Code and Cursor)
+            get_universal_session_token_stats,
+            get_universal_project_token_stats,
+            get_universal_project_stats_summary,
+            get_universal_session_comparison
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

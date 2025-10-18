@@ -246,7 +246,7 @@ export function isParseError(error: Error): boolean {
  * Classify error into ErrorCode
  */
 export function classifyError(error: Error): ErrorCode {
-  const message = error.message.toLowerCase();
+  const message = (error.message || '').toLowerCase();
 
   // File system errors
   if (message.includes('enoent') || message.includes('not found')) {

@@ -478,6 +478,8 @@
   "projectListControls": {
     "groupBySource": "Group by Source",
     "ungroup": "Ungroup",
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All",
     "sortBy": {
       "name": "Name",
       "date": "Date"

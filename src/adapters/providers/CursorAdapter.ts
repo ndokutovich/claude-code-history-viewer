@@ -166,13 +166,17 @@ export class CursorAdapter implements IConversationAdapter {
         warnings: [],
       };
     } catch (error) {
-      const errorCode = classifyError(error as Error);
+      const errorMessage = error instanceof Error
+        ? error.message
+        : (typeof error === 'string' ? error : JSON.stringify(error));
+      const errorCode = error instanceof Error ? classifyError(error) : ErrorCode.UNKNOWN;
+
       return {
         isValid: false,
         confidence: 0,
         errors: [{
           code: errorCode,
-          message: `Validation failed: ${(error as Error).message}`,
+          message: `Validation failed: ${errorMessage}`,
         }],
         warnings: [],
       };
@@ -240,8 +244,8 @@ export class CursorAdapter implements IConversationAdapter {
       return {
         success: false,
         error: {
-          code: classifyError(error as Error),
-          message: (error as Error).message,
+          code: error instanceof Error ? classifyError(error) : ErrorCode.UNKNOWN,
+          message: error instanceof Error ? error.message : String(error),
           recoverable: true,
         },
       };
@@ -255,12 +259,11 @@ export class CursorAdapter implements IConversationAdapter {
   ): Promise<ScanResult<UniversalSession>> {
     this.ensureInitialized();
 
-    try {
-      // Normalize path separators for cross-platform support
-      const normalizedPath = projectPath.replace(/\\/g, '/');
+    // Extract workspace ID early so it's available in catch block
+    const normalizedPath = projectPath.replace(/\\/g, '/');
+    const workspaceId = normalizedPath.split('/').pop() || projectId;
 
-      // Extract workspace ID from project path (last directory component)
-      const workspaceId = normalizedPath.split('/').pop() || projectId;
+    try {
 
       // Extract base Cursor path (everything before /User/workspaceStorage)
       let cursorBasePath = normalizedPath;
@@ -287,10 +290,14 @@ export class CursorAdapter implements IConversationAdapter {
         workspaceId,
       });
 
+      console.log(`✅ Loaded ${cursorSessions.length} Cursor sessions from backend`);
+
       // Convert to universal format
       const universalSessions: UniversalSession[] = cursorSessions.map((session) =>
         this.convertCursorSession(session, projectId, sourceId)
       );
+
+      console.log(`✅ Converted to ${universalSessions.length} universal sessions`);
 
       return {
         success: true,
@@ -302,11 +309,18 @@ export class CursorAdapter implements IConversationAdapter {
         },
       };
     } catch (error) {
+      console.error('❌ CursorAdapter.loadSessions error:', error);
+      console.error('Error details:', {
+        projectPath: projectPath,
+        workspaceId: workspaceId,
+        errorMessage: error instanceof Error ? error.message : String(error),
+      });
+
       return {
         success: false,
         error: {
-          code: classifyError(error as Error),
-          message: (error as Error).message,
+          code: error instanceof Error ? classifyError(error) : ErrorCode.UNKNOWN,
+          message: error instanceof Error ? error.message : String(error),
           recoverable: true,
         },
       };
@@ -352,11 +366,19 @@ export class CursorAdapter implements IConversationAdapter {
         },
       };
     } catch (error) {
+      console.error('🔴 CursorAdapter.loadMessages error:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+
+      const errorMessage = error instanceof Error
+        ? error.message
+        : (typeof error === 'string' ? error : JSON.stringify(error));
+
       return {
         success: false,
         error: {
-          code: classifyError(error as Error),
-          message: (error as Error).message,
+          code: error instanceof Error ? classifyError(error) : ErrorCode.UNKNOWN,
+          message: errorMessage,
           recoverable: true,
         },
       };
@@ -368,22 +390,63 @@ export class CursorAdapter implements IConversationAdapter {
   // ------------------------------------------------------------------------
 
   async searchMessages(
-    _sourcePaths: string[],
-    _query: string,
-    _filters: AdapterSearchFilters
+    sourcePaths: string[],
+    query: string,
+    filters: AdapterSearchFilters
   ): Promise<SearchResult<UniversalMessage>> {
     this.ensureInitialized();
 
-    // TODO: Implement search for Cursor
-    // For now, return empty results with a message
-    return {
-      success: false,
-      error: {
-        code: ErrorCode.UNSUPPORTED_VERSION,
-        message: 'Search is not yet implemented for Cursor IDE',
-        recoverable: false,
-      },
-    };
+    if (sourcePaths.length === 0) {
+      return {
+        success: false,
+        error: {
+          code: ErrorCode.PATH_NOT_FOUND,
+          message: 'At least one source path required for search',
+          recoverable: false,
+        },
+      };
+    }
+
+    if (sourcePaths.length > 1) {
+      return {
+        success: false,
+        error: {
+          code: ErrorCode.UNSUPPORTED_VERSION,
+          message: 'CursorAdapter does not support multi-source search yet',
+          recoverable: false,
+        },
+      };
+    }
+
+    try {
+      // Call Rust command to search Cursor messages
+      const result = await invoke<{ messages: UniversalMessage[], total: number }>('search_cursor_messages', {
+        cursorPath: sourcePaths[0],
+        query,
+        filters: {
+          dateRange: filters.dateRange,
+          messageType: filters.messageType,
+          hasToolCalls: filters.hasToolCalls,
+          hasErrors: filters.hasErrors,
+        },
+      });
+
+      return {
+        success: true,
+        data: result.messages,
+        totalMatches: result.total,
+        searchDuration: 0,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: error instanceof Error ? classifyError(error) : ErrorCode.UNKNOWN,
+          message: error instanceof Error ? error.message : String(error),
+          recoverable: true,
+        },
+      };
+    }
   }
 
   // ------------------------------------------------------------------------

@@ -224,7 +224,8 @@ export interface AppState {
   claudePath: string;
   projects: ClaudeProject[];
   selectedProject: ClaudeProject | null;
-  sessions: ClaudeSession[];
+  sessions: ClaudeSession[]; // Legacy: sessions for selected project only (kept for backward compatibility)
+  sessionsByProject: Record<string, ClaudeSession[]>; // NEW: Cache sessions per-project for multi-expansion
   selectedSession: ClaudeSession | null;
   messages: ClaudeMessage[];
   pagination: PaginationState;

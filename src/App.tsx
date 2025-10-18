@@ -28,6 +28,7 @@ function App() {
   const {
     projects,
     sessions,
+    sessionsByProject,
     selectedProject,
     selectedSession,
     messages,
@@ -64,10 +65,10 @@ function App() {
     initializeSources,
   } = useSourceStore();
 
-  // Maintain current view when session is selected (automatic data update handled in useAnalytics hook)
+  // Maintain current view when session is selected
   const handleSessionSelect = async (session: ClaudeSession | null) => {
     await selectSession(session);
-    // Data update is automatically handled in useAnalytics hook's useEffect
+    // Token stats will auto-refresh via useEffect below
   };
 
   useEffect(() => {
@@ -190,6 +191,27 @@ function App() {
     };
   }, [language, i18nInstance]);
 
+  // Auto-refresh token stats when session changes (if token stats view is active)
+  useEffect(() => {
+    const refreshTokenStatsForSession = async () => {
+      // Only auto-refresh if we're in token stats view and have a selected session
+      if (computed.isTokenStatsView && selectedSession?.file_path) {
+        console.log('🔄 Auto-refreshing token stats for newly selected session:', selectedSession.session_id);
+        try {
+          // Call loadSessionTokenStats directly instead of refreshAnalytics to avoid view switching
+          const { loadSessionTokenStats } = useAppStore.getState();
+          await loadSessionTokenStats(selectedSession.file_path);
+        } catch (error) {
+          console.error('Failed to auto-refresh token stats:', error);
+        }
+      }
+    };
+
+    refreshTokenStatsForSession();
+    // Only depend on session_id changing, NOT on the view or analyticsActions
+    // This prevents infinite loops and only triggers when user selects a different session
+  }, [selectedSession?.session_id, computed.isTokenStatsView]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Project selection handler (includes analytics state reset)
   const handleProjectSelect = async (project: ClaudeProject | null) => {
     // If null, just clear selection
@@ -291,6 +313,7 @@ function App() {
           <ProjectTree
             projects={projects}
             sessions={sessions}
+            sessionsByProject={sessionsByProject}
             selectedProject={selectedProject}
             selectedSession={selectedSession}
             onProjectSelect={handleProjectSelect}
