@@ -47,17 +47,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   const filteredAndSortedProjects = useMemo(() => {
     let result = [...projects];
 
-    console.log('🔍 Filter Debug:', {
-      hideEmptyProjects: projectListPreferences.hideEmptyProjects,
-      totalProjects: projects.length,
-      projectsWithCounts: projects.map(p => ({ name: p.name, session_count: p.session_count }))
-    });
-
     // Filter: Hide empty projects
     if (projectListPreferences.hideEmptyProjects) {
-      const beforeFilter = result.length;
       result = result.filter((p) => p.session_count > 0);
-      console.log(`📊 Filtered projects: ${beforeFilter} -> ${result.length} (removed ${beforeFilter - result.length} empty)`);
     }
 
     // Sort
@@ -67,7 +59,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
         comparison = a.name.localeCompare(b.name);
       } else {
         // Sort by date (lastModified)
-        comparison = new Date(a.lastModified).getTime() - new Date(b.lastModified).getTime();
+        const dateA = new Date(a.lastModified).getTime();
+        const dateB = new Date(b.lastModified).getTime();
+        comparison = dateA - dateB;
       }
 
       // Apply sort order
@@ -79,24 +73,11 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
   // Apply filtering to sessions
   const filteredSessions = useMemo(() => {
-    console.log('🔍 Session Filter Debug:', {
-      hideEmptySessions: projectListPreferences.hideEmptySessions,
-      totalSessions: sessions.length,
-      sessionsWithCounts: sessions.slice(0, 5).map(s => ({
-        summary: s.summary?.substring(0, 30),
-        message_count: s.message_count
-      }))
-    });
-
     if (!projectListPreferences.hideEmptySessions) {
       return sessions;
     }
 
-    const beforeFilter = sessions.length;
-    const filtered = sessions.filter((s) => s.message_count > 0);
-    console.log(`📊 Filtered sessions: ${beforeFilter} -> ${filtered.length} (removed ${beforeFilter - filtered.length} empty)`);
-
-    return filtered;
+    return sessions.filter((s) => s.message_count > 0);
   }, [sessions, projectListPreferences.hideEmptySessions]);
 
   // Group projects by source if needed
@@ -254,20 +235,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                   </button>
 
                   {/* Sessions for expanded project */}
-                  {isExpanded && (() => {
-                    // Debug: Check if sessions match this project
-                    const isSelectedProject = selectedProject?.path === project.path;
-                    console.log(`📂 Project "${project.name}" expanded:`, {
-                      isSelectedProject,
-                      projectSessionCount: project.session_count,
-                      filteredSessionsLength: filteredSessions.length,
-                      selectedProjectName: selectedProject?.name,
-                      firstSessionProject: filteredSessions[0]?.project_name,
-                    });
-
-                    return filteredSessions.length > 0 && !isLoading && (
-                      <div className="ml-6 space-y-1">
-                        {filteredSessions.map((session) => {
+                  {isExpanded && filteredSessions.length > 0 && !isLoading && (
+                    <div className="ml-6 space-y-1">
+                      {filteredSessions.map((session) => {
                         const isSessionSelected =
                           selectedSession?.session_id === session.session_id;
 
@@ -355,8 +325,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                         );
                       })}
                     </div>
-                    );
-                  })()}
+                  )}
                 </div>
               );
             })}

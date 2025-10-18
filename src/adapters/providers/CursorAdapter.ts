@@ -40,6 +40,7 @@ interface CursorWorkspace {
   project_root: string;
   state_db_path: string;
   session_count: number;
+  last_activity?: string; // ISO 8601 timestamp of most recent composer
 }
 
 interface CursorSession {
@@ -504,8 +505,8 @@ export class CursorAdapter implements IConversationAdapter {
       path: workspace.path,
       sessionCount: workspace.session_count,
       totalMessages: 0, // Will be calculated when sessions are loaded
-      firstActivityAt: new Date().toISOString(), // Cursor doesn't store this
-      lastActivityAt: new Date().toISOString(), // Approximate
+      firstActivityAt: workspace.last_activity || new Date().toISOString(),
+      lastActivityAt: workspace.last_activity || new Date().toISOString(), // Most recent composer timestamp
       metadata: {
         projectRoot: workspace.project_root,
         stateDbPath: workspace.state_db_path,

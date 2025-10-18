@@ -84,20 +84,34 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
                     if last_modified.is_none() || modified > last_modified.unwrap() {
                         last_modified = Some(modified);
                     }
+                } else {
+                    #[cfg(debug_assertions)]
+                    eprintln!("⚠️ Failed to get modified time for: {:?}", jsonl_entry.path());
                 }
-                
+
                 // 파일 크기로 메시지 수 추정 - 훨씬 빠름
                 let estimated_messages = estimate_message_count_from_size(metadata.len());
                 message_count += estimated_messages;
+            } else {
+                #[cfg(debug_assertions)]
+                eprintln!("⚠️ Failed to get metadata for: {:?}", jsonl_entry.path());
             }
         }
 
         let last_modified_str = last_modified
             .map(|lm| {
                 let dt: DateTime<Utc> = lm.into();
-                dt.to_rfc3339()
+                let timestamp = dt.to_rfc3339();
+                #[cfg(debug_assertions)]
+                println!("✅ Claude Code Project '{}': last_modified = {}", project_name, timestamp);
+                timestamp
             })
-            .unwrap_or_else(|| Utc::now().to_rfc3339());
+            .unwrap_or_else(|| {
+                let fallback = Utc::now().to_rfc3339();
+                #[cfg(debug_assertions)]
+                println!("⚠️ Claude Code Project '{}': Using fallback timestamp (no JSONL files had metadata)", project_name);
+                fallback
+            });
 
         projects.push(ClaudeProject {
             name: project_name,

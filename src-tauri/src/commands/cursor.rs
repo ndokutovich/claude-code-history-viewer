@@ -24,6 +24,7 @@ pub struct CursorWorkspace {
     pub project_root: String,
     pub state_db_path: String,
     pub session_count: usize,
+    pub last_activity: Option<String>, // ISO 8601 timestamp of most recent composer
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -198,17 +199,105 @@ pub async fn scan_cursor_workspaces(cursor_path: String) -> Result<Vec<CursorWor
             root_path: "/".to_string(),
         });
 
+        // Count actual composers (sessions) that have messages for this workspace
+        let (session_count, last_activity) = count_workspace_composers_with_messages(&cursor_base, &state_db).unwrap_or((0, None));
+
+        #[cfg(debug_assertions)]
+        println!("  📊 Workspace {}: {} sessions with messages (last: {:?})",
+                 workspace_id, session_count, last_activity.as_ref().map(|s| &s[..19]));
+
         workspaces.push(CursorWorkspace {
             id: workspace_id.clone(),
             path: entry.path().to_string_lossy().to_string(),
             project_name: project_info.name,
             project_root: project_info.root_path,
             state_db_path: state_db.to_string_lossy().to_string(),
-            session_count: session_dbs.len(),
+            session_count,
+            last_activity,
         });
     }
 
     Ok(workspaces)
+}
+
+/// Count the number of composers (sessions) in a workspace that actually have messages
+/// Returns (count, most_recent_timestamp)
+fn count_workspace_composers_with_messages(cursor_base: &PathBuf, state_db: &PathBuf) -> Result<(usize, Option<String>), String> {
+    // Open workspace database
+    let conn = Connection::open(state_db)
+        .map_err(|e| format!("Failed to open workspace DB: {}", e))?;
+
+    // Try to read composer.composerData
+    let composer_data_json: Result<String, _> = conn.query_row(
+        "SELECT value FROM ItemTable WHERE key = 'composer.composerData'",
+        params![],
+        |row| row.get(0)
+    );
+
+    let composers: Vec<ComposerMetadata> = match composer_data_json {
+        Ok(json_str) => {
+            // Parse composers
+            let workspace_composer_data: WorkspaceComposerData = serde_json::from_str(&json_str)
+                .map_err(|e| format!("Failed to parse composer data: {}", e))?;
+
+            workspace_composer_data.all_composers
+        },
+        Err(_) => {
+            // No composer data found = 0 sessions
+            return Ok((0, None));
+        }
+    };
+
+    if composers.is_empty() {
+        return Ok((0, None));
+    }
+
+    // Find global database
+    let session_dbs = find_cursor_session_dbs(cursor_base);
+    if session_dbs.is_empty() {
+        return Ok((0, None));
+    }
+
+    // Open global database and check which composers have messages
+    let global_db = &session_dbs[0];
+    let global_conn = Connection::open(global_db)
+        .map_err(|e| format!("Failed to open global DB: {}", e))?;
+
+    // Build a query to check which session IDs have messages and track most recent
+    let mut count = 0;
+    let mut most_recent_timestamp: Option<i64> = None;
+
+    for composer in composers {
+        let has_messages: Result<i64, _> = global_conn.query_row(
+            "SELECT COUNT(*) FROM cursorDiskKV WHERE key LIKE ?",
+            params![format!("bubbleId:{}:%", composer.composer_id)],
+            |row| row.get(0)
+        );
+
+        if let Ok(message_count) = has_messages {
+            if message_count > 0 {
+                count += 1;
+
+                // Track most recent timestamp
+                if let Some(timestamp) = composer.last_updated_at {
+                    most_recent_timestamp = match most_recent_timestamp {
+                        Some(current) => Some(current.max(timestamp)),
+                        None => Some(timestamp),
+                    };
+                }
+            }
+        }
+    }
+
+    // Convert timestamp to ISO 8601 string
+    let last_activity = most_recent_timestamp.map(|ts| {
+        // Convert milliseconds to seconds for chrono
+        let naive = chrono::NaiveDateTime::from_timestamp_opt(ts / 1000, ((ts % 1000) * 1_000_000) as u32)
+            .unwrap_or_else(|| chrono::NaiveDateTime::from_timestamp_opt(0, 0).unwrap());
+        chrono::DateTime::<Utc>::from_naive_utc_and_offset(naive, Utc).to_rfc3339()
+    });
+
+    Ok((count, last_activity))
 }
 
 // ============================================================================

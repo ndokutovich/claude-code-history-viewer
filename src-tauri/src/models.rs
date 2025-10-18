@@ -88,8 +88,11 @@ pub struct ClaudeMessage {
 pub struct ClaudeProject {
     pub name: String,
     pub path: String,
+    #[serde(rename = "session_count")]
     pub session_count: usize,
+    #[serde(rename = "message_count")]
     pub message_count: usize,
+    #[serde(rename = "lastModified")]
     pub last_modified: String,
 }
 
