@@ -838,25 +838,60 @@ export const useAppStore = create<AppStore>((set, get) => ({
             await get().loadSessionTokenStats(selectedSession.file_path);
           }
         } else if (currentView === "analytics") {
-          // Refresh analytics dashboard (only for Claude Code)
-          if (selectedProject.providerId !== 'cursor') {
-            const projectSummary = await invoke<ProjectStatsSummary>(
+          // Refresh analytics dashboard
+          let projectSummary: ProjectStatsSummary;
+
+          if (selectedProject.providerId === 'cursor') {
+            // Use universal command for Cursor
+            const workspaceId = selectedProject.path.split(/[\/\\]/).pop() || 'unknown';
+
+            projectSummary = await invoke<ProjectStatsSummary>(
+              "get_universal_project_stats_summary",
+              {
+                providerId: selectedProject.providerId,
+                sourcePath: selectedProject.sourceId || selectedProject.path,
+                projectId: workspaceId,
+              }
+            );
+          } else {
+            // Use legacy command for Claude Code
+            projectSummary = await invoke<ProjectStatsSummary>(
               "get_project_stats_summary",
               { projectPath: selectedProject.path }
             );
-            get().setProjectSummary(projectSummary);
+          }
 
-            // Refresh session comparison data
-            if (selectedSession) {
-              const sessionComparison = await invoke<SessionComparison>(
+          get().setProjectSummary(projectSummary);
+
+          // Refresh session comparison data
+          if (selectedSession) {
+            let sessionComparison: SessionComparison;
+
+            if (selectedProject.providerId === 'cursor') {
+              // Use universal command for Cursor
+              const workspaceId = selectedProject.path.split(/[\/\\]/).pop() || 'unknown';
+
+              sessionComparison = await invoke<SessionComparison>(
+                "get_universal_session_comparison",
+                {
+                  providerId: selectedProject.providerId,
+                  sourcePath: selectedProject.sourceId || selectedProject.path,
+                  sessionId: selectedSession.session_id,
+                  projectId: workspaceId,
+                }
+              );
+            } else {
+              // Use legacy command for Claude Code
+              sessionComparison = await invoke<SessionComparison>(
                 "get_session_comparison",
                 {
                   sessionId: selectedSession.actual_session_id,
                   projectPath: selectedProject.path
                 }
               );
-              get().setSessionComparison(sessionComparison);
             }
+
+            get().setSessionComparison(sessionComparison);
           }
         }
 
@@ -1040,37 +1075,76 @@ export const useAppStore = create<AppStore>((set, get) => ({
           if (!selectedProject) {
             throw new Error("No project selected.");
           }
-          // Load project summary (only for Claude Code - Cursor analytics not yet implemented)
-          if (selectedProject.providerId !== 'cursor') {
-            set({ isLoadingProjectSummary: true, projectSummaryError: null });
-            try {
-              const summary = await get().loadProjectStatsSummary(selectedProject.path);
-              set({ projectStatsSummary: summary });
-            } catch (error) {
-              const errorMessage = error instanceof Error ? error.message : "Failed to load project summary";
-              set({ projectSummaryError: errorMessage });
-              throw error;
-            } finally {
-              set({ isLoadingProjectSummary: false });
+
+          set({ isLoadingProjectSummary: true, projectSummaryError: null });
+          try {
+            let summary: ProjectStatsSummary;
+
+            if (selectedProject.providerId === 'cursor') {
+              // Use universal command for Cursor
+              console.log('📊 Loading Cursor project summary via universal command');
+
+              // Extract workspace ID from project path
+              const workspaceId = selectedProject.path.split(/[\/\\]/).pop() || 'unknown';
+
+              summary = await invoke<ProjectStatsSummary>("get_universal_project_stats_summary", {
+                providerId: selectedProject.providerId,
+                sourcePath: selectedProject.sourceId || selectedProject.path, // Cursor base path
+                projectId: workspaceId,
+              });
+              console.log('✅ Cursor project summary loaded:', summary);
+            } else {
+              // Use legacy command for Claude Code
+              summary = await get().loadProjectStatsSummary(selectedProject.path);
             }
 
-            // Load session comparison if session selected
-            if (selectedSession) {
-              set({ isLoadingSessionComparison: true, sessionComparisonError: null });
-              try {
-                const comparison = await get().loadSessionComparison(
-                selectedSession.actual_session_id,
-                selectedProject.path
-              );
+            set({ projectStatsSummary: summary });
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Failed to load project summary";
+            console.error('❌ Failed to load project summary:', errorMessage);
+            set({ projectSummaryError: errorMessage });
+            throw error;
+          } finally {
+            set({ isLoadingProjectSummary: false });
+          }
+
+          // Load session comparison if session selected
+          if (selectedSession) {
+            set({ isLoadingSessionComparison: true, sessionComparisonError: null });
+            try {
+              let comparison: SessionComparison;
+
+              if (selectedProject.providerId === 'cursor') {
+                // Use universal command for Cursor
+                console.log('📊 Loading Cursor session comparison via universal command');
+
+                // Extract workspace ID from project path
+                const workspaceId = selectedProject.path.split(/[\/\\]/).pop() || 'unknown';
+
+                comparison = await invoke<SessionComparison>("get_universal_session_comparison", {
+                  providerId: selectedProject.providerId,
+                  sourcePath: selectedProject.sourceId || selectedProject.path, // Cursor base path
+                  sessionId: selectedSession.session_id,
+                  projectId: workspaceId,
+                });
+                console.log('✅ Cursor session comparison loaded:', comparison);
+              } else {
+                // Use legacy command for Claude Code
+                comparison = await get().loadSessionComparison(
+                  selectedSession.actual_session_id,
+                  selectedProject.path
+                );
+              }
+
               set({ sessionComparison: comparison });
             } catch (error) {
               const errorMessage = error instanceof Error ? error.message : "Failed to load session comparison";
+              console.error('❌ Failed to load session comparison:', errorMessage);
               set({ sessionComparisonError: errorMessage });
               // Session comparison failure is not critical
             } finally {
               set({ isLoadingSessionComparison: false });
             }
-          }
           }
           break;
 
