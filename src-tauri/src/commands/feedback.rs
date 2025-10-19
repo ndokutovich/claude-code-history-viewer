@@ -72,7 +72,7 @@ pub async fn get_system_info() -> Result<SystemInfo, String> {
 
 #[tauri::command]
 pub async fn open_github_issues() -> Result<(), String> {
-    let github_url = "https://github.com/jhlee0409/claude-code-history-viewer/issues/new";
+    let github_url = "https://github.com/ndokutovich/claude-code-history-viewer/issues/new";
 
     tauri_plugin_opener::open_url(github_url, None::<String>)
         .map_err(|e| format!("Failed to open GitHub: {}", e))?;

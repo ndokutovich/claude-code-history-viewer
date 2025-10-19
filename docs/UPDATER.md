@@ -32,7 +32,7 @@ Example `latest.json`:
   "platforms": {
     "windows-x86_64": {
       "signature": "dW50cnVzdGVk...",
-      "url": "https://github.com/jhlee0409/claude-code-history-viewer/releases/download/v1.0.0-4/installer.msi"
+      "url": "https://github.com/ndokutovich/claude-code-history-viewer/releases/download/v1.0.0-4/installer.msi"
     },
     "darwin-x86_64": {
       "signature": "...",
@@ -86,7 +86,7 @@ This public key verifies that updates are signed by the developer.
     "updater": {
       "active": true,
       "endpoints": [
-        "https://github.com/jhlee0409/claude-code-history-viewer/releases/latest/download/latest.json"
+        "https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/latest.json"
       ],
       "dialog": false,
       "pubkey": "..."
@@ -215,5 +215,5 @@ Users can still manually download and install new versions.
 ## References
 
 - [Tauri Updater Plugin Docs](https://tauri.app/v2/plugin/updater/)
-- [GitHub Releases](https://github.com/jhlee0409/claude-code-history-viewer/releases)
+- [GitHub Releases](https://github.com/ndokutovich/claude-code-history-viewer/releases)
 - [UPDATER_ANALYSIS_REPORT.md](../UPDATER_ANALYSIS_REPORT.md) - Detailed analysis of the updater system

@@ -136,7 +136,7 @@ const response = await fetch('http://localhost:3000/latest.json', {
 "updater": {
   "active": true,
   "endpoints": [
-    "https://api.github.com/repos/jhlee0409/claude-code-history-viewer/releases/latest"
+    "https://api.github.com/repos/ndokutovich/claude-code-history-viewer/releases/latest"
   ],
   "dialog": false,
   "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhCMDAzQUUxMEEzNEFDRTcKUldUbnJEUUs0VG9BaXpzVXFxU2NKTjBOYnFIOVlMWWlHY0NkRHBjVHlFUjdvWkdrMXgyaUFXeXYK"
@@ -149,7 +149,7 @@ const response = await fetch('http://localhost:3000/latest.json', {
 ```typescript
 // 프로덕션: GitHub API 사용
 const response = await fetch(
-  "https://api.github.com/repos/jhlee0409/claude-code-history-viewer/releases/latest",
+  "https://api.github.com/repos/ndokutovich/claude-code-history-viewer/releases/latest",
   {
     headers: {
       Accept: "application/vnd.github.v3+json",
