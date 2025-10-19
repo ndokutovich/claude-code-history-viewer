@@ -49,28 +49,6 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   const filteredAndSortedProjects = useMemo(() => {
     let result = [...projects];
 
-    // Debug: Log Cursor workspace IDs
-    const cursorWorkspaces = result.filter(p => p.providerId === 'cursor');
-    if (cursorWorkspaces.length > 0) {
-      console.log(`📋 Total Cursor workspaces: ${cursorWorkspaces.length}`);
-      const workspaceIds = cursorWorkspaces.map(p => {
-        // Extract workspace ID from path
-        const parts = p.path.split(/[\/\\]/);
-        return parts[parts.length - 1];
-      });
-      console.log(`🔍 Looking for workspaces with sessions:`, [
-        'ea03cc824f69e685537a85dc8126102b',
-        '27ee40ff632647d1e5a6b71371940336',
-        '4f08bcab4c2ac89c37d3c199ff4917fc'
-      ]);
-      const found = workspaceIds.filter(id =>
-        id === 'ea03cc824f69e685537a85dc8126102b' ||
-        id === '27ee40ff632647d1e5a6b71371940336' ||
-        id === '4f08bcab4c2ac89c37d3c199ff4917fc'
-      );
-      console.log(`✅ Found ${found.length} target workspaces:`, found);
-    }
-
     // Filter: Hide empty projects
     if (projectListPreferences.hideEmptyProjects) {
       result = result.filter((p) => {
@@ -238,9 +216,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   // Expose expand/collapse functions via custom event for ProjectListControls
   useEffect(() => {
     const handleExpandAll = async () => {
-      console.log('🔽 handleExpandAll triggered, expanding', filteredAndSortedProjects.length, 'projects');
       const allPaths = new Set(filteredAndSortedProjects.map(p => p.path));
-      console.log('🔽 Setting expanded projects:', allPaths.size);
       setExpandedProjects(allPaths);
 
       // Load sessions for all projects
@@ -248,41 +224,15 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     };
 
     const handleCollapseAll = () => {
-      console.log('🔼 handleCollapseAll triggered');
       setExpandedProjects(new Set());
-    };
-
-    const handleExpandWithSessions = async () => {
-      console.log('🎯 Expanding ONLY workspaces with sessions');
-      const targetWorkspaces = [
-        'ea03cc824f69e685537a85dc8126102b',
-        '27ee40ff632647d1e5a6b71371940336',
-        '4f08bcab4c2ac89c37d3c199ff4917fc'
-      ];
-
-      const pathsToExpand = filteredAndSortedProjects
-        .filter(p => {
-          const parts = p.path.split(/[\/\\]/);
-          const wsId = parts[parts.length - 1];
-          return wsId && targetWorkspaces.includes(wsId);
-        })
-        .map(p => p.path);
-
-      console.log('🎯 Expanding', pathsToExpand.length, 'target workspaces:', pathsToExpand);
-      setExpandedProjects(new Set(pathsToExpand));
-
-      // Load sessions for target workspaces
-      await loadSessionsForProjects(pathsToExpand);
     };
 
     window.addEventListener('expandAllProjects', handleExpandAll);
     window.addEventListener('collapseAllProjects', handleCollapseAll);
-    window.addEventListener('expandWithSessions', handleExpandWithSessions);
 
     return () => {
       window.removeEventListener('expandAllProjects', handleExpandAll);
       window.removeEventListener('collapseAllProjects', handleCollapseAll);
-      window.removeEventListener('expandWithSessions', handleExpandWithSessions);
     };
   }, [filteredAndSortedProjects]);
 

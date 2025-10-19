@@ -1,4 +1,4 @@
-import { Settings2, SortAsc, SortDesc, Group, Ungroup, Eye, EyeOff, ChevronsDown, ChevronsUp, Target } from "lucide-react";
+import { Settings2, SortAsc, SortDesc, Group, Ungroup, Eye, EyeOff, ChevronsDown, ChevronsUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../store/useAppStore";
 import { Button } from "./ui/button";
@@ -41,26 +41,11 @@ export const ProjectListControls = () => {
             : t("projectListControls.groupBySource")}
         </Button>
 
-        {/* Expand With Sessions (DEBUG) */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            console.log('🎯 Expand With Sessions clicked');
-            window.dispatchEvent(new Event('expandWithSessions'));
-          }}
-          className="text-xs bg-blue-100 dark:bg-blue-900"
-          title="Expand ONLY workspaces with token data"
-        >
-          <Target className="w-4 h-4" />
-        </Button>
-
         {/* Expand All */}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => {
-            console.log('🔽 Expand All clicked');
             window.dispatchEvent(new Event('expandAllProjects'));
           }}
           className="text-xs"
@@ -74,7 +59,6 @@ export const ProjectListControls = () => {
           variant="ghost"
           size="sm"
           onClick={() => {
-            console.log('🔼 Collapse All clicked');
             window.dispatchEvent(new Event('collapseAllProjects'));
           }}
           className="text-xs"

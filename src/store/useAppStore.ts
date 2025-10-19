@@ -953,21 +953,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // Get selected session to determine provider
       const { selectedSession } = get();
 
-      console.log('📊 loadSessionTokenStats called:', {
-        sessionPath,
-        providerId: selectedSession?.providerId,
-        sessionId: selectedSession?.session_id,
-      });
-
       if (selectedSession?.providerId === 'cursor') {
         // Use universal command for Cursor
-        console.log('🎯 Calling get_universal_session_token_stats for Cursor session');
         const stats = await invoke<SessionTokenStats>("get_universal_session_token_stats", {
           providerId: selectedSession.providerId,
           sourcePath: sessionPath,
           sessionId: selectedSession.session_id,
         });
-        console.log('✅ Token stats loaded for Cursor session:', stats);
         set({ sessionTokenStats: stats });
       } else {
         // Use legacy command for Claude Code
@@ -1102,8 +1094,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
             if (selectedProject.providerId === 'cursor') {
               // Use universal command for Cursor
-              console.log('📊 Loading Cursor project summary via universal command');
-
               // Extract workspace ID from project path
               const workspaceId = selectedProject.path.split(/[\/\\]/).pop() || 'unknown';
 
@@ -1115,22 +1105,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 throw new Error(`Source not found for ID: ${selectedProject.sourceId}`);
               }
 
-              const cursorBasePath = source.path; // This is the actual Cursor path like C:\Users\xxx\AppData\Roaming\Cursor
-
-              console.log('📊 Analytics parameters:', {
-                providerId: selectedProject.providerId,
-                cursorBasePath,
-                workspaceId,
-                sourceId: selectedProject.sourceId,
-                fullProject: selectedProject,
-              });
+              const cursorBasePath = source.path;
 
               summary = await invoke<ProjectStatsSummary>("get_universal_project_stats_summary", {
                 providerId: selectedProject.providerId,
                 sourcePath: cursorBasePath,
                 projectId: workspaceId,
               });
-              console.log('✅ Cursor project summary loaded:', summary);
             } else {
               // Use legacy command for Claude Code
               summary = await get().loadProjectStatsSummary(selectedProject.path);
@@ -1154,8 +1135,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
               if (selectedProject.providerId === 'cursor') {
                 // Use universal command for Cursor
-                console.log('📊 Loading Cursor session comparison via universal command');
-
                 // Extract workspace ID from project path
                 const workspaceId = selectedProject.path.split(/[\/\\]/).pop() || 'unknown';
 
@@ -1175,7 +1154,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
                   sessionId: selectedSession.session_id,
                   projectId: workspaceId,
                 });
-                console.log('✅ Cursor session comparison loaded:', comparison);
               } else {
                 // Use legacy command for Claude Code
                 comparison = await get().loadSessionComparison(
