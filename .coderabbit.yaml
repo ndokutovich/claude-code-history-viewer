@@ -2,12 +2,12 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
 # ============================================================================
-# 기본 설정
+# Basic Settings
 # ============================================================================
-language: "ko-KR" # 한국어 리뷰
-early_access: false # 얼리 액세스 기능 비활성화
-enable_free_tier: true # 무료 티어 기능 활성화
-tone_instructions: "친근하고 건설적인 톤으로 리뷰를 제공하되, 중요한 보안이나 성능 이슈는 명확하게 지적해주세요."
+language: "en-US" # English reviews
+early_access: false # Disable early access features
+enable_free_tier: true # Enable free tier features
+tone_instructions: "Provide reviews in a friendly and constructive tone, but clearly point out important security or performance issues."
 
 # ============================================================================
 # 지식 베이스 설정
@@ -272,16 +272,16 @@ reviews:
       enabled: true
 
 # ============================================================================
-# 코드 생성 설정
+# Code Generation Settings
 # ============================================================================
 code_generation:
   docstrings:
-    language: "ko-KR" # 한국어 docstring
+    language: "en-US" # English docstrings
     path_instructions:
       - path: "src/**/*.{ts,tsx}"
-        instructions: "JSDoc 형식으로 TypeScript/React 함수와 컴포넌트에 대한 문서를 생성해주세요."
+        instructions: "Generate documentation for TypeScript/React functions and components in JSDoc format."
       - path: "src-tauri/**/*.rs"
-        instructions: "Rust doc 형식으로 함수와 구조체에 대한 문서를 생성해주세요."
+        instructions: "Generate documentation for Rust functions and structs in Rust doc format."
 
   unit_tests:
     path_instructions:
