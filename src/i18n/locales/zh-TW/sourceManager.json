@@ -1,0 +1,43 @@
+{
+  "title": "資料來源",
+  "description": "管理您的對話歷史來源",
+  "addSource": "新增來源",
+  "refreshAll": "全部重新整理",
+  "loading": "載入來源中...",
+  "dialog": {
+    "title": "新增資料來源",
+    "description": "新增包含對話歷史資料的資料夾",
+    "nameLabel": "名稱（選填）",
+    "namePlaceholder": "我的對話",
+    "pathLabel": "資料夾路徑",
+    "pathPlaceholder": "/path/to/.claude",
+    "cancel": "取消",
+    "add": "新增來源",
+    "adding": "新增中...",
+    "selectFolder": "選擇對話資料資料夾",
+    "confirmRemove": "您確定要移除此來源嗎？"
+  },
+  "validation": {
+    "enterPath": "請輸入路徑",
+    "invalidPath": "無效路徑"
+  },
+  "actions": {
+    "refresh": "重新整理",
+    "setDefault": "設為預設",
+    "remove": "移除"
+  },
+  "emptyState": {
+    "title": "未設定來源",
+    "description": "點擊「新增來源」開始"
+  },
+  "stats": {
+    "projects": "專案",
+    "sessions": "工作階段",
+    "messages": "訊息"
+  },
+  "errors": {
+    "alreadyAdded": "此來源已被新增",
+    "failedToAdd": "新增來源失敗"
+  },
+  "autoDetected": "自動偵測 ({{number}})"
+}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import type { LoadingProgress } from "../types";
 
@@ -7,6 +8,7 @@ interface SplashScreenProps {
 }
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ progress }) => {
+  const { t } = useTranslation('splash');
   const [dots, setDots] = useState("");
 
   // Animate dots
@@ -33,10 +35,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ progress }) => {
 
         {/* App Title */}
         <h1 className="text-3xl font-bold text-center mb-2 text-gray-800 dark:text-gray-100">
-          Claude Code History Viewer
+          {t('appTitle')}
         </h1>
         <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-8">
-          Loading conversation history{dots}
+          {t('loadingMessage')}{dots}
         </p>
 
         {/* Progress Bar */}

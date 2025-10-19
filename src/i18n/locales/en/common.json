@@ -1,6 +1,6 @@
 {
-  "appName": "Claude Code History Viewer",
-  "appDescription": "Explore and analyze your Claude Code conversation history",
+  "appName": "Claude Code & Cursor IDE History Viewer",
+  "appDescription": "Explore and analyze your Claude Code and Cursor IDE conversation history",
   "errorOccurred": "An error occurred",
   "loading": "Loading...",
   "back": "Back",

@@ -1,0 +1,43 @@
+{
+  "title": "데이터 소스",
+  "description": "대화 기록 소스 관리",
+  "addSource": "소스 추가",
+  "refreshAll": "전체 새로고침",
+  "loading": "소스 로딩 중...",
+  "dialog": {
+    "title": "데이터 소스 추가",
+    "description": "대화 기록 데이터가 포함된 폴더 추가",
+    "nameLabel": "이름 (선택사항)",
+    "namePlaceholder": "내 대화",
+    "pathLabel": "폴더 경로",
+    "pathPlaceholder": "/path/to/.claude",
+    "cancel": "취소",
+    "add": "소스 추가",
+    "adding": "추가 중...",
+    "selectFolder": "대화 데이터 폴더 선택",
+    "confirmRemove": "이 소스를 제거하시겠습니까?"
+  },
+  "validation": {
+    "enterPath": "경로를 입력하세요",
+    "invalidPath": "잘못된 경로"
+  },
+  "actions": {
+    "refresh": "새로고침",
+    "setDefault": "기본값으로 설정",
+    "remove": "제거"
+  },
+  "emptyState": {
+    "title": "구성된 소스 없음",
+    "description": "「소스 추가」를 클릭하여 시작하세요"
+  },
+  "stats": {
+    "projects": "프로젝트",
+    "sessions": "세션",
+    "messages": "메시지"
+  },
+  "errors": {
+    "alreadyAdded": "이 소스는 이미 추가되었습니다",
+    "failedToAdd": "소스 추가 실패"
+  },
+  "autoDetected": "자동 감지 ({{number}})"
+}

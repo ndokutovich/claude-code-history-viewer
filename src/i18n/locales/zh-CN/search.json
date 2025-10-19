@@ -1,0 +1,9 @@
+{
+  "loadingSessionInfo": "加载会话信息中...",
+  "errors": {
+    "missingProjectInfo": "无法跳转到消息：缺少项目信息",
+    "projectNotFound": "找不到此会话的项目",
+    "messageNotFound": "在对话中找不到消息。UUID: {{uuid}}",
+    "jumpError": "跳转到消息时出错: {{error}}"
+  }
+}

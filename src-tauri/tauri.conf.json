@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Claude Code History Viewer",
+        "title": "Claude Code & Cursor IDE History Viewer",
         "width": 1200,
         "height": 800,
         "minWidth": 900,

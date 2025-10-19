@@ -9,6 +9,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { load, type StoreOptions } from '@tauri-apps/plugin-store';
 import type { UniversalSource } from '../types/universal';
 import { adapterRegistry } from '../adapters';
+import i18n from '../i18n.config';
 
 // Generate deterministic ID from path (simple hash to UUID format)
 // This ensures the same path always gets the same ID across restarts
@@ -192,7 +193,7 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       if (!path) continue; // Skip undefined paths
 
       try {
-        const source = await get().addSource(path, `Auto-detected (${i + 1})`);
+        const source = await get().addSource(path, i18n.t('sourceManager:autoDetected', { number: i + 1 }));
 
         // Set first source as default
         if (i === 0) {
@@ -225,7 +226,7 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       // Check for duplicates
       const existingSources = get().sources;
       if (existingSources.some((s) => s.path === path)) {
-        throw new Error('This source is already added');
+        throw new Error(i18n.t('sourceManager:errors.alreadyAdded'));
       }
 
       // Get adapter
@@ -286,7 +287,7 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
 
       return source;
     } catch (error) {
-      const errorMessage = `Failed to add source: ${(error as Error).message}`;
+      const errorMessage = `${i18n.t('sourceManager:errors.failedToAdd')}: ${(error as Error).message}`;
       set({ error: errorMessage });
       throw error;
     } finally {

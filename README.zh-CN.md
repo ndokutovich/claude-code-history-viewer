@@ -1,6 +1,6 @@
-# Claude Code History Viewer
+# Claude Code & Cursor IDE History Viewer
 
-一款用于浏览存储在 `~/.claude` 中的 Claude Code 对话历史的跨平台桌面应用程序。
+一款用于浏览 Claude Code 和 Cursor IDE 对话历史（存储在 `~/.claude` 和 Cursor 数据文件夹）的跨平台桌面应用程序。
 
 ![Version](https://img.shields.io/badge/Version-1.1.3-blue.svg)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)
@@ -12,7 +12,7 @@
 
 ## 开发原因
 
-Claude Code 将对话历史存储在 `~/.claude/projects/` 文件夹中的 JSONL 文件中。这些文件难以阅读和搜索。此应用程序提供了一个合适的界面来浏览对话、查看使用统计信息并查找旧讨论。
+Claude Code 和 Cursor IDE 分别将对话历史存储在各自的数据文件夹（Claude Code 使用 `~/.claude/projects/`，Cursor 使用 AppData 文件夹）中的 JSONL 文件中。这些文件难以阅读和搜索。此应用程序提供了一个统一的界面来浏览两个工具的对话、查看使用统计信息并查找旧讨论。
 
 ## 截图和演示
 
@@ -58,6 +58,12 @@ Claude Code 将对话历史存储在 `~/.claude/projects/` 文件夹中的 JSONL
 - 6种语言：英语、韩语、日语、简体中文、繁体中文、俄语
 - 从系统区域设置自动检测语言
 - 完整的 UI 翻译覆盖
+
+**🔌 多数据源支持**:
+- 同时支持 Claude Code 和 Cursor IDE 的对话历史
+- 自动检测可用的数据源
+- 统一界面浏览两个工具的对话
+- 数据源之间轻松切换
 
 **🎨 增强的 UI/UX**:
 - 改进的浅色/深色模式和更好的消息气泡样式

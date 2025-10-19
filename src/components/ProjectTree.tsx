@@ -42,7 +42,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   isLoading,
 }) => {
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
-  const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation('components');
   const { projectListPreferences, loadProjectSessions } = useAppStore();
 
   // Apply filtering and sorting to projects
@@ -129,7 +129,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
     // Sort groups: Claude Code first, Cursor second, others after
     const sortedGroups: Record<string, ClaudeProject[]> = {};
-    const sourceOrder = ['Claude Code', 'Cursor'];
+    const sourceOrder = [t('projectTree.sources.claudeCode'), t('projectTree.sources.cursor')];
 
     // Add sources in preferred order
     sourceOrder.forEach(sourceName => {
@@ -381,7 +381,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
                       {/* Metadata row */}
                       <div className="flex items-center space-x-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        <span>{session.message_count} messages</span>
+                        <span>{t("message.count", { count: session.message_count })}</span>
                         <span>•</span>
                         <span>{formatTimeAgo(session.last_modified)}</span>
                         {session.has_tool_use && (

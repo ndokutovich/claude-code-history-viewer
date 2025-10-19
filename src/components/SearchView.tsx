@@ -19,6 +19,7 @@ interface GroupedSearchResult {
 
 export const SearchView = () => {
   const { t } = useTranslation("common");
+  const { t: tSearch } = useTranslation("search");
   const {
     searchQuery,
     searchResults,
@@ -157,7 +158,7 @@ export const SearchView = () => {
     try {
       if (!group.projectPath) {
         console.error("No project path");
-        alert("Cannot jump to message: Missing project information");
+        alert(tSearch("errors.missingProjectInfo"));
         return;
       }
 
@@ -165,7 +166,7 @@ export const SearchView = () => {
       const project = projects.find((p) => p.path === group.projectPath);
       if (!project) {
         console.error("Project not found:", group.projectPath);
-        alert("Cannot find project for this session");
+        alert(tSearch("errors.projectNotFound"));
         return;
       }
 
@@ -223,12 +224,12 @@ export const SearchView = () => {
           setTimeout(() => element.classList.remove("highlight-message"), 2000);
         } else {
           console.error("Message element not found:", `message-${messageUuid}`);
-          alert(`Message not found in conversation. UUID: ${messageUuid}`);
+          alert(tSearch("errors.messageNotFound", { uuid: messageUuid }));
         }
       }, 500);
     } catch (error) {
       console.error("Error jumping to message:", error);
-      alert(`Error jumping to message: ${error}`);
+      alert(tSearch("errors.jumpError", { error: String(error) }));
     }
   };
 
@@ -364,7 +365,7 @@ export const SearchView = () => {
       <div className="flex-1 overflow-y-auto p-4">
         {isLoadingMessages || isLoadingSessionMetadata ? (
           <div className={cn("text-center py-8", COLORS.ui.text.muted)}>
-            {isLoadingMessages ? t("search.searching") : "Loading session information..."}
+            {isLoadingMessages ? t("search.searching") : tSearch("loadingSessionInfo")}
           </div>
         ) : searchResults.length === 0 ? (
           <div className={cn("text-center py-8", COLORS.ui.text.muted)}>

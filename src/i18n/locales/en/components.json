@@ -17,7 +17,8 @@
     "scanning": "Scanning projects...",
     "loading": "Loading sessions...",
     "count": "Sessions: {{count}}",
-    "selected": "Selected session"
+    "selected": "Selected session",
+    "noSessions": "No sessions found"
   },
   "selection": {
     "clear": "Clear selection (ESC)"
@@ -604,5 +605,11 @@
   "upToDateNotification": {
     "upToDate": "Already Up to Date",
     "currentVersionLatest": "Current version {{version}} is the latest"
+  },
+  "projectTree": {
+    "sources": {
+      "claudeCode": "Claude Code",
+      "cursor": "Cursor"
+    }
   }
 }

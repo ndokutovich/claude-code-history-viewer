@@ -1,0 +1,13 @@
+{
+  "appTitle": "Просмотр истории Claude Code & Cursor IDE",
+  "loadingMessage": "Загрузка истории разговоров",
+  "status": {
+    "initializing": "Инициализация приложения",
+    "loadingLanguage": "Загрузка языковых настроек",
+    "detectingSources": "Обнаружение источников диалога",
+    "loadingAdapters": "Загрузка адаптеров",
+    "scanningProjects": "Сканирование проектов",
+    "finalizing": "Завершение",
+    "ready": "Готово"
+  }
+}

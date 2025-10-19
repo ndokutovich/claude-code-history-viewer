@@ -23,6 +23,7 @@ export const Header = () => {
   const { t } = useTranslation("common");
   const { t: tComponents } = useTranslation("components");
   const { t: tMessages } = useTranslation("messages");
+  const { t: tSourceManager } = useTranslation("sourceManager");
 
   const [isSourcesModalOpen, setIsSourcesModalOpen] = useState(false);
 
@@ -74,7 +75,7 @@ export const Header = () => {
         <div className="flex items-center space-x-3">
           <img
             src="/app-icon.png"
-            alt="Claude Code History Viewer"
+            alt="Claude Code & Cursor IDE History Viewer"
             className="w-10 h-10"
           />
           <div>
@@ -106,7 +107,7 @@ export const Header = () => {
           <div className="flex items-center space-x-2">
             {/* Sources Button */}
             <TooltipButton
-              content="Data Sources"
+              content={tSourceManager("title")}
               onClick={() => setIsSourcesModalOpen(true)}
               className={cn(
                 "p-2 rounded-lg transition-colors",

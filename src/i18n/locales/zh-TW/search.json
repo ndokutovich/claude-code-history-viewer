@@ -1,0 +1,9 @@
+{
+  "loadingSessionInfo": "載入工作階段資訊中...",
+  "errors": {
+    "missingProjectInfo": "無法跳轉到訊息：缺少專案資訊",
+    "projectNotFound": "找不到此工作階段的專案",
+    "messageNotFound": "在對話中找不到訊息。UUID: {{uuid}}",
+    "jumpError": "跳轉到訊息時發生錯誤: {{error}}"
+  }
+}

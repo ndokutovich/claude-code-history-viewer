@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import { AppErrorType, type ClaudeSession, type ClaudeProject } from "./types";
 import { AlertTriangle, Loader2, MessageSquare } from "lucide-react";
 import { useLanguageStore } from "./store/useLanguageStore";
-import { type SupportedLanguage } from "./i18n";
+import { type SupportedLanguage } from "./i18n.config";
 
 import "./App.css";
 import { cn } from "./utils/cn";
@@ -82,7 +82,7 @@ function App() {
         // Stage 1: Initializing (0-20%)
         setLoadingProgress({
           stage: 'initializing',
-          message: 'Initializing application',
+          message: i18nInstance.t('splash:status.initializing', 'Initializing application'),
           progress: 5,
         });
 
@@ -90,14 +90,14 @@ function App() {
 
         setLoadingProgress({
           stage: 'initializing',
-          message: 'Loading language settings',
+          message: i18nInstance.t('splash:status.loadingLanguage', 'Loading language settings'),
           progress: 15,
         });
 
         // Stage 2: Detecting sources (20-40%)
         setLoadingProgress({
           stage: 'detecting-sources',
-          message: 'Detecting conversation sources',
+          message: i18nInstance.t('splash:status.detectingSources', 'Detecting conversation sources'),
           progress: 25,
         });
 
@@ -105,14 +105,14 @@ function App() {
 
         setLoadingProgress({
           stage: 'loading-adapters',
-          message: 'Loading adapters',
+          message: i18nInstance.t('splash:status.loadingAdapters', 'Loading adapters'),
           progress: 45,
         });
 
         // Stage 3: Scanning projects (40-80%)
         setLoadingProgress({
           stage: 'scanning-projects',
-          message: 'Scanning projects',
+          message: i18nInstance.t('splash:status.scanningProjects', 'Scanning projects'),
           progress: 65,
         });
 
@@ -120,14 +120,14 @@ function App() {
 
         setLoadingProgress({
           stage: 'scanning-projects',
-          message: 'Finalizing',
+          message: i18nInstance.t('splash:status.finalizing', 'Finalizing'),
           progress: 90,
         });
 
         // Stage 4: Complete (80-100%)
         setLoadingProgress({
           stage: 'complete',
-          message: 'Ready',
+          message: i18nInstance.t('splash:status.ready', 'Ready'),
           progress: 100,
         });
 

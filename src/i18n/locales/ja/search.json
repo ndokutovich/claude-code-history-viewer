@@ -1,0 +1,9 @@
+{
+  "loadingSessionInfo": "セッション情報を読み込み中...",
+  "errors": {
+    "missingProjectInfo": "メッセージにジャンプできません：プロジェクト情報がありません",
+    "projectNotFound": "このセッションのプロジェクトが見つかりません",
+    "messageNotFound": "会話内でメッセージが見つかりません。UUID: {{uuid}}",
+    "jumpError": "メッセージへのジャンプ中にエラー: {{error}}"
+  }
+}

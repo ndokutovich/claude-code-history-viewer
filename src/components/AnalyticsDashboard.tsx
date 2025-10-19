@@ -93,7 +93,7 @@ export const AnalyticsDashboard: React.FC = () => {
   const ActivityHeatmapComponent = ({ data }: { data: ActivityHeatmap[] }) => {
     const maxActivity = Math.max(...data.map((d) => d.activity_count), 1);
     const hours = Array.from({ length: 24 }, (_, i) => i);
-    const days = t("analytics.weekdayNames", { returnObjects: true });
+    const days = t("analytics.weekdayNames", { returnObjects: true }) as string[];
     return (
       <div className="overflow-x-auto h-[calc(100%-30px)]">
         <div className="inline-block min-w-max">
@@ -385,7 +385,7 @@ export const AnalyticsDashboard: React.FC = () => {
             <div className="flex items-center justify-between mb-2">
               <Activity className={cn("w-8 h-8", COLORS.tools.search.icon)} />
               <span className={cn("text-xs", COLORS.ui.text.muted)}>
-                {projectSummary.total_sessions} sessions
+                {projectSummary.total_sessions} {t("analytics.sessionsUnit")}
               </span>
             </div>
             <div className={cn("text-2xl font-bold", COLORS.ui.text.primary)}>
@@ -457,7 +457,7 @@ export const AnalyticsDashboard: React.FC = () => {
               />
             ) : (
               <div className={cn("text-center py-8", COLORS.ui.text.muted)}>
-                {t("analytics.No activity data available")}
+                {t("analytics.noActivity")}
               </div>
             )}
           </div>
@@ -482,7 +482,7 @@ export const AnalyticsDashboard: React.FC = () => {
               <ToolUsageChart tools={projectSummary.most_used_tools} />
             ) : (
               <div className={cn("text-center py-8", COLORS.ui.text.muted)}>
-                {t("analytics.No tool usage data available")}
+                {t("analytics.noData")}
               </div>
             )}
           </div>
@@ -686,25 +686,25 @@ export const AnalyticsDashboard: React.FC = () => {
             <div className="space-y-3">
               {[
                 {
-                  label: "Input",
+                  label: t("analytics.input"),
                   value: projectSummary.token_distribution.input,
                   color: COLORS.semantic.success.textDark,
                   bgColor: "bg-green-800 dark:bg-green-300",
                 },
                 {
-                  label: "Output",
+                  label: t("analytics.output"),
                   value: projectSummary.token_distribution.output,
                   color: COLORS.semantic.info.textDark,
                   bgColor: "bg-blue-800 dark:bg-blue-300",
                 },
                 {
-                  label: "Cache Creation",
+                  label: t("analytics.cacheCreation"),
                   value: projectSummary.token_distribution.cache_creation,
                   color: COLORS.tools.search.text,
                   bgColor: "bg-purple-800 dark:bg-purple-300",
                 },
                 {
-                  label: "Cache Read",
+                  label: t("analytics.cacheRead"),
                   value: projectSummary.token_distribution.cache_read,
                   color: COLORS.tools.task.text,
                   bgColor: "bg-orange-800 dark:bg-orange-300",
@@ -905,28 +905,28 @@ export const AnalyticsDashboard: React.FC = () => {
           <div className="space-y-4">
             {[
               {
-                label: "Input",
+                label: t("analytics.input"),
                 value: sessionStats.total_input_tokens,
                 icon: TrendingUp,
                 color: COLORS.semantic.success.textDark,
                 bgColor: "bg-green-500",
               },
               {
-                label: "Output",
+                label: t("analytics.output"),
                 value: sessionStats.total_output_tokens,
                 icon: Zap,
                 color: COLORS.semantic.info.textDark,
                 bgColor: "bg-blue-500",
               },
               {
-                label: "Cache Creation",
+                label: t("analytics.cacheCreation"),
                 value: sessionStats.total_cache_creation_tokens,
                 icon: Database,
                 color: COLORS.tools.search.text,
                 bgColor: "bg-purple-500",
               },
               {
-                label: "Cache Read",
+                label: t("analytics.cacheRead"),
                 value: sessionStats.total_cache_read_tokens,
                 icon: Eye,
                 color: COLORS.tools.task.text,
@@ -1290,10 +1290,10 @@ export const AnalyticsDashboard: React.FC = () => {
           <h2
             className={cn("text-xl font-semibold mb-2", COLORS.ui.text.primary)}
           >
-            {t("analytics.Analytics Dashboard")}
+            {t("analytics.dashboard")}
           </h2>
           <p className={cn("text-sm", COLORS.ui.text.tertiary)}>
-            {t("analytics.Select a project to view analytics")}
+            {t("project.selectToView")}
           </p>
         </div>
       </div>
@@ -1311,7 +1311,7 @@ export const AnalyticsDashboard: React.FC = () => {
         </div>
         <p className={cn(COLORS.ui.text.tertiary)}>
           {selectedProject?.name}
-          {selectedSession && ` • ${t("analytics.Session Analysis")}`}
+          {selectedSession && ` • ${t("analytics.sessionOverview")}`}
         </p>
       </div>
 

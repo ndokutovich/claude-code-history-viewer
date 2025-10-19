@@ -17,7 +17,8 @@
     "scanning": "Сканирование проектов...",
     "loading": "Загрузка сеансов...",
     "count": "Сеансов: {{count}}",
-    "selected": "Выбранная сессия"
+    "selected": "Выбранная сессия",
+    "noSessions": "Сеансы не найдены"
   },
   "message": {
     "user": "Пользователь",
@@ -573,7 +574,35 @@
     "upToDate": "Уже обновлено",
     "currentVersionLatest": "Текущая версия {{version}} является последней"
   },
+  "projectListControls": {
+    "groupBySource": "Группировать по источнику",
+    "ungroup": "Разгруппировать",
+    "groupBy": {
+      "source": "По источнику",
+      "none": "По проекту",
+      "sessions": "Все сеансы"
+    },
+    "expandAll": "Развернуть все",
+    "collapseAll": "Свернуть все",
+    "sortBy": {
+      "name": "Название",
+      "date": "Дата"
+    },
+    "sortOrder": {
+      "asc": "По возрастанию",
+      "desc": "По убыванию"
+    },
+    "hideEmptyProjects": "Скрыть пустые проекты",
+    "hideEmptySessions": "Скрыть пустые сеансы",
+    "showAll": "Показать все"
+  },
   "selection": {
     "clear": "Очистить выбор (ESC)"
+  },
+  "projectTree": {
+    "sources": {
+      "claudeCode": "Claude Code",
+      "cursor": "Cursor"
+    }
   }
 }

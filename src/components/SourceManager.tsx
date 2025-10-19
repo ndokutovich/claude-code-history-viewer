@@ -4,6 +4,7 @@
 // UI for managing multiple conversation data sources
 
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSourceStore } from '../store/useSourceStore';
 import type { UniversalSource, HealthStatus } from '../types/universal';
 import { Button } from './ui/button';
@@ -27,6 +28,16 @@ import {
 import { open } from '@tauri-apps/plugin-dialog';
 
 export const SourceManager: React.FC = () => {
+  const { t, i18n } = useTranslation('sourceManager');
+
+  // DEBUG: Log translation info
+  console.log('🔍 SourceManager Translation Debug:');
+  console.log('  Current language:', i18n.language);
+  console.log('  Available namespaces:', i18n.options.ns);
+  console.log('  Test translation t("title"):', t('title'));
+  console.log('  Test translation t("description"):', t('description'));
+  console.log('  Raw resources:', i18n.getResourceBundle(i18n.language, 'sourceManager'));
+
   const {
     sources,
     selectedSourceId,
@@ -61,7 +72,7 @@ export const SourceManager: React.FC = () => {
     setValidationError(null);
 
     if (!newSourcePath.trim()) {
-      setValidationError('Please enter a path');
+      setValidationError(t('validation.enterPath'));
       return;
     }
 
@@ -70,7 +81,7 @@ export const SourceManager: React.FC = () => {
       const validation = await validatePath(newSourcePath);
 
       if (!validation.isValid) {
-        setValidationError(validation.error || 'Invalid path');
+        setValidationError(validation.error || t('validation.invalidPath'));
         return;
       }
 
@@ -92,7 +103,7 @@ export const SourceManager: React.FC = () => {
       const selected = await open({
         directory: true,
         multiple: false,
-        title: 'Select Conversation Data Folder',
+        title: t('dialog.selectFolder'),
       });
 
       if (selected && typeof selected === 'string') {
@@ -105,7 +116,7 @@ export const SourceManager: React.FC = () => {
 
   // Handle remove source
   const handleRemoveSource = async (sourceId: string) => {
-    if (confirm('Are you sure you want to remove this source?')) {
+    if (confirm(t('dialog.confirmRemove'))) {
       try {
         await removeSource(sourceId);
       } catch (err) {
@@ -160,7 +171,7 @@ export const SourceManager: React.FC = () => {
       <div className="p-4 flex items-center justify-center">
         <div className="flex items-center gap-2 text-muted-foreground">
           <RefreshCw className="h-4 w-4 animate-spin" />
-          <span>Loading sources...</span>
+          <span>{t('loading')}</span>
         </div>
       </div>
     );
@@ -171,9 +182,9 @@ export const SourceManager: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Data Sources</h2>
+          <h2 className="text-lg font-semibold">{t('title')}</h2>
           <p className="text-sm text-muted-foreground">
-            Manage your conversation history sources
+            {t('description')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -184,14 +195,14 @@ export const SourceManager: React.FC = () => {
             disabled={isLoadingSources}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh All
+            {t('refreshAll')}
           </Button>
           <Button
             size="sm"
             onClick={() => setIsAddDialogOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add Source
+            {t('addSource')}
           </Button>
         </div>
       </div>
@@ -209,8 +220,8 @@ export const SourceManager: React.FC = () => {
         {sources.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <FolderOpen className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>No sources configured</p>
-            <p className="text-sm">Click "Add Source" to get started</p>
+            <p>{t('emptyState.title')}</p>
+            <p className="text-sm">{t('emptyState.description')}</p>
           </div>
         ) : (
           sources.map((source) => (
@@ -233,19 +244,19 @@ export const SourceManager: React.FC = () => {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Data Source</DialogTitle>
+            <DialogTitle>{t('dialog.title')}</DialogTitle>
             <DialogDescription>
-              Add a folder containing conversation history data
+              {t('dialog.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {/* Name Field */}
             <div className="space-y-2">
-              <Label htmlFor="source-name">Name (Optional)</Label>
+              <Label htmlFor="source-name">{t('dialog.nameLabel')}</Label>
               <Input
                 id="source-name"
-                placeholder="My Conversations"
+                placeholder={t('dialog.namePlaceholder')}
                 value={newSourceName}
                 onChange={(e) => setNewSourceName(e.target.value)}
               />
@@ -253,11 +264,11 @@ export const SourceManager: React.FC = () => {
 
             {/* Path Field */}
             <div className="space-y-2">
-              <Label htmlFor="source-path">Folder Path</Label>
+              <Label htmlFor="source-path">{t('dialog.pathLabel')}</Label>
               <div className="flex gap-2">
                 <Input
                   id="source-path"
-                  placeholder="/path/to/.claude"
+                  placeholder={t('dialog.pathPlaceholder')}
                   value={newSourcePath}
                   onChange={(e) => setNewSourcePath(e.target.value)}
                   className="flex-1"
@@ -291,7 +302,7 @@ export const SourceManager: React.FC = () => {
                 setValidationError(null);
               }}
             >
-              Cancel
+              {t('dialog.cancel')}
             </Button>
             <Button
               onClick={handleAddSource}
@@ -300,12 +311,12 @@ export const SourceManager: React.FC = () => {
               {isAddingSource || isValidatingSource ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Adding...
+                  {t('dialog.adding')}
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Source
+                  {t('dialog.add')}
                 </>
               )}
             </Button>
@@ -341,6 +352,7 @@ const SourceCard: React.FC<SourceCardProps> = ({
   renderHealthIcon,
   renderProviderBadge,
 }) => {
+  const { t } = useTranslation('sourceManager');
   return (
     <div
       className={`
@@ -368,9 +380,9 @@ const SourceCard: React.FC<SourceCardProps> = ({
 
           {/* Stats */}
           <div className="flex gap-4 text-xs text-muted-foreground">
-            <span>{source.stats.projectCount} projects</span>
-            <span>{source.stats.sessionCount} sessions</span>
-            <span>{source.stats.messageCount.toLocaleString()} messages</span>
+            <span>{source.stats.projectCount} {t('stats.projects')}</span>
+            <span>{source.stats.sessionCount} {t('stats.sessions')}</span>
+            <span>{source.stats.messageCount.toLocaleString()} {t('stats.messages')}</span>
           </div>
         </div>
 
@@ -383,7 +395,7 @@ const SourceCard: React.FC<SourceCardProps> = ({
               e.stopPropagation();
               onRefresh();
             }}
-            title="Refresh"
+            title={t('actions.refresh')}
           >
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -396,7 +408,7 @@ const SourceCard: React.FC<SourceCardProps> = ({
                 e.stopPropagation();
                 onSetDefault();
               }}
-              title="Set as default"
+              title={t('actions.setDefault')}
             >
               <StarOff className="h-4 w-4" />
             </Button>
@@ -409,7 +421,7 @@ const SourceCard: React.FC<SourceCardProps> = ({
               e.stopPropagation();
               onRemove();
             }}
-            title="Remove"
+            title={t('actions.remove')}
             className="text-destructive hover:text-destructive"
           >
             <Trash2 className="h-4 w-4" />

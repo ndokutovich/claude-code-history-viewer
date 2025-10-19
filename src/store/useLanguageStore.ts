@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { load, type StoreOptions } from "@tauri-apps/plugin-store";
 import { locale } from "@tauri-apps/plugin-os";
-import i18n from "../i18n";
-import type { SupportedLanguage } from "../i18n";
-import { languageLocaleMap } from "../i18n";
+import i18n from "../i18n.config";
+import type { SupportedLanguage } from "../i18n.config";
+import { languageLocaleMap } from "../i18n.config";
 
 interface LanguageStore {
   language: SupportedLanguage;

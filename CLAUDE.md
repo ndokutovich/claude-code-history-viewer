@@ -20,6 +20,16 @@ First, You must use command "gemini -p {prompt}" and then use the result that re
 - Pursue high cohesion design
 - Pursue low coupling design
 
+**Naming Conventions (CRITICAL):**
+- **NEVER name a file and folder identically in the same directory**
+  - ❌ BAD: `src/i18n.ts` + `src/i18n/index.ts` (module resolution ambiguity)
+  - ✅ GOOD: `src/i18n.config.ts` + `src/i18n/` (clear and unambiguous)
+- Use descriptive suffixes for configuration files (`.config.ts`, `.setup.ts`, etc.)
+- This prevents module resolution conflicts where `import "./name"` could resolve to either:
+  - `./name.ts` (file)
+  - `./name/index.ts` (folder index)
+- Lesson learned: We had two i18n config files and spent hours debugging why translations weren't loading
+
 **⚠️ Platform Note**: This application is officially tested and supported on **macOS only**. Windows and Linux builds may compile but functionality is not guaranteed. See "Platform and Deployment" section for details.
 
 ## Project Overview
@@ -196,6 +206,14 @@ sudo rpm -i src-tauri/target/release/bundle/rpm/*.rpm
   - Analytics state (token stats, activity heatmaps)
   - Pagination state for infinite scrolling
   - Language preferences in `src/store/useLanguageStore.ts`
+
+- **Internationalization (i18n)**:
+  - **Configuration**: `src/i18n.config.ts` - Single source of truth for i18n setup
+    - ⚠️ **IMPORTANT**: Named `.config.ts` to avoid collision with `src/i18n/` folder
+    - Supports 6 languages: English, Korean, Japanese, Simplified Chinese, Traditional Chinese, Russian
+    - Namespaces: `common`, `components`, `messages`, `sourceManager`, `splash`, `search`
+  - **Translation files**: `src/i18n/locales/{lang}/{namespace}.json`
+  - **Never** create `src/i18n/index.ts` - it will conflict with the config file!
 
 - **Component Organization**:
   - `src/components/` - Core UI components

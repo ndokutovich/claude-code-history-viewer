@@ -1,0 +1,9 @@
+{
+  "loadingSessionInfo": "Loading session information...",
+  "errors": {
+    "missingProjectInfo": "Cannot jump to message: Missing project information",
+    "projectNotFound": "Cannot find project for this session",
+    "messageNotFound": "Message not found in conversation. UUID: {{uuid}}",
+    "jumpError": "Error jumping to message: {{error}}"
+  }
+}
