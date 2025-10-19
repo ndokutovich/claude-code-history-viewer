@@ -29,8 +29,8 @@ import type {
 import { ProviderID, ErrorCode } from '../../types/providers';
 import { invoke } from '@tauri-apps/api/core';
 
-// Legacy types for backwards compatibility (projects/sessions still use legacy types)
-import type { ClaudeProject, ClaudeSession, MessagePage } from '../../types/index';
+// UI display types (projects/sessions use UI format for component compatibility)
+import type { UIProject, UISession, MessagePage } from '../../types/index';
 
 // ============================================================================
 // ADAPTER IMPLEMENTATION
@@ -197,14 +197,14 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
     this.ensureInitialized();
 
     try {
-      // Call existing Rust command
-      const legacyProjects = await invoke<ClaudeProject[]>('scan_projects', {
+      // Call existing Rust command (returns UI format from backend for backward compat)
+      const uiProjects = await invoke<UIProject[]>('scan_projects', {
         claudePath: sourcePath,
       });
 
-      // Convert to universal format
-      const universalProjects: UniversalProject[] = legacyProjects.map((project) =>
-        this.convertLegacyProject(project, sourceId)
+      // Convert UI format to universal format
+      const universalProjects: UniversalProject[] = uiProjects.map((project) =>
+        this.convertUIProject(project, sourceId)
       );
 
       return {
@@ -236,15 +236,15 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
     this.ensureInitialized();
 
     try {
-      // Call existing Rust command
-      const legacySessions = await invoke<ClaudeSession[]>('load_project_sessions', {
+      // Call existing Rust command (returns UI format from backend for backward compat)
+      const uiSessions = await invoke<UISession[]>('load_project_sessions', {
         projectPath,
         excludeSidechain: false, // Load all sessions, let UI filter
       });
 
-      // Convert to universal format
-      const universalSessions: UniversalSession[] = legacySessions.map((session) =>
-        this.convertLegacySession(session, projectId, sourceId)
+      // Convert UI format to universal format
+      const universalSessions: UniversalSession[] = uiSessions.map((session) =>
+        this.convertUISession(session, projectId, sourceId)
       );
 
       return {
@@ -474,47 +474,47 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
   // CONVERSION HELPERS (PRIVATE)
   // ------------------------------------------------------------------------
 
-  private convertLegacyProject(legacy: ClaudeProject, sourceId: string): UniversalProject {
+  private convertUIProject(uiProject: UIProject, sourceId: string): UniversalProject {
     return {
-      id: legacy.path, // Use path as unique ID
+      id: uiProject.path, // Use path as unique ID
       sourceId,
       providerId: this.providerId,
-      name: legacy.name,
-      path: legacy.path,
-      sessionCount: legacy.session_count,
-      totalMessages: legacy.message_count,
-      firstActivityAt: legacy.lastModified, // Approximate
-      lastActivityAt: legacy.lastModified,
+      name: uiProject.name,
+      path: uiProject.path,
+      sessionCount: uiProject.session_count,
+      totalMessages: uiProject.message_count,
+      firstActivityAt: uiProject.lastModified, // Approximate
+      lastActivityAt: uiProject.lastModified,
       metadata: {
-        checksum: this.generateChecksum(legacy.path + legacy.lastModified),
+        checksum: this.generateChecksum(uiProject.path + uiProject.lastModified),
       },
     };
   }
 
-  private convertLegacySession(
-    legacy: ClaudeSession,
+  private convertUISession(
+    uiSession: UISession,
     projectId: string,
     sourceId: string
   ): UniversalSession {
     return {
-      id: legacy.session_id,
+      id: uiSession.session_id,
       projectId,
       sourceId,
       providerId: this.providerId,
-      title: legacy.summary || 'Untitled Session',
-      messageCount: legacy.message_count,
-      firstMessageAt: legacy.first_message_time,
-      lastMessageAt: legacy.last_message_time,
-      duration: this.calculateDuration(legacy.first_message_time, legacy.last_message_time),
+      title: uiSession.summary || 'Untitled Session',
+      messageCount: uiSession.message_count,
+      firstMessageAt: uiSession.first_message_time,
+      lastMessageAt: uiSession.last_message_time,
+      duration: this.calculateDuration(uiSession.first_message_time, uiSession.last_message_time),
       totalTokens: undefined, // Would need to load messages to calculate
-      toolCallCount: legacy.has_tool_use ? -1 : 0, // -1 means "has but count unknown"
-      errorCount: legacy.has_errors ? -1 : 0,
+      toolCallCount: uiSession.has_tool_use ? -1 : 0, // -1 means "has but count unknown"
+      errorCount: uiSession.has_errors ? -1 : 0,
       metadata: {
-        filePath: legacy.file_path,
-        actualSessionId: legacy.actual_session_id,
-        projectName: legacy.project_name,
+        filePath: uiSession.file_path,
+        actualSessionId: uiSession.actual_session_id,
+        projectName: uiSession.project_name,
       },
-      checksum: this.generateChecksum(legacy.file_path + legacy.last_modified),
+      checksum: this.generateChecksum(uiSession.file_path + uiSession.last_modified),
     };
   }
 

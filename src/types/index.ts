@@ -82,8 +82,16 @@ export interface ThinkingContent {
   signature?: string;
 }
 
-// Processed message for UI
-export interface ClaudeMessage {
+// ============================================================================
+// UI DISPLAY FORMATS (Provider-Agnostic)
+// ============================================================================
+// These types are converted from Universal types for UI component compatibility.
+// They use flatter structure with legacy field names (uuid, type, etc.)
+// that existing UI components expect.
+
+// UI display format for messages (provider-agnostic)
+// Converted from UniversalMessage for UI component compatibility
+export interface UIMessage {
   uuid: string;
   parentUuid?: string;
   sessionId: string;
@@ -109,7 +117,8 @@ export interface ClaudeMessage {
   provider_metadata?: Record<string, unknown>;
 }
 
-export interface ClaudeProject {
+// UI display format for projects (provider-agnostic)
+export interface UIProject {
   name: string;
   path: string;
   session_count: number;
@@ -121,7 +130,8 @@ export interface ClaudeProject {
   providerName?: string; // Human-readable name like "Claude Code" or "Cursor IDE"
 }
 
-export interface ClaudeSession {
+// UI display format for sessions (provider-agnostic)
+export interface UISession {
   session_id: string; // Unique ID based on file path
   actual_session_id: string; // Actual session ID from the messages
   file_path: string; // Full path to the JSONL file
@@ -138,6 +148,18 @@ export interface ClaudeSession {
   providerName?: string;
 }
 
+// ============================================================================
+// BACKWARD COMPATIBILITY ALIASES
+// ============================================================================
+// @deprecated Use UIMessage instead - "Claude" prefix is misleading (works with all providers)
+export type ClaudeMessage = UIMessage;
+
+// @deprecated Use UIProject instead - "Claude" prefix is misleading (works with all providers)
+export type ClaudeProject = UIProject;
+
+// @deprecated Use UISession instead - "Claude" prefix is misleading (works with all providers)
+export type ClaudeSession = UISession;
+
 export interface SearchFilters {
   dateRange?: [Date, Date];
   projects?: string[];
@@ -149,7 +171,7 @@ export interface SearchFilters {
 }
 
 export interface MessageNode {
-  message: ClaudeMessage;
+  message: UIMessage;
   children: MessageNode[];
   depth: number;
   isExpanded: boolean;
@@ -224,17 +246,17 @@ export interface AppState {
 
   // Core state
   claudePath: string;
-  projects: ClaudeProject[];
-  selectedProject: ClaudeProject | null;
-  sessions: ClaudeSession[]; // Legacy: sessions for selected project only (kept for backward compatibility)
-  sessionsByProject: Record<string, ClaudeSession[]>; // NEW: Cache sessions per-project for multi-expansion
-  selectedSession: ClaudeSession | null;
-  messages: ClaudeMessage[];
+  projects: UIProject[];
+  selectedProject: UIProject | null;
+  sessions: UISession[]; // Legacy: sessions for selected project only (kept for backward compatibility)
+  sessionsByProject: Record<string, UISession[]>; // NEW: Cache sessions per-project for multi-expansion
+  selectedSession: UISession | null;
+  messages: UIMessage[];
   pagination: PaginationState;
 
   // Search state
   searchQuery: string;
-  searchResults: ClaudeMessage[];
+  searchResults: UIMessage[];
   searchFilters: SearchFilters;
 
   // Loading states

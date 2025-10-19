@@ -4,9 +4,9 @@ import { load, type StoreOptions } from "@tauri-apps/plugin-store";
 import {
   type AppState,
   type AppView,
-  type ClaudeProject,
-  type ClaudeSession,
-  type ClaudeMessage,
+  type UIProject,
+  type UISession,
+  type UIMessage,
   type SearchFilters,
   type SessionTokenStats,
   type ProjectStatsSummary,
@@ -58,9 +58,9 @@ function findSourceForPath(projectPath: string): UniversalSource | null {
 }
 
 /**
- * Convert UniversalProject to legacy ClaudeProject
+ * Convert UniversalProject to UI display format
  */
-function universalToLegacyProject(project: UniversalProject): ClaudeProject {
+function universalToUIProject(project: UniversalProject): UIProject {
   // Get provider name from adapter registry
   const adapter = adapterRegistry.tryGet(project.providerId);
   const providerName = adapter?.providerDefinition.name || project.providerId;
@@ -78,9 +78,9 @@ function universalToLegacyProject(project: UniversalProject): ClaudeProject {
 }
 
 /**
- * Convert UniversalSession to legacy ClaudeSession
+ * Convert UniversalSession to UI display format
  */
-function universalToLegacySession(session: UniversalSession): ClaudeSession {
+function universalToUISession(session: UniversalSession): UISession {
   // Extract summary and file path from metadata if available
   const summary = session.metadata.summary as string | undefined;
   const filePath = session.metadata.filePath as string | undefined;
@@ -107,9 +107,9 @@ function universalToLegacySession(session: UniversalSession): ClaudeSession {
 }
 
 /**
- * Convert UniversalMessage to legacy ClaudeMessage
+ * Convert UniversalMessage to UI display format
  */
-function universalToLegacyMessage(msg: UniversalMessage): ClaudeMessage {
+function universalToUIMessage(msg: UniversalMessage): UIMessage {
   // Extract text content from universal content array
   let content: string | any[] = "";
 
@@ -172,9 +172,9 @@ interface AppStore extends AppState {
   // Actions - Data Loading
   initializeApp: () => Promise<void>;
   scanProjects: () => Promise<void>;
-  selectProject: (project: ClaudeProject | null) => Promise<void>;
-  loadProjectSessions: (projectPath: string, excludeSidechain?: boolean) => Promise<ClaudeSession[]>;
-  selectSession: (session: ClaudeSession | null, pageSize?: number) => Promise<void>;
+  selectProject: (project: UIProject | null) => Promise<void>;
+  loadProjectSessions: (projectPath: string, excludeSidechain?: boolean) => Promise<UISession[]>;
+  selectSession: (session: UISession | null, pageSize?: number) => Promise<void>;
   clearSelection: () => void;
   loadMoreMessages: () => Promise<void>;
   refreshCurrentSession: () => Promise<void>;
@@ -379,17 +379,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
         })
       );
 
-      // Convert to legacy format for existing UI
-      const legacyProjects = allUniversalProjects.map(universalToLegacyProject);
+      // Convert to UI display format
+      const uiProjects = allUniversalProjects.map(universalToUIProject);
 
       const duration = performance.now() - start;
       if (import.meta.env.DEV) {
         console.log(
-          `🚀 [v2.0] scanProjects: ${legacyProjects.length} projects from ${availableSources.length} sources, ${duration.toFixed(1)}ms`
+          `🚀 [v2.0] scanProjects: ${uiProjects.length} projects from ${availableSources.length} sources, ${duration.toFixed(1)}ms`
         );
       }
 
-      set({ projects: legacyProjects });
+      set({ projects: uiProjects });
     } catch (error) {
       console.error("Failed to scan projects:", error);
       set({ error: { type: AppErrorType.UNKNOWN, message: String(error) } });
@@ -398,7 +398,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
-  selectProject: async (project: ClaudeProject | null) => {
+  selectProject: async (project: UIProject | null) => {
     // Clear selection if null is passed
     if (project === null) {
       console.log('🔄 selectProject: Clearing selection');
@@ -494,15 +494,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         throw new Error(result.error?.message || 'Failed to load sessions');
       }
 
-      // Convert to legacy format
-      const legacySessions = result.data.map(universalToLegacySession);
+      // Convert to UI display format
+      const uiSessions = result.data.map(universalToUISession);
 
       // Filter sidechain if needed (for Claude Code compatibility)
       const shouldExcludeSidechain = excludeSidechain !== undefined
         ? excludeSidechain
         : get().excludeSidechain;
 
-      const finalSessions = shouldExcludeSidechain ? legacySessions : legacySessions;
+      const finalSessions = shouldExcludeSidechain ? uiSessions : uiSessions;
 
       // Cache the result
       set((state) => ({
@@ -522,7 +522,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   selectSession: async (
-    session: ClaudeSession | null,
+    session: UISession | null,
     pageSize = DEFAULT_PAGE_SIZE
   ) => {
     // Clear selection if null is passed
@@ -594,15 +594,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
         throw new Error(result.error?.message || 'Failed to load messages');
       }
 
-      // Convert to legacy format
-      const legacyMessages = result.data.map(universalToLegacyMessage);
+      // Convert to UI display format
+      const uiMessages = result.data.map(universalToUIMessage);
 
       set({
-        messages: legacyMessages,
+        messages: uiMessages,
         pagination: {
           currentOffset: result.pagination?.nextOffset || pageSize,
           pageSize,
-          totalCount: result.pagination?.totalCount || legacyMessages.length,
+          totalCount: result.pagination?.totalCount || uiMessages.length,
           hasMore: result.pagination?.hasMore || false,
           isLoadingMore: false,
         },
@@ -695,11 +695,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
         throw new Error(result.error?.message || 'Failed to load more messages');
       }
 
-      // Convert to legacy format
-      const legacyMessages = result.data.map(universalToLegacyMessage);
+      // Convert to UI display format
+      const uiMessages = result.data.map(universalToUIMessage);
 
       set({
-        messages: [...legacyMessages, ...messages], // Add older messages to the front
+        messages: [...uiMessages, ...messages], // Add older messages to the front
         pagination: {
           ...pagination,
           currentOffset: result.pagination?.nextOffset || pagination.currentOffset + pagination.pageSize,
@@ -782,10 +782,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
 
-      // Convert to legacy format
-      const legacyResults = allUniversalMessages.map(universalToLegacyMessage);
+      // Convert to UI display format
+      const uiResults = allUniversalMessages.map(universalToUIMessage);
 
-      set({ searchResults: legacyResults });
+      set({ searchResults: uiResults });
     } catch (error) {
       console.error("Failed to search messages:", error);
       set({ error: { type: AppErrorType.UNKNOWN, message: String(error) } });
@@ -810,7 +810,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       // Refresh project session list to update message_count
       if (selectedProject) {
-        const sessions = await invoke<ClaudeSession[]>(
+        const sessions = await invoke<UISession[]>(
           "load_project_sessions",
           {
             projectPath: selectedProject.path,
