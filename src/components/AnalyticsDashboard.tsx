@@ -304,14 +304,15 @@ export const AnalyticsDashboard: React.FC = () => {
                   />
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-medium text-white mix-blend-difference">
-                    {(
-                      (tool.usage_count /
-                        topTools.reduce((sum, t) => sum + t.usage_count, 0)) *
-                      100
-                    ).toFixed(1)}
-                    %
-                  </span>
+                  {(() => {
+                    const total = topTools.reduce((sum, t) => sum + t.usage_count, 0);
+                    const pct = total > 0 ? (tool.usage_count / total) * 100 : 0;
+                    return (
+                      <span className="text-xs font-medium text-white mix-blend-difference">
+                        {pct.toFixed(1)}%
+                      </span>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -710,8 +711,8 @@ export const AnalyticsDashboard: React.FC = () => {
                   bgColor: "bg-orange-800 dark:bg-orange-300",
                 },
               ].map((item) => {
-                const percentage =
-                  (item.value / projectSummary.total_tokens) * 100;
+                const total = projectSummary.total_tokens || 0;
+                const percentage = total > 0 ? (item.value / total) * 100 : 0;
 
                 return (
                   <div key={item.label} className="space-y-1">
@@ -729,9 +730,7 @@ export const AnalyticsDashboard: React.FC = () => {
                           "h-2 rounded-full transition-all",
                           item.bgColor
                         )}
-                        style={{
-                          width: `${percentage}%`,
-                        }}
+                        style={{ width: `${percentage}%` }}
                       />
                     </div>
                   </div>
@@ -933,7 +932,8 @@ export const AnalyticsDashboard: React.FC = () => {
                 bgColor: "bg-orange-500",
               },
             ].map((item) => {
-              const percentage = (item.value / sessionStats.total_tokens) * 100;
+              const total = sessionStats.total_tokens || 0;
+              const percentage = total > 0 ? (item.value / total) * 100 : 0;
               const Icon = item.icon;
 
               return (

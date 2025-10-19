@@ -463,23 +463,32 @@ fn extract_errors(msg: &ClaudeMessage) -> Option<Vec<ErrorInfo>> {
 }
 
 /// Extract project ID from project path or file path
+/// Uses std::path for cross-platform compatibility (Windows, macOS, Linux)
 pub fn extract_project_id(project_path: &Option<String>, file_path: &str) -> String {
+    // Prefer explicit project_path
     if let Some(ref path) = project_path {
-        // Extract project name from path like "~/.claude/projects/my-project"
-        if let Some(last_segment) = path.split('/').last() {
-            return last_segment.to_string();
+        if let Some(name) = std::path::Path::new(path)
+            .file_name()
+            .and_then(|s| s.to_str())
+        {
+            return name.to_string();
         }
     }
 
-    // Extract from file path as fallback
-    // Path format: "~/.claude/projects/[project-name]/[session].jsonl"
-    let path_parts: Vec<&str> = file_path.split('/').collect();
-    if let Some(project_idx) = path_parts.iter().position(|&p| p == "projects") {
-        if project_idx + 1 < path_parts.len() {
-            return path_parts[project_idx + 1].to_string();
+    // Fallback: scan components to find "projects/<name>"
+    let mut iter = std::path::Path::new(file_path).components();
+    while let Some(comp) = iter.next() {
+        if let std::path::Component::Normal(os) = comp {
+            if os == "projects" {
+                if let Some(std::path::Component::Normal(next)) = iter.next() {
+                    if let Some(s) = next.to_str() {
+                        return s.to_string();
+                    }
+                }
+                break;
+            }
         }
     }
-
     "unknown".to_string()
 }
 
