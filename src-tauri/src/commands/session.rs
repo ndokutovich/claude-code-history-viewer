@@ -1,4 +1,6 @@
 use crate::models::*;
+use crate::models::universal::UniversalMessage;
+use crate::commands::adapters::claude_code::{claude_message_to_universal, extract_project_id};
 use crate::utils::extract_project_name;
 use std::fs;
 use std::path::PathBuf;
@@ -276,7 +278,7 @@ pub async fn load_project_sessions(
 }
 
 #[tauri::command]
-pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMessage>, String> {
+pub async fn load_session_messages(session_path: String) -> Result<Vec<UniversalMessage>, String> {
     let content = fs::read_to_string(&session_path)
         .map_err(|e| format!("Failed to read session file: {}", e))?;
 
@@ -379,7 +381,32 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
         }
     }
 
-    Ok(messages)
+    // Convert ClaudeMessages to UniversalMessages
+    // Extract project_id and source_id from session_path
+    let project_id = extract_project_id(&None, &session_path);
+
+    // Extract source_id (base .claude folder path)
+    let source_id = session_path
+        .split("projects")
+        .next()
+        .unwrap_or("")
+        .trim_end_matches('/')
+        .to_string();
+
+    let universal_messages: Vec<UniversalMessage> = messages
+        .iter()
+        .enumerate()
+        .map(|(i, msg)| {
+            claude_message_to_universal(
+                msg,
+                project_id.clone(),
+                source_id.clone(),
+                i as i32,
+            )
+        })
+        .collect();
+
+    Ok(universal_messages)
 }
 
 #[tauri::command]
@@ -455,9 +482,31 @@ pub async fn load_session_messages_paginated(
             }
         }
     }
-    
+
+    // Convert ClaudeMessages to UniversalMessages
+    let project_id = extract_project_id(&None, &session_path);
+    let source_id = session_path
+        .split("projects")
+        .next()
+        .unwrap_or("")
+        .trim_end_matches('/')
+        .to_string();
+
+    let all_messages: Vec<UniversalMessage> = all_messages
+        .iter()
+        .enumerate()
+        .map(|(i, msg)| {
+            claude_message_to_universal(
+                msg,
+                project_id.clone(),
+                source_id.clone(),
+                i as i32,
+            )
+        })
+        .collect();
+
     let total_count = all_messages.len();
-    
+
     #[cfg(debug_assertions)]
     eprintln!("Pagination Debug - Total: {}, Offset: {}, Limit: {}", total_count, offset, limit);
     
@@ -506,7 +555,7 @@ pub async fn load_session_messages_paginated(
     };
     
     // Get the slice of messages we need
-    let messages: Vec<ClaudeMessage> = all_messages
+    let messages: Vec<UniversalMessage> = all_messages
         .into_iter()
         .skip(start_idx)
         .take(end_idx - start_idx)
@@ -654,7 +703,7 @@ pub async fn search_messages(
     claude_path: String,
     query: String,
     filters: SearchFilters
-) -> Result<Vec<ClaudeMessage>, String> {
+) -> Result<Vec<UniversalMessage>, String> {
     let projects_path = PathBuf::from(&claude_path).join("projects");
     let mut all_messages = Vec::new();
 
@@ -811,5 +860,26 @@ pub async fn search_messages(
         }
     }
 
-    Ok(all_messages)
+    // Convert ClaudeMessages to UniversalMessages
+    let source_id = claude_path.clone();
+    let universal_messages: Vec<UniversalMessage> = all_messages
+        .iter()
+        .enumerate()
+        .map(|(i, msg)| {
+            let project_id = msg.project_path
+                .as_ref()
+                .and_then(|path| path.split('/').last())
+                .unwrap_or("unknown")
+                .to_string();
+
+            claude_message_to_universal(
+                msg,
+                project_id,
+                source_id.clone(),
+                i as i32,
+            )
+        })
+        .collect();
+
+    Ok(universal_messages)
 }

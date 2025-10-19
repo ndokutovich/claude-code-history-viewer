@@ -174,12 +174,12 @@ pub async fn get_session_token_stats(session_path: String) -> Result<SessionToke
     let mut last_time: Option<String> = None;
 
     for message in &messages {
-        let usage = extract_token_usage(message);
+        let (input, output, cache_creation, cache_read) = extract_universal_token_usage(message);
 
-        total_input_tokens += usage.input_tokens.unwrap_or(0);
-        total_output_tokens += usage.output_tokens.unwrap_or(0);
-        total_cache_creation_tokens += usage.cache_creation_input_tokens.unwrap_or(0);
-        total_cache_read_tokens += usage.cache_read_input_tokens.unwrap_or(0);
+        total_input_tokens += input;
+        total_output_tokens += output;
+        total_cache_creation_tokens += cache_creation;
+        total_cache_read_tokens += cache_read;
 
         if first_time.is_none() || message.timestamp < first_time.as_ref().unwrap().clone() {
             first_time = Some(message.timestamp.clone());
@@ -508,13 +508,13 @@ pub async fn get_universal_session_token_stats(
     let mut last_time: Option<String> = None;
 
     println!("  📊 Aggregating token stats from {} messages:", messages.len());
-    let mut messages_with_tokens = 0;
+    let mut _messages_with_tokens = 0;
 
     for message in &messages {
         let (input, output, cache_creation, cache_read) = extract_universal_token_usage(message);
 
         if input > 0 || output > 0 {
-            messages_with_tokens += 1;
+            _messages_with_tokens += 1;
             println!("    ✅ Message {} has tokens: input={}, output={}",
                      message.id, input, output);
         }

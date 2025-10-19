@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use walkdir::WalkDir;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 
 // ============================================================================
 // CURSOR-SPECIFIC TYPES
@@ -177,7 +177,7 @@ pub async fn scan_cursor_workspaces(cursor_path: String) -> Result<Vec<CursorWor
     let mut workspaces = Vec::new();
 
     // Find all session databases first (shared across workspaces)
-    let session_dbs = find_cursor_session_dbs(&cursor_base);
+    let _session_dbs = find_cursor_session_dbs(&cursor_base);
 
     // Scan each workspace directory
     for entry in WalkDir::new(&workspace_storage)
@@ -293,9 +293,9 @@ fn count_workspace_composers_with_messages(cursor_base: &PathBuf, state_db: &Pat
     // Convert timestamp to ISO 8601 string
     let last_activity = most_recent_timestamp.map(|ts| {
         // Convert milliseconds to seconds for chrono
-        let naive = chrono::NaiveDateTime::from_timestamp_opt(ts / 1000, ((ts % 1000) * 1_000_000) as u32)
-            .unwrap_or_else(|| chrono::NaiveDateTime::from_timestamp_opt(0, 0).unwrap());
-        chrono::DateTime::<Utc>::from_naive_utc_and_offset(naive, Utc).to_rfc3339()
+        chrono::DateTime::<Utc>::from_timestamp(ts / 1000, ((ts % 1000) * 1_000_000) as u32)
+            .unwrap_or_else(|| chrono::DateTime::<Utc>::from_timestamp(0, 0).unwrap())
+            .to_rfc3339()
     });
 
     Ok((count, last_activity))
@@ -826,7 +826,7 @@ pub async fn search_cursor_messages(
         .map_err(|e| format!("Failed to open global database: {}", e))?;
 
     // Search pattern: case-insensitive search in bubble text
-    let search_pattern = format!("%{}%", query.to_lowercase());
+    let _search_pattern = format!("%{}%", query.to_lowercase());
 
     // Query all bubbles and filter by text content
     let mut stmt = conn.prepare(
@@ -1031,7 +1031,7 @@ fn find_cursor_session_dbs(cursor_base: &PathBuf) -> Vec<PathBuf> {
     if let Ok(conn) = Connection::open(&global_storage_db) {
         // Verify cursorDiskKV table exists
         if let Ok(mut stmt) = conn.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='cursorDiskKV'") {
-            if let Ok(table_exists) = stmt.query_row(params![], |row| row.get::<_, String>(0)) {
+            if let Ok(_table_exists) = stmt.query_row(params![], |row| row.get::<_, String>(0)) {
                 println!("      ✓ cursorDiskKV table found");
 
                 // Count bubble messages
@@ -1143,6 +1143,8 @@ fn find_common_prefix(paths: &[String]) -> String {
     }
 }
 
+// Helper function kept for potential future use
+#[allow(dead_code)]
 fn count_cursor_messages(session_db: &PathBuf) -> Result<usize, String> {
     let conn = Connection::open(session_db)
         .map_err(|e| format!("Failed to open database: {}", e))?;

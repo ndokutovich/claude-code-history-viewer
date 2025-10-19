@@ -113,7 +113,7 @@ pub struct ClaudeSession {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessagePage {
-    pub messages: Vec<ClaudeMessage>,
+    pub messages: Vec<universal::UniversalMessage>,
     pub total_count: usize,
     pub has_more: bool,
     pub next_offset: usize,
