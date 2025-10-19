@@ -2,7 +2,7 @@
 
 Claude Code 및 Cursor IDE의 대화 기록(`~/.claude`와 Cursor 데이터 폴더)을 보기 편하게 탐색할 수 있는 크로스 플랫폼 데스크톱 앱입니다.
 
-![Version](https://img.shields.io/badge/Version-1.1.3-blue.svg)
+![Version](https://img.shields.io/github/v/release/ndokutovich/claude-code-history-viewer?label=Version&color=blue)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
@@ -41,7 +41,21 @@ Claude Code와 Cursor IDE는 대화 기록을 각각의 데이터 폴더(`~/.cla
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
 
-## v1.1.3의 새로운 기능
+## v1.5.0의 새로운 기능
+
+**🔌 Cursor IDE 지원** (신규!):
+- Claude Code와 Cursor IDE를 모두 지원하는 다중 프로바이더 아키텍처
+- Cursor의 SQLite 대화 데이터베이스 자동 감지
+- 프로바이더 독립적인 데이터 처리를 위한 범용 메시지 형식
+- Claude Code와 Cursor 대화 간 원활한 전환
+- 효율적인 파일/데이터베이스 파싱을 위한 Rust 백엔드 어댑터
+
+**🛡️ 보안 및 안정성 개선**:
+- XSS 공격 방어를 위한 콘텐츠 보안 정책(CSP) 강화
+- Windows 호환성을 위한 크로스 플랫폼 경로 처리 수정
+- 분석 계산에서 0으로 나누기 방지
+- 자동 업데이터의 다운로드 진행률 추적 수정
+- CodeRabbit AI 코드 리뷰 통합
 
 **🔍 전체 검색 기능**:
 - Cmd/Ctrl+F 단축키로 강력한 전체 텍스트 검색
@@ -53,12 +67,6 @@ Claude Code와 Cursor IDE는 대화 기록을 각각의 데이터 폴더(`~/.cla
 - macOS(유니버셜 바이너리), Windows, Linux에서 실행
 - 플랫폼별 설치 프로그램(.dmg, .exe, .msi, .deb, .AppImage, .rpm)
 - 다중 패키지 매니저 지원(npm, pnpm, yarn, bun)
-
-**🔌 다중 소스 지원**:
-- Claude Code와 Cursor IDE 대화 기록 모두 지원
-- 사용 가능한 데이터 소스 자동 감지
-- 두 도구의 대화를 탐색할 수 있는 통합 인터페이스
-- 소스 간 쉬운 전환
 
 **🌏 완전한 다국어 지원**:
 - 6개 언어: 영어, 한국어, 일본어, 중국어(간체), 중국어(번체), 러시아어

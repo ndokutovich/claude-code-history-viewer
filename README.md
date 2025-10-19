@@ -1,6 +1,6 @@
 A cross-platform desktop app to browse and search your Claude Code and Cursor IDE conversation history stored in `~/.claude` and Cursor's data folders.
 
-![Version](https://img.shields.io/badge/Version-1.1.3-blue.svg)
+![Version](https://img.shields.io/github/v/release/ndokutovich/claude-code-history-viewer?label=Version&color=blue)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 [![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/ndokutovich/claude-code-history-viewer?utm_source=oss&utm_medium=github&utm_campaign=ndokutovich%2Fclaude-code-history-viewer&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
@@ -40,7 +40,21 @@ Per-project token usage breakdown and session-level analysis
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
 
-## What's New in v1.1.3
+## What's New in v1.5.0
+
+**🔌 Cursor IDE Support** (New!):
+- Multi-provider architecture supporting both Claude Code and Cursor IDE
+- Auto-detection of Cursor's SQLite conversation database
+- Universal message format for provider-agnostic data handling
+- Seamless switching between Claude Code and Cursor conversations
+- Backend Rust adapters for efficient file/database parsing
+
+**🛡️ Security & Stability Improvements**:
+- Content Security Policy (CSP) hardening against XSS attacks
+- Cross-platform path handling fixes for Windows compatibility
+- Division-by-zero protection in analytics calculations
+- Fixed download progress tracking in auto-updater
+- CodeRabbit AI code review integration
 
 **🔍 Full Search Functionality**:
 - Powerful full-text search with Cmd/Ctrl+F keyboard shortcut
@@ -49,15 +63,9 @@ Per-project token usage breakdown and session-level analysis
 - Session-grouped results with expandable previews
 
 **🌍 Cross-Platform Support**:
-- Now runs on macOS (universal binary), Windows, and Linux
+- Runs on macOS (universal binary), Windows, and Linux
 - Platform-specific installers (.dmg, .exe, .msi, .deb, .AppImage, .rpm)
 - Multi-package manager support (npm, pnpm, yarn, bun)
-
-**🔌 Multi-Source Support**:
-- Support for both Claude Code and Cursor IDE conversation histories
-- Auto-detection of available data sources
-- Unified interface to browse conversations from both tools
-- Easy switching between sources
 
 **🌏 Complete Internationalization**:
 - 6 languages: English, Korean, Japanese, Simplified Chinese, Traditional Chinese, Russian

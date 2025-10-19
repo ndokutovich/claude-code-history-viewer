@@ -2,7 +2,7 @@
 
 一款用于浏览 Claude Code 和 Cursor IDE 对话历史（存储在 `~/.claude` 和 Cursor 数据文件夹）的跨平台桌面应用程序。
 
-![Version](https://img.shields.io/badge/Version-1.1.3-blue.svg)
+![Version](https://img.shields.io/github/v/release/ndokutovich/claude-code-history-viewer?label=Version&color=blue)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
@@ -41,7 +41,21 @@ Claude Code 和 Cursor IDE 分别将对话历史存储在各自的数据文件�
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
 
-## v1.1.3 新功能
+## v1.5.0 新功能
+
+**🔌 Cursor IDE 支持**（新增！）:
+- 支持 Claude Code 和 Cursor IDE 的多提供商架构
+- 自动检测 Cursor 的 SQLite 对话数据库
+- 提供商无关的数据处理通用消息格式
+- Claude Code 和 Cursor 对话之间无缝切换
+- 用于高效文件/数据库解析的 Rust 后端适配器
+
+**🛡️ 安全性和稳定性改进**:
+- 内容安全策略（CSP）强化，防御 XSS 攻击
+- 跨平台路径处理修复，支持 Windows 兼容性
+- 分析计算中的除零保护
+- 修复自动更新器中的下载进度跟踪
+- CodeRabbit AI 代码审查集成
 
 **🔍 完整搜索功能**:
 - 使用 Cmd/Ctrl+F 键盘快捷键进行强大的全文搜索
@@ -58,12 +72,6 @@ Claude Code 和 Cursor IDE 分别将对话历史存储在各自的数据文件�
 - 6种语言：英语、韩语、日语、简体中文、繁体中文、俄语
 - 从系统区域设置自动检测语言
 - 完整的 UI 翻译覆盖
-
-**🔌 多数据源支持**:
-- 同时支持 Claude Code 和 Cursor IDE 的对话历史
-- 自动检测可用的数据源
-- 统一界面浏览两个工具的对话
-- 数据源之间轻松切换
 
 **🎨 增强的 UI/UX**:
 - 改进的浅色/深色模式和更好的消息气泡样式

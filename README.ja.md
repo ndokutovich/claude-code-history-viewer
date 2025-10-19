@@ -2,7 +2,7 @@
 
 Claude Code および Cursor IDE の会話履歴（`~/.claude`と Cursor データフォルダ）を閲覧するためのクロスプラットフォームデスクトップアプリです。
 
-![Version](https://img.shields.io/badge/Version-1.1.3-blue.svg)
+![Version](https://img.shields.io/github/v/release/ndokutovich/claude-code-history-viewer?label=Version&color=blue)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
@@ -41,7 +41,21 @@ Claude Code と Cursor IDE は会話履歴をそれぞれのデータフォル�
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
 
-## v1.1.3 の新機能
+## v1.5.0 の新機能
+
+**🔌 Cursor IDE 対応**（新機能！）:
+- Claude Code と Cursor IDE の両方をサポートするマルチプロバイダーアーキテクチャ
+- Cursor の SQLite 会話データベースの自動検出
+- プロバイダー非依存のデータ処理のためのユニバーサルメッセージ形式
+- Claude Code と Cursor の会話間のシームレスな切り替え
+- 効率的なファイル/データベース解析のための Rust バックエンドアダプター
+
+**🛡️ セキュリティと安定性の向上**:
+- XSS 攻撃に対するコンテンツセキュリティポリシー（CSP）の強化
+- Windows 互換性のためのクロスプラットフォームパス処理の修正
+- 分析計算でのゼロ除算保護
+- 自動アップデーターのダウンロード進捗追跡の修正
+- CodeRabbit AI コードレビュー統合
 
 **🔍 完全な検索機能**:
 - Cmd/Ctrl+F キーボードショートカットによる強力な全文検索
@@ -58,12 +72,6 @@ Claude Code と Cursor IDE は会話履歴をそれぞれのデータフォル�
 - 6言語：英語、韓国語、日本語、簡体字中国語、繁体字中国語、ロシア語
 - システムロケールからの自動言語検出
 - 完全なUI翻訳カバレッジ
-
-**🔌 マルチソース対応**:
-- Claude Code と Cursor IDE の会話履歴の両方をサポート
-- 利用可能なデータソースの自動検出
-- 両方のツールの会話を閲覧できる統合インターフェース
-- ソース間の簡単な切り替え
 
 **🎨 強化されたUI/UX**:
 - 改善されたライト/ダークモードとより良いメッセージバブルスタイリング

@@ -2,7 +2,7 @@
 
 一款用於瀏覽 Claude Code 和 Cursor IDE 對話記錄（儲存在 `~/.claude` 和 Cursor 資料資料夾）的跨平台桌面應用程式。
 
-![Version](https://img.shields.io/badge/Version-1.1.3-blue.svg)
+![Version](https://img.shields.io/github/v/release/ndokutovich/claude-code-history-viewer?label=Version&color=blue)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
@@ -41,7 +41,21 @@ Claude Code 和 Cursor IDE 分別將對話記錄儲存在各自的資料資料�
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
 
-## v1.1.3 新功能
+## v1.5.0 新功能
+
+**🔌 Cursor IDE 支援**（新增！）:
+- 支援 Claude Code 和 Cursor IDE 的多提供者架構
+- 自動偵測 Cursor 的 SQLite 對話資料庫
+- 提供者無關的資料處理通用訊息格式
+- Claude Code 和 Cursor 對話之間無縫切換
+- 用於高效檔案/資料庫解析的 Rust 後端介面卡
+
+**🛡️ 安全性和穩定性改進**:
+- 內容安全性原則（CSP）強化，防禦 XSS 攻擊
+- 跨平台路徑處理修正，支援 Windows 相容性
+- 分析計算中的除零保護
+- 修正自動更新程式中的下載進度追蹤
+- CodeRabbit AI 程式碼審查整合
 
 **🔍 完整搜尋功能**:
 - 使用 Cmd/Ctrl+F 鍵盤快捷鍵進行強大的全文搜尋
@@ -58,12 +72,6 @@ Claude Code 和 Cursor IDE 分別將對話記錄儲存在各自的資料資料�
 - 6種語言：英語、韓語、日語、簡體中文、繁體中文、俄語
 - 從系統區域設定自動偵測語言
 - 完整的 UI 翻譯覆蓋
-
-**🔌 多資料來源支援**:
-- 同時支援 Claude Code 和 Cursor IDE 的對話記錄
-- 自動偵測可用的資料來源
-- 統一介面瀏覽兩個工具的對話
-- 資料來源之間輕鬆切換
 
 **🎨 增強的 UI/UX**:
 - 改進的淺色/深色模式和更好的訊息氣泡樣式
