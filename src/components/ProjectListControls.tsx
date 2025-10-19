@@ -15,8 +15,6 @@ export const ProjectListControls = () => {
   const { t } = useTranslation("components");
   const { projectListPreferences, setProjectListPreferences } = useAppStore();
 
-  console.log('🎛️ ProjectListControls render:', projectListPreferences);
-
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
       <div className="flex items-center space-x-2">
@@ -134,7 +132,6 @@ export const ProjectListControls = () => {
           <DropdownMenuCheckboxItem
             checked={projectListPreferences.hideEmptyProjects}
             onCheckedChange={(checked) => {
-              console.log('✅ Hide Empty Projects clicked:', checked);
               setProjectListPreferences({ hideEmptyProjects: checked });
             }}
           >
@@ -143,7 +140,6 @@ export const ProjectListControls = () => {
           <DropdownMenuCheckboxItem
             checked={projectListPreferences.hideEmptySessions}
             onCheckedChange={(checked) => {
-              console.log('✅ Hide Empty Sessions clicked:', checked);
               setProjectListPreferences({ hideEmptySessions: checked });
             }}
           >

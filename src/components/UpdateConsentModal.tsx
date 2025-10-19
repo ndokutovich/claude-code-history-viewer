@@ -3,6 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { setUpdateSettings } from '@/utils/updateSettings';
@@ -36,6 +37,7 @@ export function UpdateIntroModal({ isOpen, onClose }: UpdateIntroModalProps) {
       <DialogContent className="max-w-md" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>{t('update.intro.title')}</DialogTitle>
+          <DialogDescription>{t('update.intro.subtitle')}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4 dark:text-gray-300">

@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ExternalLink, Download, AlertTriangle, X } from 'lucide-react';
@@ -59,6 +60,9 @@ export function SimpleUpdateModal({ updater, isVisible, onClose }: SimpleUpdateM
               </span>
             )}
           </DialogTitle>
+          <DialogDescription>
+            {t('update.version')} {currentVersion} → {newVersion}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

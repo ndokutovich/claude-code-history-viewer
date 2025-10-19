@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { RefreshCw, Trash2, Loader2 } from 'lucide-react';
@@ -64,6 +65,7 @@ export function SimpleUpdateSettings({ isOpen, onClose, onManualCheck, isCheckin
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{t('components:settings.updateSettings')}</DialogTitle>
+          <DialogDescription>{t("update.settings.description")}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4 dark:text-gray-300">
