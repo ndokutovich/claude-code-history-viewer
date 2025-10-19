@@ -478,6 +478,11 @@
   "projectListControls": {
     "groupBySource": "Group by Source",
     "ungroup": "Ungroup",
+    "groupBy": {
+      "source": "By Source",
+      "none": "By Project",
+      "sessions": "Flat Sessions"
+    },
     "expandAll": "Expand All",
     "collapseAll": "Collapse All",
     "sortBy": {

@@ -1,4 +1,4 @@
-import { Settings2, SortAsc, SortDesc, Group, Ungroup, Eye, EyeOff, ChevronsDown, ChevronsUp } from "lucide-react";
+import { Settings2, SortAsc, SortDesc, Group, Ungroup, Eye, EyeOff, ChevronsDown, ChevronsUp, MessageCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../store/useAppStore";
 import { Button } from "./ui/button";
@@ -20,25 +20,30 @@ export const ProjectListControls = () => {
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
       <div className="flex items-center space-x-2">
-        {/* Group/Ungroup */}
+        {/* Group/Ungroup - Cycles through: source → none → sessions → source */}
         <Button
           variant="ghost"
           size="sm"
-          onClick={() =>
-            setProjectListPreferences({
-              groupBy: projectListPreferences.groupBy === "source" ? "none" : "source",
-            })
-          }
+          onClick={() => {
+            const next =
+              projectListPreferences.groupBy === "source"
+                ? "none"
+                : projectListPreferences.groupBy === "none"
+                ? "sessions"
+                : "source";
+            setProjectListPreferences({ groupBy: next });
+          }}
           className="text-xs"
+          title={t(`projectListControls.groupBy.${projectListPreferences.groupBy}`)}
         >
           {projectListPreferences.groupBy === "source" ? (
+            <Group className="w-4 h-4 mr-1" />
+          ) : projectListPreferences.groupBy === "none" ? (
             <Ungroup className="w-4 h-4 mr-1" />
           ) : (
-            <Group className="w-4 h-4 mr-1" />
+            <MessageCircle className="w-4 h-4 mr-1" />
           )}
-          {projectListPreferences.groupBy === "source"
-            ? t("projectListControls.ungroup")
-            : t("projectListControls.groupBySource")}
+          {t(`projectListControls.groupBy.${projectListPreferences.groupBy}`)}
         </Button>
 
         {/* Expand All */}

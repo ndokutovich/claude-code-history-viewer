@@ -130,6 +130,45 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     return groups;
   }, [filteredAndSortedProjects, projectListPreferences.groupBy]);
 
+  // Collect all sessions from all projects for flat view mode
+  const allSessionsFlat = useMemo(() => {
+    if (projectListPreferences.groupBy !== 'sessions') {
+      return [];
+    }
+
+    // Collect all sessions from sessionsByProject cache
+    const allSessions: (ClaudeSession & { projectPath: string; projectName: string; providerId?: string })[] = [];
+
+    filteredAndSortedProjects.forEach((project) => {
+      const projectSessions = sessionsByProject[project.path] || [];
+      projectSessions.forEach((session) => {
+        allSessions.push({
+          ...session,
+          projectPath: project.path,
+          projectName: project.name,
+          providerId: project.providerId,
+        });
+      });
+    });
+
+    // Sort by last_modified (most recent first)
+    allSessions.sort((a, b) => {
+      const dateA = new Date(a.last_modified).getTime();
+      const dateB = new Date(b.last_modified).getTime();
+      return dateB - dateA; // Descending (newest first)
+    });
+
+    return allSessions;
+  }, [projectListPreferences.groupBy, sessionsByProject, filteredAndSortedProjects]);
+
+  // Auto-load all sessions when switching to flat view
+  useEffect(() => {
+    if (projectListPreferences.groupBy === 'sessions') {
+      const projectPaths = filteredAndSortedProjects.map(p => p.path);
+      loadSessionsForProjects(projectPaths);
+    }
+  }, [projectListPreferences.groupBy, filteredAndSortedProjects]);
+
   // ESC key to clear selection
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -271,7 +310,81 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
               </p>
             </div>
           </div>
+        ) : projectListPreferences.groupBy === 'sessions' ? (
+          // FLAT SESSIONS VIEW (no projects, just all sessions mixed)
+          <div className="space-y-1 p-2">
+            {allSessionsFlat.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">{t("components:session.noSessions", "No sessions found")}</p>
+              </div>
+            ) : (
+              allSessionsFlat.map((session) => {
+                const isSelected = selectedSession?.session_id === session.session_id;
+
+                return (
+                  <button
+                    key={session.session_id}
+                    onClick={() => {
+                      // Find the project for this session
+                      const project = filteredAndSortedProjects.find(p => p.path === session.projectPath);
+                      if (project) {
+                        onProjectSelect(project);
+                      }
+                      onSessionSelect(session);
+                    }}
+                    className={cn(
+                      "text-left w-full p-2 rounded transition-colors flex items-start space-x-2",
+                      isSelected
+                        ? "bg-blue-100 dark:bg-blue-900/40 border-l-2 border-blue-500"
+                        : "hover:bg-gray-200 dark:hover:bg-gray-700"
+                    )}
+                  >
+                    {/* Provider Icon */}
+                    <ProviderIcon
+                      providerId={session.providerId || ""}
+                      className={cn("w-4 h-4 mt-0.5 flex-shrink-0", getProviderColorClass(session.providerId))}
+                    />
+
+                    {/* Session Info */}
+                    <div className="flex-1 min-w-0">
+                      {/* Session Title */}
+                      <div className="flex items-center space-x-1">
+                        <MessageCircle className="w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                        <p className="text-sm text-gray-800 dark:text-gray-200 truncate font-medium">
+                          {getSessionTitle(session)}
+                        </p>
+                      </div>
+
+                      {/* Project Name (subdued) */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                        {session.projectName}
+                      </p>
+
+                      {/* Metadata row */}
+                      <div className="flex items-center space-x-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        <span>{session.message_count} messages</span>
+                        <span>•</span>
+                        <span>{formatTimeAgo(session.last_modified)}</span>
+                        {session.has_tool_use && (
+                          <>
+                            <Wrench className="w-3 h-3" />
+                          </>
+                        )}
+                        {session.has_errors && (
+                          <>
+                            <AlertTriangle className="w-3 h-3 text-yellow-600 dark:text-yellow-500" />
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
         ) : (
+          // NORMAL PROJECT TREE VIEW
           <div className="space-y-2">
             {Object.entries(groupedProjects).map(([groupName, groupProjects]) => (
               <div key={groupName}>

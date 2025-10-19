@@ -203,7 +203,7 @@ export interface LoadingProgress {
  * Project list display preferences
  */
 export interface ProjectListPreferences {
-  groupBy: 'source' | 'none';
+  groupBy: 'source' | 'none' | 'sessions';
   sortBy: 'name' | 'date';
   sortOrder: 'asc' | 'desc';
   hideEmptyProjects: boolean;
