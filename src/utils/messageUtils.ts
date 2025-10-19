@@ -1,7 +1,7 @@
-import type { ClaudeMessage } from "../types";
+import type { UIMessage } from "../types";
 
-export const extractClaudeMessageContent = (
-  message: ClaudeMessage
+export const extractUIMessageContent = (
+  message: UIMessage
 ): string | null => {
   // Direct string content
   if (typeof message.content === "string") {
@@ -88,6 +88,6 @@ export const extractImageFromContent = (content: unknown): string | null => {
   return null;
 };
 
-export const hasImageContent = (message: ClaudeMessage): boolean => {
+export const hasImageContent = (message: UIMessage): boolean => {
   return extractImageFromContent(message.content) !== null;
 };

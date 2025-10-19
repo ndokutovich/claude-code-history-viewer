@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { ClaudeProject, ClaudeSession } from "../types";
+import type { UIProject, UISession } from "../types";
 import { cn } from "../utils/cn";
 import { getLocale } from "../utils/time";
 import { getSessionTitle } from "../utils/sessionUtils";
@@ -19,13 +19,13 @@ import { useAppStore } from "../store/useAppStore";
 import { ProviderIcon, getProviderColorClass } from "./icons/ProviderIcons";
 
 interface ProjectTreeProps {
-  projects: ClaudeProject[];
-  sessions: ClaudeSession[]; // Legacy: sessions for selected project only
-  sessionsByProject: Record<string, ClaudeSession[]>; // NEW: Cache sessions per-project for multi-expansion
-  selectedProject: ClaudeProject | null;
-  selectedSession: ClaudeSession | null;
-  onProjectSelect: (project: ClaudeProject | null) => void;
-  onSessionSelect: (session: ClaudeSession | null) => void;
+  projects: UIProject[];
+  sessions: UISession[]; // Legacy: sessions for selected project only
+  sessionsByProject: Record<string, UISession[]>; // NEW: Cache sessions per-project for multi-expansion
+  selectedProject: UIProject | null;
+  selectedSession: UISession | null;
+  onProjectSelect: (project: UIProject | null) => void;
+  onSessionSelect: (session: UISession | null) => void;
   onClearSelection: () => void;
   isLoading: boolean;
 }
@@ -83,7 +83,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   }, [sessions, projectListPreferences.hideEmptySessions]);
 
   // Helper function to get sessions for a specific project
-  const getSessionsForProject = (projectPath: string): ClaudeSession[] => {
+  const getSessionsForProject = (projectPath: string): UISession[] => {
     // Try cache first (new multi-project architecture)
     const cachedSessions = sessionsByProject[projectPath];
 
@@ -118,7 +118,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       return { ungrouped: filteredAndSortedProjects };
     }
 
-    const groups: Record<string, ClaudeProject[]> = {};
+    const groups: Record<string, UIProject[]> = {};
     filteredAndSortedProjects.forEach((project) => {
       const groupName = project.providerName || "Unknown";
       if (!groups[groupName]) {
@@ -128,7 +128,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     });
 
     // Sort groups: Claude Code first, Cursor second, others after
-    const sortedGroups: Record<string, ClaudeProject[]> = {};
+    const sortedGroups: Record<string, UIProject[]> = {};
     const sourceOrder = [t('projectTree.sources.claudeCode'), t('projectTree.sources.cursor')];
 
     // Add sources in preferred order
@@ -155,7 +155,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     }
 
     // Collect all sessions from sessionsByProject cache
-    const allSessions: (ClaudeSession & { projectPath: string; projectName: string; providerId?: string })[] = [];
+    const allSessions: (UISession & { projectPath: string; projectName: string; providerId?: string })[] = [];
 
     filteredAndSortedProjects.forEach((project) => {
       const projectSessions = sessionsByProject[project.path] || [];

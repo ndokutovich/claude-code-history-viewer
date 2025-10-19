@@ -1,11 +1,11 @@
-import type { RawClaudeMessage, ClaudeMessage } from "../types";
+import type { RawClaudeMessage, UIMessage } from "../types";
 
 /**
  * Converts raw JSONL message format to UI-friendly format
  * This adapter handles the difference between the actual data structure
  * documented in CLAUDE.md and the expected UI structure
  */
-export function adaptRawMessage(raw: RawClaudeMessage): ClaudeMessage {
+export function adaptRawMessage(raw: RawClaudeMessage): UIMessage {
   const { message, toolUseResult, ...rest } = raw;
 
   return {
@@ -25,6 +25,6 @@ export function adaptRawMessage(raw: RawClaudeMessage): ClaudeMessage {
  */
 export function processMessages(
   rawMessages: RawClaudeMessage[]
-): ClaudeMessage[] {
+): UIMessage[] {
   return rawMessages.map(adaptRawMessage);
 }

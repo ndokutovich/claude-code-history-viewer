@@ -14,7 +14,7 @@ import { useAnalytics } from "./hooks/useAnalytics";
 import { getSessionTitle } from "./utils/sessionUtils";
 
 import { useTranslation } from "react-i18next";
-import { AppErrorType, type ClaudeSession, type ClaudeProject } from "./types";
+import { AppErrorType, type UISession, type UIProject } from "./types";
 import { AlertTriangle, Loader2, MessageSquare } from "lucide-react";
 import { useLanguageStore } from "./store/useLanguageStore";
 import { type SupportedLanguage } from "./i18n.config";
@@ -70,7 +70,7 @@ function App() {
   } = useSourceStore();
 
   // Maintain current view when session is selected
-  const handleSessionSelect = async (session: ClaudeSession | null) => {
+  const handleSessionSelect = async (session: UISession | null) => {
     await selectSession(session);
     // Token stats will auto-refresh via useEffect below
   };
@@ -217,7 +217,7 @@ function App() {
   }, [selectedSession?.session_id, computed.isTokenStatsView]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Project selection handler (includes analytics state reset)
-  const handleProjectSelect = async (project: ClaudeProject | null) => {
+  const handleProjectSelect = async (project: UIProject | null) => {
     // If null, just clear selection
     if (project === null) {
       await selectProject(null);

@@ -1,10 +1,10 @@
 import React from 'react';
 import { HelpCircle } from 'lucide-react';
-import type { ClaudeMessage } from '../../types';
+import type { UIMessage } from '../../types';
 import { useTranslation } from 'react-i18next';
 
 interface AssistantMessageDetailsProps {
-  message: ClaudeMessage;
+  message: UIMessage;
 }
 
 export const AssistantMessageDetails: React.FC<AssistantMessageDetailsProps> = ({ message }) => {

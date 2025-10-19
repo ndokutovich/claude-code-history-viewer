@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { Loader2, MessageCircle, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { ClaudeMessage, ClaudeSession, PaginationState } from "../types";
+import type { UIMessage, UISession, PaginationState } from "../types";
 import { ClaudeContentArrayRenderer } from "./contentRenderer";
 import {
   ClaudeToolUseDisplay,
@@ -16,26 +16,26 @@ import {
   AssistantMessageDetails,
   ProviderMetadataDisplay,
 } from "./messageRenderer";
-import { extractClaudeMessageContent } from "../utils/messageUtils";
+import { extractUIMessageContent } from "../utils/messageUtils";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
 import { formatTime } from "../utils/time";
 
 interface MessageViewerProps {
-  messages: ClaudeMessage[];
+  messages: UIMessage[];
   pagination: PaginationState;
   isLoading: boolean;
-  selectedSession: ClaudeSession | null;
+  selectedSession: UISession | null;
   onLoadMore: () => void;
 }
 
 interface MessageNodeProps {
-  message: ClaudeMessage;
+  message: UIMessage;
   depth: number;
   providerName: string;
 }
 
-const ClaudeMessageNode = ({ message, depth, providerName }: MessageNodeProps) => {
+const UIMessageNode = ({ message, depth, providerName }: MessageNodeProps) => {
   const { t } = useTranslation("components");
 
   if (message.isSidechain) {
@@ -94,7 +94,7 @@ const ClaudeMessageNode = ({ message, depth, providerName }: MessageNodeProps) =
         <div className="w-full">
           {/* Message Content */}
           <MessageContentDisplay
-            content={extractClaudeMessageContent(message)}
+            content={extractUIMessageContent(message)}
             messageType={message.type}
           />
 
@@ -104,14 +104,14 @@ const ClaudeMessageNode = ({ message, depth, providerName }: MessageNodeProps) =
             Array.isArray(message.content) &&
             (message.type !== "assistant" ||
               (message.type === "assistant" &&
-                !extractClaudeMessageContent(message))) && (
+                !extractUIMessageContent(message))) && (
               <div className="mb-2">
                 <ClaudeContentArrayRenderer content={message.content} />
               </div>
             )}
 
           {/* Special case: when content is null but toolUseResult exists */}
-          {!extractClaudeMessageContent(message) &&
+          {!extractUIMessageContent(message) &&
             message.toolUseResult &&
             typeof message.toolUseResult === "object" &&
             Array.isArray(message.toolUseResult.content) && (
@@ -147,8 +147,8 @@ const ClaudeMessageNode = ({ message, depth, providerName }: MessageNodeProps) =
 };
 
 // Type-safe parent UUID extraction function
-const getParentUuid = (message: ClaudeMessage): string | null | undefined => {
-  const msgWithParent = message as ClaudeMessage & {
+const getParentUuid = (message: UIMessage): string | null | undefined => {
+  const msgWithParent = message as UIMessage & {
     parentUuid?: string;
     parent_uuid?: string;
   };
@@ -224,7 +224,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     );
 
     // Find root messages
-    const roots: ClaudeMessage[] = [];
+    const roots: UIMessage[] = [];
     uniqueMessages.forEach((msg) => {
       const parentUuid = getParentUuid(msg);
       if (!parentUuid) {
@@ -386,7 +386,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   }
 
   const renderMessageTree = (
-    message: ClaudeMessage,
+    message: UIMessage,
     depth = 0,
     visitedIds = new Set<string>(),
     keyPrefix = ""
@@ -408,7 +408,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 
     // Add current message first, then child messages
     const result: React.ReactNode[] = [
-      <ClaudeMessageNode key={uniqueKey} message={message} depth={depth} providerName={providerName} />,
+      <UIMessageNode key={uniqueKey} message={message} depth={depth} providerName={providerName} />,
     ];
 
     // Recursively add child messages (increase depth)
@@ -548,7 +548,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                       : `fallback-${index}-${message.timestamp}-${message.type}`;
 
                   return (
-                    <ClaudeMessageNode
+                    <UIMessageNode
                       key={uniqueKey}
                       message={message}
                       depth={0}

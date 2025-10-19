@@ -5,15 +5,15 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
-import type { ClaudeMessage, ClaudeSession } from "@/types";
+import type { UIMessage, UISession } from "@/types";
 import { getSessionTitle } from "@/utils/sessionUtils";
 import { normalizeQuotes } from "@/utils/stringUtils";
 
 interface GroupedSearchResult {
   sessionId: string;
   projectPath: string | null;
-  session: ClaudeSession | null;
-  messages: ClaudeMessage[];
+  session: UISession | null;
+  messages: UIMessage[];
   isExpanded: boolean;
 }
 
@@ -35,7 +35,7 @@ export const SearchView = () => {
 
   const [query, setQuery] = useState(searchQuery);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
-  const [searchResultSessions, setSearchResultSessions] = useState<Map<string, ClaudeSession>>(new Map());
+  const [searchResultSessions, setSearchResultSessions] = useState<Map<string, UISession>>(new Map());
   const [isLoadingSessionMetadata, setIsLoadingSessionMetadata] = useState(false);
 
   // Load session metadata for all search results
@@ -57,7 +57,7 @@ export const SearchView = () => {
 
       console.log("Loading session metadata for projects:", Array.from(projectPaths));
 
-      const sessionMap = new Map<string, ClaudeSession>();
+      const sessionMap = new Map<string, UISession>();
 
       // Load sessions for each project (including sidechains for search)
       for (const projectPath of projectPaths) {
@@ -233,7 +233,7 @@ export const SearchView = () => {
     }
   };
 
-  const renderMessagePreview = (message: ClaudeMessage) => {
+  const renderMessagePreview = (message: UIMessage) => {
     let preview = "";
 
     // Try to extract text from content
