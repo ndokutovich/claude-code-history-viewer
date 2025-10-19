@@ -103,9 +103,9 @@ async fn load_universal_session_messages(
     match provider_id {
         "claude-code" => {
             // For Claude Code, source_path is the JSONL file path
-            // We need to load ClaudeMessages and convert them to UniversalMessage
-            // For now, this is not implemented - we'll focus on Cursor first
-            Err("Claude Code universal analytics not yet implemented".to_string())
+            // load_session_messages now returns UniversalMessage ✅
+            use crate::commands::session::load_session_messages;
+            load_session_messages(source_path.to_string()).await
         }
         "cursor" => {
             // For Cursor, we need to construct the encoded path format that load_cursor_messages expects

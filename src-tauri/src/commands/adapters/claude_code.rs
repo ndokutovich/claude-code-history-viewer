@@ -6,7 +6,7 @@
 // CRITICAL: This adapter preserves ALL original Claude Code fields to ensure
 // zero data loss during the migration to universal types.
 
-use crate::models::{ClaudeMessage, TokenUsage as ClaudeTokenUsage};
+use crate::models::ClaudeMessage;
 use crate::models::universal::*;
 use serde_json::{json, Value};
 use std::collections::HashMap;

@@ -7,7 +7,3 @@
 
 pub mod claude_code;
 pub mod cursor;
-
-// Re-export for convenience
-pub use claude_code::claude_message_to_universal;
-pub use cursor::cursor_bubble_to_universal;
