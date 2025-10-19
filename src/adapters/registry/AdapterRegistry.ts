@@ -75,6 +75,7 @@ export class AdapterRegistry {
 
   /**
    * Register built-in adapters
+   * Gracefully handles individual adapter failures
    */
   private async registerBuiltinAdapters(): Promise<void> {
     // Built-in adapters
@@ -83,13 +84,28 @@ export class AdapterRegistry {
       new CursorAdapter(),     // ✅ v2.0.0 COMPLETE
     ];
 
+    const failures: Array<{ id: string; error: Error }> = [];
+
     for (const adapter of adapters) {
-      await this.register(adapter);
+      try {
+        await this.register(adapter);
+      } catch (error) {
+        // Log but don't fail - allow other adapters to load
+        const err = error instanceof Error ? error : new Error(String(error));
+        failures.push({ id: adapter.providerId, error: err });
+        console.error(`⚠️  Failed to register ${adapter.providerId}:`, err.message);
+      }
     }
 
-    // If no adapters, log warning but don't fail
-    if (adapters.length === 0) {
-      console.warn('⚠️  No built-in adapters registered yet');
+    // Fail only if ALL adapters failed
+    if (this.adapters.size === 0) {
+      const errorDetails = failures.map(f => `${f.id}: ${f.error.message}`).join(', ');
+      throw new Error(`No adapters could be registered. Errors: ${errorDetails}`);
+    }
+
+    // Log warnings for partial failures
+    if (failures.length > 0) {
+      console.warn(`⚠️  ${failures.length}/${adapters.length} adapters failed to register`);
     }
   }
 
