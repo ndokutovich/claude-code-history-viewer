@@ -201,20 +201,3 @@ export const HEX_COLORS = {
     scrollbarThumbHover: "rgb(107 114 128)", // gray-500
   },
 } as const;
-
-// Utility function to combine color classes
-export function getColorClasses(
-  ...classes: (string | undefined | false)[]
-): string {
-  return classes.filter(Boolean).join(" ");
-}
-
-// Type helpers for TypeScript
-export type ColorKey = keyof typeof COLORS;
-export type SemanticColorKey = keyof typeof COLORS.semantic;
-export type ToolColorKey = keyof typeof COLORS.tools;
-export type UIColorKey = keyof typeof COLORS.ui;
-export type MessageColorKey = keyof typeof COLORS.message;
-
-// Theme type
-export type Theme = "light" | "dark";
