@@ -1,0 +1,43 @@
+{
+  "title": "数据源",
+  "description": "管理您的对话历史源",
+  "addSource": "添加源",
+  "refreshAll": "全部刷新",
+  "loading": "加载源中...",
+  "dialog": {
+    "title": "添加数据源",
+    "description": "添加包含对话历史数据的文件夹",
+    "nameLabel": "名称（可选）",
+    "namePlaceholder": "我的对话",
+    "pathLabel": "文件夹路径",
+    "pathPlaceholder": "/path/to/.claude",
+    "cancel": "取消",
+    "add": "添加源",
+    "adding": "添加中...",
+    "selectFolder": "选择对话数据文件夹",
+    "confirmRemove": "您确定要删除此源吗？"
+  },
+  "validation": {
+    "enterPath": "请输入路径",
+    "invalidPath": "无效路径"
+  },
+  "actions": {
+    "refresh": "刷新",
+    "setDefault": "设为默认",
+    "remove": "删除"
+  },
+  "emptyState": {
+    "title": "未配置源",
+    "description": "点击「添加源」开始"
+  },
+  "stats": {
+    "projects": "项目",
+    "sessions": "会话",
+    "messages": "消息"
+  },
+  "errors": {
+    "alreadyAdded": "此源已被添加",
+    "failedToAdd": "添加源失败"
+  },
+  "autoDetected": "自动检测 ({{number}})"
+}

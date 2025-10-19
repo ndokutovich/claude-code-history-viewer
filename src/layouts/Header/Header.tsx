@@ -5,11 +5,14 @@ import {
   MessageSquare,
   Activity,
   Search,
+  Database,
 } from "lucide-react";
+import { useState } from "react";
 
 import { TooltipButton } from "@/shared/TooltipButton";
 import { useAppStore } from "@/store/useAppStore";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { SourcesModal } from "@/components/modals/SourcesModal";
 
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
@@ -20,6 +23,9 @@ export const Header = () => {
   const { t } = useTranslation("common");
   const { t: tComponents } = useTranslation("components");
   const { t: tMessages } = useTranslation("messages");
+  const { t: tSourceManager } = useTranslation("sourceManager");
+
+  const [isSourcesModalOpen, setIsSourcesModalOpen] = useState(false);
 
   const {
     selectedProject,
@@ -52,8 +58,6 @@ export const Header = () => {
       await analyticsActions.switchToAnalytics();
     } catch (error) {
       console.error("Failed to load analytics:", error);
-      // TODO: Display toast message or error state
-      // toast.error(t("errors.failedToLoadAnalytics"));
     }
   };
 
@@ -69,7 +73,7 @@ export const Header = () => {
         <div className="flex items-center space-x-3">
           <img
             src="/app-icon.png"
-            alt="Claude Code History Viewer"
+            alt="Claude Code & Cursor IDE History Viewer"
             className="w-10 h-10"
           />
           <div>
@@ -99,6 +103,18 @@ export const Header = () => {
           )}
 
           <div className="flex items-center space-x-2">
+            {/* Sources Button */}
+            <TooltipButton
+              content={tSourceManager("title")}
+              onClick={() => setIsSourcesModalOpen(true)}
+              className={cn(
+                "p-2 rounded-lg transition-colors",
+                COLORS.ui.interactive.hover
+              )}
+            >
+              <Database className={cn("w-5 h-5", COLORS.ui.text.primary)} />
+            </TooltipButton>
+
             <TooltipButton
               content={t("search.title")}
               onClick={() => {
@@ -226,6 +242,12 @@ export const Header = () => {
           </div>
         </div>
       </div>
+
+      {/* Sources Modal */}
+      <SourcesModal
+        open={isSourcesModalOpen}
+        onOpenChange={setIsSourcesModalOpen}
+      />
     </header>
   );
 };

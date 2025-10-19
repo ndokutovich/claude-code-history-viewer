@@ -2,7 +2,7 @@ mod models;
 mod commands;
 mod utils;
 
-use crate::commands::{project::*, session::*, stats::*, update::*, secure_update::*, feedback::*};
+use crate::commands::{project::*, session::*, stats::*, update::*, secure_update::*, feedback::*, cursor::*};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -33,7 +33,19 @@ pub fn run() {
             verify_download_integrity,
             send_feedback,
             get_system_info,
-            open_github_issues
+            open_github_issues,
+            // Cursor IDE support (v2.0.0)
+            get_cursor_path,
+            validate_cursor_folder,
+            scan_cursor_workspaces,
+            load_cursor_sessions,
+            load_cursor_messages,
+            search_cursor_messages,
+            // Universal Analytics (v2.1.0 - works with both Claude Code and Cursor)
+            get_universal_session_token_stats,
+            get_universal_project_token_stats,
+            get_universal_project_stats_summary,
+            get_universal_session_comparison
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

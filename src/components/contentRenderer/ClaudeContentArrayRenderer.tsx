@@ -73,7 +73,7 @@ export const ClaudeContentArrayRenderer = ({ content }: Props) => {
             return <ToolUseRenderer key={index} toolUse={item} />;
 
           case "tool_result":
-            return <ClaudeToolResultItem toolResult={item} index={index} />;
+            return <ClaudeToolResultItem key={index} toolResult={item} index={index} />;
 
           default:
             // Default JSON rendering

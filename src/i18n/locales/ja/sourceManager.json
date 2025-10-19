@@ -1,0 +1,43 @@
+{
+  "title": "データソース",
+  "description": "会話履歴ソースを管理",
+  "addSource": "ソースを追加",
+  "refreshAll": "すべて更新",
+  "loading": "ソースを読み込み中...",
+  "dialog": {
+    "title": "データソースを追加",
+    "description": "会話履歴データを含むフォルダを追加",
+    "nameLabel": "名前（オプション）",
+    "namePlaceholder": "マイ会話",
+    "pathLabel": "フォルダパス",
+    "pathPlaceholder": "/path/to/.claude",
+    "cancel": "キャンセル",
+    "add": "ソースを追加",
+    "adding": "追加中...",
+    "selectFolder": "会話データフォルダを選択",
+    "confirmRemove": "このソースを削除してもよろしいですか？"
+  },
+  "validation": {
+    "enterPath": "パスを入力してください",
+    "invalidPath": "無効なパス"
+  },
+  "actions": {
+    "refresh": "更新",
+    "setDefault": "デフォルトに設定",
+    "remove": "削除"
+  },
+  "emptyState": {
+    "title": "ソースが設定されていません",
+    "description": "「ソースを追加」をクリックして開始"
+  },
+  "stats": {
+    "projects": "プロジェクト",
+    "sessions": "セッション",
+    "messages": "メッセージ"
+  },
+  "errors": {
+    "alreadyAdded": "このソースは既に追加されています",
+    "failedToAdd": "ソースの追加に失敗しました"
+  },
+  "autoDetected": "自動検出 ({{number}})"
+}

@@ -1,6 +1,6 @@
 {
-  "appName": "Claude Code History Viewer",
-  "appDescription": "探索和分析您的 Claude Code 對話歷史",
+  "appName": "Claude Code & Cursor IDE 歷史檢視器",
+  "appDescription": "探索和分析您的 Claude Code 和 Cursor IDE 對話歷史",
   "errorOccurred": "發生錯誤",
   "loading": "載入中...",
   "back": "返回",

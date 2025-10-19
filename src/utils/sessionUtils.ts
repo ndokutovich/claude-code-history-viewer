@@ -1,12 +1,12 @@
-import type { ClaudeSession, ClaudeMessage } from "@/types";
+import type { UISession, UIMessage } from "@/types";
 
 /**
  * Extracts a readable title from a session
  * Prioritizes session summary, then first message content, then sessionId fallback
  */
 export function getSessionTitle(
-  session: ClaudeSession | null,
-  messages?: ClaudeMessage[],
+  session: UISession | null,
+  messages?: UIMessage[],
   maxLength: number = 60
 ): string {
   // Use session summary if available

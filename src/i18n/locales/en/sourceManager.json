@@ -1,0 +1,43 @@
+{
+  "title": "Data Sources",
+  "description": "Manage your conversation history sources",
+  "addSource": "Add Source",
+  "refreshAll": "Refresh All",
+  "loading": "Loading sources...",
+  "dialog": {
+    "title": "Add Data Source",
+    "description": "Add a folder containing conversation history data",
+    "nameLabel": "Name (Optional)",
+    "namePlaceholder": "My Conversations",
+    "pathLabel": "Folder Path",
+    "pathPlaceholder": "/path/to/.claude",
+    "cancel": "Cancel",
+    "add": "Add Source",
+    "adding": "Adding...",
+    "selectFolder": "Select Conversation Data Folder",
+    "confirmRemove": "Are you sure you want to remove this source?"
+  },
+  "validation": {
+    "enterPath": "Please enter a path",
+    "invalidPath": "Invalid path"
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "setDefault": "Set as default",
+    "remove": "Remove"
+  },
+  "emptyState": {
+    "title": "No sources configured",
+    "description": "Click \"Add Source\" to get started"
+  },
+  "stats": {
+    "projects": "projects",
+    "sessions": "sessions",
+    "messages": "messages"
+  },
+  "errors": {
+    "alreadyAdded": "This source is already added",
+    "failedToAdd": "Failed to add source"
+  },
+  "autoDetected": "Auto-detected ({{number}})"
+}

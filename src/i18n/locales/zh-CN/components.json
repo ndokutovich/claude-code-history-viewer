@@ -17,7 +17,8 @@
     "scanning": "正在扫描项目...",
     "loading": "正在加载会话...",
     "count": "会话：{{count}}个",
-    "selected": "已选会话"
+    "selected": "已选会话",
+    "noSessions": "未找到会话"
   },
   "message": {
     "user": "用户",
@@ -588,7 +589,35 @@
     "upToDate": "已是最新版本",
     "currentVersionLatest": "当前版本 {{version}} 为最新版本"
   },
+  "projectListControls": {
+    "groupBySource": "按来源分组",
+    "ungroup": "取消分组",
+    "groupBy": {
+      "source": "按来源",
+      "none": "按项目",
+      "sessions": "全部会话"
+    },
+    "expandAll": "全部展开",
+    "collapseAll": "全部折叠",
+    "sortBy": {
+      "name": "名称",
+      "date": "日期"
+    },
+    "sortOrder": {
+      "asc": "升序",
+      "desc": "降序"
+    },
+    "hideEmptyProjects": "隐藏空项目",
+    "hideEmptySessions": "隐藏空会话",
+    "showAll": "显示全部"
+  },
   "selection": {
     "clear": "清除选择 (ESC)"
+  },
+  "projectTree": {
+    "sources": {
+      "claudeCode": "Claude Code",
+      "cursor": "Cursor"
+    }
   }
 }

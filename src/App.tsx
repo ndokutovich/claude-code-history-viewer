@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
@@ -6,15 +6,18 @@ import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { SimpleUpdateManager } from "./components/SimpleUpdateManager";
 import { SearchView } from "./components/SearchView";
 import { DebugConsole } from "./components/DebugConsole";
+import { SplashScreen } from "./components/SplashScreen";
+import { ResizableSplitter } from "./components/ResizableSplitter";
 import { useAppStore } from "./store/useAppStore";
+import { useSourceStore } from "./store/useSourceStore";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { getSessionTitle } from "./utils/sessionUtils";
 
 import { useTranslation } from "react-i18next";
-import { AppErrorType, type ClaudeSession, type ClaudeProject } from "./types";
+import { AppErrorType, type UISession, type UIProject } from "./types";
 import { AlertTriangle, Loader2, MessageSquare } from "lucide-react";
 import { useLanguageStore } from "./store/useLanguageStore";
-import { type SupportedLanguage } from "./i18n";
+import { type SupportedLanguage } from "./i18n.config";
 
 import "./App.css";
 import { cn } from "./utils/cn";
@@ -26,6 +29,7 @@ function App() {
   const {
     projects,
     sessions,
+    sessionsByProject,
     selectedProject,
     selectedSession,
     messages,
@@ -38,11 +42,13 @@ function App() {
     sessionTokenStats,
     projectTokenStats,
     projectStatsSummary,
+    loadingProgress,
     initializeApp,
     selectProject,
     selectSession,
     clearSelection,
     loadMoreMessages,
+    setLoadingProgress,
   } = useAppStore();
 
   const {
@@ -55,24 +61,91 @@ function App() {
   const { t: tMessages } = useTranslation("messages");
   const { language, loadLanguage } = useLanguageStore();
 
-  // Maintain current view when session is selected (automatic data update handled in useAnalytics hook)
-  const handleSessionSelect = async (session: ClaudeSession | null) => {
+  // Sidebar width state for resizable splitter
+  const [sidebarWidth, setSidebarWidth] = useState(320);
+
+  // Source store for multi-source management
+  const {
+    initializeSources,
+  } = useSourceStore();
+
+  // Maintain current view when session is selected
+  const handleSessionSelect = async (session: UISession | null) => {
     await selectSession(session);
-    // Data update is automatically handled in useAnalytics hook's useEffect
+    // Token stats will auto-refresh via useEffect below
   };
 
   useEffect(() => {
-    // Initialize app after loading language settings
-    loadLanguage()
-      .then(() => {
-        initializeApp();
-      })
-      .catch((error) => {
-        console.error("Failed to load language:", error);
-        // Proceed with app initialization using default language
-        initializeApp();
-      });
-  }, [initializeApp, loadLanguage]);
+    // Initialize sources and app after loading language settings
+    const initialize = async () => {
+      try {
+        // Stage 1: Initializing (0-20%)
+        setLoadingProgress({
+          stage: 'initializing',
+          message: i18nInstance.t('splash:status.initializing', 'Initializing application'),
+          progress: 5,
+        });
+
+        await loadLanguage();
+
+        setLoadingProgress({
+          stage: 'initializing',
+          message: i18nInstance.t('splash:status.loadingLanguage', 'Loading language settings'),
+          progress: 15,
+        });
+
+        // Stage 2: Detecting sources (20-40%)
+        setLoadingProgress({
+          stage: 'detecting-sources',
+          message: i18nInstance.t('splash:status.detectingSources', 'Detecting conversation sources'),
+          progress: 25,
+        });
+
+        await initializeSources();
+
+        setLoadingProgress({
+          stage: 'loading-adapters',
+          message: i18nInstance.t('splash:status.loadingAdapters', 'Loading adapters'),
+          progress: 45,
+        });
+
+        // Stage 3: Scanning projects (40-80%)
+        setLoadingProgress({
+          stage: 'scanning-projects',
+          message: i18nInstance.t('splash:status.scanningProjects', 'Scanning projects'),
+          progress: 65,
+        });
+
+        await initializeApp();
+
+        setLoadingProgress({
+          stage: 'scanning-projects',
+          message: i18nInstance.t('splash:status.finalizing', 'Finalizing'),
+          progress: 90,
+        });
+
+        // Stage 4: Complete (80-100%)
+        setLoadingProgress({
+          stage: 'complete',
+          message: i18nInstance.t('splash:status.ready', 'Ready'),
+          progress: 100,
+        });
+
+        // Remove splash screen after a short delay
+        setTimeout(() => {
+          setLoadingProgress(null);
+        }, 300);
+      } catch (error) {
+        console.error("Failed to initialize:", error);
+        // Clear splash screen even on error so user can see the error message
+        setLoadingProgress(null);
+      }
+    };
+
+    // Start initialization immediately
+    initialize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps to run only once on mount
 
   // Cmd+F keyboard shortcut
   useEffect(() => {
@@ -122,8 +195,29 @@ function App() {
     };
   }, [language, i18nInstance]);
 
+  // Auto-refresh token stats when session changes (if token stats view is active)
+  useEffect(() => {
+    const refreshTokenStatsForSession = async () => {
+      // Only auto-refresh if we're in token stats view and have a selected session
+      if (computed.isTokenStatsView && selectedSession?.file_path) {
+        console.log('🔄 Auto-refreshing token stats for newly selected session:', selectedSession.session_id);
+        try {
+          // Call loadSessionTokenStats directly instead of refreshAnalytics to avoid view switching
+          const { loadSessionTokenStats } = useAppStore.getState();
+          await loadSessionTokenStats(selectedSession.file_path);
+        } catch (error) {
+          console.error('Failed to auto-refresh token stats:', error);
+        }
+      }
+    };
+
+    refreshTokenStatsForSession();
+    // Only depend on session_id changing, NOT on the view or analyticsActions
+    // This prevents infinite loops and only triggers when user selects a different session
+  }, [selectedSession?.session_id, computed.isTokenStatsView]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Project selection handler (includes analytics state reset)
-  const handleProjectSelect = async (project: ClaudeProject | null) => {
+  const handleProjectSelect = async (project: UIProject | null) => {
     // If null, just clear selection
     if (project === null) {
       await selectProject(null);
@@ -163,8 +257,12 @@ function App() {
     }
   };
 
-  // Show folder selector if needed
+  // Show splash screen during initialization
+  if (loadingProgress) {
+    return <SplashScreen progress={loadingProgress} />;
+  }
 
+  // Show folder selector if needed
   if (error && error.type !== AppErrorType.CLAUDE_FOLDER_NOT_FOUND) {
     return (
       <div
@@ -215,20 +313,31 @@ function App() {
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar */}
-          <ProjectTree
-            projects={projects}
-            sessions={sessions}
-            selectedProject={selectedProject}
-            selectedSession={selectedSession}
-            onProjectSelect={handleProjectSelect}
-            onSessionSelect={handleSessionSelect}
-            onClearSelection={clearSelection}
-            isLoading={isLoadingProjects || isLoadingSessions}
+          {/* Sidebar with fixed width */}
+          <div style={{ width: `${sidebarWidth}px` }} className="flex-shrink-0 overflow-hidden">
+            <ProjectTree
+              projects={projects}
+              sessions={sessions}
+              sessionsByProject={sessionsByProject}
+              selectedProject={selectedProject}
+              selectedSession={selectedSession}
+              onProjectSelect={handleProjectSelect}
+              onSessionSelect={handleSessionSelect}
+              onClearSelection={clearSelection}
+              isLoading={isLoadingProjects || isLoadingSessions}
+            />
+          </div>
+
+          {/* Resizable Splitter */}
+          <ResizableSplitter
+            minWidth={200}
+            maxWidth={800}
+            defaultWidth={320}
+            onWidthChange={setSidebarWidth}
           />
 
           {/* Main Content Area */}
-          <div className="w-full flex flex-col relative">
+          <div className="flex-1 flex flex-col relative overflow-hidden">
             {computed.isSearchView ? (
               /* Search View - Full overlay */
               <SearchView />

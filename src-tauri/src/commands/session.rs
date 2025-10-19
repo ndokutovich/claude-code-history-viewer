@@ -1,4 +1,6 @@
 use crate::models::*;
+use crate::models::universal::UniversalMessage;
+use crate::commands::adapters::claude_code::{claude_message_to_universal, extract_project_id};
 use crate::utils::extract_project_name;
 use std::fs;
 use std::path::PathBuf;
@@ -32,7 +34,7 @@ pub async fn load_project_sessions(
             Utc::now().to_rfc3339()
         };
         
-        // 파일을 스트리밍으로 읽어서 메모리 사용량 줄이기
+        // Read file in streaming mode to reduce memory usage
         if let Ok(file) = std::fs::File::open(entry.path()) {
             use std::io::{BufRead, BufReader};
             let reader = BufReader::new(file);
@@ -171,14 +173,14 @@ pub async fn load_project_sessions(
                     false
                 });
 
-                // summary가 없을 때만 첫 번째 사용자 메시지에서 텍스트 추출
+                // Extract text from first user message only when summary is not present
                 let final_summary = if session_summary.is_none() {
                     messages.iter()
                         .find(|m| m.message_type == "user")
                         .and_then(|m| {
                             if let Some(content) = &m.content {
                                 match content {
-                                    // 단순 문자열인 경우
+                                    // Simple string case
                                     serde_json::Value::String(text) => {
                                         if text.trim().is_empty() {
                                             None
@@ -189,7 +191,7 @@ pub async fn load_project_sessions(
                                             Some(text.clone())
                                         }
                                     },
-                                    // 배열인 경우 type="text" 찾기
+                                    // Array case: find type="text"
                                     serde_json::Value::Array(arr) => {
                                         for item in arr {
                                             if let Some(item_type) = item.get("type").and_then(|v| v.as_str()) {
@@ -269,14 +271,14 @@ pub async fn load_project_sessions(
 
     let _elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
-    println!("📊 load_project_sessions 성능: {}개 세션, {}ms 소요",
+    println!("📊 load_project_sessions performance: {} sessions loaded in {}ms",
              sessions.len(), _elapsed.as_millis());
 
     Ok(sessions)
 }
 
 #[tauri::command]
-pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMessage>, String> {
+pub async fn load_session_messages(session_path: String) -> Result<Vec<UniversalMessage>, String> {
     let content = fs::read_to_string(&session_path)
         .map_err(|e| format!("Failed to read session file: {}", e))?;
 
@@ -379,7 +381,29 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<ClaudeMes
         }
     }
 
-    Ok(messages)
+    // Convert ClaudeMessages to UniversalMessages
+    let project_id = extract_project_id(&None, &session_path);
+    let source_id = session_path
+        .split("projects")
+        .next()
+        .unwrap_or("")
+        .trim_end_matches('/')
+        .to_string();
+
+    let universal_messages: Vec<UniversalMessage> = messages
+        .iter()
+        .enumerate()
+        .map(|(i, msg)| {
+            claude_message_to_universal(
+                msg,
+                project_id.clone(),
+                source_id.clone(),
+                i as i32,
+            )
+        })
+        .collect();
+
+    Ok(universal_messages)
 }
 
 #[tauri::command]
@@ -455,9 +479,31 @@ pub async fn load_session_messages_paginated(
             }
         }
     }
-    
+
+    // Convert ClaudeMessages to UniversalMessages
+    let project_id = extract_project_id(&None, &session_path);
+    let source_id = session_path
+        .split("projects")
+        .next()
+        .unwrap_or("")
+        .trim_end_matches('/')
+        .to_string();
+
+    let all_messages: Vec<UniversalMessage> = all_messages
+        .iter()
+        .enumerate()
+        .map(|(i, msg)| {
+            claude_message_to_universal(
+                msg,
+                project_id.clone(),
+                source_id.clone(),
+                i as i32,
+            )
+        })
+        .collect();
+
     let total_count = all_messages.len();
-    
+
     #[cfg(debug_assertions)]
     eprintln!("Pagination Debug - Total: {}, Offset: {}, Limit: {}", total_count, offset, limit);
     
@@ -506,7 +552,7 @@ pub async fn load_session_messages_paginated(
     };
     
     // Get the slice of messages we need
-    let messages: Vec<ClaudeMessage> = all_messages
+    let messages: Vec<UniversalMessage> = all_messages
         .into_iter()
         .skip(start_idx)
         .take(end_idx - start_idx)
@@ -518,7 +564,7 @@ pub async fn load_session_messages_paginated(
 
     let _elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
-    eprintln!("📊 load_session_messages_paginated 성능: {}개 메시지, {}ms 소요", messages.len(), _elapsed.as_millis());
+    eprintln!("📊 load_session_messages_paginated performance: {} messages loaded in {}ms", messages.len(), _elapsed.as_millis());
     #[cfg(debug_assertions)]
     eprintln!("Result: {} messages returned, has_more={}, next_offset={}", messages.len(), has_more, next_offset);
     
@@ -654,7 +700,7 @@ pub async fn search_messages(
     claude_path: String,
     query: String,
     filters: SearchFilters
-) -> Result<Vec<ClaudeMessage>, String> {
+) -> Result<Vec<UniversalMessage>, String> {
     let projects_path = PathBuf::from(&claude_path).join("projects");
     let mut all_messages = Vec::new();
 
@@ -811,5 +857,26 @@ pub async fn search_messages(
         }
     }
 
-    Ok(all_messages)
+    // Convert ClaudeMessages to UniversalMessages
+    let source_id = claude_path.clone();
+    let universal_messages: Vec<UniversalMessage> = all_messages
+        .iter()
+        .enumerate()
+        .map(|(i, msg)| {
+            let project_id = msg.project_path
+                .as_ref()
+                .and_then(|path| path.split('/').last())
+                .unwrap_or("unknown")
+                .to_string();
+
+            claude_message_to_universal(
+                msg,
+                project_id,
+                source_id.clone(),
+                i as i32,
+            )
+        })
+        .collect();
+
+    Ok(universal_messages)
 }

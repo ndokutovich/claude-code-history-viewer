@@ -1,0 +1,13 @@
+{
+  "appTitle": "Claude Code & Cursor IDE 历史查看器",
+  "loadingMessage": "加载对话历史中",
+  "status": {
+    "initializing": "正在初始化应用",
+    "loadingLanguage": "正在加载语言设置",
+    "detectingSources": "正在检测对话源",
+    "loadingAdapters": "正在加载适配器",
+    "scanningProjects": "正在扫描项目",
+    "finalizing": "正在完成",
+    "ready": "就绪"
+  }
+}

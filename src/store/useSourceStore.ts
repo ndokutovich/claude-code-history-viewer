@@ -1,0 +1,542 @@
+// ============================================================================
+// SOURCE STORE (v2.0.0)
+// ============================================================================
+// Manages multiple conversation data sources (Claude Code, Cursor, etc.)
+// Uses adapter pattern to support different providers
+
+import { create } from 'zustand';
+import { invoke } from '@tauri-apps/api/core';
+import { load, type StoreOptions } from '@tauri-apps/plugin-store';
+import type { UniversalSource } from '../types/universal';
+import { adapterRegistry } from '../adapters';
+import i18n from '../i18n.config';
+
+// Generate deterministic ID from path (simple hash to UUID format)
+// This ensures the same path always gets the same ID across restarts
+function generateDeterministicId(path: string): string {
+  // Simple string hash function
+  let hash = 0;
+  for (let i = 0; i < path.length; i++) {
+    const char = path.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+
+  // Convert hash to positive number and to hex
+  const hashHex = (hash >>> 0).toString(16).padStart(8, '0');
+
+  // Create a UUID-like format using the hash
+  // Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  // We'll use the hash multiple times to fill the UUID
+  const part1 = hashHex;
+  const part2 = hashHex.substring(0, 4);
+  const part3 = '4' + hashHex.substring(1, 4); // UUID v4 marker
+  const part4 = ((parseInt(hashHex.substring(0, 1), 16) & 0x3) | 0x8).toString(16) + hashHex.substring(1, 4);
+  const part5 = hashHex + hashHex.substring(0, 4);
+
+  return `${part1}-${part2}-${part3}-${part4}-${part5}`;
+}
+
+// ============================================================================
+// SOURCE STORE STATE
+// ============================================================================
+
+interface SourceStoreState {
+  // Source management
+  sources: UniversalSource[];
+  selectedSourceId: string | null;
+  isLoadingSources: boolean;
+  isAddingSource: boolean;
+  isValidatingSource: boolean;
+
+  // Errors
+  error: string | null;
+  validationError: string | null;
+
+  // Actions - Initialization
+  initializeSources: () => Promise<void>;
+  autoDetectDefaultSource: () => Promise<void>;
+
+  // Actions - Source CRUD
+  addSource: (path: string, name?: string) => Promise<UniversalSource>;
+  removeSource: (sourceId: string) => Promise<void>;
+  updateSource: (sourceId: string, updates: Partial<UniversalSource>) => Promise<void>;
+  setDefaultSource: (sourceId: string) => Promise<void>;
+  refreshSource: (sourceId: string) => Promise<void>;
+  refreshAllSources: () => Promise<void>;
+
+  // Actions - Selection
+  selectSource: (sourceId: string | null) => void;
+  getSelectedSource: () => UniversalSource | null;
+
+  // Actions - Validation
+  validatePath: (path: string) => Promise<{ isValid: boolean; providerId?: string; error?: string }>;
+
+  // Actions - Error handling
+  setError: (error: string | null) => void;
+  clearErrors: () => void;
+
+  // Actions - Persistence (internal)
+  persistSources: () => Promise<void>;
+}
+
+// ============================================================================
+// STORAGE KEY
+// ============================================================================
+
+const SOURCES_STORAGE_KEY = 'sources';
+const SELECTED_SOURCE_KEY = 'selectedSourceId';
+
+// ============================================================================
+// SOURCE STORE
+// ============================================================================
+
+export const useSourceStore = create<SourceStoreState>((set, get) => ({
+  // Initial state
+  sources: [],
+  selectedSourceId: null,
+  isLoadingSources: false,
+  isAddingSource: false,
+  isValidatingSource: false,
+  error: null,
+  validationError: null,
+
+  // ------------------------------------------------------------------------
+  // INITIALIZATION
+  // ------------------------------------------------------------------------
+
+  initializeSources: async () => {
+    set({ isLoadingSources: true, error: null });
+
+    try {
+      // Initialize adapter registry first
+      await adapterRegistry.initialize();
+
+      // Load saved sources from persistent storage
+      const store = await load('sources.json', { autoSave: false } as StoreOptions);
+      const savedSources = await store.get<UniversalSource[]>(SOURCES_STORAGE_KEY);
+      const savedSelectedId = await store.get<string>(SELECTED_SOURCE_KEY);
+
+      if (savedSources && Array.isArray(savedSources) && savedSources.length > 0) {
+        set({ sources: savedSources, selectedSourceId: savedSelectedId || null });
+
+        // Refresh all source health status in background
+        get().refreshAllSources().catch((err) => {
+          console.error('Failed to refresh sources:', err);
+        });
+
+        console.log(`✅ Loaded ${savedSources.length} sources from storage`);
+      } else {
+        // No saved sources - try to auto-detect default Claude Code folder
+        console.log('No saved sources found, attempting auto-detection...');
+        await get().autoDetectDefaultSource();
+      }
+    } catch (error) {
+      console.error('Failed to initialize sources:', error);
+      set({ error: `Failed to initialize sources: ${(error as Error).message}` });
+
+      // Fallback: try auto-detection ONLY if no sources were loaded
+      const currentSources = get().sources;
+      if (currentSources.length === 0) {
+        try {
+          console.log('No sources loaded, attempting auto-detection...');
+          await get().autoDetectDefaultSource();
+        } catch (autoDetectError) {
+          console.error('Auto-detection also failed:', autoDetectError);
+        }
+      } else {
+        console.log(`Skipping auto-detection: ${currentSources.length} source(s) already loaded`);
+      }
+    } finally {
+      set({ isLoadingSources: false });
+    }
+  },
+
+  // ------------------------------------------------------------------------
+  // AUTO-DETECTION (INTERNAL)
+  // ------------------------------------------------------------------------
+
+  autoDetectDefaultSource: async () => {
+    console.log('🔍 Auto-detecting conversation data sources...');
+    const detectedSources: string[] = [];
+
+    // Try to detect Claude Code folder
+    try {
+      const claudePath = await invoke<string>('get_claude_folder_path');
+      const validation = await get().validatePath(claudePath);
+
+      if (validation.isValid && validation.providerId === 'claude-code') {
+        console.log(`  ✓ Found Claude Code at: ${claudePath}`);
+        detectedSources.push(claudePath);
+      }
+    } catch (error) {
+      console.log('  ✗ Claude Code not found:', (error as Error).message);
+    }
+
+    // Try to detect Cursor folder
+    try {
+      const cursorPath = await invoke<string>('get_cursor_path');
+      const validation = await get().validatePath(cursorPath);
+
+      if (validation.isValid && validation.providerId === 'cursor') {
+        console.log(`  ✓ Found Cursor at: ${cursorPath}`);
+        detectedSources.push(cursorPath);
+      }
+    } catch (error) {
+      console.log('  ✗ Cursor not found:', (error as Error).message);
+    }
+
+    // Add all detected sources
+    if (detectedSources.length === 0) {
+      console.warn('⚠️  No conversation data sources found');
+      throw new Error('No conversation data sources found. Please add a source manually.');
+    }
+
+    console.log(`📦 Adding ${detectedSources.length} detected source(s)...`);
+
+    for (let i = 0; i < detectedSources.length; i++) {
+      const path = detectedSources[i];
+      if (!path) continue; // Skip undefined paths
+
+      try {
+        const source = await get().addSource(path, i18n.t('sourceManager:autoDetected', { number: i + 1 }));
+
+        // Set first source as default
+        if (i === 0) {
+          await get().setDefaultSource(source.id);
+          console.log(`  ✓ Set ${source.name} as default source`);
+        }
+      } catch (error) {
+        console.error(`  ✗ Failed to add source ${path}:`, error);
+      }
+    }
+
+    console.log(`✅ Auto-detection complete: ${detectedSources.length} source(s) added`);
+  },
+
+  // ------------------------------------------------------------------------
+  // SOURCE CRUD
+  // ------------------------------------------------------------------------
+
+  addSource: async (path: string, name?: string) => {
+    set({ isAddingSource: true, error: null });
+
+    try {
+      // Validate path first
+      const validation = await get().validatePath(path);
+
+      if (!validation.isValid || !validation.providerId) {
+        throw new Error(validation.error || 'Invalid source path');
+      }
+
+      // Check for duplicates
+      const existingSources = get().sources;
+      if (existingSources.some((s) => s.path === path)) {
+        throw new Error(i18n.t('sourceManager:errors.alreadyAdded'));
+      }
+
+      // Get adapter
+      const adapter = adapterRegistry.get(validation.providerId);
+
+      // Create source with deterministic ID based on path
+      // This ensures the same path always gets the same ID across restarts
+      const sourceId = generateDeterministicId(path);
+      const source: UniversalSource = {
+        id: sourceId,
+        name: name || `Source (${validation.providerId})`,
+        path,
+        providerId: validation.providerId,
+        isDefault: existingSources.length === 0, // First source is default
+        isAvailable: true,
+        healthStatus: 'healthy',
+        lastValidation: new Date().toISOString(),
+        stats: {
+          projectCount: 0,
+          sessionCount: 0,
+          messageCount: 0,
+          totalSize: 0,
+        },
+        addedAt: new Date().toISOString(),
+        providerConfig: {
+          providerName: adapter.providerDefinition.name,
+          providerVersion: adapter.providerDefinition.version,
+        },
+      };
+
+      // Scan projects to get initial stats (in background)
+      try {
+        const scanResult = await adapter.scanProjects(path, sourceId);
+        if (scanResult.success && scanResult.data) {
+          source.stats.projectCount = scanResult.metadata?.itemsFound || scanResult.data.length;
+          source.stats.messageCount = scanResult.data.reduce(
+            (sum, p) => sum + (p.totalMessages || 0),
+            0
+          );
+          source.stats.sessionCount = scanResult.data.reduce(
+            (sum, p) => sum + p.sessionCount,
+            0
+          );
+        }
+      } catch (scanError) {
+        console.warn('Failed to scan projects during add:', scanError);
+        // Continue anyway - stats can be refreshed later
+      }
+
+      // Add to state
+      const updatedSources = [...existingSources, source];
+      set({ sources: updatedSources });
+
+      // Save to persistent storage
+      await get().persistSources();
+
+      console.log(`✅ Added source: ${source.name} (${source.providerId})`);
+
+      return source;
+    } catch (error) {
+      const errorMessage = `${i18n.t('sourceManager:errors.failedToAdd')}: ${(error as Error).message}`;
+      set({ error: errorMessage });
+      throw error;
+    } finally {
+      set({ isAddingSource: false });
+    }
+  },
+
+  removeSource: async (sourceId: string) => {
+    try {
+      const sources = get().sources;
+      const sourceToRemove = sources.find((s) => s.id === sourceId);
+
+      if (!sourceToRemove) {
+        throw new Error('Source not found');
+      }
+
+      // Cannot remove if it's the only source
+      if (sources.length === 1) {
+        throw new Error('Cannot remove the only source');
+      }
+
+      // Remove from state
+      const updatedSources = sources.filter((s) => s.id !== sourceId);
+
+      // If removed source was default, make first source default
+      if (sourceToRemove.isDefault && updatedSources.length > 0 && updatedSources[0]) {
+        updatedSources[0].isDefault = true;
+      }
+
+      // If removed source was selected, select first source
+      const selectedSourceId = get().selectedSourceId;
+      const newSelectedId = selectedSourceId === sourceId ? updatedSources[0]?.id || null : selectedSourceId;
+
+      set({ sources: updatedSources, selectedSourceId: newSelectedId });
+
+      // Save to persistent storage
+      await get().persistSources();
+
+      console.log(`✅ Removed source: ${sourceToRemove.name}`);
+    } catch (error) {
+      const errorMessage = `Failed to remove source: ${(error as Error).message}`;
+      set({ error: errorMessage });
+      throw error;
+    }
+  },
+
+  updateSource: async (sourceId: string, updates: Partial<UniversalSource>) => {
+    try {
+      const sources = get().sources;
+      const index = sources.findIndex((s) => s.id === sourceId);
+
+      if (index === -1) {
+        throw new Error('Source not found');
+      }
+
+      // Update source
+      const updatedSource = { ...sources[index], ...updates } as UniversalSource;
+      const updatedSources = [...sources];
+      updatedSources[index] = updatedSource;
+
+      set({ sources: updatedSources });
+
+      // Save to persistent storage
+      await get().persistSources();
+
+      console.log(`✅ Updated source: ${updatedSource.name}`);
+    } catch (error) {
+      const errorMessage = `Failed to update source: ${(error as Error).message}`;
+      set({ error: errorMessage });
+      throw error;
+    }
+  },
+
+  setDefaultSource: async (sourceId: string) => {
+    try {
+      const sources = get().sources;
+
+      // Clear all defaults
+      const updatedSources = sources.map((s) => ({
+        ...s,
+        isDefault: s.id === sourceId,
+      }));
+
+      set({ sources: updatedSources });
+
+      // Save to persistent storage
+      await get().persistSources();
+
+      console.log(`✅ Set default source: ${sourceId}`);
+    } catch (error) {
+      const errorMessage = `Failed to set default source: ${(error as Error).message}`;
+      set({ error: errorMessage });
+      throw error;
+    }
+  },
+
+  refreshSource: async (sourceId: string) => {
+    try {
+      const sources = get().sources;
+      const source = sources.find((s) => s.id === sourceId);
+
+      if (!source) {
+        throw new Error('Source not found');
+      }
+
+      // Get adapter
+      const adapter = adapterRegistry.get(source.providerId);
+
+      // Health check
+      const healthStatus = await adapter.healthCheck(source.path);
+
+      // Scan projects
+      const scanResult = await adapter.scanProjects(source.path, sourceId);
+
+      // Update stats
+      const updatedSource: Partial<UniversalSource> = {
+        isAvailable: healthStatus === 'healthy' || healthStatus === 'degraded',
+        healthStatus,
+        lastValidation: new Date().toISOString(),
+        stats: {
+          ...source.stats,
+          projectCount: scanResult.success && scanResult.metadata ? scanResult.metadata.itemsFound : 0,
+          sessionCount: scanResult.success && scanResult.data
+            ? scanResult.data.reduce((sum, p) => sum + p.sessionCount, 0)
+            : 0,
+          messageCount: scanResult.success && scanResult.data
+            ? scanResult.data.reduce((sum, p) => sum + (p.totalMessages || 0), 0)
+            : 0,
+        },
+        lastScanAt: new Date().toISOString(),
+      };
+
+      // Update state
+      await get().updateSource(sourceId, updatedSource);
+
+      console.log(`✅ Refreshed source: ${source.name}`);
+    } catch (error) {
+      console.error(`Failed to refresh source ${sourceId}:`, error);
+      // Update source as degraded
+      const source = get().sources.find((s) => s.id === sourceId);
+      if (source) {
+        await get().updateSource(sourceId, {
+          isAvailable: false,
+          healthStatus: 'offline',
+        });
+      }
+    }
+  },
+
+  refreshAllSources: async () => {
+    const sources = get().sources;
+
+    // Refresh all sources in parallel
+    await Promise.allSettled(
+      sources.map((source) => get().refreshSource(source.id))
+    );
+
+    console.log('✅ Refreshed all sources');
+  },
+
+  // ------------------------------------------------------------------------
+  // SELECTION
+  // ------------------------------------------------------------------------
+
+  selectSource: (sourceId: string | null) => {
+    set({ selectedSourceId: sourceId });
+
+    // Save selected source to storage
+    if (sourceId) {
+      load('sources.json', { autoSave: false } as StoreOptions)
+        .then((store) => {
+          store.set(SELECTED_SOURCE_KEY, sourceId);
+          return store.save();
+        })
+        .catch((err) => {
+          console.error('Failed to save selected source:', err);
+        });
+    }
+  },
+
+  getSelectedSource: () => {
+    const { sources, selectedSourceId } = get();
+    if (!selectedSourceId) return null;
+    return sources.find((s) => s.id === selectedSourceId) || null;
+  },
+
+  // ------------------------------------------------------------------------
+  // VALIDATION
+  // ------------------------------------------------------------------------
+
+  validatePath: async (path: string) => {
+    set({ isValidatingSource: true, validationError: null });
+
+    try {
+      // Use adapter registry to detect provider
+      const detection = await adapterRegistry.detectProvider(path);
+
+      if (!detection.success || !detection.providerId) {
+        return {
+          isValid: false,
+          error: detection.error || 'No compatible provider found',
+        };
+      }
+
+      return {
+        isValid: true,
+        providerId: detection.providerId,
+      };
+    } catch (error) {
+      return {
+        isValid: false,
+        error: (error as Error).message,
+      };
+    } finally {
+      set({ isValidatingSource: false });
+    }
+  },
+
+  // ------------------------------------------------------------------------
+  // ERROR HANDLING
+  // ------------------------------------------------------------------------
+
+  setError: (error: string | null) => {
+    set({ error });
+  },
+
+  clearErrors: () => {
+    set({ error: null, validationError: null });
+  },
+
+  // ------------------------------------------------------------------------
+  // PERSISTENCE (INTERNAL)
+  // ------------------------------------------------------------------------
+
+  persistSources: async () => {
+    try {
+      const store = await load('sources.json', { autoSave: false } as StoreOptions);
+      await store.set(SOURCES_STORAGE_KEY, get().sources);
+      await store.save();
+      console.log('💾 Sources persisted to storage');
+    } catch (error) {
+      console.error('Failed to persist sources:', error);
+      throw error;
+    }
+  },
+}));

@@ -1,7 +1,7 @@
-import type { ClaudeMessage } from "../types";
+import type { UIMessage } from "../types";
 
-export const extractClaudeMessageContent = (
-  message: ClaudeMessage
+export const extractUIMessageContent = (
+  message: UIMessage
 ): string | null => {
   // Direct string content
   if (typeof message.content === "string") {
@@ -53,41 +53,4 @@ export const isImageUrl = (url: string): boolean => {
 export const isBase64Image = (data: string): boolean => {
   if (!data || typeof data !== "string") return false;
   return data.startsWith("data:image/");
-};
-
-export const extractImageFromContent = (content: unknown): string | null => {
-  // If directly an image URL or base64
-  if (typeof content === "string") {
-    if (isImageUrl(content) || isBase64Image(content)) {
-      return content;
-    }
-  }
-
-  // Extract image from array-type content
-  if (Array.isArray(content)) {
-    for (const item of content) {
-      if (item.type === "image" && item.source) {
-        // Claude API format image object
-        if (item.source.type === "base64") {
-          return `data:${item.source.media_type};base64,${item.source.data}`;
-        }
-      }
-
-      // If there's an image URL within text
-      if (item.type === "text" && item.text) {
-        const imageMatch = item.text.match(
-          /(data:image\/[^;\s]+;base64,[A-Za-z0-9+/=]+|https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|svg|webp))/i
-        );
-        if (imageMatch) {
-          return imageMatch[1];
-        }
-      }
-    }
-  }
-
-  return null;
-};
-
-export const hasImageContent = (message: ClaudeMessage): boolean => {
-  return extractImageFromContent(message.content) !== null;
 };

@@ -1,0 +1,13 @@
+{
+  "appTitle": "Claude Code & Cursor IDE History Viewer",
+  "loadingMessage": "Loading conversation history",
+  "status": {
+    "initializing": "Initializing application",
+    "loadingLanguage": "Loading language settings",
+    "detectingSources": "Detecting conversation sources",
+    "loadingAdapters": "Loading adapters",
+    "scanningProjects": "Scanning projects",
+    "finalizing": "Finalizing",
+    "ready": "Ready"
+  }
+}

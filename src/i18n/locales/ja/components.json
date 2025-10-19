@@ -17,7 +17,8 @@
     "scanning": "プロジェクトをスキャン中...",
     "loading": "セッションを読み込み中...",
     "count": "セッション：{{count}}件",
-    "selected": "選択されたセッション"
+    "selected": "選択されたセッション",
+    "noSessions": "セッションが見つかりません"
   },
   "message": {
     "user": "ユーザー",
@@ -573,7 +574,35 @@
     "upToDate": "既に最新です",
     "currentVersionLatest": "現在のバージョン {{version}} が最新です"
   },
+  "projectListControls": {
+    "groupBySource": "ソース別にグループ化",
+    "ungroup": "グループ解除",
+    "groupBy": {
+      "source": "ソース別",
+      "none": "プロジェクト別",
+      "sessions": "全セッション"
+    },
+    "expandAll": "すべて展開",
+    "collapseAll": "すべて折りたたむ",
+    "sortBy": {
+      "name": "名前",
+      "date": "日付"
+    },
+    "sortOrder": {
+      "asc": "昇順",
+      "desc": "降順"
+    },
+    "hideEmptyProjects": "空のプロジェクトを非表示",
+    "hideEmptySessions": "空のセッションを非表示",
+    "showAll": "すべて表示"
+  },
   "selection": {
     "clear": "選択をクリア (ESC)"
+  },
+  "projectTree": {
+    "sources": {
+      "claudeCode": "Claude Code",
+      "cursor": "Cursor"
+    }
   }
 }

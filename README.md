@@ -1,8 +1,9 @@
-A cross-platform desktop app to browse and search your Claude Code conversation history stored in `~/.claude`.
+A cross-platform desktop app to browse and search your Claude Code and Cursor IDE conversation history stored in `~/.claude` and Cursor's data folders.
 
 ![Version](https://img.shields.io/badge/Version-1.1.3-blue.svg)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
+[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/ndokutovich/claude-code-history-viewer?utm_source=oss&utm_medium=github&utm_campaign=ndokutovich%2Fclaude-code-history-viewer&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 
 **Languages**: [English](README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) | [中文 (简体)](README.zh-CN.md) | [中文 (繁體)](README.zh-TW.md) | [Русский](README.ru.md)
 
@@ -10,7 +11,7 @@ A cross-platform desktop app to browse and search your Claude Code conversation 
 
 ## Why this exists
 
-Claude Code stores conversation history in JSONL files scattered across `~/.claude/projects/`. These are hard to read and search through. This app gives you a proper interface to browse your conversations, see usage stats, and find old discussions.
+Claude Code and Cursor IDE store conversation history in JSONL files scattered across their data folders (`~/.claude/projects/` for Claude Code, and Cursor's AppData folder). These are hard to read and search through. This app gives you a proper interface to browse your conversations from both tools, see usage stats, and find old discussions.
 
 ## Screenshots & Demo
 
@@ -51,6 +52,12 @@ Per-project token usage breakdown and session-level analysis
 - Now runs on macOS (universal binary), Windows, and Linux
 - Platform-specific installers (.dmg, .exe, .msi, .deb, .AppImage, .rpm)
 - Multi-package manager support (npm, pnpm, yarn, bun)
+
+**🔌 Multi-Source Support**:
+- Support for both Claude Code and Cursor IDE conversation histories
+- Auto-detection of available data sources
+- Unified interface to browse conversations from both tools
+- Easy switching between sources
 
 **🌏 Complete Internationalization**:
 - 6 languages: English, Korean, Japanese, Simplified Chinese, Traditional Chinese, Russian

@@ -3,7 +3,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
-import { supportedLanguages, type SupportedLanguage } from "@/i18n";
+import { supportedLanguages, type SupportedLanguage } from "@/i18n.config";
 import { useLanguageStore } from "@/store/useLanguageStore";
 import { useTranslation } from "react-i18next";
 

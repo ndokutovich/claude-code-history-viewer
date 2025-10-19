@@ -64,7 +64,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         const response = await fetch(
-          "https://api.github.com/repos/jhlee0409/claude-code-history-viewer/releases/latest",
+          "https://api.github.com/repos/ndokutovich/claude-code-history-viewer/releases/latest",
           {
             method: "GET",
             headers: {
@@ -160,16 +160,34 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
       setState((prev) => ({ ...prev, isDownloading: true, error: null }));
 
       // Download progress listener
+      let downloaded = 0;
+      let total = 0;
       await state.updateInfo.downloadAndInstall((event) => {
         switch (event.event) {
           case "Started":
+            // Capture total file size if available
+            if (typeof event.data?.contentLength === "number") {
+              total = event.data.contentLength;
+            }
+            downloaded = 0;
             setState((prev) => ({ ...prev, downloadProgress: 0 }));
             break;
           case "Progress": {
-            const progress = Math.round(
-              (event.data.chunkLength / (event.data.chunkLength || 1)) * 100
-            );
-            setState((prev) => ({ ...prev, downloadProgress: progress }));
+            // Accumulate downloaded bytes
+            if (typeof event.data?.chunkLength === "number") {
+              downloaded += event.data.chunkLength;
+            }
+            // Calculate progress based on total or show incremental progress
+            const progress = total > 0
+              ? Math.min(100, Math.round((downloaded / total) * 100))
+              : undefined;
+            setState((prev) => ({
+              ...prev,
+              // If total is unknown, show incremental progress up to 99%
+              downloadProgress: typeof progress === "number"
+                ? progress
+                : Math.min(99, (prev.downloadProgress || 0) + 1),
+            }));
             break;
           }
           case "Finished":

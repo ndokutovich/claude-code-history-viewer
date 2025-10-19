@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Claude Code History Viewer",
+        "title": "Claude Code & Cursor IDE History Viewer",
         "width": 1200,
         "height": 800,
         "minWidth": 900,
@@ -25,7 +25,7 @@
       }
     ],
     "security": {
-      "csp": null,
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'",
       "capabilities": [
         "default",
         "http-requests"
@@ -43,7 +43,7 @@
         "https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/latest.json"
       ],
       "dialog": false,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI0QTRBQTVEOTgxMUJGNEEKUldSS3Z4R1lYYXFrSkRPUFl6T0ZLSndRdkUzbDdBcXhKVHUxZWZBbEhkRnd4SU0ra3g1NDY4KzgK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDgzMkRDNUQwOTUxQTYwNgpSV1FHcGxFSlhkd3lDS2wzbFRRRXp3MmlVaDR4OXdFNkFOd1grOThjaHo1cXBjUCthdUZ6THJQbAo="
     }
   },
   "bundle": {

@@ -1,3 +1,5 @@
+import type { UniversalMessage } from './universal';
+
 export interface ClaudeMCPResult {
   server: string;
   method: string;
@@ -80,8 +82,16 @@ export interface ThinkingContent {
   signature?: string;
 }
 
-// Processed message for UI
-export interface ClaudeMessage {
+// ============================================================================
+// UI DISPLAY FORMATS (Provider-Agnostic)
+// ============================================================================
+// These types are converted from Universal types for UI component compatibility.
+// They use flatter structure with UI-friendly field names (uuid, type, etc.)
+// that existing UI components expect.
+
+// UI display format for messages (provider-agnostic)
+// Converted from UniversalMessage for UI component compatibility
+export interface UIMessage {
   uuid: string;
   parentUuid?: string;
   sessionId: string;
@@ -103,17 +113,25 @@ export interface ClaudeMessage {
   };
   // Search metadata
   projectPath?: string;
+  // Provider-specific metadata (tool results, file attachments, etc.)
+  provider_metadata?: Record<string, unknown>;
 }
 
-export interface ClaudeProject {
+// UI display format for projects (provider-agnostic)
+export interface UIProject {
   name: string;
   path: string;
   session_count: number;
   message_count: number;
   lastModified: string;
+  // Source/Provider information
+  sourceId?: string;
+  providerId?: string;
+  providerName?: string; // Human-readable name like "Claude Code" or "Cursor IDE"
 }
 
-export interface ClaudeSession {
+// UI display format for sessions (provider-agnostic)
+export interface UISession {
   session_id: string; // Unique ID based on file path
   actual_session_id: string; // Actual session ID from the messages
   file_path: string; // Full path to the JSONL file
@@ -125,6 +143,9 @@ export interface ClaudeSession {
   has_tool_use: boolean;
   has_errors: boolean;
   summary?: string;
+  // Provider information
+  providerId?: string;
+  providerName?: string;
 }
 
 export interface SearchFilters {
@@ -138,7 +159,7 @@ export interface SearchFilters {
 }
 
 export interface MessageNode {
-  message: ClaudeMessage;
+  message: UIMessage;
   children: MessageNode[];
   depth: number;
   isExpanded: boolean;
@@ -147,7 +168,7 @@ export interface MessageNode {
 }
 
 export interface MessagePage {
-  messages: ClaudeMessage[];
+  messages: UniversalMessage[]; // Backend returns UniversalMessage directly
   total_count: number;
   has_more: boolean;
   next_offset: number;
@@ -180,22 +201,50 @@ export interface AppError {
  */
 export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search';
 
+/**
+ * Loading progress tracking
+ */
+export interface LoadingProgress {
+  stage: 'initializing' | 'detecting-sources' | 'loading-adapters' | 'scanning-projects' | 'complete';
+  message: string;
+  progress: number; // 0-100
+  details?: string;
+}
+
+/**
+ * Project list display preferences
+ */
+export interface ProjectListPreferences {
+  groupBy: 'source' | 'none' | 'sessions';
+  sortBy: 'name' | 'date';
+  sortOrder: 'asc' | 'desc';
+  hideEmptyProjects: boolean;
+  hideEmptySessions: boolean;
+}
+
 export interface AppState {
   // Root-level view state (single source of truth)
   currentView: AppView;
 
+  // Loading progress
+  loadingProgress: LoadingProgress | null;
+
+  // Project list preferences
+  projectListPreferences: ProjectListPreferences;
+
   // Core state
   claudePath: string;
-  projects: ClaudeProject[];
-  selectedProject: ClaudeProject | null;
-  sessions: ClaudeSession[];
-  selectedSession: ClaudeSession | null;
-  messages: ClaudeMessage[];
+  projects: UIProject[];
+  selectedProject: UIProject | null;
+  sessions: UISession[]; // Sessions for selected project only (kept for backward compatibility)
+  sessionsByProject: Record<string, UISession[]>; // NEW: Cache sessions per-project for multi-expansion
+  selectedSession: UISession | null;
+  messages: UIMessage[];
   pagination: PaginationState;
 
   // Search state
   searchQuery: string;
-  searchResults: ClaudeMessage[];
+  searchResults: UIMessage[];
   searchFilters: SearchFilters;
 
   // Loading states
@@ -314,3 +363,14 @@ export interface UpdateInfo {
   is_forced: boolean;
   days_until_deadline?: number;
 }
+
+// ============================================================================
+// UNIVERSAL TYPES (v2.0.0 - Multi-Provider Support)
+// ============================================================================
+
+// Re-export all universal types
+export * from './universal';
+export * from './providers';
+
+// Deprecated type aliases remain for backwards compatibility
+// New code should use Universal* types from './universal'

@@ -1,4 +1,4 @@
-import i18n, { languageLocaleMap } from "../i18n";
+import i18n, { languageLocaleMap } from "../i18n.config";
 
 // Returns the locale based on the current language
 export const getLocale = (language: string): string => {

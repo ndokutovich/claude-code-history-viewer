@@ -5,20 +5,21 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
-import type { ClaudeMessage, ClaudeSession } from "@/types";
+import type { UIMessage, UISession } from "@/types";
 import { getSessionTitle } from "@/utils/sessionUtils";
 import { normalizeQuotes } from "@/utils/stringUtils";
 
 interface GroupedSearchResult {
   sessionId: string;
   projectPath: string | null;
-  session: ClaudeSession | null;
-  messages: ClaudeMessage[];
+  session: UISession | null;
+  messages: UIMessage[];
   isExpanded: boolean;
 }
 
 export const SearchView = () => {
   const { t } = useTranslation("common");
+  const { t: tSearch } = useTranslation("search");
   const {
     searchQuery,
     searchResults,
@@ -34,7 +35,7 @@ export const SearchView = () => {
 
   const [query, setQuery] = useState(searchQuery);
   const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
-  const [searchResultSessions, setSearchResultSessions] = useState<Map<string, ClaudeSession>>(new Map());
+  const [searchResultSessions, setSearchResultSessions] = useState<Map<string, UISession>>(new Map());
   const [isLoadingSessionMetadata, setIsLoadingSessionMetadata] = useState(false);
 
   // Load session metadata for all search results
@@ -56,7 +57,7 @@ export const SearchView = () => {
 
       console.log("Loading session metadata for projects:", Array.from(projectPaths));
 
-      const sessionMap = new Map<string, ClaudeSession>();
+      const sessionMap = new Map<string, UISession>();
 
       // Load sessions for each project (including sidechains for search)
       for (const projectPath of projectPaths) {
@@ -157,7 +158,7 @@ export const SearchView = () => {
     try {
       if (!group.projectPath) {
         console.error("No project path");
-        alert("Cannot jump to message: Missing project information");
+        alert(tSearch("errors.missingProjectInfo"));
         return;
       }
 
@@ -165,7 +166,7 @@ export const SearchView = () => {
       const project = projects.find((p) => p.path === group.projectPath);
       if (!project) {
         console.error("Project not found:", group.projectPath);
-        alert("Cannot find project for this session");
+        alert(tSearch("errors.projectNotFound"));
         return;
       }
 
@@ -223,16 +224,16 @@ export const SearchView = () => {
           setTimeout(() => element.classList.remove("highlight-message"), 2000);
         } else {
           console.error("Message element not found:", `message-${messageUuid}`);
-          alert(`Message not found in conversation. UUID: ${messageUuid}`);
+          alert(tSearch("errors.messageNotFound", { uuid: messageUuid }));
         }
       }, 500);
     } catch (error) {
       console.error("Error jumping to message:", error);
-      alert(`Error jumping to message: ${error}`);
+      alert(tSearch("errors.jumpError", { error: String(error) }));
     }
   };
 
-  const renderMessagePreview = (message: ClaudeMessage) => {
+  const renderMessagePreview = (message: UIMessage) => {
     let preview = "";
 
     // Try to extract text from content
@@ -364,7 +365,7 @@ export const SearchView = () => {
       <div className="flex-1 overflow-y-auto p-4">
         {isLoadingMessages || isLoadingSessionMetadata ? (
           <div className={cn("text-center py-8", COLORS.ui.text.muted)}>
-            {isLoadingMessages ? t("search.searching") : "Loading session information..."}
+            {isLoadingMessages ? t("search.searching") : tSearch("loadingSessionInfo")}
           </div>
         ) : searchResults.length === 0 ? (
           <div className={cn("text-center py-8", COLORS.ui.text.muted)}>

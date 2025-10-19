@@ -17,7 +17,8 @@
     "scanning": "Scanning projects...",
     "loading": "Loading sessions...",
     "count": "Sessions: {{count}}",
-    "selected": "Selected session"
+    "selected": "Selected session",
+    "noSessions": "No sessions found"
   },
   "selection": {
     "clear": "Clear selection (ESC)"
@@ -453,6 +454,13 @@
     "error": "Error:",
     "executionResult": "Execution Result"
   },
+  "providerMetadata": {
+    "relevantFiles": "Relevant Files ({{count}})",
+    "codeChunks": "Code Chunks ({{count}})",
+    "fileMetadata": "File Metadata ({{count}})",
+    "suggestedDiffs": "Suggested Diffs ({{count}})",
+    "consoleLogs": "Console Logs ({{count}})"
+  },
   "gitWorkflowRenderer": {
     "gitWorkflow": "Git Workflow",
     "status": "Status:",
@@ -467,6 +475,28 @@
   },
   "thinkingRenderer": {
     "title": "Thinking Process"
+  },
+  "projectListControls": {
+    "groupBySource": "Group by Source",
+    "ungroup": "Ungroup",
+    "groupBy": {
+      "source": "By Source",
+      "none": "By Project",
+      "sessions": "Flat Sessions"
+    },
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All",
+    "sortBy": {
+      "name": "Name",
+      "date": "Date"
+    },
+    "sortOrder": {
+      "asc": "Ascending",
+      "desc": "Descending"
+    },
+    "hideEmptyProjects": "Hide Empty Projects",
+    "hideEmptySessions": "Hide Empty Sessions",
+    "showAll": "Show All"
   },
   "feedback": {
     "title": "Send Feedback",
@@ -575,5 +605,11 @@
   "upToDateNotification": {
     "upToDate": "Already Up to Date",
     "currentVersionLatest": "Current version {{version}} is the latest"
+  },
+  "projectTree": {
+    "sources": {
+      "claudeCode": "Claude Code",
+      "cursor": "Cursor"
+    }
   }
 }
