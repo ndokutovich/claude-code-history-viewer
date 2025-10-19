@@ -37,40 +37,43 @@ export const ProjectListControls = () => {
           title={t(`projectListControls.groupBy.${projectListPreferences.groupBy}`)}
         >
           {projectListPreferences.groupBy === "source" ? (
-            <Group className="w-4 h-4 mr-1" />
+            <Group className="w-4 h-4" />
           ) : projectListPreferences.groupBy === "none" ? (
-            <Ungroup className="w-4 h-4 mr-1" />
+            <Ungroup className="w-4 h-4" />
           ) : (
-            <MessageCircle className="w-4 h-4 mr-1" />
+            <MessageCircle className="w-4 h-4" />
           )}
-          {t(`projectListControls.groupBy.${projectListPreferences.groupBy}`)}
         </Button>
 
-        {/* Expand All */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            window.dispatchEvent(new Event('expandAllProjects'));
-          }}
-          className="text-xs"
-          title={t("projectListControls.expandAll")}
-        >
-          <ChevronsDown className="w-4 h-4" />
-        </Button>
+        {/* Expand All (hidden in flat sessions mode) */}
+        {projectListPreferences.groupBy !== 'sessions' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              window.dispatchEvent(new Event('expandAllProjects'));
+            }}
+            className="text-xs"
+            title={t("projectListControls.expandAll")}
+          >
+            <ChevronsDown className="w-4 h-4" />
+          </Button>
+        )}
 
-        {/* Collapse All */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            window.dispatchEvent(new Event('collapseAllProjects'));
-          }}
-          className="text-xs"
-          title={t("projectListControls.collapseAll")}
-        >
-          <ChevronsUp className="w-4 h-4" />
-        </Button>
+        {/* Collapse All (hidden in flat sessions mode) */}
+        {projectListPreferences.groupBy !== 'sessions' && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              window.dispatchEvent(new Event('collapseAllProjects'));
+            }}
+            className="text-xs"
+            title={t("projectListControls.collapseAll")}
+          >
+            <ChevronsUp className="w-4 h-4" />
+          </Button>
+        )}
 
         {/* Sort Controls Dropdown */}
         <DropdownMenu>

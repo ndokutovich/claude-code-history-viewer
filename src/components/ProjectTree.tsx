@@ -127,7 +127,25 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       groups[groupName].push(project);
     });
 
-    return groups;
+    // Sort groups: Claude Code first, Cursor second, others after
+    const sortedGroups: Record<string, ClaudeProject[]> = {};
+    const sourceOrder = ['Claude Code', 'Cursor'];
+
+    // Add sources in preferred order
+    sourceOrder.forEach(sourceName => {
+      if (groups[sourceName]) {
+        sortedGroups[sourceName] = groups[sourceName];
+      }
+    });
+
+    // Add any remaining sources
+    Object.keys(groups).forEach(sourceName => {
+      if (!sourceOrder.includes(sourceName) && groups[sourceName]) {
+        sortedGroups[sourceName] = groups[sourceName];
+      }
+    });
+
+    return sortedGroups;
   }, [filteredAndSortedProjects, projectListPreferences.groupBy]);
 
   // Collect all sessions from all projects for flat view mode
@@ -268,7 +286,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   }, [filteredAndSortedProjects]);
 
   return (
-    <div className="max-w-80 w-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col h-full">
+    <div className="w-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col h-full">
       {/* Project List Controls */}
       <ProjectListControls />
 

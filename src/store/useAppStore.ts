@@ -229,8 +229,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     groupBy: 'source',
     sortBy: 'date',
     sortOrder: 'desc',
-    hideEmptyProjects: false,
-    hideEmptySessions: false,
+    hideEmptyProjects: true,
+    hideEmptySessions: true,
   },
 
   // Core state

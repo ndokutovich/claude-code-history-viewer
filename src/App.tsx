@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
@@ -7,6 +7,7 @@ import { SimpleUpdateManager } from "./components/SimpleUpdateManager";
 import { SearchView } from "./components/SearchView";
 import { DebugConsole } from "./components/DebugConsole";
 import { SplashScreen } from "./components/SplashScreen";
+import { ResizableSplitter } from "./components/ResizableSplitter";
 import { useAppStore } from "./store/useAppStore";
 import { useSourceStore } from "./store/useSourceStore";
 import { useAnalytics } from "./hooks/useAnalytics";
@@ -59,6 +60,9 @@ function App() {
   const { t: tComponents } = useTranslation("components");
   const { t: tMessages } = useTranslation("messages");
   const { language, loadLanguage } = useLanguageStore();
+
+  // Sidebar width state for resizable splitter
+  const [sidebarWidth, setSidebarWidth] = useState(320);
 
   // Source store for multi-source management
   const {
@@ -309,21 +313,31 @@ function App() {
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar */}
-          <ProjectTree
-            projects={projects}
-            sessions={sessions}
-            sessionsByProject={sessionsByProject}
-            selectedProject={selectedProject}
-            selectedSession={selectedSession}
-            onProjectSelect={handleProjectSelect}
-            onSessionSelect={handleSessionSelect}
-            onClearSelection={clearSelection}
-            isLoading={isLoadingProjects || isLoadingSessions}
+          {/* Sidebar with fixed width */}
+          <div style={{ width: `${sidebarWidth}px` }} className="flex-shrink-0 overflow-hidden">
+            <ProjectTree
+              projects={projects}
+              sessions={sessions}
+              sessionsByProject={sessionsByProject}
+              selectedProject={selectedProject}
+              selectedSession={selectedSession}
+              onProjectSelect={handleProjectSelect}
+              onSessionSelect={handleSessionSelect}
+              onClearSelection={clearSelection}
+              isLoading={isLoadingProjects || isLoadingSessions}
+            />
+          </div>
+
+          {/* Resizable Splitter */}
+          <ResizableSplitter
+            minWidth={200}
+            maxWidth={800}
+            defaultWidth={320}
+            onWidthChange={setSidebarWidth}
           />
 
           {/* Main Content Area */}
-          <div className="w-full flex flex-col relative">
+          <div className="flex-1 flex flex-col relative overflow-hidden">
             {computed.isSearchView ? (
               /* Search View - Full overlay */
               <SearchView />
