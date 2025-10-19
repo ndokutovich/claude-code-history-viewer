@@ -533,8 +533,8 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
   }
 
   private generateChecksum(input: string): string {
-    // Simple hash function (for now)
-    // TODO: Use proper crypto hash in production
+    // Simple hash for cache invalidation (non-cryptographic)
+    // This is sufficient for detecting JSONL file changes
     let hash = 0;
     for (let i = 0; i < input.length; i++) {
       const char = input.charCodeAt(i);

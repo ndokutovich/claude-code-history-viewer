@@ -148,18 +148,6 @@ export interface UISession {
   providerName?: string;
 }
 
-// ============================================================================
-// BACKWARD COMPATIBILITY ALIASES
-// ============================================================================
-// @deprecated Use UIMessage instead - "Claude" prefix is misleading (works with all providers)
-export type ClaudeMessage = UIMessage;
-
-// @deprecated Use UIProject instead - "Claude" prefix is misleading (works with all providers)
-export type ClaudeProject = UIProject;
-
-// @deprecated Use UISession instead - "Claude" prefix is misleading (works with all providers)
-export type ClaudeSession = UISession;
-
 export interface SearchFilters {
   dateRange?: [Date, Date];
   projects?: string[];

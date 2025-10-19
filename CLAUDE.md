@@ -199,6 +199,83 @@ sudo rpm -i src-tauri/target/release/bundle/rpm/*.rpm
 
 ## Architecture
 
+### Universal Message Architecture (v2.0 - Multi-Provider Support)
+
+**Overview**: The application uses a provider-agnostic architecture that supports multiple AI coding assistants (Claude Code, Cursor IDE, etc.) through a unified data model.
+
+#### Three-Tier Type System
+
+The architecture uses three distinct type layers to maintain clear separation of concerns:
+
+1. **Provider-Specific Types** (e.g., `RawClaudeMessage`, Cursor SQLite schema)
+   - Raw data formats from each AI assistant
+   - Located in provider adapters
+   - Never exposed to UI layer
+
+2. **UniversalMessage** (Provider-Agnostic)
+   - Common format returned by backend Rust adapters
+   - Defined in `src/types/universal.ts`
+   - Includes normalized fields that work across all providers:
+     - `id`, `parent_id`, `session_id`, `timestamp`
+     - `role` ("user" | "assistant" | "system")
+     - `content` (text, tool_use, tool_result, thinking)
+     - `metadata` (tokens, model, provider info)
+
+3. **UIMessage** (UI Display Format)
+   - Frontend display format with UI-friendly field names
+   - Defined in `src/types/index.ts`
+   - Converted from UniversalMessage by frontend adapters
+   - Used by all React components
+
+#### Data Flow Diagram
+
+```
+Provider Data (JSONL, SQLite, etc.)
+         ↓
+Backend Rust Adapter (src-tauri/src/commands/adapters/)
+  - Reads files/databases
+  - Parses provider-specific formats
+  - Converts to UniversalMessage
+         ↓
+UniversalMessage (sent via Tauri IPC)
+         ↓
+Frontend Adapter (src/adapters/providers/)
+  - Receives UniversalMessage
+  - Converts to UIMessage
+  - Handles errors, retries, caching
+         ↓
+Zustand Store (src/store/useAppStore.ts)
+         ↓
+UI Components (React)
+```
+
+#### Why Two Adapter Layers?
+
+**Backend Adapters (Rust)**:
+- Heavy file I/O and parsing
+- Provider-specific data extraction
+- Performance-critical operations
+- Convert to UniversalMessage format
+
+**Frontend Adapters (TypeScript)**:
+- UniversalMessage → UIMessage conversion
+- Error handling and retry logic
+- Client-side caching (future)
+- Offline mode support (future)
+- Legacy response format handling
+
+#### Provider Support
+
+Currently supported providers:
+- ✅ **Claude Code** - JSONL files in `~/.claude/projects/`
+- ✅ **Cursor IDE** - SQLite database in `AppData/Roaming/Cursor/`
+
+Adding new providers requires:
+1. Backend Rust adapter implementing `ProviderAdapter` trait
+2. Frontend TypeScript adapter extending `BaseProviderAdapter`
+3. Add to `src-tauri/src/commands/source_manager.rs`
+4. Add translations for provider name in i18n files
+
 ### Frontend (React + TypeScript)
 
 - **State Management**: Uses Zustand store in `src/store/useAppStore.ts`
@@ -284,15 +361,24 @@ sudo rpm -i src-tauri/target/release/bundle/rpm/*.rpm
     - `open_github_issues` - Open GitHub issues page
 
 - **Data Models** (in `src-tauri/src/models.rs`):
-  - Rust structs mirror TypeScript interfaces in `src/types/index.ts`
+  - Rust structs mirror TypeScript interfaces in `src/types/index.ts` and `src/types/universal.ts`
   - All structs use `serde` for serialization/deserialization
-  - Nested `MessagePayload` structure matches JSONL format
+  - `UniversalMessage` is the primary interchange format
+  - Provider-specific structs (e.g., `RawClaudeMessage`) used only in adapters
 
-- **Data Flow**:
-  - Reads JSONL files from `~/.claude/projects/[project-name]/*.jsonl`
-  - Each line is parsed as a `RawClaudeMessage`
-  - Messages are filtered (exclude sidechain), sorted, and paginated
-  - Results are serialized to JSON and sent to frontend via IPC
+- **Provider Adapters** (in `src-tauri/src/commands/adapters/`):
+  - `claude_code.rs` - Reads JSONL files from `~/.claude/projects/`
+  - `cursor.rs` - Reads SQLite database from Cursor IDE
+  - Each adapter implements unified interface returning `UniversalMessage`
+  - Handles provider-specific parsing, filtering, and normalization
+
+- **Data Flow** (Universal Architecture):
+  - Provider adapter reads data source (JSONL, SQLite, etc.)
+  - Parses provider-specific format (e.g., `RawClaudeMessage`)
+  - Converts to `UniversalMessage` with normalized fields
+  - Filters (exclude sidechain), sorts, and paginates
+  - Serializes to JSON and sends to frontend via Tauri IPC
+  - Frontend adapter converts `UniversalMessage` → `UIMessage` for display
 
 ## Raw Message Structure
 

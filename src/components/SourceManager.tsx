@@ -28,15 +28,7 @@ import {
 import { open } from '@tauri-apps/plugin-dialog';
 
 export const SourceManager: React.FC = () => {
-  const { t, i18n } = useTranslation('sourceManager');
-
-  // DEBUG: Log translation info
-  console.log('🔍 SourceManager Translation Debug:');
-  console.log('  Current language:', i18n.language);
-  console.log('  Available namespaces:', i18n.options.ns);
-  console.log('  Test translation t("title"):', t('title'));
-  console.log('  Test translation t("description"):', t('description'));
-  console.log('  Raw resources:', i18n.getResourceBundle(i18n.language, 'sourceManager'));
+  const { t } = useTranslation('sourceManager');
 
   const {
     sources,

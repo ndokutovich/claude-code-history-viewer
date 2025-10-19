@@ -58,8 +58,6 @@ export const Header = () => {
       await analyticsActions.switchToAnalytics();
     } catch (error) {
       console.error("Failed to load analytics:", error);
-      // TODO: Display toast message or error state
-      // toast.error(t("errors.failedToLoadAnalytics"));
     }
   };
 
