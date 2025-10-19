@@ -1,11 +1,13 @@
 // Universal message models for Rust backend
 // These mirror the TypeScript universal types
 //
-// NOTE: These types are designed for a universal abstraction layer that would
-// uniformly handle both Claude Code and Cursor IDE conversation histories.
-// Currently NOT IMPLEMENTED - the codebase handles each provider separately.
-// These types are kept for potential future refactoring to a universal adapter pattern.
+// ✅ FULLY IMPLEMENTED: Backend now returns UniversalMessage for all message operations.
+// Adapters in src/commands/adapters/ convert provider-specific formats to UniversalMessage.
+// - Claude Code: adapters/claude_code.rs
+// - Cursor IDE: commands/cursor.rs (native UniversalMessage)
 
+// Note: Some types below are used only by frontend TypeScript (via JSON serialization)
+// and not directly by Rust backend code. Warnings for unused structs are expected.
 #![allow(dead_code)]
 
 use serde::{Deserialize, Serialize};

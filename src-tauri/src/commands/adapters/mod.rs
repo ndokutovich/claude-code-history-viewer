@@ -6,4 +6,3 @@
 // all conversation history sources (Claude Code, Cursor IDE, etc.)
 
 pub mod claude_code;
-pub mod cursor;
