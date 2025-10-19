@@ -32,7 +32,7 @@ pub async fn load_project_sessions(
             Utc::now().to_rfc3339()
         };
         
-        // 파일을 스트리밍으로 읽어서 메모리 사용량 줄이기
+        // Read file in streaming mode to reduce memory usage
         if let Ok(file) = std::fs::File::open(entry.path()) {
             use std::io::{BufRead, BufReader};
             let reader = BufReader::new(file);
@@ -171,14 +171,14 @@ pub async fn load_project_sessions(
                     false
                 });
 
-                // summary가 없을 때만 첫 번째 사용자 메시지에서 텍스트 추출
+                // Extract text from first user message only when summary is not present
                 let final_summary = if session_summary.is_none() {
                     messages.iter()
                         .find(|m| m.message_type == "user")
                         .and_then(|m| {
                             if let Some(content) = &m.content {
                                 match content {
-                                    // 단순 문자열인 경우
+                                    // Simple string case
                                     serde_json::Value::String(text) => {
                                         if text.trim().is_empty() {
                                             None
@@ -189,7 +189,7 @@ pub async fn load_project_sessions(
                                             Some(text.clone())
                                         }
                                     },
-                                    // 배열인 경우 type="text" 찾기
+                                    // Array case: find type="text"
                                     serde_json::Value::Array(arr) => {
                                         for item in arr {
                                             if let Some(item_type) = item.get("type").and_then(|v| v.as_str()) {
@@ -269,7 +269,7 @@ pub async fn load_project_sessions(
 
     let _elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
-    println!("📊 load_project_sessions 성능: {}개 세션, {}ms 소요",
+    println!("📊 load_project_sessions performance: {} sessions loaded in {}ms",
              sessions.len(), _elapsed.as_millis());
 
     Ok(sessions)
@@ -518,7 +518,7 @@ pub async fn load_session_messages_paginated(
 
     let _elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
-    eprintln!("📊 load_session_messages_paginated 성능: {}개 메시지, {}ms 소요", messages.len(), _elapsed.as_millis());
+    eprintln!("📊 load_session_messages_paginated performance: {} messages loaded in {}ms", messages.len(), _elapsed.as_millis());
     #[cfg(debug_assertions)]
     eprintln!("Result: {} messages returned, has_more={}, next_offset={}", messages.len(), has_more, next_offset);
     

@@ -89,7 +89,7 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
                     eprintln!("⚠️ Failed to get modified time for: {:?}", jsonl_entry.path());
                 }
 
-                // 파일 크기로 메시지 수 추정 - 훨씬 빠름
+                // Estimate message count from file size - much faster
                 let estimated_messages = estimate_message_count_from_size(metadata.len());
                 message_count += estimated_messages;
             } else {
@@ -126,7 +126,7 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
 
     let _elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
-    println!("📊 scan_projects 성능: {}개 프로젝트, {}ms 소요",
+    println!("📊 scan_projects performance: {} projects scanned in {}ms",
              projects.len(), _elapsed.as_millis());
 
     Ok(projects)
