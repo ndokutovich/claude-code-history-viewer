@@ -88,13 +88,6 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     const cachedSessions = sessionsByProject[projectPath];
 
     if (cachedSessions && cachedSessions.length > 0) {
-      // Debug logging for Cursor projects
-      if (projectPath.includes('workspaceStorage')) {
-        const parts = projectPath.split(/[\/\\]/);
-        const wsId = parts[parts.length - 1];
-        console.log(`📂 Project ${wsId}: Using ${cachedSessions.length} cached sessions`);
-      }
-
       // Apply hide empty sessions filter
       if (projectListPreferences.hideEmptySessions) {
         return cachedSessions.filter((s) => s.message_count > 0);
@@ -427,12 +420,6 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                           const wasExpanded = isExpanded;
                           const isAlreadySelected = selectedProject?.path === project.path;
 
-                          console.log(`🖱️ Clicked project: ${project.name}`, {
-                            path: project.path,
-                            wasExpanded,
-                            isAlreadySelected,
-                          });
-
                           // Always select/load sessions for this project
                           onProjectSelect(project);
 
@@ -442,14 +429,10 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                           // - If expanded but not selected, keep expanded (we just selected it)
                           if (isAlreadySelected && wasExpanded) {
                             // Clicking selected project again: toggle collapse
-                            console.log(`  🔽 Toggling collapse (already selected)`);
                             toggleProject(project.path);
                           } else if (!wasExpanded) {
                             // Collapsed project: expand it
-                            console.log(`  🔼 Expanding (was collapsed)`);
                             toggleProject(project.path);
-                          } else {
-                            console.log(`  ✅ Keeping expanded (newly selected)`);
                           }
                           // else: already expanded, newly selected - keep expanded
                         }}
