@@ -233,6 +233,7 @@ export class AdapterRegistry {
    * Check if provider is registered
    */
   has(providerId: string): boolean {
+    this.ensureInitialized();
     return this.adapters.has(providerId);
   }
 
