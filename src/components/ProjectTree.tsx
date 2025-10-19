@@ -51,15 +51,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
     // Filter: Hide empty projects
     if (projectListPreferences.hideEmptyProjects) {
-      result = result.filter((p) => {
-        // For Cursor projects, always show them because session_count is unreliable
-        // (sessions are in global DB, not workspace-specific)
-        if (p.providerId === 'cursor') {
-          return true;
-        }
-        // For Claude Code projects, filter by session_count
-        return p.session_count > 0;
-      });
+      result = result.filter((p) => p.session_count > 0);
     }
 
     // Sort
