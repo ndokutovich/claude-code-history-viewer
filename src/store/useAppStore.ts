@@ -845,11 +845,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
             // Use universal command for Cursor
             const workspaceId = selectedProject.path.split(/[\/\\]/).pop() || 'unknown';
 
+            // Get the actual Cursor base path from the source store
+            const { sources } = useSourceStore.getState();
+            const source = sources.find(s => s.id === selectedProject.sourceId);
+
+            if (!source) {
+              throw new Error(`Source not found for ID: ${selectedProject.sourceId}`);
+            }
+
+            const cursorBasePath = source.path;
+
             projectSummary = await invoke<ProjectStatsSummary>(
               "get_universal_project_stats_summary",
               {
                 providerId: selectedProject.providerId,
-                sourcePath: selectedProject.sourceId || selectedProject.path,
+                sourcePath: cursorBasePath,
                 projectId: workspaceId,
               }
             );
@@ -871,11 +881,21 @@ export const useAppStore = create<AppStore>((set, get) => ({
               // Use universal command for Cursor
               const workspaceId = selectedProject.path.split(/[\/\\]/).pop() || 'unknown';
 
+              // Get the actual Cursor base path from the source store
+              const { sources } = useSourceStore.getState();
+              const source = sources.find(s => s.id === selectedProject.sourceId);
+
+              if (!source) {
+                throw new Error(`Source not found for ID: ${selectedProject.sourceId}`);
+              }
+
+              const cursorBasePath = source.path;
+
               sessionComparison = await invoke<SessionComparison>(
                 "get_universal_session_comparison",
                 {
                   providerId: selectedProject.providerId,
-                  sourcePath: selectedProject.sourceId || selectedProject.path,
+                  sourcePath: cursorBasePath,
                   sessionId: selectedSession.session_id,
                   projectId: workspaceId,
                 }
@@ -1087,9 +1107,27 @@ export const useAppStore = create<AppStore>((set, get) => ({
               // Extract workspace ID from project path
               const workspaceId = selectedProject.path.split(/[\/\\]/).pop() || 'unknown';
 
+              // Get the actual Cursor base path from the source store
+              const { sources } = useSourceStore.getState();
+              const source = sources.find(s => s.id === selectedProject.sourceId);
+
+              if (!source) {
+                throw new Error(`Source not found for ID: ${selectedProject.sourceId}`);
+              }
+
+              const cursorBasePath = source.path; // This is the actual Cursor path like C:\Users\xxx\AppData\Roaming\Cursor
+
+              console.log('📊 Analytics parameters:', {
+                providerId: selectedProject.providerId,
+                cursorBasePath,
+                workspaceId,
+                sourceId: selectedProject.sourceId,
+                fullProject: selectedProject,
+              });
+
               summary = await invoke<ProjectStatsSummary>("get_universal_project_stats_summary", {
                 providerId: selectedProject.providerId,
-                sourcePath: selectedProject.sourceId || selectedProject.path, // Cursor base path
+                sourcePath: cursorBasePath,
                 projectId: workspaceId,
               });
               console.log('✅ Cursor project summary loaded:', summary);
@@ -1121,9 +1159,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 // Extract workspace ID from project path
                 const workspaceId = selectedProject.path.split(/[\/\\]/).pop() || 'unknown';
 
+                // Get the actual Cursor base path from the source store
+                const { sources } = useSourceStore.getState();
+                const source = sources.find(s => s.id === selectedProject.sourceId);
+
+                if (!source) {
+                  throw new Error(`Source not found for ID: ${selectedProject.sourceId}`);
+                }
+
+                const cursorBasePath = source.path;
+
                 comparison = await invoke<SessionComparison>("get_universal_session_comparison", {
                   providerId: selectedProject.providerId,
-                  sourcePath: selectedProject.sourceId || selectedProject.path, // Cursor base path
+                  sourcePath: cursorBasePath,
                   sessionId: selectedSession.session_id,
                   projectId: workspaceId,
                 });

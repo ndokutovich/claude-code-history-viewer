@@ -108,10 +108,22 @@ async fn load_universal_session_messages(
             Err("Claude Code universal analytics not yet implemented".to_string())
         }
         "cursor" => {
-            // For Cursor, source_path is the session_db_path (with #session= and #timestamp= encoded)
-            // It's already in the format expected by load_cursor_messages
+            // For Cursor, we need to construct the encoded path format that load_cursor_messages expects
+            // Format: <full_db_path>#session=<session_id>#timestamp=<timestamp>
+            // source_path is the Cursor base path, we need to append the global DB path
             use crate::commands::cursor::load_cursor_messages;
-            load_cursor_messages(source_path.to_string()).await
+            use std::path::PathBuf;
+
+            // Build the full path to the global database
+            let cursor_base = PathBuf::from(source_path);
+            let global_db = cursor_base.join("User").join("globalStorage").join("state.vscdb");
+
+            // Build the encoded path with session ID
+            // We'll use a placeholder timestamp since load_cursor_messages extracts from the global DB anyway
+            let encoded_path = format!("{}#session={}#timestamp=unknown", global_db.to_string_lossy(), session_id);
+
+            println!("  🔍 load_universal_session_messages: Calling load_cursor_messages with encoded_path={}", encoded_path);
+            load_cursor_messages(encoded_path).await
         }
         _ => Err(format!("Unknown provider: {}", provider_id)),
     }
@@ -132,7 +144,12 @@ async fn get_project_session_ids(
         "cursor" => {
             // For Cursor, load sessions from workspace
             use crate::commands::cursor::load_cursor_sessions;
+            println!("🔍 get_project_session_ids: source_path={}, project_id={}", source_path, project_id);
             let sessions = load_cursor_sessions(source_path.to_string(), Some(project_id.to_string())).await?;
+            println!("  ✅ Found {} sessions for workspace {}", sessions.len(), project_id);
+            for session in &sessions {
+                println!("    - Session ID: {}, message_count: {}", session.id, session.message_count);
+            }
             Ok(sessions.into_iter().map(|s| s.id).collect())
         }
         _ => Err(format!("Unknown provider: {}", provider_id)),

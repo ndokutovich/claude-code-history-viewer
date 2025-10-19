@@ -10,13 +10,30 @@ import { load, type StoreOptions } from '@tauri-apps/plugin-store';
 import type { UniversalSource } from '../types/universal';
 import { adapterRegistry } from '../adapters';
 
-// Simple UUID v4 generator (RFC 4122 compliant)
-function generateUUID(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
+// Generate deterministic ID from path (simple hash to UUID format)
+// This ensures the same path always gets the same ID across restarts
+function generateDeterministicId(path: string): string {
+  // Simple string hash function
+  let hash = 0;
+  for (let i = 0; i < path.length; i++) {
+    const char = path.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+
+  // Convert hash to positive number and to hex
+  const hashHex = (hash >>> 0).toString(16).padStart(8, '0');
+
+  // Create a UUID-like format using the hash
+  // Format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  // We'll use the hash multiple times to fill the UUID
+  const part1 = hashHex;
+  const part2 = hashHex.substring(0, 4);
+  const part3 = '4' + hashHex.substring(1, 4); // UUID v4 marker
+  const part4 = ((parseInt(hashHex.substring(0, 1), 16) & 0x3) | 0x8).toString(16) + hashHex.substring(1, 4);
+  const part5 = hashHex + hashHex.substring(0, 4);
+
+  return `${part1}-${part2}-${part3}-${part4}-${part5}`;
 }
 
 // ============================================================================
@@ -214,8 +231,9 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       // Get adapter
       const adapter = adapterRegistry.get(validation.providerId);
 
-      // Create source
-      const sourceId = generateUUID();
+      // Create source with deterministic ID based on path
+      // This ensures the same path always gets the same ID across restarts
+      const sourceId = generateDeterministicId(path);
       const source: UniversalSource = {
         id: sourceId,
         name: name || `Source (${validation.providerId})`,
