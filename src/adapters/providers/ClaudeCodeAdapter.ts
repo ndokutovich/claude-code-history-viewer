@@ -22,16 +22,6 @@ import type {
   UniversalProject,
   UniversalSession,
   UniversalMessage,
-  UniversalContent,
-  ToolCall,
-  ThinkingBlock,
-} from '../../types/universal';
-import {
-  MessageRole as MsgRole,
-  MessageType as MsgType,
-  ContentType as ContType,
-  MessageRole,
-  MessageType,
 } from '../../types/universal';
 import type {
   ProviderDefinition,
@@ -39,8 +29,8 @@ import type {
 import { ProviderID, ErrorCode } from '../../types/providers';
 import { invoke } from '@tauri-apps/api/core';
 
-// Legacy types for backwards compatibility (will be phased out)
-import type { ClaudeProject, ClaudeSession, ClaudeMessage, MessagePage } from '../../types/index';
+// Legacy types for backwards compatibility (projects/sessions still use legacy types)
+import type { ClaudeProject, ClaudeSession, MessagePage } from '../../types/index';
 
 // ============================================================================
 // ADAPTER IMPLEMENTATION
@@ -284,13 +274,13 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
 
   async loadMessages(
     sessionPath: string,
-    sessionId: string,
+    _sessionId: string, // Unused - backend provides session ID
     options: LoadOptions
   ): Promise<LoadResult<UniversalMessage>> {
     this.ensureInitialized();
 
     try {
-      // Use paginated loading for efficiency
+      // Backend now returns UniversalMessage directly - no conversion needed!
       const messagePage = await invoke<MessagePage>('load_session_messages_paginated', {
         sessionPath,
         offset: options.offset || 0,
@@ -298,14 +288,10 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
         excludeSidechain: options.excludeSidechain || false,
       });
 
-      // Convert to universal format
-      const universalMessages: UniversalMessage[] = messagePage.messages.map((msg, index) =>
-        this.convertLegacyMessage(msg, sessionId, index)
-      );
-
+      // Messages are already in universal format from backend
       return {
         success: true,
-        data: universalMessages,
+        data: messagePage.messages,
         pagination: {
           hasMore: messagePage.has_more,
           nextOffset: messagePage.next_offset,
@@ -344,8 +330,8 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
     }
 
     try {
-      // Call existing Rust search command
-      const legacyMessages = await invoke<ClaudeMessage[]>('search_messages', {
+      // Backend now returns UniversalMessage directly
+      const universalMessages = await invoke<UniversalMessage[]>('search_messages', {
         claudePath: sourcePaths[0],
         query,
         filters: {
@@ -359,11 +345,6 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
             : undefined,
         },
       });
-
-      // Convert to universal format
-      const universalMessages: UniversalMessage[] = legacyMessages.map((msg, index) =>
-        this.convertLegacyMessage(msg, msg.sessionId, index)
-      );
 
       return {
         success: true,
@@ -537,252 +518,9 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
     };
   }
 
-  private convertLegacyMessage(
-    legacy: ClaudeMessage,
-    sessionId: string,
-    sequenceNumber: number
-  ): UniversalMessage {
-    // Determine role
-    const role = this.mapRole(legacy.type);
-
-    // Determine message type
-    const messageType = this.mapMessageType(legacy.type);
-
-    // Convert content
-    const content = this.convertContent(legacy);
-
-    // Extract tool calls
-    const toolCalls = this.extractToolCalls(legacy);
-
-    // Extract thinking
-    const thinking = this.extractThinking(legacy);
-
-    // Extract tokens
-    const tokens = legacy.usage
-      ? {
-          inputTokens: legacy.usage.input_tokens || 0,
-          outputTokens: legacy.usage.output_tokens || 0,
-          cacheCreationTokens: legacy.usage.cache_creation_input_tokens || 0,
-          cacheReadTokens: legacy.usage.cache_read_input_tokens || 0,
-          totalTokens:
-            (legacy.usage.input_tokens || 0) +
-            (legacy.usage.output_tokens || 0) +
-            (legacy.usage.cache_creation_input_tokens || 0) +
-            (legacy.usage.cache_read_input_tokens || 0),
-        }
-      : undefined;
-
-    return {
-      // CORE IDENTITY (REQUIRED)
-      id: legacy.uuid,
-      sessionId,
-      projectId: '', // Will be set by caller
-      sourceId: '', // Will be set by caller
-      providerId: this.providerId,
-
-      // TEMPORAL (REQUIRED)
-      timestamp: legacy.timestamp,
-      sequenceNumber,
-
-      // ROLE & TYPE (REQUIRED)
-      role,
-      messageType,
-
-      // CONTENT (REQUIRED)
-      content,
-
-      // HIERARCHY (OPTIONAL)
-      parentId: legacy.parentUuid || undefined,
-
-      // METADATA (OPTIONAL)
-      model: legacy.model || undefined,
-      tokens,
-      toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
-      thinking,
-
-      // RAW PRESERVATION (REQUIRED)
-      originalFormat: 'claude-code-jsonl',
-      providerMetadata: {
-        stopReason: legacy.stop_reason,
-        isSidechain: legacy.isSidechain,
-        projectPath: legacy.projectPath,
-      },
-    };
-  }
-
-  private convertContent(legacy: ClaudeMessage): UniversalContent[] {
-    const contents: UniversalContent[] = [];
-
-    if (!legacy.content) {
-      return contents;
-    }
-
-    // Handle string content
-    if (typeof legacy.content === 'string') {
-      contents.push({
-        type: ContType.TEXT,
-        data: { text: legacy.content },
-        encoding: 'plain',
-        mimeType: 'text/plain',
-      });
-      return contents;
-    }
-
-    // Handle array content
-    if (Array.isArray(legacy.content)) {
-      for (const item of legacy.content) {
-        if (typeof item === 'string') {
-          contents.push({
-            type: ContType.TEXT,
-            data: { text: item },
-            encoding: 'plain',
-            mimeType: 'text/plain',
-          });
-        } else if (typeof item === 'object' && item !== null) {
-          const contentType = (item as any).type;
-
-          switch (contentType) {
-            case 'text':
-              contents.push({
-                type: ContType.TEXT,
-                data: { text: (item as any).text || '' },
-                encoding: 'plain',
-                mimeType: 'text/plain',
-              });
-              break;
-
-            case 'tool_use':
-              contents.push({
-                type: ContType.TOOL_USE,
-                data: {
-                  id: (item as any).id,
-                  name: (item as any).name,
-                  input: (item as any).input,
-                },
-                encoding: 'json',
-                mimeType: 'application/json',
-              });
-              break;
-
-            case 'tool_result':
-              contents.push({
-                type: ContType.TOOL_RESULT,
-                data: {
-                  toolUseId: (item as any).tool_use_id,
-                  content: (item as any).content,
-                  isError: (item as any).is_error || false,
-                },
-                encoding: 'json',
-                mimeType: 'application/json',
-              });
-              break;
-
-            case 'thinking':
-              contents.push({
-                type: ContType.THINKING,
-                data: {
-                  content: (item as any).thinking || '',
-                  signature: (item as any).signature,
-                },
-                encoding: 'plain',
-                mimeType: 'text/plain',
-              });
-              break;
-
-            default:
-              // Unknown content type - preserve as metadata
-              contents.push({
-                type: ContType.TEXT,
-                data: { text: JSON.stringify(item) },
-                encoding: 'json',
-                mimeType: 'application/json',
-              });
-          }
-        }
-      }
-    }
-
-    // Handle JSON object content
-    if (typeof legacy.content === 'object' && !Array.isArray(legacy.content)) {
-      contents.push({
-        type: ContType.TEXT,
-        data: { text: JSON.stringify(legacy.content) },
-        encoding: 'json',
-        mimeType: 'application/json',
-      });
-    }
-
-    return contents;
-  }
-
-  private extractToolCalls(legacy: ClaudeMessage): ToolCall[] {
-    const toolCalls: ToolCall[] = [];
-
-    // Extract from content array
-    if (Array.isArray(legacy.content)) {
-      for (const item of legacy.content) {
-        if (typeof item === 'object' && (item as any).type === 'tool_use') {
-          toolCalls.push({
-            id: (item as any).id,
-            name: (item as any).name,
-            input: (item as any).input,
-            output: undefined, // Will be filled from tool_use_result
-            status: 'pending',
-          });
-        }
-      }
-    }
-
-    // Extract from toolUse field
-    if (legacy.toolUse) {
-      // Handle toolUse structure (if different from content)
-      // TODO: Parse legacy.toolUse structure if needed
-    }
-
-    return toolCalls;
-  }
-
-  private extractThinking(legacy: ClaudeMessage): ThinkingBlock | undefined {
-    // Extract from content array
-    if (Array.isArray(legacy.content)) {
-      for (const item of legacy.content) {
-        if (typeof item === 'object' && (item as any).type === 'thinking') {
-          return {
-            content: (item as any).thinking || '',
-            signature: (item as any).signature,
-          };
-        }
-      }
-    }
-
-    return undefined;
-  }
-
-  private mapRole(role: string | undefined): MessageRole {
-    switch (role?.toLowerCase()) {
-      case 'user':
-        return MsgRole.USER;
-      case 'assistant':
-        return MsgRole.ASSISTANT;
-      case 'system':
-        return MsgRole.SYSTEM;
-      case 'function':
-        return MsgRole.FUNCTION;
-      default:
-        return MsgRole.USER; // Default fallback
-    }
-  }
-
-  private mapMessageType(type: string): MessageType {
-    switch (type.toLowerCase()) {
-      case 'summary':
-        return MsgType.SUMMARY;
-      case 'sidechain':
-        return MsgType.SIDECHAIN;
-      default:
-        return MsgType.MESSAGE;
-    }
-  }
+  // NOTE: Message conversion removed - backend now returns UniversalMessage directly!
+  // convertLegacyMessage, convertContent, extractToolCalls, extractThinking, mapRole, mapMessageType
+  // have been removed because the Rust backend adapter handles all conversion.
 
   private calculateDuration(start: string, end: string): number {
     try {

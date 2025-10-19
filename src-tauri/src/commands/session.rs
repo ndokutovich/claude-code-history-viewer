@@ -382,10 +382,7 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<Universal
     }
 
     // Convert ClaudeMessages to UniversalMessages
-    // Extract project_id and source_id from session_path
     let project_id = extract_project_id(&None, &session_path);
-
-    // Extract source_id (base .claude folder path)
     let source_id = session_path
         .split("projects")
         .next()

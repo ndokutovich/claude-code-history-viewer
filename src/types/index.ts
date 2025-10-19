@@ -1,3 +1,5 @@
+import type { UniversalMessage } from './universal';
+
 export interface ClaudeMCPResult {
   server: string;
   method: string;
@@ -156,7 +158,7 @@ export interface MessageNode {
 }
 
 export interface MessagePage {
-  messages: ClaudeMessage[];
+  messages: UniversalMessage[]; // Backend returns UniversalMessage directly
   total_count: number;
   has_more: boolean;
   next_offset: number;
