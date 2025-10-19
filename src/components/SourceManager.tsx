@@ -3,7 +3,7 @@
 // ============================================================================
 // UI for managing multiple conversation data sources
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSourceStore } from '../store/useSourceStore';
 import type { UniversalSource, HealthStatus } from '../types/universal';
@@ -37,7 +37,6 @@ export const SourceManager: React.FC = () => {
     isAddingSource,
     isValidatingSource,
     error,
-    initializeSources,
     addSource,
     removeSource,
     setDefaultSource,
@@ -53,10 +52,8 @@ export const SourceManager: React.FC = () => {
   const [newSourceName, setNewSourceName] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Initialize sources on mount
-  useEffect(() => {
-    initializeSources();
-  }, [initializeSources]);
+  // Note: Sources are initialized in App.tsx on startup
+  // No need to reinitialize here to avoid duplicate calls
 
   // Handle add source
   const handleAddSource = async () => {

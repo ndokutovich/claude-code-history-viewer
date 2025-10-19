@@ -135,11 +135,17 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       console.error('Failed to initialize sources:', error);
       set({ error: `Failed to initialize sources: ${(error as Error).message}` });
 
-      // Fallback: try auto-detection
-      try {
-        await get().autoDetectDefaultSource();
-      } catch (autoDetectError) {
-        console.error('Auto-detection also failed:', autoDetectError);
+      // Fallback: try auto-detection ONLY if no sources were loaded
+      const currentSources = get().sources;
+      if (currentSources.length === 0) {
+        try {
+          console.log('No sources loaded, attempting auto-detection...');
+          await get().autoDetectDefaultSource();
+        } catch (autoDetectError) {
+          console.error('Auto-detection also failed:', autoDetectError);
+        }
+      } else {
+        console.log(`Skipping auto-detection: ${currentSources.length} source(s) already loaded`);
       }
     } finally {
       set({ isLoadingSources: false });
