@@ -34,7 +34,7 @@ const isTauriAvailable = () => {
 };
 
 // ============================================================================
-// CONVERSION UTILITIES (Universal ↔ Legacy)
+// CONVERSION UTILITIES (Universal ↔ UI Display Format)
 // ============================================================================
 
 /**
@@ -237,7 +237,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   claudePath: "",
   projects: [],
   selectedProject: null,
-  sessions: [], // Legacy: for selected project only
+  sessions: [], // For selected project only (backward compatibility)
   sessionsByProject: {}, // NEW: Cache sessions per-project
   selectedSession: null,
   messages: [],
@@ -435,7 +435,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const sessions = await get().loadProjectSessions(project.path);
       console.log(`✅ selectProject: Loaded ${sessions.length} sessions for ${project.name}`);
 
-      // Update both legacy sessions array AND cache in sessionsByProject
+      // Update both sessions array AND cache in sessionsByProject
       set((state) => ({
         sessions,
         sessionsByProject: {
@@ -752,7 +752,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
               return;
             }
 
-            // Convert legacy filters to universal format
+            // Convert UI filters to universal format
             const universalFilters = {
               dateRange: filters.dateRange,
               messageTypes: filters.messageType && filters.messageType !== 'all'
@@ -864,7 +864,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
               }
             );
           } else {
-            // Use legacy command for Claude Code
+            // Use Tauri command for Claude Code
             projectSummary = await invoke<ProjectStatsSummary>(
               "get_project_stats_summary",
               { projectPath: selectedProject.path }
@@ -901,7 +901,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 }
               );
             } else {
-              // Use legacy command for Claude Code
+              // Use Tauri command for Claude Code
               sessionComparison = await invoke<SessionComparison>(
                 "get_session_comparison",
                 {
@@ -1113,7 +1113,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
                 projectId: workspaceId,
               });
             } else {
-              // Use legacy command for Claude Code
+              // Use Tauri command for Claude Code
               summary = await get().loadProjectStatsSummary(selectedProject.path);
             }
 
@@ -1155,7 +1155,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
                   projectId: workspaceId,
                 });
               } else {
-                // Use legacy command for Claude Code
+                // Use Tauri command for Claude Code
                 comparison = await get().loadSessionComparison(
                   selectedSession.actual_session_id,
                   selectedProject.path

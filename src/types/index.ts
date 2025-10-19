@@ -86,7 +86,7 @@ export interface ThinkingContent {
 // UI DISPLAY FORMATS (Provider-Agnostic)
 // ============================================================================
 // These types are converted from Universal types for UI component compatibility.
-// They use flatter structure with legacy field names (uuid, type, etc.)
+// They use flatter structure with UI-friendly field names (uuid, type, etc.)
 // that existing UI components expect.
 
 // UI display format for messages (provider-agnostic)
@@ -248,7 +248,7 @@ export interface AppState {
   claudePath: string;
   projects: UIProject[];
   selectedProject: UIProject | null;
-  sessions: UISession[]; // Legacy: sessions for selected project only (kept for backward compatibility)
+  sessions: UISession[]; // Sessions for selected project only (kept for backward compatibility)
   sessionsByProject: Record<string, UISession[]>; // NEW: Cache sessions per-project for multi-expansion
   selectedSession: UISession | null;
   messages: UIMessage[];
@@ -384,5 +384,5 @@ export interface UpdateInfo {
 export * from './universal';
 export * from './providers';
 
-// Legacy types remain for backwards compatibility
+// Deprecated type aliases remain for backwards compatibility
 // New code should use Universal* types from './universal'

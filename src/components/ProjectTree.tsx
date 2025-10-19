@@ -20,7 +20,7 @@ import { ProviderIcon, getProviderColorClass } from "./icons/ProviderIcons";
 
 interface ProjectTreeProps {
   projects: UIProject[];
-  sessions: UISession[]; // Legacy: sessions for selected project only
+  sessions: UISession[]; // Sessions for selected project only (backward compatibility)
   sessionsByProject: Record<string, UISession[]>; // NEW: Cache sessions per-project for multi-expansion
   selectedProject: UIProject | null;
   selectedSession: UISession | null;
@@ -102,7 +102,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       return cachedSessions;
     }
 
-    // Fallback to legacy behavior for backward compatibility
+    // Fallback to selected project behavior for backward compatibility
     // If this is the selected project, return filteredSessions
     if (selectedProject?.path === projectPath) {
       return filteredSessions;
