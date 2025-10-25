@@ -20,6 +20,14 @@ import { extractUIMessageContent } from "../utils/messageUtils";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
 import { formatTime } from "../utils/time";
+import {
+  MAX_DEPTH_MARGIN,
+  SCROLL_ADJUSTMENT_DELAY,
+  SESSION_SCROLL_DELAY,
+  SCROLL_BOTTOM_THRESHOLD,
+  SCROLL_THROTTLE_DELAY,
+  MIN_MESSAGES_FOR_SCROLL_BTN,
+} from "../constants/layout";
 
 interface MessageViewerProps {
   messages: UIMessage[];
@@ -42,7 +50,7 @@ const UIMessageNode = ({ message, depth, providerName }: MessageNodeProps) => {
     return null;
   }
   // Apply left margin based on depth
-  const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, 16)}` : "";
+  const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, MAX_DEPTH_MARGIN)}` : "";
 
   return (
     <div
@@ -249,7 +257,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           attempts < 3 &&
           element.scrollTop < element.scrollHeight - element.clientHeight - 10
         ) {
-          setTimeout(() => attemptScroll(attempts + 1), 50);
+          setTimeout(() => attemptScroll(attempts + 1), SCROLL_ADJUSTMENT_DELAY);
         }
       };
       attemptScroll();
@@ -269,14 +277,14 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       prevSessionIdRef.current = selectedSession.session_id;
 
       // Execute scroll after DOM is fully updated
-      setTimeout(() => scrollToBottom(), 100);
+      setTimeout(() => scrollToBottom(), SESSION_SCROLL_DELAY);
     }
   }, [selectedSession, messages.length, isLoading, scrollToBottom]);
 
   // Scroll to bottom when pagination is reset (new session or refresh)
   useEffect(() => {
     if (pagination.currentOffset === 0 && messages.length > 0 && !isLoading) {
-      setTimeout(() => scrollToBottom(), 50);
+      setTimeout(() => scrollToBottom(), SCROLL_ADJUSTMENT_DELAY);
     }
   }, [pagination.currentOffset, messages.length, isLoading, scrollToBottom]);
 
@@ -334,14 +342,14 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           if (scrollContainerRef.current) {
             const { scrollTop, scrollHeight, clientHeight } =
               scrollContainerRef.current;
-            const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-            setShowScrollToBottom(!isNearBottom && messages.length > 5);
+            const isNearBottom = scrollHeight - scrollTop - clientHeight < SCROLL_BOTTOM_THRESHOLD;
+            setShowScrollToBottom(!isNearBottom && messages.length > MIN_MESSAGES_FOR_SCROLL_BTN);
           }
         } catch (error) {
           console.error("Scroll handler error:", error);
         }
         throttleTimer = null;
-      }, 100);
+      }, SCROLL_THROTTLE_DELAY);
     };
 
     const scrollElement = scrollContainerRef.current;

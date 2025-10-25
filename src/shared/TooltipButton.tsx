@@ -12,10 +12,13 @@ type Props = {
 } & Omit<React.ComponentProps<"button">, "children" | "title">;
 
 export const TooltipButton = ({ children, content, ...props }: Props) => {
+  // Extract aria-label from content if it's a string, otherwise use provided aria-label
+  const ariaLabel = props["aria-label"] || (typeof content === "string" ? content : undefined);
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button {...props}>{children}</button>
+        <button {...props} aria-label={ariaLabel}>{children}</button>
       </TooltipTrigger>
       <TooltipContent>{content}</TooltipContent>
     </Tooltip>

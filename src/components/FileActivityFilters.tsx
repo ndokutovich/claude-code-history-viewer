@@ -82,6 +82,7 @@ export const FileActivityFilters = () => {
         </div>
         <button
           onClick={applyFilters}
+          aria-label={t("filesView.filters.apply")}
           className={cn(
             "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
             COLORS.semantic.info.bg,
@@ -94,6 +95,7 @@ export const FileActivityFilters = () => {
         {hasActiveFilters && (
           <button
             onClick={clearFilters}
+            aria-label={t("filesView.filters.clear")}
             className={cn(
               "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
               COLORS.ui.background.secondary,
@@ -116,6 +118,8 @@ export const FileActivityFilters = () => {
             <button
               key={op}
               onClick={() => toggleOperation(op)}
+              aria-label={`${t("filesView.filters.toggleOperation")} ${op}`}
+              aria-pressed={selectedOperations.includes(op)}
               className={cn(
                 "px-3 py-1 rounded-md text-xs font-medium transition-colors",
                 selectedOperations.includes(op)
@@ -139,6 +143,8 @@ export const FileActivityFilters = () => {
             <button
               key={ext}
               onClick={() => toggleExtension(ext)}
+              aria-label={`${t("filesView.filters.toggleExtension")} ${ext}`}
+              aria-pressed={selectedExtensions.includes(ext)}
               className={cn(
                 "px-3 py-1 rounded-md text-xs font-medium transition-colors",
                 selectedExtensions.includes(ext)
