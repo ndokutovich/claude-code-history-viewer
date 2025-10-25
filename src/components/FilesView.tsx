@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import type { FileActivity } from "../types";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
+import { EmptyState } from "./ui/EmptyState";
 
 export const FilesView = () => {
   const { t } = useTranslation("components");
@@ -110,14 +111,13 @@ export const FilesView = () => {
   // Error state
   if (error && error.type === "LOAD_FILE_ACTIVITIES") {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <AlertCircle className={cn("w-12 h-12 mx-auto mb-4", COLORS.semantic.error.icon)} />
-          <h3 className={cn("text-lg font-semibold mb-2", COLORS.semantic.error.text)}>
-            {t("filesView.errorLoadingFiles")}
-          </h3>
-          <p className={cn("text-sm", COLORS.ui.text.secondary)}>{error.message}</p>
-        </div>
+      <div className="flex-1">
+        <EmptyState
+          icon={AlertCircle}
+          title={t("filesView.errorLoadingFiles")}
+          description={error.message}
+          iconSize="w-12 h-12"
+        />
       </div>
     );
   }
@@ -147,17 +147,12 @@ export const FilesView = () => {
       {/* Table */}
       <div className="flex-1 overflow-hidden">
         {fileActivities.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <Files className={cn("w-16 h-16 mx-auto mb-4", COLORS.ui.text.muted)} />
-              <h3 className={cn("text-lg font-semibold mb-2", COLORS.ui.text.primary)}>
-                {t("filesView.noFilesFound")}
-              </h3>
-              <p className={cn("text-sm", COLORS.ui.text.secondary)}>
-                {t("filesView.noFilesDescription")}
-              </p>
-            </div>
-          </div>
+          <EmptyState
+            icon={Files}
+            title={t("filesView.noFilesFound")}
+            description={t("filesView.noFilesDescription")}
+            className="h-full"
+          />
         ) : (
           <FileActivityTable
             activities={fileActivities}
