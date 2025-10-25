@@ -1,5 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, memo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   File,
@@ -22,7 +22,7 @@ interface FileActivityTableProps {
   onViewFile: (file: FileActivity) => void;
 }
 
-export const FileActivityTable = ({
+const FileActivityTableComponent = ({
   activities,
   onViewFile,
 }: FileActivityTableProps) => {
@@ -230,3 +230,6 @@ export const FileActivityTable = ({
     </div>
   );
 };
+
+// Memoized export to prevent unnecessary re-renders
+export const FileActivityTable = memo(FileActivityTableComponent);

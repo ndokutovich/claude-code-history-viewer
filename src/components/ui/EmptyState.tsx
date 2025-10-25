@@ -5,7 +5,7 @@
  * Used across the application for consistent UX
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { COLORS } from '@/constants/colors';
@@ -42,7 +42,7 @@ interface EmptyStateProps {
   iconSize?: string;
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({
+const EmptyStateComponent: React.FC<EmptyStateProps> = ({
   icon: Icon,
   title,
   description,
@@ -74,3 +74,6 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     </div>
   );
 };
+
+// Memoized export to prevent unnecessary re-renders when props haven't changed
+export const EmptyState = memo(EmptyStateComponent);
