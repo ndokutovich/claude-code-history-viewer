@@ -321,7 +321,7 @@ pub async fn load_cursor_sessions(cursor_path: String, workspace_id: Option<Stri
     let workspace_storage_path = if let Some(ref ws_id) = workspace_id {
         cursor_base.join("User").join("workspaceStorage").join(ws_id).join("state.vscdb")
     } else {
-        return Err("workspace_id is required".to_string());
+        return Err("CURSOR_INVALID_ARGUMENT: workspace_id is required".to_string());
     };
 
     println!("  📂 Reading workspace storage: {}", workspace_storage_path.display());
@@ -846,7 +846,10 @@ pub async fn search_cursor_messages(
     let cursor_path_str = cursor_path.clone();
 
     if !global_db.exists() {
-        return Err("Cursor global database not found".to_string());
+        return Err(format!(
+            "CURSOR_DB_NOT_FOUND: Cursor global database not found at {}",
+            global_db.display()
+        ));
     }
 
     let conn = Connection::open(&global_db)
@@ -932,6 +935,20 @@ pub async fn search_cursor_messages(
         if let Some(has_tool_calls) = filters.has_tool_calls {
             let has_tools = !bubble.tool_results.is_empty() || bubble.tool_former_data.is_some();
             if has_tool_calls != has_tools {
+                continue;
+            }
+        }
+
+        // Apply errors filter
+        if let Some(has_errors) = filters.has_errors {
+            // Check if bubble has errors in console logs or tool results
+            let bubble_has_errors = bubble.console_logs.iter().any(|log| {
+                log.to_string().to_lowercase().contains("error")
+            }) || bubble.tool_results.iter().any(|result| {
+                result.get("is_error").and_then(|v| v.as_bool()).unwrap_or(false)
+            });
+
+            if has_errors != bubble_has_errors {
                 continue;
             }
         }

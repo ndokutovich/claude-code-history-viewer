@@ -196,7 +196,7 @@ export const FileViewerModal = ({
   const operationColor = getOperationColor(file.operation);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-w-[60vw] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex-1 min-w-0">
@@ -242,7 +242,8 @@ export const FileViewerModal = ({
                   -{file.lines_removed}
                 </span>
               )}
-              {!file.lines_added && !file.lines_removed && (
+              {(file.lines_added === undefined || file.lines_added === 0) &&
+               (file.lines_removed === undefined || file.lines_removed === 0) && (
                 <span className={cn("text-sm", COLORS.ui.text.muted)}>-</span>
               )}
             </div>

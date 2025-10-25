@@ -63,6 +63,7 @@ export interface AnalyticsActions {
   switchToMessages: () => void;
   switchToTokenStats: () => void;
   switchToAnalytics: () => void;
+  switchToFiles: () => void;
 
   // Reset actions
   resetAnalytics: () => void;
@@ -95,6 +96,7 @@ export interface UseAnalyticsReturn {
     switchToMessages: () => void;
     switchToTokenStats: () => Promise<void>;
     switchToAnalytics: () => Promise<void>;
+    switchToFiles: () => Promise<void>;
     refreshAnalytics: () => Promise<void>;
     clearAll: () => void;
   };
