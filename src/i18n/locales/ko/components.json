@@ -219,6 +219,17 @@
     "hours": "시간",
     "minute": "분",
     "minutes": "분"
+    ,"justNow": "방금 전",
+    "minutesAgo": "{{count}}분 전",
+    "minutesAgo_plural": "{{count}}분 전",
+    "hoursAgo": "{{count}}시간 전",
+    "hoursAgo_plural": "{{count}}시간 전",
+    "daysAgo": "{{count}}일 전",
+    "daysAgo_plural": "{{count}}일 전",
+    "monthsAgo": "{{count}}개월 전",
+    "monthsAgo_plural": "{{count}}개월 전",
+    "yearsAgo": "{{count}}년 전",
+    "yearsAgo_plural": "{{count}}년 전"
   },
   "tools": {
     "terminal": "🐚 터미널",

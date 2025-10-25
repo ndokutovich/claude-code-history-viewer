@@ -1,5 +1,3 @@
-"use client";
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { FileContent } from "./FileContent";
 import { EnhancedDiffViewer } from "./EnhancedDiffViewer";
@@ -10,28 +8,10 @@ import { useAnalytics } from "../hooks/useAnalytics";
 import type { FileActivity } from "../types";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
+import { formatRelativeTime } from "../utils/time";
 import { toast } from "sonner";
 import { Command } from "@tauri-apps/plugin-shell";
 import { platform } from "@tauri-apps/plugin-os";
-
-// Simple relative time formatter (no external dependency)
-const formatDistanceToNow = (date: Date): string => {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
-
-  if (diffSec < 60) return "just now";
-  if (diffMin < 60) return `${diffMin} minute${diffMin !== 1 ? "s" : ""} ago`;
-  if (diffHour < 24) return `${diffHour} hour${diffHour !== 1 ? "s" : ""} ago`;
-  if (diffDay < 30) return `${diffDay} day${diffDay !== 1 ? "s" : ""} ago`;
-  const diffMonth = Math.floor(diffDay / 30);
-  if (diffMonth < 12) return `${diffMonth} month${diffMonth !== 1 ? "s" : ""} ago`;
-  const diffYear = Math.floor(diffDay / 365);
-  return `${diffYear} year${diffYear !== 1 ? "s" : ""} ago`;
-};
 
 interface FileViewerModalProps {
   file: FileActivity;
@@ -57,8 +37,8 @@ export const FileViewerModal = ({
         has_content_before: !!file.content_before,
         operation: file.operation,
       });
-      toast.error("Cannot download", {
-        description: "No content available for this file"
+      toast.error(t("filesView.toast.cannotDownload"), {
+        description: t("filesView.toast.noContentAvailable")
       });
       return;
     }
@@ -66,7 +46,7 @@ export const FileViewerModal = ({
     const fileName = file.file_path.split("/").pop() || "file.txt";
 
     // Show download starting toast
-    const downloadToast = toast.loading(`Downloading ${fileName}...`);
+    const downloadToast = toast.loading(t("filesView.toast.downloading", { fileName }));
 
     try {
       const blob = new Blob([content], { type: "text/plain" });
@@ -80,10 +60,10 @@ export const FileViewerModal = ({
       URL.revokeObjectURL(url);
 
       // Show success toast with action to open folder
-      toast.success(`Downloaded ${fileName}`, {
-        description: "File saved to Downloads folder",
+      toast.success(t("filesView.toast.downloaded", { fileName }), {
+        description: t("filesView.toast.savedToDownloads"),
         action: {
-          label: "Open Folder",
+          label: t("filesView.toast.openFolder"),
           onClick: async () => {
             try {
               const platformName = platform();
@@ -99,7 +79,7 @@ export const FileViewerModal = ({
               }
             } catch (error) {
               console.error("Failed to open downloads folder:", error);
-              toast.error("Failed to open folder");
+              toast.error(t("filesView.toast.failedToOpenFolder"));
             }
           }
         },
@@ -109,8 +89,8 @@ export const FileViewerModal = ({
       toast.dismiss(downloadToast);
     } catch (error) {
       console.error("Download failed:", error);
-      toast.error("Download failed", {
-        description: error instanceof Error ? error.message : "Unknown error"
+      toast.error(t("filesView.toast.downloadFailed"), {
+        description: error instanceof Error ? error.message : t("filesView.toast.unknownError")
       });
       toast.dismiss(downloadToast);
     }
@@ -252,7 +232,7 @@ export const FileViewerModal = ({
               {t("filesView.viewer.timestamp")}
             </div>
             <div className={cn("text-sm", COLORS.ui.text.secondary)}>
-              {formatDistanceToNow(new Date(file.timestamp))}
+              {formatRelativeTime(file.timestamp)}
             </div>
           </div>
           <div>

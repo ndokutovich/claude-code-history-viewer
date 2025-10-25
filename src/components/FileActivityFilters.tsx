@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { useTranslation } from "react-i18next";

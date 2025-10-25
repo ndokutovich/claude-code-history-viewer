@@ -199,7 +199,18 @@
     "hour": "時間",
     "hours": "時間",
     "minute": "分",
-    "minutes": "分"
+    "minutes": "分",
+    "justNow": "たった今",
+    "minutesAgo": "{{count}}分前",
+    "minutesAgo_plural": "{{count}}分前",
+    "hoursAgo": "{{count}}時間前",
+    "hoursAgo_plural": "{{count}}時間前",
+    "daysAgo": "{{count}}日前",
+    "daysAgo_plural": "{{count}}日前",
+    "monthsAgo": "{{count}}ヶ月前",
+    "monthsAgo_plural": "{{count}}ヶ月前",
+    "yearsAgo": "{{count}}年前",
+    "yearsAgo_plural": "{{count}}年前"
   },
   "tools": {
     "terminal": "🐚 ターミナル",
@@ -608,6 +619,7 @@
   "filesView": {
     "title": "ファイル",
     "subtitle": "{{project}}の{{count}}件のファイル活動",
+    "allProjects": "全プロジェクト",
     "noProjectSelected": "プロジェクトが選択されていません",
     "selectProjectToViewFiles": "ファイル活動を表示するにはプロジェクトを選択してください",
     "loadingFiles": "ファイル活動を読み込み中...",
@@ -618,7 +630,9 @@
       "changes": "変更",
       "actions": "操作",
       "download": "ファイルをダウンロード",
-      "view": "詳細を表示"
+      "view": "詳細を表示",
+      "changeCount": "{{count}}件の変更",
+      "changeCount_plural": "{{count}}件の変更"
     },
     "filters": {
       "searchPlaceholder": "パスまたは名前でファイルを検索...",
@@ -638,6 +652,17 @@
       "sessionNotFound": "セッションが見つかりません",
       "messageNotFound": "セッション内にメッセージが見つかりません",
       "jumpError": "メッセージへの移動に失敗しました"
+    },
+    "toast": {
+      "cannotDownload": "ダウンロードできません",
+      "noContentAvailable": "このファイルには利用可能なコンテンツがありません",
+      "downloading": "{{fileName}}をダウンロード中...",
+      "downloaded": "{{fileName}}をダウンロードしました",
+      "savedToDownloads": "ファイルをダウンロードフォルダに保存しました",
+      "openFolder": "フォルダを開く",
+      "failedToOpenFolder": "フォルダを開けませんでした",
+      "downloadFailed": "ダウンロードに失敗しました",
+      "unknownError": "不明なエラー"
     }
   }
 }

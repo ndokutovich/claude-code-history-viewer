@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { FileActivityTable } from "./FileActivityTable";
@@ -93,7 +91,7 @@ export const FilesView = () => {
     setSelectedFile(null);
   };
 
-  const projectDisplayName = selectedProject?.name || "All Projects";
+  const projectDisplayName = selectedProject?.name || t("filesView.allProjects");
 
   // Loading state
   if (isLoadingFileActivities) {
