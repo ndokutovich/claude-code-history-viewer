@@ -214,7 +214,18 @@
     "hour": "小时",
     "hours": "小时",
     "minute": "分钟",
-    "minutes": "分钟"
+    "minutes": "分钟",
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}}分钟前",
+    "minutesAgo_plural": "{{count}}分钟前",
+    "hoursAgo": "{{count}}小时前",
+    "hoursAgo_plural": "{{count}}小时前",
+    "daysAgo": "{{count}}天前",
+    "daysAgo_plural": "{{count}}天前",
+    "monthsAgo": "{{count}}个月前",
+    "monthsAgo_plural": "{{count}}个月前",
+    "yearsAgo": "{{count}}年前",
+    "yearsAgo_plural": "{{count}}年前"
   },
   "tools": {
     "terminal": "🐚 终端",
@@ -623,6 +634,7 @@
   "filesView": {
     "title": "文件",
     "subtitle": "{{project}} 中的 {{count}} 个文件活动",
+    "allProjects": "所有项目",
     "noProjectSelected": "未选择项目",
     "selectProjectToViewFiles": "选择项目以查看文件活动",
     "loadingFiles": "正在加载文件活动...",
@@ -633,7 +645,9 @@
       "changes": "更改",
       "actions": "操作",
       "download": "下载文件",
-      "view": "查看详情"
+      "view": "查看详情",
+      "changeCount": "{{count}}处更改",
+      "changeCount_plural": "{{count}}处更改"
     },
     "filters": {
       "searchPlaceholder": "按路径或名称搜索文件...",
@@ -653,6 +667,17 @@
       "sessionNotFound": "未找到会话",
       "messageNotFound": "会话中未找到消息",
       "jumpError": "跳转到消息失败"
+    },
+    "toast": {
+      "cannotDownload": "无法下载",
+      "noContentAvailable": "此文件没有可用内容",
+      "downloading": "正在下载 {{fileName}}...",
+      "downloaded": "已下载 {{fileName}}",
+      "savedToDownloads": "文件已保存到下载文件夹",
+      "openFolder": "打开文件夹",
+      "failedToOpenFolder": "无法打开文件夹",
+      "downloadFailed": "下载失败",
+      "unknownError": "未知错误"
     }
   }
 }

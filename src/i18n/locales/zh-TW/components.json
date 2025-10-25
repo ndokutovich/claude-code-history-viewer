@@ -214,7 +214,18 @@
     "hour": "小時",
     "hours": "小時",
     "minute": "分鐘",
-    "minutes": "分鐘"
+    "minutes": "分鐘",
+    "justNow": "剛剛",
+    "minutesAgo": "{{count}}分鐘前",
+    "minutesAgo_plural": "{{count}}分鐘前",
+    "hoursAgo": "{{count}}小時前",
+    "hoursAgo_plural": "{{count}}小時前",
+    "daysAgo": "{{count}}天前",
+    "daysAgo_plural": "{{count}}天前",
+    "monthsAgo": "{{count}}個月前",
+    "monthsAgo_plural": "{{count}}個月前",
+    "yearsAgo": "{{count}}年前",
+    "yearsAgo_plural": "{{count}}年前"
   },
   "tools": {
     "terminal": "🐚 終端機",
@@ -623,6 +634,7 @@
   "filesView": {
     "title": "檔案",
     "subtitle": "{{project}} 中的 {{count}} 個檔案活動",
+    "allProjects": "所有專案",
     "noProjectSelected": "未選擇專案",
     "selectProjectToViewFiles": "選擇專案以檢視檔案活動",
     "loadingFiles": "正在載入檔案活動...",
@@ -633,7 +645,9 @@
       "changes": "變更",
       "actions": "操作",
       "download": "下載檔案",
-      "view": "檢視詳情"
+      "view": "檢視詳情",
+      "changeCount": "{{count}}處變更",
+      "changeCount_plural": "{{count}}處變更"
     },
     "filters": {
       "searchPlaceholder": "按路徑或名稱搜尋檔案...",
@@ -653,6 +667,17 @@
       "sessionNotFound": "未找到工作階段",
       "messageNotFound": "工作階段中未找到訊息",
       "jumpError": "跳轉到訊息失敗"
+    },
+    "toast": {
+      "cannotDownload": "無法下載",
+      "noContentAvailable": "此檔案沒有可用內容",
+      "downloading": "正在下載 {{fileName}}...",
+      "downloaded": "已下載 {{fileName}}",
+      "savedToDownloads": "檔案已儲存到下載資料夾",
+      "openFolder": "開啟資料夾",
+      "failedToOpenFolder": "無法開啟資料夾",
+      "downloadFailed": "下載失敗",
+      "unknownError": "未知錯誤"
     }
   }
 }
