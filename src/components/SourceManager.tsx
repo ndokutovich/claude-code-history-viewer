@@ -56,7 +56,7 @@ export const SourceManager: React.FC = () => {
   // No need to reinitialize here to avoid duplicate calls
 
   // Handle add source
-  const handleAddSource = async () => {
+  const handleAddSource = async (): Promise<void> => {
     clearErrors();
     setValidationError(null);
 
@@ -87,7 +87,7 @@ export const SourceManager: React.FC = () => {
   };
 
   // Handle browse for folder
-  const handleBrowseFolder = async () => {
+  const handleBrowseFolder = async (): Promise<void> => {
     try {
       const selected = await open({
         directory: true,
@@ -104,7 +104,7 @@ export const SourceManager: React.FC = () => {
   };
 
   // Handle remove source
-  const handleRemoveSource = async (sourceId: string) => {
+  const handleRemoveSource = async (sourceId: string): Promise<void> => {
     if (confirm(t('dialog.confirmRemove'))) {
       try {
         await removeSource(sourceId);
@@ -116,7 +116,7 @@ export const SourceManager: React.FC = () => {
   };
 
   // Handle set default
-  const handleSetDefault = async (sourceId: string) => {
+  const handleSetDefault = async (sourceId: string): Promise<void> => {
     try {
       await setDefaultSource(sourceId);
     } catch (err) {
@@ -125,7 +125,7 @@ export const SourceManager: React.FC = () => {
   };
 
   // Render health status icon
-  const renderHealthIcon = (status: HealthStatus) => {
+  const renderHealthIcon = (status: HealthStatus): React.ReactNode => {
     switch (status) {
       case 'healthy':
         return <CheckCircle2 className="h-4 w-4 text-green-500" />;
@@ -139,7 +139,7 @@ export const SourceManager: React.FC = () => {
   };
 
   // Render provider badge
-  const renderProviderBadge = (providerId: string) => {
+  const renderProviderBadge = (providerId: string): React.ReactNode => {
     const colors: Record<string, string> = {
       'claude-code': 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
       'cursor': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',

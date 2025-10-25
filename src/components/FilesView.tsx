@@ -81,12 +81,12 @@ export const FilesView = () => {
     loadFileActivities(projectPath, filters);
   }, [selectedProject?.path, selectedSession?.actual_session_id, fileActivityFilters, loadFileActivities]);
 
-  const handleViewFile = (file: FileActivity) => {
+  const handleViewFile = (file: FileActivity): void => {
     setSelectedFile(file);
     setIsViewerOpen(true);
   };
 
-  const handleCloseViewer = () => {
+  const handleCloseViewer = (): void => {
     setIsViewerOpen(false);
     setSelectedFile(null);
   };

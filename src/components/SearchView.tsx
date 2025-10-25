@@ -125,19 +125,19 @@ export const SearchView = () => {
     );
   }, [searchResults, searchResultSessions, expandedSessions]);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (query.trim()) {
       await searchMessages(query);
     }
   };
 
-  const handleClear = () => {
+  const handleClear = (): void => {
     setQuery("");
     searchMessages("", {});
   };
 
-  const toggleSession = (sessionId: string) => {
+  const toggleSession = (sessionId: string): void => {
     const newExpanded = new Set(expandedSessions);
     if (newExpanded.has(sessionId)) {
       newExpanded.delete(sessionId);

@@ -36,7 +36,7 @@ export const FileActivityTable = ({
     overscan: 10,
   });
 
-  const getOperationIcon = (operation: string) => {
+  const getOperationIcon = (operation: string): React.ReactNode => {
     switch (operation.toLowerCase()) {
       case "read":
         return <Eye className="w-4 h-4" />;
@@ -53,17 +53,17 @@ export const FileActivityTable = ({
     }
   };
 
-  const getFileExtension = (filePath: string) => {
+  const getFileExtension = (filePath: string): string => {
     const parts = filePath.split(".");
-    return parts.length > 1 ? parts[parts.length - 1] : "";
+    return parts.length > 1 ? (parts[parts.length - 1] || "") : "";
   };
 
-  const getDirectory = (filePath: string) => {
+  const getDirectory = (filePath: string): string => {
     const parts = getDirectoryParts(filePath);
     return parts.join("/");
   };
 
-  const handleDownload = (file: FileActivity, e: React.MouseEvent) => {
+  const handleDownload = (file: FileActivity, e: React.MouseEvent): void => {
     e.stopPropagation();
 
     const content = file.content_after || file.content_before || "";
