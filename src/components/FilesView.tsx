@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { FileActivityTable } from "./FileActivityTable";
 import { FileActivityFilters as Filters } from "./FileActivityFilters";
@@ -82,15 +82,15 @@ export const FilesView = () => {
     loadFileActivities(projectPath, filters);
   }, [selectedProject?.path, selectedSession?.actual_session_id, fileActivityFilters, loadFileActivities]);
 
-  const handleViewFile = (file: FileActivity): void => {
+  const handleViewFile = useCallback((file: FileActivity): void => {
     setSelectedFile(file);
     setIsViewerOpen(true);
-  };
+  }, []);
 
-  const handleCloseViewer = (): void => {
+  const handleCloseViewer = useCallback((): void => {
     setIsViewerOpen(false);
     setSelectedFile(null);
-  };
+  }, []);
 
   const projectDisplayName = selectedProject?.name || t("filesView.allProjects");
 

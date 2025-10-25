@@ -3,7 +3,7 @@
 // ============================================================================
 // UI for managing multiple conversation data sources
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSourceStore } from '../store/useSourceStore';
 import type { UniversalSource, HealthStatus } from '../types/universal';
@@ -57,7 +57,7 @@ export const SourceManager: React.FC = () => {
   // No need to reinitialize here to avoid duplicate calls
 
   // Handle add source
-  const handleAddSource = async (): Promise<void> => {
+  const handleAddSource = useCallback(async (): Promise<void> => {
     clearErrors();
     setValidationError(null);
 
@@ -85,10 +85,10 @@ export const SourceManager: React.FC = () => {
     } catch (err) {
       setValidationError((err as Error).message);
     }
-  };
+  }, [newSourcePath, newSourceName, validatePath, addSource, clearErrors, t]);
 
   // Handle browse for folder
-  const handleBrowseFolder = async (): Promise<void> => {
+  const handleBrowseFolder = useCallback(async (): Promise<void> => {
     try {
       const selected = await open({
         directory: true,
@@ -102,10 +102,10 @@ export const SourceManager: React.FC = () => {
     } catch (err) {
       console.error('Failed to open folder browser:', err);
     }
-  };
+  }, [t]);
 
   // Handle remove source
-  const handleRemoveSource = async (sourceId: string): Promise<void> => {
+  const handleRemoveSource = useCallback(async (sourceId: string): Promise<void> => {
     if (confirm(t('dialog.confirmRemove'))) {
       try {
         await removeSource(sourceId);
@@ -114,16 +114,16 @@ export const SourceManager: React.FC = () => {
         console.error('Failed to remove source:', err);
       }
     }
-  };
+  }, [removeSource, t]);
 
   // Handle set default
-  const handleSetDefault = async (sourceId: string): Promise<void> => {
+  const handleSetDefault = useCallback(async (sourceId: string): Promise<void> => {
     try {
       await setDefaultSource(sourceId);
     } catch (err) {
       console.error('Failed to set default source:', err);
     }
-  };
+  }, [setDefaultSource]);
 
   // Render health status icon
   const renderHealthIcon = (status: HealthStatus): React.ReactNode => {

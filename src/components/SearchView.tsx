@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Search, X, ChevronDown, ChevronRight, MessageSquare } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { useAnalytics } from "@/hooks/useAnalytics";
@@ -125,27 +125,29 @@ export const SearchView = () => {
     );
   }, [searchResults, searchResultSessions, expandedSessions]);
 
-  const handleSearch = async (e: React.FormEvent): Promise<void> => {
+  const handleSearch = useCallback(async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (query.trim()) {
       await searchMessages(query);
     }
-  };
+  }, [query, searchMessages]);
 
-  const handleClear = (): void => {
+  const handleClear = useCallback((): void => {
     setQuery("");
     searchMessages("", {});
-  };
+  }, [searchMessages]);
 
-  const toggleSession = (sessionId: string): void => {
-    const newExpanded = new Set(expandedSessions);
-    if (newExpanded.has(sessionId)) {
-      newExpanded.delete(sessionId);
-    } else {
-      newExpanded.add(sessionId);
-    }
-    setExpandedSessions(newExpanded);
-  };
+  const toggleSession = useCallback((sessionId: string): void => {
+    setExpandedSessions(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(sessionId)) {
+        newExpanded.delete(sessionId);
+      } else {
+        newExpanded.add(sessionId);
+      }
+      return newExpanded;
+    });
+  }, []);
 
   const { t: tComponents } = useTranslation("components");
 

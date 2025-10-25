@@ -1,5 +1,5 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef } from "react";
+import { useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
   File,
@@ -63,7 +63,7 @@ export const FileActivityTable = ({
     return parts.join("/");
   };
 
-  const handleDownload = (file: FileActivity, e: React.MouseEvent): void => {
+  const handleDownload = useCallback((file: FileActivity, e: React.MouseEvent): void => {
     e.stopPropagation();
 
     const content = file.content_after || file.content_before || "";
@@ -78,7 +78,7 @@ export const FileActivityTable = ({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
+  }, []);
 
   return (
     <div ref={parentRef} className="h-full overflow-auto">
