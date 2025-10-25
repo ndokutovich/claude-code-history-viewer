@@ -23,7 +23,7 @@ export const FileActivityFilters = () => {
   const applyFilters = () => {
     const filters = {
       searchQuery: searchQuery || undefined,
-      operations: selectedOperations.length > 0 ? selectedOperations : undefined,
+      operations: selectedOperations.length > 0 ? (selectedOperations as import("../types").FileOperation[]) : undefined,
       fileExtensions: selectedExtensions.length > 0 ? selectedExtensions : undefined,
     };
 

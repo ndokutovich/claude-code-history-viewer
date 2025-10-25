@@ -75,15 +75,11 @@ export const FileViewerModal = ({
               if (platformName === "windows") {
                 await Command.create("explorer", ["shell:Downloads"]).execute();
               } else if (platformName === "macos") {
-                // On macOS, use the user's actual Downloads folder
-                const homeDir = await import("@tauri-apps/plugin-os").then((m) => m.homeDir());
-                const downloadsPath = `${homeDir}/Downloads`;
-                await Command.create("open", [downloadsPath]).execute();
+                // On macOS, use the open command to open Downloads folder
+                await Command.create("open", ["~/Downloads"]).execute();
               } else {
-                // Linux - use xdg-user-dir if available, fallback to $HOME/Downloads
-                const homeDir = await import("@tauri-apps/plugin-os").then((m) => m.homeDir());
-                const downloadsPath = `${homeDir}/Downloads`;
-                await Command.create("xdg-open", [downloadsPath]).execute();
+                // Linux - use xdg-open to open Downloads folder
+                await Command.create("xdg-open", ["~/Downloads"]).execute();
               }
             } catch (error) {
               console.error("Failed to open downloads folder:", error);

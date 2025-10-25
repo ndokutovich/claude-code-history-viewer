@@ -9,8 +9,8 @@
  * @returns The filename (e.g., "file.txt")
  */
 export function getFileName(path: string): string {
-  // Split by both / and \ to handle cross-platform paths
-  const parts = path.split(/[/\]/);
+  // Split by both / and \\ to handle cross-platform paths
+  const parts = path.split(/[/\\\\]/);
   return parts[parts.length - 1] || "";
 }
 
@@ -20,7 +20,7 @@ export function getFileName(path: string): string {
  * @returns Array of path segments
  */
 export function getPathParts(path: string): string[] {
-  return path.split(/[/\]/).filter(Boolean);
+  return path.split(/[/\\\\]/).filter(Boolean);
 }
 
 /**
