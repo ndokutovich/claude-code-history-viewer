@@ -74,6 +74,10 @@ struct CursorBubble {
 
     #[serde(rename = "attachedFileCodeChunksMetadataOnly", default)]
     attached_file_metadata: Vec<serde_json::Value>,
+
+    // New Cursor format: toolFormerData contains actual file operations
+    #[serde(rename = "toolFormerData", default)]
+    tool_former_data: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -611,8 +615,8 @@ pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<Univers
             }
         };
 
-        // Skip entries with empty text
-        if bubble.text.trim().is_empty() {
+        // Skip entries with empty text UNLESS they have toolFormerData
+        if bubble.text.trim().is_empty() && bubble.tool_former_data.is_none() {
             continue;
         }
 
@@ -673,19 +677,20 @@ pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<Univers
             });
         }
 
-        // Count total items for logging
-        let tool_count = bubble.tool_results.len();
-        let file_count = bubble.relevant_files.len() + bubble.attached_file_metadata.len();
-        let diff_count = bubble.assistant_suggested_diffs.len() + bubble.git_diffs.len();
+        // Extract tool calls from Cursor bubble data
+        let tool_calls = convert_cursor_tool_calls(&bubble);
 
-        println!("    [{}] {:?}: {} chars @ {} (tools:{} files:{} diffs:{})",
+        // Count extracted tool calls for logging
+        let extracted_tool_count = tool_calls.as_ref().map(|t| t.len()).unwrap_or(0);
+        let has_tool_former = bubble.tool_former_data.is_some();
+
+        println!("    [{}] {:?}: {} chars @ {} (extracted_tools:{} has_toolFormerData:{})",
                  sequence_number,
                  role,
                  bubble.text.len(),
                  message_timestamp.format("%H:%M:%S"),
-                 tool_count,
-                 file_count,
-                 diff_count);
+                 extracted_tool_count,
+                 has_tool_former);
 
         // Create universal message
         let message = UniversalMessage {
@@ -722,7 +727,7 @@ pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<Univers
                 cache_read_tokens: None,
                 service_tier: None,
             }),
-            tool_calls: None, // Will be in provider_metadata
+            tool_calls, // Extracted from bubble data (diffs, files, git, etc.)
             thinking: None, // Will be in provider_metadata
             attachments: None, // Will be in provider_metadata
             errors: None,
@@ -952,6 +957,9 @@ pub async fn search_cursor_messages(
             });
         }
 
+        // Extract tool calls from Cursor bubble data
+        let tool_calls = convert_cursor_tool_calls(&bubble);
+
         // Create message
         let message = UniversalMessage {
             id: key.clone(),
@@ -976,7 +984,7 @@ pub async fn search_cursor_messages(
                 cache_read_tokens: None,
                 service_tier: None,
             }),
-            tool_calls: None,
+            tool_calls, // Extracted from bubble data
             thinking: None,
             attachments: None,
             errors: None,
@@ -997,6 +1005,128 @@ pub async fn search_cursor_messages(
         total: matching_messages.len(),
         messages: matching_messages,
     })
+}
+
+// ============================================================================
+// TOOL CALL CONVERSION
+// ============================================================================
+
+/// Convert Cursor tool data from toolFormerData into ToolCall structures
+/// Modern Cursor stores file operations in toolFormerData with this structure:
+/// {
+///   "name": "read_file" | "write_file" | "edit_file" | "list_dir",
+///   "params": "{\"targetFile\":\"...\",...}",
+///   "result": "{\"contents\":\"...\"}"
+/// }
+fn convert_cursor_tool_calls(bubble: &CursorBubble) -> Option<Vec<ToolCall>> {
+    let mut tool_calls = Vec::new();
+
+    // Extract from toolFormerData (modern Cursor format)
+    if let Some(tool_data) = &bubble.tool_former_data {
+        if let Some(tool_name) = tool_data.get("name").and_then(|v| v.as_str()) {
+            let params_str = tool_data.get("params").and_then(|v| v.as_str()).unwrap_or("{}");
+            let result_str = tool_data.get("result").and_then(|v| v.as_str()).unwrap_or("{}");
+
+            // Parse params JSON
+            let params: serde_json::Value = serde_json::from_str(params_str).unwrap_or(serde_json::json!({}));
+            let result: serde_json::Value = serde_json::from_str(result_str).unwrap_or(serde_json::json!({}));
+
+            match tool_name {
+                "read_file" => {
+                    if let Some(target_file) = params.get("targetFile").and_then(|v| v.as_str()) {
+                        let mut input = HashMap::new();
+                        input.insert("file_path".to_string(), serde_json::json!(target_file));
+
+                        // Match Claude Code format: output has "file" object with "content"
+                        let output = if let Some(contents) = result.get("contents") {
+                            let mut file_obj = HashMap::new();
+                            file_obj.insert("content".to_string(), contents.clone());
+
+                            let mut output = HashMap::new();
+                            output.insert("file".to_string(), serde_json::json!(file_obj));
+                            Some(output)
+                        } else {
+                            None
+                        };
+
+                        tool_calls.push(ToolCall {
+                            id: tool_data.get("modelCallId").and_then(|v| v.as_str()).unwrap_or("unknown").to_string(),
+                            name: "Read".to_string(),
+                            input,
+                            output,
+                            error: None,
+                            status: ToolCallStatus::Success,
+                        });
+                    }
+                },
+                "write_file" => {
+                    if let Some(target_file) = params.get("targetFile").and_then(|v| v.as_str()) {
+                        let mut input = HashMap::new();
+                        input.insert("file_path".to_string(), serde_json::json!(target_file));
+
+                        if let Some(content) = params.get("content") {
+                            input.insert("content".to_string(), content.clone());
+                        }
+
+                        tool_calls.push(ToolCall {
+                            id: tool_data.get("modelCallId").and_then(|v| v.as_str()).unwrap_or("unknown").to_string(),
+                            name: "Write".to_string(),
+                            input,
+                            output: None,
+                            error: None,
+                            status: ToolCallStatus::Success,
+                        });
+                    }
+                },
+                "edit_file" | "apply_diff" => {
+                    if let Some(target_file) = params.get("targetFile").and_then(|v| v.as_str()) {
+                        let mut input = HashMap::new();
+                        input.insert("file_path".to_string(), serde_json::json!(target_file));
+
+                        if let Some(old_str) = params.get("oldString") {
+                            input.insert("old_string".to_string(), old_str.clone());
+                        }
+                        if let Some(new_str) = params.get("newString") {
+                            input.insert("new_string".to_string(), new_str.clone());
+                        }
+
+                        tool_calls.push(ToolCall {
+                            id: tool_data.get("modelCallId").and_then(|v| v.as_str()).unwrap_or("unknown").to_string(),
+                            name: "Edit".to_string(),
+                            input,
+                            output: None,
+                            error: None,
+                            status: ToolCallStatus::Success,
+                        });
+                    }
+                },
+                "list_dir" => {
+                    if let Some(target_dir) = params.get("targetDirectory").and_then(|v| v.as_str()) {
+                        let mut input = HashMap::new();
+                        input.insert("pattern".to_string(), serde_json::json!(target_dir));  // Match expected "pattern" field
+
+                        tool_calls.push(ToolCall {
+                            id: tool_data.get("modelCallId").and_then(|v| v.as_str()).unwrap_or("unknown").to_string(),
+                            name: "Glob".to_string(),
+                            input,
+                            output: None,
+                            error: None,
+                            status: ToolCallStatus::Success,
+                        });
+                    }
+                },
+                _ => {
+                    // Unknown tool, skip
+                }
+            }
+        }
+    }
+
+    if tool_calls.is_empty() {
+        None
+    } else {
+        Some(tool_calls)
+    }
 }
 
 // ============================================================================

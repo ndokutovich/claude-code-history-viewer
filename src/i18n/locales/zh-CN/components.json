@@ -619,5 +619,40 @@
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
     }
+  },
+  "filesView": {
+    "title": "文件",
+    "subtitle": "{{project}} 中的 {{count}} 个文件活动",
+    "noProjectSelected": "未选择项目",
+    "selectProjectToViewFiles": "选择项目以查看文件活动",
+    "loadingFiles": "正在加载文件活动...",
+    "table": {
+      "filePath": "文件路径",
+      "operation": "操作",
+      "timestamp": "时间",
+      "changes": "更改",
+      "actions": "操作",
+      "download": "下载文件",
+      "view": "查看详情"
+    },
+    "filters": {
+      "searchPlaceholder": "按路径或名称搜索文件...",
+      "operations": "操作",
+      "extensions": "文件扩展名"
+    },
+    "viewer": {
+      "operation": "操作",
+      "timestamp": "时间戳",
+      "changes": "更改",
+      "jumpToMessage": "跳转到消息",
+      "download": "下载",
+      "fileContent": "文件内容",
+      "noContentAvailable": "此文件没有可用内容"
+    },
+    "errors": {
+      "sessionNotFound": "未找到会话",
+      "messageNotFound": "会话中未找到消息",
+      "jumpError": "跳转到消息失败"
+    }
   }
 }

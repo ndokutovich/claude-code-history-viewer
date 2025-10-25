@@ -23,6 +23,7 @@ export interface UseAnalyticsReturn {
     switchToTokenStats: () => Promise<void>;
     switchToAnalytics: () => Promise<void>;
     switchToSearch: () => Promise<void>;
+    switchToFiles: () => Promise<void>;
     refreshAnalytics: () => Promise<void>;
     clearAll: () => void;
   };
@@ -33,6 +34,7 @@ export interface UseAnalyticsReturn {
     isAnalyticsView: boolean;
     isMessagesView: boolean;
     isSearchView: boolean;
+    isFilesView: boolean;
     hasAnyError: boolean;
     isAnyLoading: boolean;
   };
@@ -96,6 +98,16 @@ export const useAnalytics = (): UseAnalyticsReturn => {
   }, [switchView]);
 
   /**
+   * Switch to files view
+   */
+  const switchToFiles = useCallback(async () => {
+    if (!selectedProject) {
+      throw new Error("No project selected.");
+    }
+    await switchView("files");
+  }, [selectedProject, switchView]);
+
+  /**
    * Refresh analytics data for the current view
    */
   const refreshAnalytics = useCallback(async () => {
@@ -120,6 +132,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
       isAnalyticsView: currentView === "analytics",
       isMessagesView: currentView === "messages",
       isSearchView: currentView === "search",
+      isFilesView: currentView === "files",
       hasAnyError: !!(projectSummaryError || sessionComparisonError),
       isAnyLoading:
         isLoadingProjectSummary ||
@@ -143,6 +156,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
       switchToTokenStats,
       switchToAnalytics,
       switchToSearch,
+      switchToFiles,
       refreshAnalytics,
       clearAll,
     },

@@ -863,11 +863,12 @@ pub async fn search_messages(
         .iter()
         .enumerate()
         .map(|(i, msg)| {
+            // Use the full project path, not just the last component
+            // This ensures the frontend can match it against project.path
             let project_id = msg.project_path
                 .as_ref()
-                .and_then(|path| path.split('/').last())
-                .unwrap_or("unknown")
-                .to_string();
+                .map(|path| path.to_string())
+                .unwrap_or_else(|| "unknown".to_string());
 
             claude_message_to_universal(
                 msg,

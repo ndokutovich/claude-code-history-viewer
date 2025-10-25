@@ -21,30 +21,42 @@ use std::collections::HashMap;
 pub struct UniversalMessage {
     // CORE IDENTITY (REQUIRED)
     pub id: String,
+
+    #[serde(rename = "sessionId")]
     pub session_id: String,
+
+    #[serde(rename = "projectId")]
     pub project_id: String,
+
+    #[serde(rename = "sourceId")]
     pub source_id: String,
+
+    #[serde(rename = "providerId")]
     pub provider_id: String,
 
     // TEMPORAL (REQUIRED)
     pub timestamp: String,
+
+    #[serde(rename = "sequenceNumber")]
     pub sequence_number: i32,
 
     // ROLE & TYPE (REQUIRED)
     pub role: MessageRole,
+
+    #[serde(rename = "messageType")]
     pub message_type: MessageType,
 
     // CONTENT (REQUIRED)
     pub content: Vec<UniversalContent>,
 
     // HIERARCHY (OPTIONAL)
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "parentId")]
     pub parent_id: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub depth: Option<i32>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "branchId")]
     pub branch_id: Option<String>,
 
     // METADATA (OPTIONAL)
@@ -54,7 +66,7 @@ pub struct UniversalMessage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tokens: Option<TokenUsage>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "toolCalls")]
     pub tool_calls: Option<Vec<ToolCall>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -67,7 +79,10 @@ pub struct UniversalMessage {
     pub errors: Option<Vec<ErrorInfo>>,
 
     // RAW PRESERVATION (REQUIRED)
+    #[serde(rename = "originalFormat")]
     pub original_format: String,
+
+    #[serde(rename = "providerMetadata")]
     pub provider_metadata: HashMap<String, serde_json::Value>,
 }
 
@@ -84,7 +99,7 @@ pub struct UniversalContent {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub encoding: Option<String>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "mimeType")]
     pub mime_type: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -101,22 +116,38 @@ pub struct UniversalContent {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UniversalSession {
     pub id: String,
+
+    #[serde(rename = "projectId")]
     pub project_id: String,
+
+    #[serde(rename = "sourceId")]
     pub source_id: String,
+
+    #[serde(rename = "providerId")]
     pub provider_id: String,
 
     pub title: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 
+    #[serde(rename = "messageCount")]
     pub message_count: usize,
+
+    #[serde(rename = "firstMessageAt")]
     pub first_message_at: String,
+
+    #[serde(rename = "lastMessageAt")]
     pub last_message_at: String,
+
     pub duration: i64, // milliseconds
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "totalTokens")]
     pub total_tokens: Option<TokenUsage>,
+
+    #[serde(rename = "toolCallCount")]
     pub tool_call_count: usize,
+
+    #[serde(rename = "errorCount")]
     pub error_count: usize,
 
     pub metadata: HashMap<String, serde_json::Value>,
@@ -130,19 +161,26 @@ pub struct UniversalSession {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UniversalProject {
     pub id: String,
+
+    #[serde(rename = "sourceId")]
     pub source_id: String,
+
+    #[serde(rename = "providerId")]
     pub provider_id: String,
 
     pub name: String,
     pub path: String,
 
+    #[serde(rename = "sessionCount")]
     pub session_count: usize,
+
+    #[serde(rename = "totalMessages")]
     pub total_messages: usize,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "firstActivityAt")]
     pub first_activity_at: Option<String>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "lastActivityAt")]
     pub last_activity_at: Option<String>,
 
     pub metadata: HashMap<String, serde_json::Value>,
@@ -157,33 +195,52 @@ pub struct UniversalSource {
     pub id: String,
     pub name: String,
     pub path: String,
+
+    #[serde(rename = "providerId")]
     pub provider_id: String,
 
+    #[serde(rename = "isDefault")]
     pub is_default: bool,
+
+    #[serde(rename = "isAvailable")]
     pub is_available: bool,
+
+    #[serde(rename = "lastValidation")]
     pub last_validation: String,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "validationError")]
     pub validation_error: Option<String>,
 
+    #[serde(rename = "addedAt")]
     pub added_at: String,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "lastScanAt")]
     pub last_scan_at: Option<String>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "lastModifiedAt")]
     pub last_modified_at: Option<String>,
 
     pub stats: SourceStats,
+
+    #[serde(rename = "providerConfig")]
     pub provider_config: HashMap<String, serde_json::Value>,
+
+    #[serde(rename = "healthStatus")]
     pub health_status: HealthStatus,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SourceStats {
+    #[serde(rename = "projectCount")]
     pub project_count: usize,
+
+    #[serde(rename = "sessionCount")]
     pub session_count: usize,
+
+    #[serde(rename = "messageCount")]
     pub message_count: usize,
+
+    #[serde(rename = "totalSize")]
     pub total_size: u64,
 }
 
@@ -253,7 +310,7 @@ pub struct Attachment {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub size: Option<u64>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none", rename = "mimeType")]
     pub mime_type: Option<String>,
 }
 

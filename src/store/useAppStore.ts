@@ -19,9 +19,55 @@ import {
   type UniversalSource,
   type ProjectListPreferences,
   type LoadingProgress,
+  type FileActivity,
+  type FileActivityFilters,
 } from "../types";
 import { adapterRegistry } from "@/adapters/registry/AdapterRegistry";
 import { useSourceStore } from "./useSourceStore";
+
+// ============================================================================
+// VIEW MANAGEMENT SYSTEM (v1.5.1+)
+// ============================================================================
+/**
+ * Comprehensive View State Management
+ *
+ * DESIGN PRINCIPLES:
+ * 1. **User Intent is Paramount**: Only explicit user actions (clicking view buttons)
+ *    should change the currentView. System operations (selecting projects/sessions)
+ *    preserve the user's view choice.
+ *
+ * 2. **View Persistence**: The user's view selection persists across:
+ *    - Project switches (controlled by viewPreferences.preserveViewOnProjectSwitch)
+ *    - Session switches (controlled by viewPreferences.preserveViewOnSessionSwitch)
+ *    - Application restarts (future: localStorage persistence)
+ *
+ * 3. **Extensibility**: New views can be added easily:
+ *    - Add to AppView type in types/index.ts
+ *    - Add case in switchView() function
+ *    - Add UI button in Header/navigation
+ *    - System automatically preserves user preference
+ *
+ * KEY FUNCTIONS:
+ * - switchView(view): ONLY function that should change currentView (except errors)
+ * - selectProject(): Does NOT change view - preserves user preference
+ * - selectSession(): Does NOT change view - preserves user preference
+ * - setViewPreferences(): Configure view persistence behavior
+ *
+ * CURRENT VIEWS:
+ * - messages: Conversation messages (default)
+ * - search: Global search across all conversations
+ * - tokenStats: Token usage statistics
+ * - analytics: Analytics dashboard
+ * - files: File activity viewer (v1.5.0+)
+ *
+ * ADDING NEW VIEWS:
+ * 1. Add type to AppView union
+ * 2. Add case in switchView() with data loading logic
+ * 3. Add view component to App.tsx
+ * 4. Add navigation button to Header
+ * 5. Document here
+ */
+// ============================================================================
 
 // Function to check if Tauri API is available
 const isTauriAvailable = () => {
@@ -162,12 +208,34 @@ function universalToUIMessage(msg: UniversalMessage): UIMessage {
   };
 }
 
+/**
+ * View Preferences - Preserves user's view selection across navigation
+ *
+ * Design principles:
+ * 1. User's view selection should persist when switching projects/sessions
+ * 2. Only explicit user actions (clicking view buttons) should change views
+ * 3. System should remember the last view the user was in
+ * 4. Extensible for future views
+ */
+interface ViewPreferences {
+  /** Last view the user explicitly selected */
+  lastSelectedView: AppView;
+  /** Whether to preserve view when switching projects (default: true) */
+  preserveViewOnProjectSwitch: boolean;
+  /** Whether to preserve view when switching sessions (default: true) */
+  preserveViewOnSessionSwitch: boolean;
+}
+
 interface AppStore extends AppState {
   // Filter state
   excludeSidechain: boolean;
 
+  // View preferences
+  viewPreferences: ViewPreferences;
+
   // Actions - View Management
   switchView: (view: AppView) => Promise<void>;
+  setViewPreferences: (preferences: Partial<ViewPreferences>) => void;
 
   // Actions - Data Loading
   initializeApp: () => Promise<void>;
@@ -209,6 +277,11 @@ interface AppStore extends AppState {
 
   // Loading progress
   setLoadingProgress: (progress: LoadingProgress | null) => void;
+
+  // File activities actions (v1.5.0+)
+  loadFileActivities: (projectPath: string, filters?: FileActivityFilters) => Promise<void>;
+  setFileActivityFilters: (filters: FileActivityFilters) => void;
+  clearFileActivities: () => void;
 }
 
 const DEFAULT_PAGE_SIZE = 100; // Load 100 messages on initial loading
@@ -216,6 +289,13 @@ const DEFAULT_PAGE_SIZE = 100; // Load 100 messages on initial loading
 export const useAppStore = create<AppStore>((set, get) => ({
   // Root-level view state (single source of truth)
   currentView: "messages" as AppView,
+
+  // View preferences - Controls view persistence behavior
+  viewPreferences: {
+    lastSelectedView: "messages",
+    preserveViewOnProjectSwitch: true,
+    preserveViewOnSessionSwitch: true,
+  },
 
   // Loading progress - Start with initializing state
   loadingProgress: {
@@ -253,6 +333,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   searchQuery: "",
   searchResults: [],
   searchFilters: {},
+
+  // File activities state (v1.5.0+)
+  fileActivities: [],
+  fileActivityFilters: {},
+  isLoadingFileActivities: false,
 
   // Loading states
   isLoading: false,
@@ -399,6 +484,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   selectProject: async (project: UIProject | null) => {
+    // ============================================================================
+    // VIEW PRESERVATION BEHAVIOR
+    // ============================================================================
+    // This function does NOT change currentView - it preserves the user's view
+    // selection as per viewPreferences.preserveViewOnProjectSwitch
+    // ============================================================================
+
     // Clear selection if null is passed
     if (project === null) {
       console.log('🔄 selectProject: Clearing selection');
@@ -416,6 +508,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       providerId: project.providerId,
     });
 
+    // Note: currentView is intentionally NOT set here to preserve user's view preference
     set({
       selectedProject: project,
       sessions: [],
@@ -525,6 +618,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     session: UISession | null,
     pageSize = DEFAULT_PAGE_SIZE
   ) => {
+    // ============================================================================
+    // VIEW PRESERVATION BEHAVIOR
+    // ============================================================================
+    // This function does NOT change currentView - it preserves the user's view
+    // selection as per viewPreferences.preserveViewOnSessionSwitch
+    // ============================================================================
+
     // Clear selection if null is passed
     if (session === null) {
       set({
@@ -541,6 +641,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return;
     }
 
+    // Note: currentView is intentionally NOT set here to preserve user's view preference
     set({
       selectedSession: session,
       messages: [],
@@ -1048,18 +1149,42 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
+  // Set view preferences
+  setViewPreferences: (preferences: Partial<ViewPreferences>) => {
+    set((state) => ({
+      viewPreferences: {
+        ...state.viewPreferences,
+        ...preferences,
+      }
+    }));
+  },
+
   // Unified view switching
   switchView: async (view: AppView) => {
     const { currentView, selectedProject, selectedSession } = get();
 
+    console.log(`🔀 Switching view: ${currentView} → ${view}`);
+
     // If already on this view and it's not messages, go back to messages
     if (currentView === view && view !== 'messages') {
-      set({ currentView: 'messages' });
+      set({
+        currentView: 'messages',
+        viewPreferences: {
+          ...get().viewPreferences,
+          lastSelectedView: 'messages',
+        }
+      });
       return;
     }
 
-    // Set the new view
-    set({ currentView: view });
+    // Set the new view and remember user's preference
+    set({
+      currentView: view,
+      viewPreferences: {
+        ...get().viewPreferences,
+        lastSelectedView: view,
+      }
+    });
 
     // Clear search results when leaving search view
     if (view !== 'search') {
@@ -1244,5 +1369,49 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Loading progress
   setLoadingProgress: (progress: LoadingProgress | null) => {
     set({ loadingProgress: progress });
+  },
+
+  // ============================================================================
+  // FILE ACTIVITIES ACTIONS (v1.5.0+)
+  // ============================================================================
+
+  loadFileActivities: async (projectPath: string, filters?: FileActivityFilters) => {
+    set({ isLoadingFileActivities: true, error: null });
+    try {
+      const state = get();
+      const sourcePath = projectPath === "*" ? state.claudePath : null;
+
+      const fileActivities = await invoke<FileActivity[]>("get_file_activities", {
+        projectPath,
+        sourcePath,
+        filters: filters || state.fileActivityFilters,
+      });
+
+      set({
+        fileActivities,
+        isLoadingFileActivities: false,
+      });
+    } catch (error) {
+      console.error("Failed to load file activities:", error);
+      set({
+        error: {
+          type: AppErrorType.LOAD_FILE_ACTIVITIES,
+          message: `Failed to load file activities: ${error}`,
+        },
+        isLoadingFileActivities: false,
+      });
+    }
+  },
+
+  setFileActivityFilters: (filters: FileActivityFilters) => {
+    set({ fileActivityFilters: filters });
+  },
+
+  clearFileActivities: () => {
+    set({
+      fileActivities: [],
+      fileActivityFilters: {},
+      isLoadingFileActivities: false,
+    });
   },
 }));

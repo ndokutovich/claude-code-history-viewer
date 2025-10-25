@@ -604,5 +604,40 @@
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
     }
+  },
+  "filesView": {
+    "title": "ファイル",
+    "subtitle": "{{project}}の{{count}}件のファイル活動",
+    "noProjectSelected": "プロジェクトが選択されていません",
+    "selectProjectToViewFiles": "ファイル活動を表示するにはプロジェクトを選択してください",
+    "loadingFiles": "ファイル活動を読み込み中...",
+    "table": {
+      "filePath": "ファイルパス",
+      "operation": "操作",
+      "timestamp": "時刻",
+      "changes": "変更",
+      "actions": "操作",
+      "download": "ファイルをダウンロード",
+      "view": "詳細を表示"
+    },
+    "filters": {
+      "searchPlaceholder": "パスまたは名前でファイルを検索...",
+      "operations": "操作",
+      "extensions": "ファイル拡張子"
+    },
+    "viewer": {
+      "operation": "操作",
+      "timestamp": "タイムスタンプ",
+      "changes": "変更",
+      "jumpToMessage": "メッセージに移動",
+      "download": "ダウンロード",
+      "fileContent": "ファイル内容",
+      "noContentAvailable": "このファイルには利用可能なコンテンツがありません"
+    },
+    "errors": {
+      "sessionNotFound": "セッションが見つかりません",
+      "messageNotFound": "セッション内にメッセージが見つかりません",
+      "jumpError": "メッセージへの移動に失敗しました"
+    }
   }
 }

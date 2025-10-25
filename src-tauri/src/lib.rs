@@ -2,7 +2,7 @@ mod models;
 mod commands;
 mod utils;
 
-use crate::commands::{project::*, session::*, stats::*, update::*, secure_update::*, feedback::*, cursor::*};
+use crate::commands::{project::*, session::*, stats::*, update::*, secure_update::*, feedback::*, cursor::*, files::*};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -12,6 +12,7 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_os::init())
@@ -45,7 +46,9 @@ pub fn run() {
             get_universal_session_token_stats,
             get_universal_project_token_stats,
             get_universal_project_stats_summary,
-            get_universal_session_comparison
+            get_universal_session_comparison,
+            // File Activities (v1.5.0+)
+            get_file_activities
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

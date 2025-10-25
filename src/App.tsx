@@ -3,6 +3,7 @@ import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
+import { FilesView } from "./components/FilesView";
 import { SimpleUpdateManager } from "./components/SimpleUpdateManager";
 import { SearchView } from "./components/SearchView";
 import { DebugConsole } from "./components/DebugConsole";
@@ -18,6 +19,7 @@ import { AppErrorType, type UISession, type UIProject } from "./types";
 import { AlertTriangle, Loader2, MessageSquare } from "lucide-react";
 import { useLanguageStore } from "./store/useLanguageStore";
 import { type SupportedLanguage } from "./i18n.config";
+import { Toaster } from "sonner";
 
 import "./App.css";
 import { cn } from "./utils/cn";
@@ -415,6 +417,8 @@ function App() {
                         projectStats={projectTokenStats}
                       />
                     </div>
+                  ) : computed.isFilesView ? (
+                    <FilesView />
                   ) : selectedSession ? (
                     <MessageViewer
                       messages={messages}
@@ -522,6 +526,9 @@ function App() {
 
       {/* Debug Console */}
       <DebugConsole />
+
+      {/* Toast Notifications */}
+      <Toaster position="bottom-right" richColors closeButton />
     </>
   );
 }

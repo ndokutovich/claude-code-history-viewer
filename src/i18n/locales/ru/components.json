@@ -604,5 +604,40 @@
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
     }
+  },
+  "filesView": {
+    "title": "Файлы",
+    "subtitle": "{{count}} активностей с файлами в {{project}}",
+    "noProjectSelected": "Проект не выбран",
+    "selectProjectToViewFiles": "Выберите проект для просмотра файловых активностей",
+    "loadingFiles": "Загрузка файловых активностей...",
+    "table": {
+      "filePath": "Путь к файлу",
+      "operation": "Операция",
+      "timestamp": "Время",
+      "changes": "Изменения",
+      "actions": "Действия",
+      "download": "Скачать файл",
+      "view": "Просмотр деталей"
+    },
+    "filters": {
+      "searchPlaceholder": "Поиск файлов по пути или имени...",
+      "operations": "Операции",
+      "extensions": "Расширения файлов"
+    },
+    "viewer": {
+      "operation": "Операция",
+      "timestamp": "Временная метка",
+      "changes": "Изменения",
+      "jumpToMessage": "Перейти к сообщению",
+      "download": "Скачать",
+      "fileContent": "Содержимое файла",
+      "noContentAvailable": "Для этого файла нет доступного содержимого"
+    },
+    "errors": {
+      "sessionNotFound": "Сессия не найдена",
+      "messageNotFound": "Сообщение не найдено в сессии",
+      "jumpError": "Не удалось перейти к сообщению"
+    }
   }
 }

@@ -619,5 +619,40 @@
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
     }
+  },
+  "filesView": {
+    "title": "檔案",
+    "subtitle": "{{project}} 中的 {{count}} 個檔案活動",
+    "noProjectSelected": "未選擇專案",
+    "selectProjectToViewFiles": "選擇專案以檢視檔案活動",
+    "loadingFiles": "正在載入檔案活動...",
+    "table": {
+      "filePath": "檔案路徑",
+      "operation": "操作",
+      "timestamp": "時間",
+      "changes": "變更",
+      "actions": "操作",
+      "download": "下載檔案",
+      "view": "檢視詳情"
+    },
+    "filters": {
+      "searchPlaceholder": "按路徑或名稱搜尋檔案...",
+      "operations": "操作",
+      "extensions": "檔案副檔名"
+    },
+    "viewer": {
+      "operation": "操作",
+      "timestamp": "時間戳記",
+      "changes": "變更",
+      "jumpToMessage": "跳轉到訊息",
+      "download": "下載",
+      "fileContent": "檔案內容",
+      "noContentAvailable": "此檔案沒有可用內容"
+    },
+    "errors": {
+      "sessionNotFound": "未找到工作階段",
+      "messageNotFound": "工作階段中未找到訊息",
+      "jumpError": "跳轉到訊息失敗"
+    }
   }
 }

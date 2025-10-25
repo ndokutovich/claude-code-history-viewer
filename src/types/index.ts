@@ -188,6 +188,7 @@ export enum AppErrorType {
   TAURI_NOT_AVAILABLE = "TAURI_NOT_AVAILABLE",
   PERMISSION_DENIED = "PERMISSION_DENIED",
   INVALID_PATH = "INVALID_PATH",
+  LOAD_FILE_ACTIVITIES = "LOAD_FILE_ACTIVITIES",
   UNKNOWN = "UNKNOWN",
 }
 
@@ -199,7 +200,7 @@ export interface AppError {
 /**
  * App-wide view type (unified view state)
  */
-export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search';
+export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search' | 'files';
 
 /**
  * Loading progress tracking
@@ -246,6 +247,11 @@ export interface AppState {
   searchQuery: string;
   searchResults: UIMessage[];
   searchFilters: SearchFilters;
+
+  // File activities state (v1.5.0+)
+  fileActivities: FileActivity[];
+  fileActivityFilters: FileActivityFilters;
+  isLoadingFileActivities: boolean;
 
   // Loading states
   isLoading: boolean; // For overall app initialization
@@ -362,6 +368,56 @@ export interface UpdateInfo {
   metadata?: UpdateMetadata;
   is_forced: boolean;
   days_until_deadline?: number;
+}
+
+// ============================================================================
+// FILE ACTIVITY TYPES (v1.5.0+)
+// ============================================================================
+
+export type FileOperation =
+  | 'read'
+  | 'write'
+  | 'edit'
+  | 'delete'
+  | 'create'
+  | 'glob'
+  | 'multiedit';
+
+export interface FileChange {
+  old_string: string;
+  new_string: string;
+  line_start?: number;
+  line_end?: number;
+}
+
+export interface FileActivity {
+  file_path: string;
+  operation: FileOperation;
+  timestamp: string;
+  session_id: string;
+  project_id: string;
+  message_id: string;
+  tool_name: string;
+
+  // Content tracking
+  content_before?: string;
+  content_after?: string;
+  size_before?: number;
+  size_after?: number;
+
+  // Diff information
+  changes?: FileChange[];
+  lines_added?: number;
+  lines_removed?: number;
+}
+
+export interface FileActivityFilters {
+  dateRange?: string[];
+  projects?: string[];
+  sessionId?: string;
+  operations?: string[];
+  fileExtensions?: string[];
+  searchQuery?: string;
 }
 
 // ============================================================================

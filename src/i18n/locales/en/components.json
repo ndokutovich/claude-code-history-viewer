@@ -611,5 +611,44 @@
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
     }
+  },
+  "filesView": {
+    "title": "Files",
+    "subtitle": "{{count}} file activities in {{project}}",
+    "subtitle_plural": "{{count}} file activities in {{project}}",
+    "noProjectSelected": "No Project Selected",
+    "selectProjectToViewFiles": "Select a project to view file activities",
+    "loadingFiles": "Loading file activities...",
+    "errorLoadingFiles": "Error Loading Files",
+    "noFilesFound": "No File Activities Found",
+    "noFilesDescription": "No file operations were recorded in this project",
+    "table": {
+      "filePath": "File Path",
+      "operation": "Operation",
+      "timestamp": "Time",
+      "changes": "Changes",
+      "actions": "Actions",
+      "download": "Download File",
+      "view": "View Details"
+    },
+    "filters": {
+      "searchPlaceholder": "Search files by path or name...",
+      "operations": "Operations",
+      "extensions": "File Extensions"
+    },
+    "viewer": {
+      "operation": "Operation",
+      "timestamp": "Timestamp",
+      "changes": "Changes",
+      "jumpToMessage": "Jump to Message",
+      "download": "Download",
+      "fileContent": "File Content",
+      "noContentAvailable": "No content available for this file"
+    },
+    "errors": {
+      "sessionNotFound": "Session not found",
+      "messageNotFound": "Message not found in session",
+      "jumpError": "Failed to jump to message"
+    }
   }
 }

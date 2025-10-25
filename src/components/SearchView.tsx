@@ -419,9 +419,9 @@ export const SearchView = () => {
                 {/* Expanded Messages */}
                 {group.isExpanded && (
                   <div className="border-t divide-y">
-                    {group.messages.map((message) => (
+                    {group.messages.map((message, index) => (
                       <div
-                        key={message.uuid}
+                        key={`${message.uuid}-${index}`}
                         className={cn(
                           "p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                         )}

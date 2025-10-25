@@ -6,6 +6,7 @@ import {
   Activity,
   Search,
   Database,
+  FileText,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -185,6 +186,26 @@ export const Header = () => {
                       className={cn("w-5 h-5", COLORS.ui.text.primary)}
                     />
                   )}
+                </TooltipButton>
+                <TooltipButton
+                  onClick={() => {
+                    if (computed.isFilesView) {
+                      analyticsActions.switchToMessages();
+                    } else {
+                      analyticsActions.switchToFiles();
+                    }
+                  }}
+                  className={cn(
+                    "p-2 rounded-lg transition-colors",
+                    computed.isFilesView
+                      ? COLORS.tools.file.bg
+                      : COLORS.ui.interactive.hover
+                  )}
+                  content={tComponents("filesView.title")}
+                >
+                  <FileText
+                    className={cn("w-5 h-5", COLORS.ui.text.primary)}
+                  />
                 </TooltipButton>
               </>
             )}
