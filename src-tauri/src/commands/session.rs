@@ -3,7 +3,6 @@ use crate::models::universal::UniversalMessage;
 use crate::commands::adapters::claude_code::{claude_message_to_universal, extract_project_id};
 use crate::utils::extract_project_name;
 use std::fs;
-use std::path::PathBuf;
 use walkdir::WalkDir;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;

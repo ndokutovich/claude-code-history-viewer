@@ -230,7 +230,7 @@ pub async fn scan_cursor_workspaces(cursor_path: String) -> Result<Vec<CursorWor
 fn count_workspace_composers_with_messages(cursor_base: &PathBuf, state_db: &PathBuf) -> Result<(usize, Option<String>), String> {
     // Open workspace database
     let conn = Connection::open(state_db)
-        .map_err(|e| format!("Failed to open workspace DB: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open workspace DB: {}", e))?;
 
     // Try to read composer.composerData
     let composer_data_json: Result<String, _> = conn.query_row(
@@ -243,7 +243,7 @@ fn count_workspace_composers_with_messages(cursor_base: &PathBuf, state_db: &Pat
         Ok(json_str) => {
             // Parse composers
             let workspace_composer_data: WorkspaceComposerData = serde_json::from_str(&json_str)
-                .map_err(|e| format!("Failed to parse composer data: {}", e))?;
+                .map_err(|e| format!("CURSOR_PARSE_ERROR: Failed to parse composer data: {}", e))?;
 
             workspace_composer_data.all_composers
         },
@@ -266,7 +266,7 @@ fn count_workspace_composers_with_messages(cursor_base: &PathBuf, state_db: &Pat
     // Open global database and check which composers have messages
     let global_db = &session_dbs[0];
     let global_conn = Connection::open(global_db)
-        .map_err(|e| format!("Failed to open global DB: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open global DB: {}", e))?;
 
     // Build a query to check which session IDs have messages and track most recent
     let mut count = 0;
@@ -333,7 +333,7 @@ pub async fn load_cursor_sessions(cursor_path: String, workspace_id: Option<Stri
 
     // Open workspace database to get session list
     let workspace_conn = Connection::open(&workspace_storage_path)
-        .map_err(|e| format!("Failed to open workspace database: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open workspace database: {}", e))?;
 
     // Try to read composer.composerData from ItemTable (optional)
     let composer_data_json: Option<String> = workspace_conn
@@ -348,7 +348,7 @@ pub async fn load_cursor_sessions(cursor_path: String, workspace_id: Option<Stri
         println!("  📋 Parsing composer data ({} chars)...", json_str.len());
 
         let workspace_composer_data: WorkspaceComposerData = serde_json::from_str(&json_str)
-            .map_err(|e| format!("Failed to parse composer.composerData JSON: {}", e))?;
+            .map_err(|e| format!("CURSOR_PARSE_ERROR: Failed to parse composer.composerData JSON: {}", e))?;
 
         println!("  ✓ Found {} composers from workspace metadata", workspace_composer_data.all_composers.len());
         workspace_composer_data.all_composers
@@ -371,7 +371,7 @@ pub async fn load_cursor_sessions(cursor_path: String, workspace_id: Option<Stri
         println!("  📂 Opening global database: {}", global_db.display());
 
         let conn = Connection::open(&global_db)
-            .map_err(|e| format!("Failed to open global database: {}", e))?;
+            .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open global database: {}", e))?;
 
         // Create a map of session_id -> message_count from global database
         let mut session_message_counts: HashMap<String, usize> = HashMap::new();
@@ -383,18 +383,18 @@ pub async fn load_cursor_sessions(cursor_path: String, workspace_id: Option<Stri
              FROM cursorDiskKV \
              WHERE key LIKE 'bubbleId:%' \
              GROUP BY session_id"
-        ).map_err(|e| format!("Failed to prepare session query: {}", e))?;
+        ).map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare session query: {}", e))?;
 
         let session_rows = stmt.query_map(params![], |row| {
             Ok((
                 row.get::<_, String>(0)?, // session_id
                 row.get::<_, i64>(1)?,    // message count
             ))
-        }).map_err(|e| format!("Failed to query sessions: {}", e))?;
+        }).map_err(|e| format!("CURSOR_DB_ERROR: Failed to query sessions: {}", e))?;
 
         for row_result in session_rows {
             let (session_id, message_count) = row_result
-                .map_err(|e| format!("Failed to read session row: {}", e))?;
+                .map_err(|e| format!("CURSOR_DB_ERROR: Failed to read session row: {}", e))?;
             session_message_counts.insert(session_id, message_count as usize);
         }
 
@@ -585,7 +585,7 @@ pub async fn load_cursor_messages(
     println!("  🔎 Query pattern: {}", query_pattern);
 
     let mut stmt = conn.prepare("SELECT rowid, key, value FROM cursorDiskKV WHERE key LIKE ?1 ORDER BY rowid")
-        .map_err(|e| format!("Failed to prepare query: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare query: {}", e))?;
 
     let mut messages = Vec::new();
     let rows = stmt.query_map(params![query_pattern], |row| {
@@ -594,7 +594,7 @@ pub async fn load_cursor_messages(
             row.get::<_, String>(1)?, // key
             row.get::<_, String>(2)?, // value
         ))
-    }).map_err(|e| format!("Failed to query messages: {}", e))?;
+    }).map_err(|e| format!("CURSOR_DB_ERROR: Failed to query messages: {}", e))?;
 
     // Collect rows first to get min/max rowid for timestamp calculation
     let row_vec: Vec<(i64, String, String)> = rows.filter_map(|r| r.ok()).collect();
@@ -850,7 +850,7 @@ pub async fn search_cursor_messages(
     }
 
     let conn = Connection::open(&global_db)
-        .map_err(|e| format!("Failed to open global database: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open global database: {}", e))?;
 
     // Search pattern: case-insensitive search in bubble text
     let _search_pattern = format!("%{}%", query.to_lowercase());
@@ -858,7 +858,7 @@ pub async fn search_cursor_messages(
     // Query all bubbles and filter by text content
     let mut stmt = conn.prepare(
         "SELECT rowid, key, value FROM cursorDiskKV WHERE key LIKE 'bubbleId:%' ORDER BY rowid DESC"
-    ).map_err(|e| format!("Failed to prepare search query: {}", e))?;
+    ).map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare search query: {}", e))?;
 
     let rows = stmt.query_map(params![], |row| {
         Ok((
@@ -866,13 +866,13 @@ pub async fn search_cursor_messages(
             row.get::<_, String>(1)?,
             row.get::<_, String>(2)?,
         ))
-    }).map_err(|e| format!("Failed to execute search: {}", e))?;
+    }).map_err(|e| format!("CURSOR_DB_ERROR: Failed to execute search: {}", e))?;
 
     let mut matching_messages = Vec::new();
     let mut sequence = 0;
 
     for row_result in rows {
-        let (rowid, key, value_str) = row_result.map_err(|e| format!("Row error: {}", e))?;
+        let (rowid, key, value_str) = row_result.map_err(|e| format!("CURSOR_DB_ERROR: Row error: {}", e))?;
 
         // Parse bubble
         let bubble: Result<CursorBubble, _> = serde_json::from_str(&value_str);
@@ -930,7 +930,7 @@ pub async fn search_cursor_messages(
 
         // Apply tool calls filter
         if let Some(has_tool_calls) = filters.has_tool_calls {
-            let has_tools = !bubble.tool_results.is_empty();
+            let has_tools = !bubble.tool_results.is_empty() || bubble.tool_former_data.is_some();
             if has_tool_calls != has_tools {
                 continue;
             }
@@ -1214,18 +1214,18 @@ fn find_cursor_session_dbs(cursor_base: &PathBuf) -> Vec<PathBuf> {
 
 fn extract_project_info(state_db: &PathBuf) -> Result<ProjectInfo, String> {
     let conn = Connection::open(state_db)
-        .map_err(|e| format!("Failed to open workspace DB: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open workspace DB: {}", e))?;
 
     // Query ItemTable for history.entries
     let mut stmt = conn.prepare("SELECT value FROM ItemTable WHERE key = 'history.entries'")
-        .map_err(|e| format!("Failed to prepare query: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare query: {}", e))?;
 
     let value_str: String = stmt.query_row(params![], |row| row.get(0))
-        .map_err(|e| format!("Failed to get history.entries: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to get history.entries: {}", e))?;
 
     // Parse JSON
     let entries: Vec<HistoryEntry> = serde_json::from_str(&value_str)
-        .map_err(|e| format!("Failed to parse history entries: {}", e))?;
+        .map_err(|e| format!("CURSOR_PARSE_ERROR: Failed to parse history entries: {}", e))?;
 
     // Extract file paths
     let mut file_paths = Vec::new();
@@ -1299,7 +1299,7 @@ fn find_common_prefix(paths: &[String]) -> String {
 #[allow(dead_code)]
 fn count_cursor_messages(session_db: &PathBuf) -> Result<usize, String> {
     let conn = Connection::open(session_db)
-        .map_err(|e| format!("Failed to open database: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open database: {}", e))?;
 
     let mut stmt = conn.prepare("SELECT COUNT(*) FROM cursorDiskKV WHERE key LIKE 'bubbleId:%'")
         .map_err(|e| format!("Failed to prepare count query: {}", e))?;

@@ -373,6 +373,11 @@ fn convert_tool_use(msg: &ClaudeMessage) -> Option<Vec<ToolCall>> {
     if tool_calls.is_empty() {
         None
     } else {
+        // Deduplicate by ID (in case tool calls appear in both legacy and modern formats)
+        use std::collections::HashSet;
+        let mut seen_ids = HashSet::new();
+        tool_calls.retain(|tc| seen_ids.insert(tc.id.clone()));
+
         Some(tool_calls)
     }
 }

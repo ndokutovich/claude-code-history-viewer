@@ -412,10 +412,10 @@ export interface FileActivity {
 }
 
 export interface FileActivityFilters {
-  dateRange?: string[];
+  dateRange?: [string, string]; // Tuple for start/end dates
   projects?: string[];
   sessionId?: string;
-  operations?: string[];
+  operations?: FileOperation[]; // Use typed FileOperation instead of string
   fileExtensions?: string[];
   searchQuery?: string;
 }

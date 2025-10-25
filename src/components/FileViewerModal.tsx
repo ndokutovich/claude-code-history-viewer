@@ -10,6 +10,7 @@ import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
 import { formatRelativeTime } from "../utils/time";
 import { getFileName } from "../utils/pathUtils";
+import { getOperationColor } from "../utils/fileOperationUtils";
 import { toast } from "sonner";
 import { Command } from "@tauri-apps/plugin-shell";
 import { platform } from "@tauri-apps/plugin-os";
@@ -168,43 +169,31 @@ export const FileViewerModal = ({
       console.log("Loading session with full messages:", targetSession.session_id);
       await selectSession(targetSession, 10000);
 
-      // Scroll to message after a brief delay to allow rendering
-      setTimeout(() => {
-        console.log("Attempting to find element:", `message-${file.message_id}`);
-        const element = document.getElementById(`message-${file.message_id}`);
+      // Wait for message to render using polling with max attempts
+      const messageId = `message-${file.message_id}`;
+      console.log("Attempting to find element:", messageId);
+
+      let attempts = 0;
+      const maxAttempts = 20; // 2 seconds total (20 * 100ms)
+      const pollInterval = setInterval(() => {
+        const element = document.getElementById(messageId);
+
         if (element) {
+          clearInterval(pollInterval);
           console.log("Element found, scrolling to it");
           element.scrollIntoView({ behavior: "smooth", block: "center" });
           // Add highlight animation
           element.classList.add("highlight-message");
           setTimeout(() => element.classList.remove("highlight-message"), 2000);
-        } else {
-          console.error("Message element not found:", `message-${file.message_id}`);
+        } else if (++attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          console.error("Message element not found after polling:", messageId);
           toast.error(t("filesView.errors.messageNotFound"));
         }
-      }, 500);
+      }, 100);
     } catch (error) {
       console.error("Error jumping to message:", error);
       toast.error(t("filesView.errors.jumpError"));
-    }
-  };
-
-  const getOperationColor = (operation: string) => {
-    switch (operation.toLowerCase()) {
-      case "read":
-        return COLORS.semantic.info;
-      case "write":
-      case "create":
-        return COLORS.semantic.success;
-      case "edit":
-      case "multiedit":
-        return COLORS.tools.code;
-      case "glob":
-        return COLORS.tools.search;
-      case "delete":
-        return COLORS.semantic.error;
-      default:
-        return COLORS.tools.system;
     }
   };
 

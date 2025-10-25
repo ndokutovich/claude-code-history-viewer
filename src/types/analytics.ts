@@ -7,9 +7,9 @@ import type { ProjectStatsSummary, SessionComparison } from './index';
 
 /**
  * App-wide view types (unified view state)
- * This is the single source of truth for what the user is currently viewing
+ * Re-export from index.ts to maintain single source of truth
  */
-export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search';
+export type { AppView } from './index';
 
 /**
  * @deprecated Use AppView instead. Kept for backward compatibility during migration.

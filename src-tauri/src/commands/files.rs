@@ -177,14 +177,19 @@ async fn load_session_messages_for_files(
     use std::io::{BufRead, BufReader};
     use std::fs::File;
 
-    let file = File::open(session_path)
-        .map_err(|e| format!("Failed to open session file: {}", e))?;
-    let reader = BufReader::new(file);
+    // Clone path for move into spawn_blocking
+    let session_path = session_path.to_string();
 
-    let mut messages = Vec::new();
+    // Wrap blocking I/O in spawn_blocking to avoid blocking the async runtime
+    let messages = tokio::task::spawn_blocking(move || -> Result<Vec<UniversalMessage>, String> {
+        let file = File::open(&session_path)
+            .map_err(|e| format!("Failed to open session file: {}", e))?;
+        let reader = BufReader::new(file);
 
-    for (line_num, line_result) in reader.lines().enumerate() {
-        let line = line_result.map_err(|e| format!("Failed to read line: {}", e))?;
+        let mut messages = Vec::new();
+
+        for (line_num, line_result) in reader.lines().enumerate() {
+            let line = line_result.map_err(|e| format!("Failed to read line: {}", e))?;
 
         if line.trim().is_empty() {
             continue;
@@ -234,8 +239,8 @@ async fn load_session_messages_for_files(
                     project_path: None,
                 };
 
-                let project_id = extract_project_id(&None, session_path);
-                let source_id = session_path.to_string();
+                let project_id = extract_project_id(&None, &session_path);
+                let source_id = session_path.clone();
 
                 let universal_msg =
                     claude_message_to_universal(&claude_message, project_id, source_id, 0);
@@ -252,6 +257,11 @@ async fn load_session_messages_for_files(
             }
         }
     }
+
+        Ok(messages)
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))??;
 
     Ok(messages)
 }
@@ -544,6 +554,13 @@ fn should_include_activity(activity: &FileActivity, filters: &FileActivityFilter
     // Filter by session ID
     if let Some(ref session_id) = filters.session_id {
         if &activity.session_id != session_id {
+            return false;
+        }
+    }
+
+    // Filter by projects
+    if let Some(ref projects) = filters.projects {
+        if !projects.is_empty() && !projects.iter().any(|p| p == &activity.project_id) {
             return false;
         }
     }

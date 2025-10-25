@@ -15,6 +15,7 @@ import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
 import { formatRelativeTime } from "../utils/time";
 import { getFileName, getDirectoryParts } from "../utils/pathUtils";
+import { getOperationColor } from "../utils/fileOperationUtils";
 
 interface FileActivityTableProps {
   activities: FileActivity[];
@@ -49,25 +50,6 @@ export const FileActivityTable = ({
         return <FolderSearch className="w-4 h-4" />;
       default:
         return <File className="w-4 h-4" />;
-    }
-  };
-
-  const getOperationColor = (operation: string) => {
-    switch (operation.toLowerCase()) {
-      case "read":
-        return COLORS.semantic.info;
-      case "write":
-      case "create":
-        return COLORS.semantic.success;
-      case "edit":
-      case "multiedit":
-        return COLORS.tools.code;
-      case "glob":
-        return COLORS.tools.search;
-      case "delete":
-        return COLORS.semantic.error;
-      default:
-        return COLORS.tools.system;
     }
   };
 

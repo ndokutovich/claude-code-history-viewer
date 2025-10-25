@@ -122,7 +122,7 @@ async fn load_universal_session_messages(
             // We'll use a placeholder timestamp since load_cursor_messages extracts from the global DB anyway
             let encoded_path = format!("{}#session={}#timestamp=unknown", global_db.to_string_lossy(), session_id);
 
-            load_cursor_messages(encoded_path).await
+            load_cursor_messages(source_path.to_string(), encoded_path).await
         }
         _ => Err(format!("Unknown provider: {}", provider_id)),
     }
