@@ -37,6 +37,35 @@
     "fs": {
       "requireLiteralLeadingDot": false
     },
+    "shell": {
+      "open": true,
+      "scope": [
+        {
+          "name": "open-downloads-folder",
+          "cmd": "open",
+          "args": [
+            "~/Downloads"
+          ],
+          "sidecar": false
+        },
+        {
+          "name": "open-downloads-folder-windows",
+          "cmd": "explorer",
+          "args": [
+            "shell:Downloads"
+          ],
+          "sidecar": false
+        },
+        {
+          "name": "open-downloads-folder-linux",
+          "cmd": "xdg-open",
+          "args": [
+            "~/Downloads"
+          ],
+          "sidecar": false
+        }
+      ]
+    },
     "updater": {
       "active": true,
       "endpoints": [

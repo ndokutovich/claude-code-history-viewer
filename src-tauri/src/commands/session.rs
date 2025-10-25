@@ -701,7 +701,11 @@ pub async fn search_messages(
     query: String,
     filters: SearchFilters
 ) -> Result<Vec<UniversalMessage>, String> {
-    let projects_path = PathBuf::from(&claude_path).join("projects");
+    // Validate and canonicalize the path to prevent traversal attacks
+    let canonical_claude_path = std::fs::canonicalize(&claude_path)
+        .map_err(|e| format!("SEARCH_INVALID_PATH: Failed to resolve claude path: {}", e))?;
+
+    let projects_path = canonical_claude_path.join("projects");
     let mut all_messages = Vec::new();
 
     if !projects_path.exists() {

@@ -516,8 +516,12 @@ pub async fn load_cursor_sessions(cursor_path: String, workspace_id: Option<Stri
 // ============================================================================
 
 #[tauri::command]
-pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<UniversalMessage>, String> {
+pub async fn load_cursor_messages(
+    cursor_path: String,
+    session_db_path: String
+) -> Result<Vec<UniversalMessage>, String> {
     println!("🔍 [Rust] load_cursor_messages called:");
+    println!("  cursor_path: {}", cursor_path);
     println!("  session_db_path: {}", session_db_path);
 
     // Parse session ID and timestamp from db_path
@@ -542,7 +546,7 @@ pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<Univers
             (db_path, after_session.to_string(), Utc::now())
         }
     } else {
-        return Err("Session ID not found in db_path. Expected format: <path>#session=<id>#timestamp=<timestamp>".to_string());
+        return Err("CURSOR_INVALID_ARGUMENT: Session ID not found in db_path. Expected format: <path>#session=<id>#timestamp=<timestamp>".to_string());
     };
 
     println!("  📂 Database: {}", db_path_str);
@@ -551,12 +555,30 @@ pub async fn load_cursor_messages(session_db_path: String) -> Result<Vec<Univers
 
     let db_path = PathBuf::from(db_path_str);
 
+    // Validate DB path: must be the Cursor global storage DB
+    let allowed_db = PathBuf::from(&cursor_path)
+        .join("User")
+        .join("globalStorage")
+        .join("state.vscdb");
+
+    let canon_db = db_path.canonicalize()
+        .map_err(|e| format!("CURSOR_PATH_ERROR: Failed to canonicalize DB path: {}", e))?;
+    let canon_allow = allowed_db.canonicalize()
+        .map_err(|e| format!("CURSOR_PATH_ERROR: Failed to resolve allowed DB path: {}", e))?;
+
+    if canon_db != canon_allow {
+        return Err(format!(
+            "CURSOR_FORBIDDEN_PATH: DB path {} is not within Cursor global storage",
+            db_path.display()
+        ));
+    }
+
     if !db_path.exists() {
-        return Err(format!("Session database not found: {}", db_path_str));
+        return Err(format!("CURSOR_DB_NOT_FOUND: Session database not found at {}", db_path_str));
     }
 
     let conn = Connection::open(&db_path)
-        .map_err(|e| format!("Failed to open database: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open database: {}", e))?;
 
     // Filter messages by session ID: bubbleId:<session-id>:<message-id>
     let query_pattern = format!("bubbleId:{}:%", session_id);

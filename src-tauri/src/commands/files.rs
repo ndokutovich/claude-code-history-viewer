@@ -22,6 +22,16 @@ pub async fn get_file_activities(
     source_path: Option<String>,
     filters: FileActivityFilters,
 ) -> Result<Vec<FileActivity>, String> {
+    // Enforce absolute paths if provided
+    if !project_path.is_empty() && project_path != "*" && !std::path::Path::new(&project_path).is_absolute() {
+        return Err("FILES_INVALID_ARGUMENT: project_path must be absolute".to_string());
+    }
+    if let Some(ref sp) = source_path {
+        if !std::path::Path::new(sp).is_absolute() {
+            return Err("FILES_INVALID_ARGUMENT: source_path must be absolute".to_string());
+        }
+    }
+
     let mut activities = Vec::new();
 
     // Determine if we should load all projects or just one
@@ -30,7 +40,9 @@ pub async fn get_file_activities(
     if is_all_projects {
         // Load from ALL projects across all sources
         // Use provided source_path or extract from project_path
-        let claude_path = source_path.ok_or("Source path required for loading all projects")?;
+        let claude_path = source_path.ok_or_else(|| {
+            "FILES_INVALID_ARGUMENT: Source path required for loading all projects".to_string()
+        })?;
         let projects = scan_projects(claude_path).await?;
 
         for project in projects {
@@ -58,18 +70,24 @@ pub async fn get_file_activities(
         }
     } else {
         // Load from a specific project
-        // Detect if this is a Cursor workspace by checking the path
-        let is_cursor_workspace = project_path.contains("Cursor") &&
-                                  project_path.contains("workspaceStorage");
+        // Detect if this is a Cursor workspace by checking path components
+        // More robust than string.contains() - checks actual path components
+        let path = Path::new(&project_path);
+        let components: Vec<_> = path.components()
+            .filter_map(|c| c.as_os_str().to_str())
+            .collect();
+
+        let has_cursor = components.iter().any(|c| c.eq_ignore_ascii_case("cursor"));
+        let has_workspace_storage = components.iter().any(|c| c.eq_ignore_ascii_case("workspaceStorage"));
+        let is_cursor_workspace = has_cursor && has_workspace_storage;
 
         if is_cursor_workspace {
             // Extract Cursor base path from workspace path
             // Format: C:\Users\xxx\AppData\Roaming\Cursor\User\workspaceStorage\{workspace-id}
-            let path = Path::new(&project_path);
             let cursor_base = path.parent()  // workspaceStorage
                 .and_then(|p| p.parent())    // User
                 .and_then(|p| p.parent())    // Cursor
-                .ok_or("Invalid Cursor workspace path")?;
+                .ok_or_else(|| "FILES_CURSOR_INVALID_WORKSPACE_PATH: Invalid Cursor workspace path".to_string())?;
 
             println!("📂 Loading Cursor files from workspace: {}", project_path);
 
@@ -93,7 +111,10 @@ pub async fn get_file_activities(
                 );
 
                 // Load messages with tool_calls populated
-                let messages = load_cursor_messages(session_db_path).await?;
+                let messages = load_cursor_messages(
+                    cursor_base.to_string_lossy().to_string(),
+                    session_db_path
+                ).await?;
 
                 println!("    Loaded {} messages", messages.len());
 
