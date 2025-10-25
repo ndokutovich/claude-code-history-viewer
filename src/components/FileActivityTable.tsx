@@ -14,6 +14,7 @@ import type { FileActivity } from "../types";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
 import { formatRelativeTime } from "../utils/time";
+import { getFileName, getDirectoryParts } from "../utils/pathUtils";
 
 interface FileActivityTableProps {
   activities: FileActivity[];
@@ -75,14 +76,9 @@ export const FileActivityTable = ({
     return parts.length > 1 ? parts[parts.length - 1] : "";
   };
 
-  const getFileName = (filePath: string) => {
-    const parts = filePath.split("/");
-    return parts[parts.length - 1] || filePath;
-  };
-
   const getDirectory = (filePath: string) => {
-    const parts = filePath.split("/");
-    return parts.slice(0, -1).join("/");
+    const parts = getDirectoryParts(filePath);
+    return parts.join("/");
   };
 
   const handleDownload = (file: FileActivity, e: React.MouseEvent) => {

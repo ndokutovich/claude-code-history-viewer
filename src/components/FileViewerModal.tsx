@@ -9,6 +9,7 @@ import type { FileActivity } from "../types";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
 import { formatRelativeTime } from "../utils/time";
+import { getFileName } from "../utils/pathUtils";
 import { toast } from "sonner";
 import { Command } from "@tauri-apps/plugin-shell";
 import { platform } from "@tauri-apps/plugin-os";
@@ -43,7 +44,7 @@ export const FileViewerModal = ({
       return;
     }
 
-    const fileName = file.file_path.split("/").pop() || "file.txt";
+    const fileName = getFileName(file.file_path) || "file.txt";
 
     // Show download starting toast
     const downloadToast = toast.loading(t("filesView.toast.downloading", { fileName }));
@@ -66,16 +67,22 @@ export const FileViewerModal = ({
           label: t("filesView.toast.openFolder"),
           onClick: async () => {
             try {
-              const platformName = platform();
+              const platformName = await platform();
 
               // Open downloads folder based on platform
+              // Note: Shell commands are restricted by tauri.conf.json allowlist
               if (platformName === "windows") {
                 await Command.create("explorer", ["shell:Downloads"]).execute();
               } else if (platformName === "macos") {
-                await Command.create("open", ["~/Downloads"]).execute();
+                // On macOS, use the user's actual Downloads folder
+                const homeDir = await import("@tauri-apps/plugin-os").then((m) => m.homeDir());
+                const downloadsPath = `${homeDir}/Downloads`;
+                await Command.create("open", [downloadsPath]).execute();
               } else {
-                // Linux
-                await Command.create("xdg-open", ["~/Downloads"]).execute();
+                // Linux - use xdg-user-dir if available, fallback to $HOME/Downloads
+                const homeDir = await import("@tauri-apps/plugin-os").then((m) => m.homeDir());
+                const downloadsPath = `${homeDir}/Downloads`;
+                await Command.create("xdg-open", [downloadsPath]).execute();
               }
             } catch (error) {
               console.error("Failed to open downloads folder:", error);
@@ -209,7 +216,7 @@ export const FileViewerModal = ({
         <DialogHeader>
           <div className="flex-1 min-w-0">
             <DialogTitle className={cn("text-lg font-semibold truncate", COLORS.ui.text.primary)}>
-              {file.file_path.split("/").pop()}
+              {getFileName(file.file_path)}
             </DialogTitle>
             <p className={cn("text-sm mt-1 truncate", COLORS.ui.text.muted)}>
               {file.file_path}
@@ -274,7 +281,7 @@ export const FileViewerModal = ({
               title={
                 !file.content_after && !file.content_before
                   ? "No content available to download"
-                  : `Download ${file.file_path.split("/").pop()}`
+                  : `Download ${getFileName(file.file_path)}`
               }
               className={cn(
                 "px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center space-x-1",

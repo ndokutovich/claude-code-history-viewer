@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { Renderer } from "../shared/RendererHeader";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
+import { getFileName } from "../utils/pathUtils";
 
 export const FileContent = ({
   fileData,
@@ -35,7 +36,7 @@ export const FileContent = ({
   // Determine language based on file extension
   const getLanguageFromPath = (path: string) => {
     const ext = path.split(".").pop()?.toLowerCase();
-    const fileName = path.split("/").pop()?.toLowerCase() || "";
+    const fileName = getFileName(path).toLowerCase();
 
     switch (ext) {
       case "rs":

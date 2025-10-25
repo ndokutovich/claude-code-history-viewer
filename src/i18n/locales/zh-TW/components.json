@@ -634,10 +634,14 @@
   "filesView": {
     "title": "檔案",
     "subtitle": "{{project}} 中的 {{count}} 個檔案活動",
+    "subtitle_plural": "{{project}} 中的 {{count}} 個檔案活動",
     "allProjects": "所有專案",
     "noProjectSelected": "未選擇專案",
     "selectProjectToViewFiles": "選擇專案以檢視檔案活動",
     "loadingFiles": "正在載入檔案活動...",
+    "errorLoadingFiles": "載入檔案時發生錯誤",
+    "noFilesFound": "未找到檔案活動",
+    "noFilesDescription": "此專案中未記錄任何檔案操作",
     "table": {
       "filePath": "檔案路徑",
       "operation": "操作",
