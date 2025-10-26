@@ -124,7 +124,7 @@ async fn load_universal_session_messages(
 
             load_cursor_messages(source_path.to_string(), encoded_path).await
         }
-        _ => Err(format!("Unknown provider: {}", provider_id)),
+        _ => Err(format!("STATS_UNKNOWN_PROVIDER: Unknown provider: {}", provider_id)),
     }
 }
 
@@ -146,7 +146,7 @@ async fn get_project_session_ids(
             let sessions = load_cursor_sessions(source_path.to_string(), Some(project_id.to_string())).await?;
             Ok(sessions.into_iter().map(|s| s.id).collect())
         }
-        _ => Err(format!("Unknown provider: {}", provider_id)),
+        _ => Err(format!("STATS_UNKNOWN_PROVIDER: Unknown provider: {}", provider_id)),
     }
 }
 

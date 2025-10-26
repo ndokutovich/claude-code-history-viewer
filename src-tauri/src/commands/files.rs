@@ -183,13 +183,13 @@ async fn load_session_messages_for_files(
     // Wrap blocking I/O in spawn_blocking to avoid blocking the async runtime
     let messages = tokio::task::spawn_blocking(move || -> Result<Vec<UniversalMessage>, String> {
         let file = File::open(&session_path)
-            .map_err(|e| format!("Failed to open session file: {}", e))?;
+            .map_err(|e| format!("FILE_READ_ERROR: Failed to open session file: {}", e))?;
         let reader = BufReader::new(file);
 
         let mut messages = Vec::new();
 
         for (line_num, line_result) in reader.lines().enumerate() {
-            let line = line_result.map_err(|e| format!("Failed to read line: {}", e))?;
+            let line = line_result.map_err(|e| format!("FILE_READ_ERROR: Failed to read line: {}", e))?;
 
         if line.trim().is_empty() {
             continue;
@@ -261,7 +261,7 @@ async fn load_session_messages_for_files(
         Ok(messages)
     })
     .await
-    .map_err(|e| format!("Task join error: {}", e))??;
+    .map_err(|e| format!("FILE_TASK_ERROR: Task join error: {}", e))??;
 
     Ok(messages)
 }

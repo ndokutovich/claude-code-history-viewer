@@ -279,7 +279,7 @@ pub async fn load_project_sessions(
 #[tauri::command]
 pub async fn load_session_messages(session_path: String) -> Result<Vec<UniversalMessage>, String> {
     let content = fs::read_to_string(&session_path)
-        .map_err(|e| format!("Failed to read session file: {}", e))?;
+        .map_err(|e| format!("SESSION_READ_ERROR: Failed to read session file: {}", e))?;
 
     let mut messages = Vec::new();
 
@@ -417,14 +417,14 @@ pub async fn load_session_messages_paginated(
     use std::fs::File;
     
     let file = File::open(&session_path)
-        .map_err(|e| format!("Failed to open session file: {}", e))?;
+        .map_err(|e| format!("SESSION_FILE_ERROR: Failed to open session file: {}", e))?;
     let reader = BufReader::new(file);
-    
+
     // First pass: collect all messages to get total count and support reverse ordering
     let mut all_messages: Vec<ClaudeMessage> = Vec::new();
-    
+
     for (line_num, line_result) in reader.lines().enumerate() {
-        let line = line_result.map_err(|e| format!("Failed to read line: {}", e))?;
+        let line = line_result.map_err(|e| format!("SESSION_READ_ERROR: Failed to read line: {}", e))?;
         
         if line.trim().is_empty() {
             continue;
@@ -581,7 +581,7 @@ pub async fn get_session_message_count(
     exclude_sidechain: Option<bool>,
 ) -> Result<usize, String> {
     let content = fs::read_to_string(&session_path)
-        .map_err(|e| format!("Failed to read session file: {}", e))?;
+        .map_err(|e| format!("SESSION_READ_ERROR: Failed to read session file: {}", e))?;
 
     let mut count = 0;
     
@@ -700,7 +700,10 @@ pub async fn search_messages(
     query: String,
     filters: SearchFilters
 ) -> Result<Vec<UniversalMessage>, String> {
-    // Validate and canonicalize the path to prevent traversal attacks
+    // Validate and canonicalize the path for better error handling.
+    // Note: Path traversal is not a security concern for desktop apps where the user
+    // already has full filesystem access. This validation catches programming errors
+    // and provides clearer error messages when the path doesn't exist.
     let canonical_claude_path = std::fs::canonicalize(&claude_path)
         .map_err(|e| format!("SEARCH_INVALID_PATH: Failed to resolve claude path: {}", e))?;
 

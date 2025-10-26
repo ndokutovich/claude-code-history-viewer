@@ -134,7 +134,7 @@ pub async fn get_cursor_path() -> Result<String, String> {
 
     if !cursor_path.exists() {
         return Err(format!(
-            "CURSOR_FOLDER_NOT_FOUND:Cursor folder not found at {}",
+            "CURSOR_FOLDER_NOT_FOUND: Cursor folder not found at {}",
             cursor_path.display()
         ));
     }
@@ -1319,10 +1319,10 @@ fn count_cursor_messages(session_db: &PathBuf) -> Result<usize, String> {
         .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open database: {}", e))?;
 
     let mut stmt = conn.prepare("SELECT COUNT(*) FROM cursorDiskKV WHERE key LIKE 'bubbleId:%'")
-        .map_err(|e| format!("Failed to prepare count query: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare count query: {}", e))?;
 
     let count: i64 = stmt.query_row(params![], |row| row.get(0))
-        .map_err(|e| format!("Failed to count messages: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to count messages: {}", e))?;
 
     Ok(count as usize)
 }
