@@ -12,8 +12,8 @@ import { formatRelativeTime } from "../utils/time";
 import { getFileName } from "../utils/pathUtils";
 import { getOperationColor } from "../utils/fileOperationUtils";
 import { toast } from "sonner";
-import { Command } from "@tauri-apps/plugin-shell";
-import { platform } from "@tauri-apps/plugin-os";
+import { open } from "@tauri-apps/plugin-shell";
+import { downloadDir } from "@tauri-apps/api/path";
 
 interface FileViewerModalProps {
   file: FileActivity;
@@ -61,6 +61,9 @@ export const FileViewerModal = ({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
+      // Dismiss loading toast BEFORE showing success toast
+      toast.dismiss(downloadToast);
+
       // Show success toast with action to open folder
       toast.success(t("filesView.toast.downloaded", { fileName }), {
         description: t("filesView.toast.savedToDownloads"),
@@ -68,19 +71,12 @@ export const FileViewerModal = ({
           label: t("filesView.toast.openFolder"),
           onClick: async () => {
             try {
-              const platformName = await platform();
+              // Get the downloads directory path
+              const downloadsPath = await downloadDir();
 
-              // Open downloads folder based on platform
-              // Note: Shell commands are restricted by tauri.conf.json allowlist
-              if (platformName === "windows") {
-                await Command.create("explorer", ["shell:Downloads"]).execute();
-              } else if (platformName === "macos") {
-                // On macOS, use the open command to open Downloads folder
-                await Command.create("open", ["~/Downloads"]).execute();
-              } else {
-                // Linux - use xdg-open to open Downloads folder
-                await Command.create("xdg-open", ["~/Downloads"]).execute();
-              }
+              // Use shell.open() to open the folder with the system default file manager
+              // This works cross-platform (Windows Explorer, macOS Finder, Linux file manager)
+              await open(downloadsPath);
             } catch (error) {
               console.error("Failed to open downloads folder:", error);
               toast.error(t("filesView.toast.failedToOpenFolder"));
@@ -89,14 +85,12 @@ export const FileViewerModal = ({
         },
         duration: 5000,
       });
-
-      toast.dismiss(downloadToast);
     } catch (error) {
       console.error("Download failed:", error);
+      toast.dismiss(downloadToast);
       toast.error(t("filesView.toast.downloadFailed"), {
         description: error instanceof Error ? error.message : t("filesView.toast.unknownError")
       });
-      toast.dismiss(downloadToast);
     }
   };
 
