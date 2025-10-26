@@ -86,7 +86,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
     }
   }, [selectionMode, rangeStart, rangeEnd, messages]);
 
-  const handleToggleMessage = useCallback((messageId: string) => {
+  const handleToggleMessage = useCallback((messageId: string): void => {
     setSelectedMessageIds((prev) => {
       const next = new Set(prev);
       if (next.has(messageId)) {
@@ -98,17 +98,17 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
     });
   }, []);
 
-  const handleSelectAll = useCallback(() => {
+  const handleSelectAll = useCallback((): void => {
     const allIds = new Set(messages.map((msg) => msg.uuid));
     setSelectedMessageIds(allIds);
   }, [messages]);
 
-  const handleDeselectAll = useCallback(() => {
+  const handleDeselectAll = useCallback((): void => {
     setSelectedMessageIds(new Set());
   }, []);
 
   // Add to accumulated context (NEW!)
-  const handleAddToContext = useCallback(() => {
+  const handleAddToContext = useCallback((): void => {
     if (!selectedSession) return;
 
     const selected = messages.filter((msg) => selectedMessageIds.has(msg.uuid));
@@ -127,12 +127,12 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
   }, [messages, selectedMessageIds, selectedSession]);
 
   // Remove accumulated context
-  const handleRemoveContext = useCallback((index: number) => {
+  const handleRemoveContext = useCallback((index: number): void => {
     setAccumulatedContexts((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   // Final import all accumulated messages
-  const handleImportAll = useCallback(() => {
+  const handleImportAll = useCallback((): void => {
     const allMessages = accumulatedContexts.flatMap((ctx) => ctx.messages);
     onSelectMessages(allMessages);
 

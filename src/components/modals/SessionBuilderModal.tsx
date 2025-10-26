@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ValidationErrors } from '@/components/ui/ValidationErrors';
 import { FolderOpen, Plus, Save, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/useAppStore';
@@ -22,6 +23,7 @@ import {
 import { type MessageBuilder } from '@/types';
 import { adapterRegistry } from '@/adapters/registry/AdapterRegistry';
 import { open } from '@tauri-apps/plugin-dialog';
+import { validateSessionBuilder } from '@/utils/sessionValidation';
 import { MessageComposer } from './MessageComposer';
 import { ContextSelectorEnhanced } from './ContextSelectorEnhanced';
 import { SessionPreview } from './SessionPreview';
@@ -80,7 +82,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   // Handlers
-  const handleBrowseFolder = useCallback(async () => {
+  const handleBrowseFolder = useCallback(async (): Promise<void> => {
     try {
       const selected = await open({
         directory: true,
@@ -96,7 +98,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
     }
   }, []);
 
-  const handleAddMessage = useCallback(() => {
+  const handleAddMessage = useCallback((): void => {
     const newMessage: MessageBuilder = {
       id: `temp-${Date.now()}`,
       role: 'user',
@@ -106,21 +108,21 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
     setMessages((prev) => [...prev, newMessage]);
   }, []);
 
-  const handleUpdateMessage = useCallback((id: string, updates: Partial<MessageBuilder>) => {
+  const handleUpdateMessage = useCallback((id: string, updates: Partial<MessageBuilder>): void => {
     setMessages((prev) =>
       prev.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg))
     );
   }, []);
 
-  const handleRemoveMessage = useCallback((id: string) => {
+  const handleRemoveMessage = useCallback((id: string): void => {
     setMessages((prev) => prev.filter((msg) => msg.id !== id));
   }, []);
 
-  const handleReorderMessages = useCallback((reorderedMessages: MessageBuilder[]) => {
+  const handleReorderMessages = useCallback((reorderedMessages: MessageBuilder[]): void => {
     setMessages(reorderedMessages);
   }, []);
 
-  const resetForm = useCallback(() => {
+  const resetForm = useCallback((): void => {
     setProjectMode('new');
     setSelectedProjectPath('');
     setNewProjectName('');
@@ -132,38 +134,20 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
   }, []);
 
   const validateInputs = useCallback((): boolean => {
-    const errors: string[] = [];
-
-    // Validate source selection (NEW!)
-    if (!selectedSource) {
-      errors.push(t('sessionBuilder.validation.selectSource'));
-    }
-
-    // Validate project
-    if (projectMode === 'existing' && !selectedProjectPath) {
-      errors.push(t('sessionBuilder.validation.selectProject'));
-    }
-    if (projectMode === 'new' && !newProjectName.trim()) {
-      errors.push(t('sessionBuilder.validation.enterProjectName'));
-    }
-
-    // Validate messages
-    if (messages.length === 0) {
-      errors.push(t('sessionBuilder.validation.addOneMessage'));
-    }
-
-    // Validate message content
-    messages.forEach((msg, index) => {
-      if (typeof msg.content === 'string' && !msg.content.trim()) {
-        errors.push(t('sessionBuilder.validation.messageEmpty', { number: index + 1 }));
-      }
+    const result = validateSessionBuilder({
+      selectedSource,
+      projectMode,
+      selectedProjectPath,
+      newProjectName,
+      messages,
+      t,
     });
 
-    setValidationErrors(errors);
-    return errors.length === 0;
-  }, [selectedSource, projectMode, selectedProjectPath, newProjectName, messages]);
+    setValidationErrors(result.errors);
+    return result.isValid;
+  }, [selectedSource, projectMode, selectedProjectPath, newProjectName, messages, t]);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (): Promise<void> => {
     if (!validateInputs() || !selectedSource) {
       return;
     }
@@ -236,7 +220,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
     resetForm,
   ]);
 
-  const handleClose = useCallback(() => {
+  const handleClose = useCallback((): void => {
     if (!isSaving) {
       onClose();
       resetForm();
@@ -506,18 +490,11 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
             )}
 
             {/* Validation Errors */}
-            {validationErrors.length > 0 && (
-              <div className="p-4 bg-destructive/10 border border-destructive rounded-md">
-                <p className="font-semibold text-destructive mb-2">
-                  {t('sessionBuilder.validation.errorHeader')}
-                </p>
-                <ul className="list-disc list-inside space-y-1 text-sm text-destructive">
-                  {validationErrors.map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <ValidationErrors
+              errors={validationErrors}
+              title={t('sessionBuilder.validation.errorHeader')}
+              className="mb-4"
+            />
           </div>
         </div>
 

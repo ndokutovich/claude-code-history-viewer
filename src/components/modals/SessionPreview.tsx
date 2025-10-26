@@ -25,7 +25,7 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
     return sum + Math.ceil(content.length / 4);
   }, 0);
 
-  const handleMoveUp = useCallback((index: number) => {
+  const handleMoveUp = useCallback((index: number): void => {
     if (index === 0) return;
     const newMessages = [...messages];
     const current = newMessages[index];
@@ -36,7 +36,7 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
     onReorder(newMessages);
   }, [messages, onReorder]);
 
-  const handleMoveDown = useCallback((index: number) => {
+  const handleMoveDown = useCallback((index: number): void => {
     if (index === messages.length - 1) return;
     const newMessages = [...messages];
     const current = newMessages[index];
@@ -47,17 +47,17 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
     onReorder(newMessages);
   }, [messages, onReorder]);
 
-  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
+  const handleDragStart = useCallback((e: React.DragEvent, index: number): void => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
   }, []);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent): void => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent, dropIndex: number) => {
+  const handleDrop = useCallback((e: React.DragEvent, dropIndex: number): void => {
     e.preventDefault();
 
     if (draggedIndex === null || draggedIndex === dropIndex) {
@@ -74,7 +74,7 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
     setDraggedIndex(null);
   }, [draggedIndex, messages, onReorder]);
 
-  const handleDragEnd = useCallback(() => {
+  const handleDragEnd = useCallback((): void => {
     setDraggedIndex(null);
   }, []);
 
