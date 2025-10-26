@@ -8,6 +8,7 @@ import {
   ChevronRight,
   MessageCircle,
   X,
+  Loader2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { UIProject, UISession } from "../types";
@@ -42,6 +43,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   isLoading,
 }) => {
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [loadingProjects, setLoadingProjects] = useState<Set<string>>(new Set());
   const { t, i18n } = useTranslation('components');
   const { projectListPreferences, loadProjectSessions } = useAppStore();
 
@@ -240,6 +242,13 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   const loadSessionsForProjects = async (projectPaths: string[]) => {
     console.log(`📥 Loading sessions for ${projectPaths.length} projects in parallel...`);
 
+    // Mark projects as loading
+    setLoadingProjects((prev) => {
+      const newSet = new Set(prev);
+      projectPaths.forEach((path) => newSet.add(path));
+      return newSet;
+    });
+
     // Load all projects' sessions in parallel
     // Use loadProjectSessions directly to avoid changing selectedProject
     const loadPromises = projectPaths.map(async (path) => {
@@ -248,6 +257,13 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
         console.log(`  ✅ Loaded sessions for ${path}`);
       } catch (error) {
         console.error(`  ❌ Failed to load sessions for ${path}:`, error);
+      } finally {
+        // Remove from loading state when done
+        setLoadingProjects((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(path);
+          return newSet;
+        });
       }
     });
 
@@ -411,6 +427,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                 {/* Projects in this group */}
                 {groupProjects.map((project) => {
                   const isExpanded = expandedProjects.has(project.path);
+                  const isLoadingProject = loadingProjects.has(project.path);
 
                   return (
                     <div key={project.path}>
@@ -433,8 +450,11 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                           }}
                           className="p-3 pr-1 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-l transition-colors"
                           title={isExpanded ? "Collapse" : "Expand"}
+                          disabled={isLoadingProject}
                         >
-                          {isExpanded ? (
+                          {isLoadingProject ? (
+                            <Loader2 className="w-4 h-4 text-blue-500 dark:text-blue-400 animate-spin" />
+                          ) : isExpanded ? (
                             <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
                           ) : (
                             <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />

@@ -16,6 +16,7 @@
     "refresh": "Refresh Sessions",
     "scanning": "Scanning projects...",
     "loading": "Loading sessions...",
+    "loadingContent": "Loading content...",
     "count": "Sessions: {{count}}",
     "selected": "Selected session",
     "noSessions": "No sessions found"

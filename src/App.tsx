@@ -404,7 +404,19 @@ function App() {
                 )}
 
                 {/* Content */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden relative">
+                  {/* Loading overlay when switching sessions/loading content */}
+                  {isLoadingMessages && selectedSession && (
+                    <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
+                      <div className="text-center">
+                        <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-500" />
+                        <p className={cn("text-sm font-medium", COLORS.ui.text.secondary)}>
+                          {tComponents("session.loadingContent")}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {computed.isAnalyticsView ? (
                     <div className="h-full overflow-y-auto">
                       <AnalyticsDashboard />
