@@ -10,6 +10,7 @@ import { getSessionTitle } from "@/utils/sessionUtils";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useAppStore } from "@/store/useAppStore";
 import { useTheme } from "@/contexts/theme";
+import { filterMessages } from "@/utils/messageFilters";
 
 interface ExportControlsProps {
   messages: UIMessage[];
@@ -28,39 +29,9 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
 
   const sessionTitle = getSessionTitle(session, messages);
 
-  // Filter messages based on current filter settings
+  // Filter messages based on current filter settings (reuse utility function)
   const filteredMessages = useMemo(() => {
-    if (!messageFilters.showBashOnly && !messageFilters.showToolUseOnly && !messageFilters.showMessagesOnly) {
-      return messages; // No filters active
-    }
-
-    return messages.filter((message) => {
-      // Bash only filter
-      if (messageFilters.showBashOnly) {
-        const hasBashTool = message.content &&
-          Array.isArray(message.content) &&
-          message.content.some((item) =>
-            item.type === "tool_use" && item.name === "Bash"
-          );
-        return hasBashTool;
-      }
-
-      // Tool use only filter
-      if (messageFilters.showToolUseOnly) {
-        const hasToolUse = message.content &&
-          Array.isArray(message.content) &&
-          message.content.some((item) => item.type === "tool_use");
-        return hasToolUse;
-      }
-
-      // Messages only filter
-      if (messageFilters.showMessagesOnly) {
-        const hasNoTools = !message.toolUse && !message.toolUseResult;
-        return hasNoTools;
-      }
-
-      return true;
-    });
+    return filterMessages(messages, messageFilters);
   }, [messages, messageFilters]);
 
   const handleExport = async (
