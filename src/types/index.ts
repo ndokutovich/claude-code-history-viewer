@@ -445,3 +445,9 @@ export * from './providers';
 
 // Deprecated type aliases remain for backwards compatibility
 // New code should use Universal* types from './universal'
+
+// ============================================================================
+// SESSION WRITER TYPES (v1.6.0+)
+// ============================================================================
+
+export * from './sessionWriter';

@@ -23,6 +23,11 @@ import {
   type FileActivityFilters,
   type MessageViewMode,
   type MessageFilters,
+  type CreateProjectRequest,
+  type CreateProjectResponse,
+  type CreateSessionRequest,
+  type CreateSessionResponse,
+  type MessageInput,
 } from "../types";
 import { adapterRegistry } from "@/adapters/registry/AdapterRegistry";
 import { useSourceStore } from "./useSourceStore";
@@ -288,6 +293,11 @@ interface AppStore extends AppState {
   loadFileActivities: (projectPath: string, filters?: FileActivityFilters) => Promise<void>;
   setFileActivityFilters: (filters: FileActivityFilters) => void;
   clearFileActivities: () => void;
+
+  // Session writer actions (v1.6.0+)
+  createProject: (request: CreateProjectRequest) => Promise<CreateProjectResponse>;
+  createSession: (request: CreateSessionRequest) => Promise<CreateSessionResponse>;
+  appendToSession: (sessionPath: string, messages: MessageInput[]) => Promise<number>;
 }
 
 const DEFAULT_PAGE_SIZE = 100; // Load 100 messages on initial loading
@@ -1459,5 +1469,130 @@ export const useAppStore = create<AppStore>((set, get) => ({
       fileActivityFilters: {},
       isLoadingFileActivities: false,
     });
+  },
+
+  // ============================================================================
+  // SESSION WRITER ACTIONS (v1.6.0+)
+  // ============================================================================
+
+  /**
+   * Create a new Claude Code project folder
+   *
+   * @param request - Project creation request with name and optional parent path
+   * @returns Response with created project path and name
+   * @throws Error if project creation fails
+   */
+  createProject: async (request: CreateProjectRequest): Promise<CreateProjectResponse> => {
+    try {
+      if (!isTauriAvailable()) {
+        throw new Error("Tauri API is not available. Please run in the desktop app.");
+      }
+
+      const response = await invoke<CreateProjectResponse>("create_claude_project", {
+        request,
+      });
+
+      console.log(`✅ Created project: ${response.project_name} at ${response.project_path}`);
+
+      // Refresh project list to show the new project
+      await get().scanProjects();
+
+      return response;
+    } catch (error) {
+      console.error("Failed to create project:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      set({
+        error: {
+          type: AppErrorType.UNKNOWN,
+          message: `Failed to create project: ${errorMessage}`,
+        },
+      });
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new Claude Code session (JSONL file)
+   *
+   * @param request - Session creation request with project path, messages, and optional summary
+   * @returns Response with created session path, ID, and message count
+   * @throws Error if session creation fails
+   */
+  createSession: async (request: CreateSessionRequest): Promise<CreateSessionResponse> => {
+    try {
+      if (!isTauriAvailable()) {
+        throw new Error("Tauri API is not available. Please run in the desktop app.");
+      }
+
+      const response = await invoke<CreateSessionResponse>("create_claude_session", {
+        request,
+      });
+
+      console.log(
+        `✅ Created session: ${response.session_id} with ${response.message_count} messages`
+      );
+
+      // Refresh sessions for the project to show the new session
+      const { selectedProject } = get();
+      if (selectedProject && selectedProject.path === request.project_path) {
+        await get().selectProject(selectedProject);
+      }
+
+      return response;
+    } catch (error) {
+      console.error("Failed to create session:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      set({
+        error: {
+          type: AppErrorType.UNKNOWN,
+          message: `Failed to create session: ${errorMessage}`,
+        },
+      });
+      throw error;
+    }
+  },
+
+  /**
+   * Append messages to an existing session
+   *
+   * @param sessionPath - Path to the session JSONL file
+   * @param messages - Array of messages to append
+   * @returns Number of messages appended
+   * @throws Error if append fails
+   */
+  appendToSession: async (
+    sessionPath: string,
+    messages: MessageInput[]
+  ): Promise<number> => {
+    try {
+      if (!isTauriAvailable()) {
+        throw new Error("Tauri API is not available. Please run in the desktop app.");
+      }
+
+      const messageCount = await invoke<number>("append_to_claude_session", {
+        sessionPath,
+        messages,
+      });
+
+      console.log(`✅ Appended ${messageCount} messages to session: ${sessionPath}`);
+
+      // Refresh current session if it matches
+      const { selectedSession } = get();
+      if (selectedSession && selectedSession.file_path === sessionPath) {
+        await get().refreshCurrentSession();
+      }
+
+      return messageCount;
+    } catch (error) {
+      console.error("Failed to append to session:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      set({
+        error: {
+          type: AppErrorType.UNKNOWN,
+          message: `Failed to append to session: ${errorMessage}`,
+        },
+      });
+      throw error;
+    }
   },
 }));

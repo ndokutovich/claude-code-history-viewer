@@ -119,5 +119,73 @@
     "enterQuery": "Enter a search query to find messages",
     "foundResults": "Found {{count}} messages in {{sessions}} conversations",
     "matches": "matches"
+  },
+  "sessionBuilder": {
+    "createSession": "Create Session",
+    "title": "Create New Session",
+    "description": "Compose a new Claude Code conversation session",
+    "project": {
+      "label": "Project",
+      "existingProject": "Existing Project",
+      "newProject": "New Project",
+      "selectProject": "Select Project",
+      "selectPlaceholder": "-- Select a project --",
+      "projectName": "Project Name",
+      "projectNamePlaceholder": "my-project",
+      "parentFolder": "Parent Folder (optional, defaults to ~/.claude/projects/)",
+      "parentFolderPlaceholder": "~/.claude/projects/"
+    },
+    "session": {
+      "summary": "Session Summary (optional)",
+      "summaryPlaceholder": "Brief description of this conversation"
+    },
+    "messages": {
+      "label": "Messages",
+      "addMessage": "Add Message",
+      "noMessages": "No messages yet. Click \"Add Message\" to start.",
+      "compose": "Compose",
+      "fromExisting": "From Existing",
+      "role": "Role",
+      "user": "User",
+      "assistant": "Assistant",
+      "system": "System",
+      "contentPlaceholder": "Message content...",
+      "advancedOptions": "Advanced options",
+      "removeMessage": "Remove message",
+      "model": "Model (optional)",
+      "modelPlaceholder": "claude-opus-4-20250514",
+      "parentId": "Parent ID (optional)",
+      "parentIdPlaceholder": "uuid-of-parent-message",
+      "tokenUsage": "Token Usage (optional)",
+      "inputTokens": "Input Tokens",
+      "outputTokens": "Output Tokens",
+      "cacheCreation": "Cache Creation",
+      "cacheRead": "Cache Read"
+    },
+    "context": {
+      "selectProject": "Select Project",
+      "selectSession": "Select Session",
+      "selectMessages": "Select Messages",
+      "selected": "{{count}} of {{total}} selected",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "searchPlaceholder": "Search messages...",
+      "noMessages": "No messages found",
+      "import": "Import {{count}} Message",
+      "import_plural": "Import {{count}} Messages",
+      "emptyState": "Select a project to browse its sessions and messages"
+    },
+    "validation": {
+      "errors": "Please fix the following errors:",
+      "selectProject": "Please select a project",
+      "enterProjectName": "Please enter a project name",
+      "addMessages": "Please add at least one message",
+      "emptyMessage": "Message {{index}} is empty"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "createSession": "Create Session"
+    }
   }
 }

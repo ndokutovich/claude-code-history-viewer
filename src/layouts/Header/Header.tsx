@@ -7,6 +7,7 @@ import {
   Search,
   Database,
   FileText,
+  PlusCircle,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -14,6 +15,7 @@ import { TooltipButton } from "@/shared/TooltipButton";
 import { useAppStore } from "@/store/useAppStore";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { SourcesModal } from "@/components/modals/SourcesModal";
+import { SessionBuilderModal } from "@/components/modals/SessionBuilderModal";
 
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
@@ -27,6 +29,7 @@ export const Header = () => {
   const { t: tSourceManager } = useTranslation("sourceManager");
 
   const [isSourcesModalOpen, setIsSourcesModalOpen] = useState(false);
+  const [isSessionBuilderOpen, setIsSessionBuilderOpen] = useState(false);
 
   const {
     selectedProject,
@@ -114,6 +117,18 @@ export const Header = () => {
               )}
             >
               <Database className={cn("w-5 h-5", COLORS.ui.text.primary)} />
+            </TooltipButton>
+
+            {/* Create Session Button */}
+            <TooltipButton
+              content={t("sessionBuilder.createSession")}
+              onClick={() => setIsSessionBuilderOpen(true)}
+              className={cn(
+                "p-2 rounded-lg transition-colors",
+                COLORS.ui.interactive.hover
+              )}
+            >
+              <PlusCircle className={cn("w-5 h-5", COLORS.ui.text.primary)} />
             </TooltipButton>
 
             <TooltipButton
@@ -268,6 +283,13 @@ export const Header = () => {
       <SourcesModal
         open={isSourcesModalOpen}
         onOpenChange={setIsSourcesModalOpen}
+      />
+
+      {/* Session Builder Modal */}
+      <SessionBuilderModal
+        isOpen={isSessionBuilderOpen}
+        onClose={() => setIsSessionBuilderOpen(false)}
+        defaultProjectPath={selectedProject?.path}
       />
     </header>
   );
