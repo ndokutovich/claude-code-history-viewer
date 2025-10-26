@@ -47,52 +47,50 @@ export const FileViewerModal = ({
 
     const fileName = getFileName(file.file_path) || "file.txt";
 
-    // Use toast.promise for smooth loading -> success transition
-    const downloadPromise = new Promise<void>((resolve, reject) => {
-      try {
-        const blob = new Blob([content], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    });
+    // Show loading toast
+    const loadingToast = toast.loading(t("filesView.toast.downloading", { fileName }));
 
-    await toast.promise(downloadPromise, {
-      loading: t("filesView.toast.downloading", { fileName }),
-      success: t("filesView.toast.downloaded", { fileName }),
-      error: (error) =>
-        error instanceof Error ? error.message : t("filesView.toast.unknownError")
-    });
+    try {
+      // Small delay to ensure toast is mounted before dismissing
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-    // After successful download, show a new toast with the "Open Folder" action
-    toast.success(t("filesView.toast.downloaded", { fileName }), {
-      description: t("filesView.toast.savedToDownloads"),
-      action: {
-        label: t("filesView.toast.openFolder"),
-        onClick: async () => {
-          try {
-            // Get the downloads directory path
-            const downloadsPath = await downloadDir();
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-            // Use opener plugin to open the folder with the system default file manager
-            // This works cross-platform (Windows Explorer, macOS Finder, Linux file manager)
-            await openPath(downloadsPath);
-          } catch (error) {
-            console.error("Failed to open downloads folder:", error);
-            toast.error(t("filesView.toast.failedToOpenFolder"));
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+
+      // Show success toast with action
+      toast.success(t("filesView.toast.downloaded", { fileName }), {
+        description: t("filesView.toast.savedToDownloads"),
+        action: {
+          label: t("filesView.toast.openFolder"),
+          onClick: async () => {
+            try {
+              const downloadsPath = await downloadDir();
+              await openPath(downloadsPath);
+            } catch (error) {
+              console.error("Failed to open downloads folder:", error);
+              toast.error(t("filesView.toast.failedToOpenFolder"));
+            }
           }
-        }
-      },
-      duration: 5000,
-    });
+        },
+        duration: 5000,
+      });
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.dismiss(loadingToast);
+      toast.error(t("filesView.toast.downloadFailed"), {
+        description: error instanceof Error ? error.message : t("filesView.toast.unknownError")
+      });
+    }
   };
 
   const handleJumpToMessage = async () => {

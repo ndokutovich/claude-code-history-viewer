@@ -16,6 +16,9 @@ import { COLORS } from "../constants/colors";
 import { formatRelativeTime } from "../utils/time";
 import { getFileName, getDirectoryParts } from "../utils/pathUtils";
 import { getOperationColor } from "../utils/fileOperationUtils";
+import { toast } from "sonner";
+import { openPath } from "@tauri-apps/plugin-opener";
+import { downloadDir } from "@tauri-apps/api/path";
 
 interface FileActivityTableProps {
   activities: FileActivity[];
@@ -63,22 +66,64 @@ const FileActivityTableComponent = ({
     return parts.join("/");
   };
 
-  const handleDownload = useCallback((file: FileActivity, e: React.MouseEvent): void => {
+  const handleDownload = useCallback(async (file: FileActivity, e: React.MouseEvent): Promise<void> => {
     e.stopPropagation();
 
     const content = file.content_after || file.content_before || "";
-    if (!content) return;
+    if (!content) {
+      toast.error(t("filesView.toast.cannotDownload"), {
+        description: t("filesView.toast.noContentAvailable")
+      });
+      return;
+    }
 
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = getFileName(file.file_path);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, []);
+    const fileName = getFileName(file.file_path) || "file.txt";
+
+    // Show loading toast
+    const loadingToast = toast.loading(t("filesView.toast.downloading", { fileName }));
+
+    try {
+      // Small delay to ensure toast is mounted before dismissing
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+
+      // Show success toast with action
+      toast.success(t("filesView.toast.downloaded", { fileName }), {
+        description: t("filesView.toast.savedToDownloads"),
+        action: {
+          label: t("filesView.toast.openFolder"),
+          onClick: async () => {
+            try {
+              const downloadsPath = await downloadDir();
+              await openPath(downloadsPath);
+            } catch (error) {
+              console.error("Failed to open downloads folder:", error);
+              toast.error(t("filesView.toast.failedToOpenFolder"));
+            }
+          }
+        },
+        duration: 5000,
+      });
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.dismiss(loadingToast);
+      toast.error(t("filesView.toast.downloadFailed"), {
+        description: error instanceof Error ? error.message : t("filesView.toast.unknownError")
+      });
+    }
+  }, [t]);
 
   return (
     <div ref={parentRef} className="h-full overflow-auto">
