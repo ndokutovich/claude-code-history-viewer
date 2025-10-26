@@ -20,10 +20,11 @@ import {
   getWriteDisabledMessage,
   type SourceWithCapability,
 } from '@/adapters/utils/capabilityHelpers';
-import { type MessageBuilder } from '@/types';
+import { type MessageBuilder, type UIMessage } from '@/types';
 import { adapterRegistry } from '@/adapters/registry/AdapterRegistry';
 import { open } from '@tauri-apps/plugin-dialog';
 import { validateSessionBuilder } from '@/utils/sessionValidation';
+import { convertUIMessagesToBuilders } from '@/utils/messageTransform';
 import { MessageComposer } from './MessageComposer';
 import { ContextSelectorEnhanced } from './ContextSelectorEnhanced';
 import { SessionPreview } from './SessionPreview';
@@ -131,6 +132,23 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
     setMessages([]);
     setValidationErrors([]);
     setActiveTab('compose');
+  }, []);
+
+  const handleSourceChange = useCallback((sourceId: string): void => {
+    const source = sourcesWithCapabilities.find((s) => s.id === sourceId);
+    // Only allow selecting writable sources
+    if (source?.canWrite) {
+      setSelectedSource(source);
+      // Reset project selection when source changes
+      setSelectedProjectPath('');
+      setNewProjectName('');
+    }
+  }, [sourcesWithCapabilities]);
+
+  const handleImportMessages = useCallback((selectedMessages: UIMessage[]): void => {
+    const newMessages = convertUIMessagesToBuilders(selectedMessages);
+    setMessages((prev) => [...prev, ...newMessages]);
+    setActiveTab('preview');
   }, []);
 
   const validateInputs = useCallback((): boolean => {
@@ -259,13 +277,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                     id="source-select"
                     className="w-full px-3 py-2 border rounded-md bg-background"
                     value={selectedSource?.id || ''}
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                      const source = sourcesWithCapabilities.find((s) => s.id === e.target.value);
-                      // Only allow selecting writable sources
-                      if (source?.canWrite) {
-                        setSelectedSource(source);
-                      }
-                    }}
+                    onChange={(e) => handleSourceChange(e.target.value)}
                   >
                     <option value="">{t('sessionBuilder.source.selectSource')}</option>
                     {sourcesWithCapabilities.map((source) => (
@@ -459,19 +471,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                 {activeTab === 'context' && (
                   <div className="mt-4">
                   <ContextSelectorEnhanced
-                    onSelectMessages={(selectedMessages) => {
-                      const newMessages: MessageBuilder[] = selectedMessages.map((msg) => ({
-                        id: `imported-${msg.uuid}`,
-                        role: msg.type,
-                        content: (typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)) || '',
-                        parent_id: msg.parentUuid,
-                        model: msg.model,
-                        usage: msg.usage,
-                        isExpanded: false,
-                      }));
-                      setMessages((prev) => [...prev, ...newMessages]);
-                      setActiveTab('preview');
-                    }}
+                    onSelectMessages={handleImportMessages}
                   />
                   </div>
                 )}
