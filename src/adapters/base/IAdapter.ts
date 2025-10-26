@@ -74,6 +74,30 @@ export interface IConversationAdapter {
   handleError(error: Error, context: ErrorContext): ErrorRecovery;
 
   // ============================================================================
+  // PATH MANAGEMENT (OPTIONAL - v1.6.0+)
+  // ============================================================================
+  // Providers define how to convert user-selected paths to absolute project paths
+
+  /**
+   * Get the projects root directory for this provider
+   * For Claude Code: ~/.claude/projects/
+   * For Cursor: AppData/Roaming/Cursor/User/workspaceStorage/
+   * @param sourcePath - The provider's base source path
+   * @returns Absolute path to the projects root directory
+   */
+  getProjectsRoot?(sourcePath: string): string;
+
+  /**
+   * Convert a user-selected "browse folder" path to an absolute project path
+   * For Claude Code: rootPath + "/projects/" + projectName
+   * Provider can add subdirectories, validate paths, etc.
+   * @param sourcePath - The provider's base source path
+   * @param selectedPath - Path selected by user (could be relative or absolute)
+   * @returns Absolute path where the project should be created/accessed
+   */
+  convertToProjectPath?(sourcePath: string, selectedPath: string): string;
+
+  // ============================================================================
   // WRITE OPERATIONS (OPTIONAL - v1.6.0+)
   // ============================================================================
   // Providers can optionally support creating projects/sessions

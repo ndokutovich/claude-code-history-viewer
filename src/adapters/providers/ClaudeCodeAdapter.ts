@@ -479,6 +479,31 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
   }
 
   // ------------------------------------------------------------------------
+  // PATH MANAGEMENT (OPTIONAL - v1.6.0+)
+  // ------------------------------------------------------------------------
+
+  /**
+   * Get the projects root directory for Claude Code
+   * @param sourcePath - Base Claude folder (e.g., ~/.claude)
+   * @returns Projects root directory (e.g., ~/.claude/projects)
+   */
+  getProjectsRoot(sourcePath: string): string {
+    // Claude Code stores all projects under ~/.claude/projects/
+    return `${sourcePath}/projects`;
+  }
+
+  /**
+   * Convert a project name to absolute project path
+   * @param sourcePath - Base Claude folder (e.g., ~/.claude)
+   * @param projectName - Name of the project
+   * @returns Absolute project path (e.g., ~/.claude/projects/my-project)
+   */
+  convertToProjectPath(sourcePath: string, projectName: string): string {
+    const projectsRoot = this.getProjectsRoot(sourcePath);
+    return `${projectsRoot}/${projectName}`;
+  }
+
+  // ------------------------------------------------------------------------
   // WRITE OPERATIONS (OPTIONAL - v1.6.0+)
   // ------------------------------------------------------------------------
 
@@ -489,12 +514,15 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
     this.ensureInitialized();
 
     try {
+      // Use provider's projects root directory
+      const projectsRoot = this.getProjectsRoot(sourcePath);
+
       const response = await invoke<{ project_path: string; project_name: string }>(
         'create_claude_project',
         {
           request: {
             name: projectName,
-            parent_path: sourcePath, // Use source path as parent
+            parent_path: projectsRoot, // Use projects root, not source root
           },
         }
       );
