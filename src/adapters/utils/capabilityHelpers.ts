@@ -198,10 +198,10 @@ export function getWriteDisabledMessage(source: UniversalSource, t?: (key: strin
     case 'Source is not available':
       return t?.('sessionBuilder.source.notAvailable') || 'Source is not available';
     case 'Provider is read-only':
-      return t?.('sessionBuilder.source.readOnly') || 'This provider is read-only';
+      return t?.('sessionBuilder.source.providerReadOnly') || 'This provider is read-only';
     case 'Session creation not yet implemented for this provider':
       return t?.('sessionBuilder.source.notImplemented') || 'Write support not yet implemented';
     default:
-      return check.reason || 'Unknown error';
+      return t?.('sessionBuilder.source.unknownError') || check.reason || 'Unknown error';
   }
 }

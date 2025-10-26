@@ -121,7 +121,7 @@ export const Header = () => {
 
             {/* Create Session Button */}
             <TooltipButton
-              content={t("sessionBuilder.createSession")}
+              content={t("sessionBuilder.button")}
               onClick={() => setIsSessionBuilderOpen(true)}
               className={cn(
                 "p-2 rounded-lg transition-colors",

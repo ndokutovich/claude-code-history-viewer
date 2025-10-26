@@ -79,7 +79,17 @@
     "foundResults": "在{{sessions}}個對話中找到{{count}}條訊息",
     "matches": "個匹配"
   },
+  "fileActions": {
+    "openFile": "開啟檔案",
+    "openFolder": "開啟資料夾",
+    "openedFile": "已開啟檔案",
+    "openedFolder": "已開啟資料夾",
+    "failedToOpen": "開啟失敗",
+    "failedToOpenFile": "開啟檔案失敗",
+    "failedToOpenFolder": "開啟資料夾失敗"
+  },
   "sessionBuilder": {
+    "button": "建立新對話",
     "modal": {
       "title": "建立新對話",
       "description": "撰寫新的 Claude Code 對話工作階段",

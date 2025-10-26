@@ -79,7 +79,17 @@
     "foundResults": "{{sessions}}件の会話で{{count}}件のメッセージが見つかりました",
     "matches": "件一致"
   },
+  "fileActions": {
+    "openFile": "ファイルを開く",
+    "openFolder": "フォルダを開く",
+    "openedFile": "ファイルを開きました",
+    "openedFolder": "フォルダを開きました",
+    "failedToOpen": "開けませんでした",
+    "failedToOpenFile": "ファイルを開けませんでした",
+    "failedToOpenFolder": "フォルダを開けませんでした"
+  },
   "sessionBuilder": {
+    "button": "新しいセッションを作成",
     "modal": {
       "title": "新しいセッションを作成",
       "description": "新しいClaude Code会話セッションを作成",

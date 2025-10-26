@@ -34,6 +34,8 @@ export const SettingDropdown = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
+            title={t("settings.title")}
+            aria-label={t("settings.title")}
             className={cn(
               "p-2 rounded-lg transition-colors cursor-pointer relative",
               COLORS.ui.text.disabled,

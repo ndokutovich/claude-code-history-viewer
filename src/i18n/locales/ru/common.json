@@ -120,7 +120,17 @@
     "foundResults": "Найдено {{count}} сообщений в {{sessions}} диалогах",
     "matches": "совпадений"
   },
+  "fileActions": {
+    "openFile": "Открыть файл",
+    "openFolder": "Открыть папку",
+    "openedFile": "Файл открыт",
+    "openedFolder": "Папка открыта",
+    "failedToOpen": "Не удалось открыть",
+    "failedToOpenFile": "Не удалось открыть файл",
+    "failedToOpenFolder": "Не удалось открыть папку"
+  },
   "sessionBuilder": {
+    "button": "Создать новую сессию",
     "modal": {
       "title": "Создать новую сессию",
       "description": "Создать новую диалоговую сессию Claude Code",

@@ -12,8 +12,8 @@ import { formatRelativeTime } from "../utils/time";
 import { getFileName } from "../utils/pathUtils";
 import { getOperationColor } from "../utils/fileOperationUtils";
 import { toast } from "sonner";
-import { openPath } from "@tauri-apps/plugin-opener";
-import { downloadDir } from "@tauri-apps/api/path";
+import { downloadDir, join } from "@tauri-apps/api/path";
+import { createFileActions } from "../utils/fileActions";
 
 interface FileViewerModalProps {
   file: FileActivity;
@@ -67,23 +67,28 @@ export const FileViewerModal = ({
       // Dismiss loading toast
       toast.dismiss(loadingToast);
 
-      // Show success toast with action
+      // Get full file path for unified actions
+      const downloadsPath = await downloadDir();
+      const fullFilePath = await join(downloadsPath, fileName);
+      const actions = createFileActions(fullFilePath, { t: (key) => t(`common:${key}`) });
+
+      // Show success toast with unified file actions (Open File button)
       toast.success(t("filesView.toast.downloaded", { fileName }), {
-        description: t("filesView.toast.savedToDownloads"),
-        action: {
-          label: t("filesView.toast.openFolder"),
-          onClick: async () => {
-            try {
-              const downloadsPath = await downloadDir();
-              await openPath(downloadsPath);
-            } catch (error) {
-              console.error("Failed to open downloads folder:", error);
-              toast.error(t("filesView.toast.failedToOpenFolder"));
-            }
-          }
-        },
-        duration: 5000,
+        description: fullFilePath,
+        action: actions.openFile,
+        duration: 6000,
+        // Add "Open Folder" action as a secondary toast after user interaction
+        actionButtonStyle: { marginRight: '8px' },
       });
+
+      // Also provide quick access to open folder
+      setTimeout(() => {
+        toast.info(t("filesView.toast.savedToDownloads"), {
+          description: downloadsPath,
+          action: actions.openFolder,
+          duration: 5000,
+        });
+      }, 500);
     } catch (error) {
       console.error("Download failed:", error);
       toast.dismiss(loadingToast);

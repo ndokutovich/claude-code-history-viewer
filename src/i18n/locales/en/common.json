@@ -120,7 +120,17 @@
     "foundResults": "Found {{count}} messages in {{sessions}} conversations",
     "matches": "matches"
   },
+  "fileActions": {
+    "openFile": "Open File",
+    "openFolder": "Open Folder",
+    "openedFile": "Opened file",
+    "openedFolder": "Opened folder",
+    "failedToOpen": "Failed to open",
+    "failedToOpenFile": "Failed to open file",
+    "failedToOpenFolder": "Failed to open folder"
+  },
   "sessionBuilder": {
+    "button": "Create New Session",
     "modal": {
       "title": "Create New Session",
       "description": "Compose a new Claude Code conversation session",

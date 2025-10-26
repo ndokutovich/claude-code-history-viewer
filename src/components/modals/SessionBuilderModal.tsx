@@ -304,7 +304,8 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                       {sourcesWithCapabilities.find((s) => s.providerId === 'cursor' && !s.canWrite) && (
                         <span className="block mt-1">
                           {t('sessionBuilder.source.cursorPrefix')}{getWriteDisabledMessage(
-                            sourcesWithCapabilities.find((s) => s.providerId === 'cursor')!
+                            sourcesWithCapabilities.find((s) => s.providerId === 'cursor')!,
+                            t
                           )}
                         </span>
                       )}

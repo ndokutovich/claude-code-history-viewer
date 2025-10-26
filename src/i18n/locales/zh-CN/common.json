@@ -79,7 +79,17 @@
     "foundResults": "在{{sessions}}个对话中找到{{count}}条消息",
     "matches": "个匹配"
   },
+  "fileActions": {
+    "openFile": "打开文件",
+    "openFolder": "打开文件夹",
+    "openedFile": "已打开文件",
+    "openedFolder": "已打开文件夹",
+    "failedToOpen": "打开失败",
+    "failedToOpenFile": "打开文件失败",
+    "failedToOpenFolder": "打开文件夹失败"
+  },
   "sessionBuilder": {
+    "button": "创建新会话",
     "modal": {
       "title": "创建新会话",
       "description": "创作新的 Claude Code 对话会话",

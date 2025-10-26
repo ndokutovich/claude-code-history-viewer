@@ -120,7 +120,17 @@
     "foundResults": "{{sessions}}개 대화에서 {{count}}개 메시지 발견",
     "matches": "개 일치"
   },
+  "fileActions": {
+    "openFile": "파일 열기",
+    "openFolder": "폴더 열기",
+    "openedFile": "파일을 열었습니다",
+    "openedFolder": "폴더를 열었습니다",
+    "failedToOpen": "열기 실패",
+    "failedToOpenFile": "파일 열기 실패",
+    "failedToOpenFolder": "폴더 열기 실패"
+  },
   "sessionBuilder": {
+    "button": "새 세션 만들기",
     "modal": {
       "title": "새 세션 만들기",
       "description": "새로운 Claude Code 대화 세션 작성",
