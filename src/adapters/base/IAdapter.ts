@@ -97,6 +97,15 @@ export interface IConversationAdapter {
    */
   convertToProjectPath?(sourcePath: string, selectedPath: string): string;
 
+  /**
+   * Sanitize a full file path to create a valid project name
+   * Converts: "C:\_init\w\my-project" → "c---init-w-my-project"
+   * This creates unique project identifiers based on the actual code location
+   * @param fullPath - Full absolute path to sanitize
+   * @returns Sanitized project name safe for filesystem
+   */
+  sanitizePathToProjectName?(fullPath: string): string;
+
   // ============================================================================
   // WRITE OPERATIONS (OPTIONAL - v1.6.0+)
   // ============================================================================

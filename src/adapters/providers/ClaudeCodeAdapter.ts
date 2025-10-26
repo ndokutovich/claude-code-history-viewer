@@ -508,6 +508,25 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
     return `${projectsRoot}/${projectName}`;
   }
 
+  /**
+   * Sanitize a full path to create a unique project identifier
+   * Example: "C:\_init\w\_proj\my-code" → "c---init-w--proj-my-code"
+   * @param fullPath - Full absolute path
+   * @returns Sanitized project name
+   */
+  sanitizePathToProjectName(fullPath: string): string {
+    return fullPath
+      .toLowerCase()                    // Lowercase everything
+      .replace(/:/g, '-')              // C: → c-
+      .replace(/\\/g, '-')             // \ → -
+      .replace(/\//g, '-')             // / → -
+      .replace(/_/g, '-')              // _ → -
+      .replace(/\s+/g, '-')            // spaces → -
+      .replace(/[^a-z0-9-]/g, '-')     // any other invalid chars → -
+      .replace(/-+/g, '-')             // collapse multiple dashes
+      .replace(/^-+|-+$/g, '');        // trim leading/trailing dashes
+  }
+
   // ------------------------------------------------------------------------
   // WRITE OPERATIONS (OPTIONAL - v1.6.0+)
   // ------------------------------------------------------------------------

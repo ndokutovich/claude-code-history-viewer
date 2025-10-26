@@ -98,11 +98,20 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
 
       if (selected && typeof selected === 'string') {
         setCustomParentPath(selected);
+
+        // Sanitize browsed path and use as project name
+        if (selectedSource) {
+          const adapter = adapterRegistry.tryGet(selectedSource.providerId);
+          if (adapter?.sanitizePathToProjectName) {
+            const sanitizedName = adapter.sanitizePathToProjectName(selected);
+            setNewProjectName(sanitizedName);
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to open folder dialog:', error);
     }
-  }, []);
+  }, [selectedSource]);
 
   const handleAddMessage = useCallback((): void => {
     const newMessage: MessageBuilder = {
@@ -189,9 +198,15 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
 
       // Step 1: Create project if needed
       if (projectMode === 'new') {
+        // Use sanitized browsed path if available, otherwise use entered name
+        let projectName = newProjectName;
+        if (customParentPath && adapter.sanitizePathToProjectName) {
+          projectName = adapter.sanitizePathToProjectName(customParentPath);
+        }
+
         const createResult = await adapter.createProject(
           selectedSource.path,  // Use source path!
-          newProjectName
+          projectName
         );
 
         if (!createResult.success || !createResult.data) {
