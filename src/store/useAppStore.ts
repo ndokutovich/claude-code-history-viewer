@@ -641,6 +641,24 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return;
     }
 
+    // Auto-select parent project when session is selected directly
+    // (e.g., from search results or jump-to-message)
+    const currentState = get();
+    // Extract project path (directory containing the session file)
+    // Handle both forward and backward slashes for cross-platform compatibility
+    const lastSlashIndex = Math.max(
+      session.file_path.lastIndexOf('/'),
+      session.file_path.lastIndexOf('\\')
+    );
+    const projectPath = session.file_path.substring(0, lastSlashIndex);
+    const matchingProject = currentState.projects.find(p => p.path === projectPath);
+
+    if (matchingProject && currentState.selectedProject?.path !== projectPath) {
+      console.log(`🔄 selectSession: Auto-selecting parent project: ${matchingProject.name}`);
+      // Don't await - let selectProject run in parallel to avoid blocking
+      get().selectProject(matchingProject);
+    }
+
     // Note: currentView is intentionally NOT set here to preserve user's view preference
     set({
       selectedSession: session,
