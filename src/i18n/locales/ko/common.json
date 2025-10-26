@@ -119,5 +119,96 @@
     "enterQuery": "메시지를 찾으려면 검색어를 입력하세요",
     "foundResults": "{{sessions}}개 대화에서 {{count}}개 메시지 발견",
     "matches": "개 일치"
+  },
+  "sessionBuilder": {
+    "createSession": "세션 만들기",
+    "title": "새 세션 만들기",
+    "description": "새로운 Claude Code 대화 세션을 작성합니다",
+    "project": {
+      "label": "프로젝트",
+      "existingProject": "기존 프로젝트",
+      "newProject": "새 프로젝트",
+      "selectProject": "프로젝트 선택",
+      "selectPlaceholder": "-- 프로젝트를 선택하세요 --",
+      "projectName": "프로젝트 이름",
+      "projectNamePlaceholder": "my-project",
+      "parentFolder": "상위 폴더 (선택사항, 기본값: ~/.claude/projects/)",
+      "parentFolderPlaceholder": "~/.claude/projects/"
+    },
+    "session": {
+      "summary": "세션 요약 (선택사항)",
+      "summaryPlaceholder": "이 대화에 대한 간단한 설명"
+    },
+    "messages": {
+      "label": "메시지",
+      "addMessage": "메시지 추가",
+      "noMessages": "아직 메시지가 없습니다. \"메시지 추가\"를 클릭하여 시작하세요.",
+      "compose": "작성",
+      "fromExisting": "기존에서 가져오기",
+      "preview": "미리보기",
+      "role": "역할",
+      "user": "사용자",
+      "assistant": "어시스턴트",
+      "system": "시스템",
+      "contentPlaceholder": "메시지 내용...",
+      "advancedOptions": "고급 옵션",
+      "removeMessage": "메시지 제거",
+      "model": "모델 (선택사항)",
+      "modelPlaceholder": "claude-opus-4-20250514",
+      "parentId": "상위 ID (선택사항)",
+      "parentIdPlaceholder": "상위-메시지-uuid",
+      "tokenUsage": "토큰 사용량 (선택사항)",
+      "inputTokens": "입력 토큰",
+      "outputTokens": "출력 토큰",
+      "cacheCreation": "캐시 생성",
+      "cacheRead": "캐시 읽기"
+    },
+    "context": {
+      "selectProject": "프로젝트 선택",
+      "selectSession": "세션 선택",
+      "selectMessages": "메시지 선택",
+      "selected": "{{total}}개 중 {{count}}개 선택됨",
+      "selectAll": "모두 선택",
+      "deselectAll": "모두 선택 해제",
+      "searchPlaceholder": "메시지 검색...",
+      "noMessages": "메시지를 찾을 수 없습니다",
+      "import": "{{count}}개 메시지 가져오기",
+      "import_plural": "{{count}}개 메시지 가져오기",
+      "emptyState": "프로젝트를 선택하여 세션과 메시지를 찾아보세요",
+      "selectionMode": "선택 모드",
+      "individual": "개별",
+      "range": "범위",
+      "all": "전체",
+      "fromMessage": "메시지 #",
+      "toMessage": "~ 메시지 #",
+      "addToContext": "컨텍스트에 추가",
+      "accumulated": "누적된 컨텍스트 ({{sessions}}개 세션에서 {{count}}개 메시지)",
+      "importAll": "모두 가져오기"
+    },
+    "preview": {
+      "totalMessages": "전체 메시지",
+      "estimatedTokens": "예상 토큰",
+      "sessionOrder": "세션 순서 (드래그하여 재정렬)",
+      "dragTip": "💡 팁: 메시지를 드래그하여 재정렬하거나 위/아래 화살표를 사용하세요. 휴지통을 클릭하여 제거합니다."
+    },
+    "source": {
+      "label": "소스",
+      "select": "소스 선택",
+      "selectPlaceholder": "-- 소스를 선택하세요 --",
+      "noWritable": "사용 가능한 쓰기 가능 소스가 없습니다. 설정에서 Claude Code 소스를 추가하세요."
+    },
+    "validation": {
+      "errors": "다음 오류를 수정하세요:",
+      "selectSource": "소스를 선택하세요",
+      "selectProject": "프로젝트를 선택하세요",
+      "enterProjectName": "프로젝트 이름을 입력하세요",
+      "addMessages": "최소한 하나의 메시지를 추가하세요",
+      "emptyMessage": "메시지 {{index}}이(가) 비어 있습니다"
+    },
+    "actions": {
+      "cancel": "취소",
+      "creating": "생성 중...",
+      "createSession": "세션 만들기"
+    }
   }
 }

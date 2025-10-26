@@ -78,5 +78,10 @@
     "enterQuery": "メッセージを検索するには検索語を入力してください",
     "foundResults": "{{sessions}}件の会話で{{count}}件のメッセージが見つかりました",
     "matches": "件一致"
+  },
+  "sessionBuilder": {
+    "createSession": "セッションを作成",
+    "title": "新しいセッションを作成",
+    "description": "新しいClaude Codeの会話セッションを作成します"
   }
 }

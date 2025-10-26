@@ -20,7 +20,8 @@ import {
 } from '@/types';
 import { open } from '@tauri-apps/plugin-dialog';
 import { MessageComposer } from './MessageComposer';
-import { ContextSelector } from './ContextSelector';
+import { ContextSelectorEnhanced } from './ContextSelectorEnhanced';
+import { SessionPreview } from './SessionPreview';
 
 interface SessionBuilderModalProps {
   isOpen: boolean;
@@ -68,7 +69,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
   // Session state
   const [sessionSummary, setSessionSummary] = useState<string>('');
   const [messages, setMessages] = useState<MessageBuilder[]>([]);
-  const [activeTab, setActiveTab] = useState<'compose' | 'context'>('compose');
+  const [activeTab, setActiveTab] = useState<'compose' | 'context' | 'preview'>('compose');
 
   // UI state
   const [isSaving, setIsSaving] = useState(false);
@@ -109,6 +110,10 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
 
   const handleRemoveMessage = useCallback((id: string) => {
     setMessages((prev) => prev.filter((msg) => msg.id !== id));
+  }, []);
+
+  const handleReorderMessages = useCallback((reorderedMessages: MessageBuilder[]) => {
+    setMessages(reorderedMessages);
   }, []);
 
   const resetForm = useCallback(() => {
@@ -391,12 +396,11 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
               </div>
 
               <div className="space-y-4">
-                <div className="flex gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <Button
                     type="button"
                     variant={activeTab === 'compose' ? 'default' : 'outline'}
                     onClick={() => setActiveTab('compose')}
-                    className="flex-1"
                   >
                     Compose
                   </Button>
@@ -404,9 +408,15 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                     type="button"
                     variant={activeTab === 'context' ? 'default' : 'outline'}
                     onClick={() => setActiveTab('context')}
-                    className="flex-1"
                   >
                     From Existing
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={activeTab === 'preview' ? 'default' : 'outline'}
+                    onClick={() => setActiveTab('preview')}
+                  >
+                    Preview ({messages.length})
                   </Button>
                 </div>
 
@@ -431,7 +441,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
 
                 {activeTab === 'context' && (
                   <div className="mt-4">
-                  <ContextSelector
+                  <ContextSelectorEnhanced
                     onSelectMessages={(selectedMessages) => {
                       const newMessages: MessageBuilder[] = selectedMessages.map((msg) => ({
                         id: `imported-${msg.uuid}`,
@@ -443,9 +453,19 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                         isExpanded: false,
                       }));
                       setMessages((prev) => [...prev, ...newMessages]);
-                      setActiveTab('compose');
+                      setActiveTab('preview');
                     }}
                   />
+                  </div>
+                )}
+
+                {activeTab === 'preview' && (
+                  <div className="mt-4">
+                    <SessionPreview
+                      messages={messages}
+                      onReorder={handleReorderMessages}
+                      onRemove={handleRemoveMessage}
+                    />
                   </div>
                 )}
               </div>

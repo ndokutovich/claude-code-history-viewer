@@ -119,5 +119,10 @@
     "enterQuery": "Введите поисковый запрос для поиска сообщений",
     "foundResults": "Найдено {{count}} сообщений в {{sessions}} диалогах",
     "matches": "совпадений"
+  },
+  "sessionBuilder": {
+    "createSession": "Создать сеанс",
+    "title": "Создать новый сеанс",
+    "description": "Создать новый сеанс диалога Claude Code"
   }
 }
