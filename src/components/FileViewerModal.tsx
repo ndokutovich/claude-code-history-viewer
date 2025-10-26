@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { FileContent } from "./FileContent";
 import { EnhancedDiffViewer } from "./EnhancedDiffViewer";
 import { Download, ArrowRight } from "lucide-react";
@@ -197,9 +197,9 @@ export const FileViewerModal = ({
             <DialogTitle className={cn("text-lg font-semibold truncate", COLORS.ui.text.primary)}>
               {getFileName(file.file_path)}
             </DialogTitle>
-            <p className={cn("text-sm mt-1 truncate", COLORS.ui.text.muted)}>
+            <DialogDescription className={cn("text-sm mt-1 truncate", COLORS.ui.text.muted)}>
               {file.file_path}
-            </p>
+            </DialogDescription>
           </div>
         </DialogHeader>
 

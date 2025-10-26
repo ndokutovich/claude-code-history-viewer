@@ -18,6 +18,7 @@
     "store:allow-delete",
     "store:allow-clear",
     "store:allow-has",
-    "store:allow-keys"
+    "store:allow-keys",
+    "shell:allow-open"
   ]
 }
