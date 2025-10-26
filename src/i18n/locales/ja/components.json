@@ -668,5 +668,26 @@
       "downloadFailed": "ダウンロードに失敗しました",
       "unknownError": "不明なエラー"
     }
+  },
+  "export": {
+    "exportTo": "エクスポート",
+    "formatted": "フォーマット済み",
+    "raw": "生データ",
+    "formattedTooltip": "リッチフォーマットでエクスポート（コードブロック、思考、ツール使用）",
+    "rawTooltip": "シンプルなテキストコンテンツのみエクスポート",
+    "lightTheme": "ライトテーマ",
+    "darkTheme": "ダークテーマ",
+    "withAttachments": "添付ファイルを含める",
+    "noMessages": "エクスポートするメッセージがありません",
+    "success": "{{format}}形式でエクスポートしました",
+    "failed": "{{format}}形式でのエクスポートに失敗しました",
+    "copyPath": "パスをコピー",
+    "copyPathTooltip": "セッションファイルパスをクリップボードにコピー",
+    "pathCopied": "パスをクリップボードにコピーしました",
+    "pathCopyFailed": "パスのコピーに失敗しました",
+    "copied": "コピー済み",
+    "markdownTooltip": "会話をMarkdown形式でエクスポート",
+    "htmlTooltip": "会話をHTML形式でエクスポート",
+    "docxTooltip": "会話をWord文書でエクスポート"
   }
 }

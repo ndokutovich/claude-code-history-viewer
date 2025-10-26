@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, FileCode, Globe, Copy, Check } from "lucide-react";
+import { FileText, FileCode, Globe, Copy, Check, MessageSquare, Code, Sun, Moon } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/utils/cn";
@@ -14,9 +14,14 @@ interface ExportControlsProps {
   session: UISession;
 }
 
+type ExportMode = "formatted" | "raw";
+type ExportTheme = "light" | "dark";
+
 export function ExportControls({ messages, session }: ExportControlsProps) {
   const { t } = useTranslation("components");
   const [includeAttachments, setIncludeAttachments] = useState(false);
+  const [exportMode, setExportMode] = useState<ExportMode>("formatted");
+  const [exportTheme, setExportTheme] = useState<ExportTheme>("light");
   const [isExporting, setIsExporting] = useState(false);
   const [copiedPath, setCopiedPath] = useState(false);
 
@@ -24,7 +29,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
 
   const handleExport = async (
     format: "markdown" | "html" | "docx",
-    exportFn: (messages: UIMessage[], title: string, includeAttachments: boolean) => Promise<void>
+    exportFn: (messages: UIMessage[], title: string, includeAttachments: boolean, mode: ExportMode, theme: ExportTheme) => Promise<void>
   ) => {
     if (messages.length === 0) {
       toast.error(t("export.noMessages"));
@@ -33,7 +38,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
 
     setIsExporting(true);
     try {
-      await exportFn(messages, sessionTitle, includeAttachments);
+      await exportFn(messages, sessionTitle, includeAttachments, exportMode, exportTheme);
       toast.success(t("export.success", { format: format.toUpperCase() }));
     } catch (error) {
       console.error(`Export to ${format} failed:`, error);
@@ -57,6 +62,83 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
 
   return (
     <div className="flex items-center gap-3">
+      {/* Export Mode Toggle (Formatted / Raw) */}
+      <div className={cn("flex items-center gap-1 rounded-lg p-1 bg-gray-100 dark:bg-gray-800")}>
+        <button
+          onClick={() => setExportMode("formatted")}
+          className={cn(
+            "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-colors",
+            exportMode === "formatted"
+              ? "bg-white dark:bg-gray-700 shadow-sm"
+              : "hover:bg-gray-100 dark:hover:bg-gray-700",
+            exportMode === "formatted"
+              ? COLORS.ui.text.primary
+              : COLORS.ui.text.secondary
+          )}
+          title={t("export.formattedTooltip")}
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          <span>{t("export.formatted")}</span>
+        </button>
+
+        <button
+          onClick={() => setExportMode("raw")}
+          className={cn(
+            "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-colors",
+            exportMode === "raw"
+              ? "bg-white dark:bg-gray-700 shadow-sm"
+              : "hover:bg-gray-100 dark:hover:bg-gray-700",
+            exportMode === "raw"
+              ? COLORS.ui.text.primary
+              : COLORS.ui.text.secondary
+          )}
+          title={t("export.rawTooltip")}
+        >
+          <Code className="w-3.5 h-3.5" />
+          <span>{t("export.raw")}</span>
+        </button>
+      </div>
+
+      {/* Theme Toggle (Light / Dark) - Only for Formatted mode */}
+      {exportMode === "formatted" && (
+        <div className={cn("flex items-center gap-1 rounded-lg p-1 bg-gray-100 dark:bg-gray-800")}>
+          <button
+            onClick={() => setExportTheme("light")}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-colors",
+              exportTheme === "light"
+                ? "bg-white dark:bg-gray-700 shadow-sm"
+                : "hover:bg-gray-100 dark:hover:bg-gray-700",
+              exportTheme === "light"
+                ? COLORS.ui.text.primary
+                : COLORS.ui.text.secondary
+            )}
+            title={t("export.lightTheme")}
+          >
+            <Sun className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={() => setExportTheme("dark")}
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-colors",
+              exportTheme === "dark"
+                ? "bg-white dark:bg-gray-700 shadow-sm"
+                : "hover:bg-gray-100 dark:hover:bg-gray-700",
+              exportTheme === "dark"
+                ? COLORS.ui.text.primary
+                : COLORS.ui.text.secondary
+            )}
+            title={t("export.darkTheme")}
+          >
+            <Moon className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Separator */}
+      <div className={cn("h-6 w-px", COLORS.ui.border.light)} />
+
       {/* With Attachments Toggle */}
       <label className="flex items-center gap-2 text-sm cursor-pointer">
         <input

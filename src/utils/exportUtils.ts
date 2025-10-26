@@ -8,8 +8,11 @@ import {
 } from "docx";
 import type { UIMessage, ContentItem } from "@/types";
 
+export type ExportMode = "formatted" | "raw";
+export type ExportTheme = "light" | "dark";
+
 /**
- * Extract text content from a message
+ * Extract text content from a message (RAW mode - simple text extraction)
  */
 function extractTextContent(message: UIMessage): string {
   if (!message.content) return "";
@@ -32,6 +35,88 @@ function extractTextContent(message: UIMessage): string {
   }
 
   return JSON.stringify(message.content, null, 2);
+}
+
+/**
+ * Extract FORMATTED content from a message (for Formatted export mode)
+ * Returns array of content blocks with type information for rich rendering
+ */
+interface FormattedContentBlock {
+  type: "text" | "thinking" | "tool_use" | "tool_result" | "code";
+  content: string;
+  toolName?: string;
+  language?: string;
+}
+
+function extractFormattedContent(message: UIMessage): FormattedContentBlock[] {
+  const blocks: FormattedContentBlock[] = [];
+
+  if (!message.content) return blocks;
+
+  if (typeof message.content === "string") {
+    // Check for code blocks in string content
+    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = codeBlockRegex.exec(message.content)) !== null) {
+      // Add text before code block
+      if (match.index > lastIndex) {
+        const textBefore = message.content.slice(lastIndex, match.index).trim();
+        if (textBefore) {
+          blocks.push({ type: "text", content: textBefore });
+        }
+      }
+
+      // Add code block
+      blocks.push({
+        type: "code",
+        content: match[2],
+        language: match[1] || "text",
+      });
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < message.content.length) {
+      const remaining = message.content.slice(lastIndex).trim();
+      if (remaining) {
+        blocks.push({ type: "text", content: remaining });
+      }
+    }
+
+    if (blocks.length === 0) {
+      blocks.push({ type: "text", content: message.content });
+    }
+
+    return blocks;
+  }
+
+  if (Array.isArray(message.content)) {
+    message.content.forEach((item: ContentItem) => {
+      if (item.type === "text") {
+        // Parse text for code blocks
+        const textBlocks = extractFormattedContent({ ...message, content: item.text });
+        blocks.push(...textBlocks);
+      } else if (item.type === "thinking") {
+        blocks.push({ type: "thinking", content: item.thinking });
+      } else if (item.type === "tool_use") {
+        blocks.push({
+          type: "tool_use",
+          content: JSON.stringify(item.input, null, 2),
+          toolName: item.name,
+        });
+      } else if (item.type === "tool_result") {
+        blocks.push({
+          type: "tool_result",
+          content: typeof item.content === "string" ? item.content : JSON.stringify(item.content, null, 2),
+        });
+      }
+    });
+  }
+
+  return blocks;
 }
 
 /**
@@ -78,7 +163,9 @@ export function extractFileAttachments(messages: UIMessage[]): Map<string, strin
 export async function exportToMarkdown(
   messages: UIMessage[],
   sessionTitle: string,
-  includeAttachments: boolean = false
+  includeAttachments: boolean = false,
+  mode: ExportMode = "formatted",
+  theme: ExportTheme = "light" // Theme not used in Markdown, but kept for consistency
 ): Promise<void> {
   let markdown = `# ${sessionTitle}\n\n`;
   markdown += `Generated: ${new Date().toISOString()}\n\n`;
@@ -134,8 +221,46 @@ export async function exportToMarkdown(
 export async function exportToHTML(
   messages: UIMessage[],
   sessionTitle: string,
-  includeAttachments: boolean = false
+  includeAttachments: boolean = false,
+  mode: ExportMode = "formatted",
+  theme: ExportTheme = "light"
 ): Promise<void> {
+  // Theme colors
+  const isDark = theme === "dark";
+  const colors = isDark ? {
+    bg: "#0f172a",
+    cardBg: "#1e293b",
+    text: "#e2e8f0",
+    textSecondary: "#94a3b8",
+    border: "#334155",
+    codeBg: "#1e293b",
+    codeText: "#e2e8f0",
+    userColor: "#10b981",
+    assistantColor: "#3b82f6",
+    thinkingBg: "#312e81",
+    thinkingBorder: "#6366f1",
+    toolBg: "#422006",
+    toolBorder: "#f59e0b",
+    heading: "#f1f5f9",
+    headingBorder: "#3b82f6",
+  } : {
+    bg: "#f9fafb",
+    cardBg: "#ffffff",
+    text: "#1f2937",
+    textSecondary: "#6b7280",
+    border: "#e5e7eb",
+    codeBg: "#f3f4f6",
+    codeText: "#1f2937",
+    userColor: "#059669",
+    assistantColor: "#3b82f6",
+    thinkingBg: "#ede9fe",
+    thinkingBorder: "#8b5cf6",
+    toolBg: "#fef3c7",
+    toolBorder: "#f59e0b",
+    heading: "#1f2937",
+    headingBorder: "#3b82f6",
+  };
+
   let html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -149,20 +274,21 @@ export async function exportToHTML(
       margin: 40px auto;
       padding: 20px;
       line-height: 1.6;
-      color: #333;
-      background: #f9fafb;
+      color: ${colors.text};
+      background: ${colors.bg};
     }
     h1 {
-      color: #1f2937;
-      border-bottom: 3px solid #3b82f6;
+      color: ${colors.heading};
+      border-bottom: 3px solid ${colors.headingBorder};
       padding-bottom: 10px;
     }
     .message {
-      background: white;
+      background: ${colors.cardBg};
       border-radius: 8px;
       padding: 20px;
       margin: 20px 0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.${isDark ? '3' : '1'});
+      border: 1px solid ${colors.border};
     }
     .message-header {
       display: flex;
@@ -170,66 +296,96 @@ export async function exportToHTML(
       align-items: center;
       margin-bottom: 15px;
       padding-bottom: 10px;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid ${colors.border};
     }
     .role {
       font-weight: 600;
       font-size: 1.1em;
     }
-    .user { color: #059669; }
-    .assistant { color: #3b82f6; }
+    .user { color: ${colors.userColor}; }
+    .assistant { color: ${colors.assistantColor}; }
     .timestamp {
-      color: #6b7280;
+      color: ${colors.textSecondary};
       font-size: 0.9em;
     }
     .content {
       white-space: pre-wrap;
       word-wrap: break-word;
+      margin-bottom: 10px;
+    }
+    .content-block {
+      margin: 15px 0;
+    }
+    .thinking-block {
+      background: ${colors.thinkingBg};
+      border-left: 4px solid ${colors.thinkingBorder};
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 4px;
+      font-style: italic;
+    }
+    .thinking-title {
+      font-weight: 600;
+      color: ${colors.thinkingBorder};
+      margin-bottom: 10px;
+      font-style: normal;
     }
     .tool-section {
-      background: #f3f4f6;
-      border-left: 4px solid #8b5cf6;
+      background: ${colors.toolBg};
+      border-left: 4px solid ${colors.toolBorder};
       padding: 15px;
-      margin-top: 15px;
+      margin: 15px 0;
       border-radius: 4px;
     }
     .tool-title {
       font-weight: 600;
-      color: #6b21a8;
+      color: ${colors.toolBorder};
       margin-bottom: 10px;
     }
-    pre {
-      background: #1f2937;
-      color: #f3f4f6;
+    pre, code {
+      background: ${colors.codeBg};
+      color: ${colors.codeText};
       padding: 15px;
       border-radius: 6px;
       overflow-x: auto;
       font-size: 0.9em;
+      font-family: 'Courier New', Consolas, monospace;
+      border: 1px solid ${colors.border};
+    }
+    code {
+      padding: 2px 6px;
+      display: inline;
+    }
+    .language-label {
+      font-size: 0.75em;
+      color: ${colors.textSecondary};
+      margin-bottom: 5px;
+      font-weight: 600;
     }
     .tokens {
-      color: #6b7280;
+      color: ${colors.textSecondary};
       font-size: 0.9em;
       margin-top: 10px;
       padding-top: 10px;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid ${colors.border};
     }
     .attachment {
-      background: #fef3c7;
-      border-left: 4px solid #f59e0b;
+      background: ${colors.toolBg};
+      border-left: 4px solid ${colors.toolBorder};
       padding: 15px;
       margin: 20px 0;
       border-radius: 4px;
     }
     .attachment-title {
       font-weight: 600;
-      color: #92400e;
+      color: ${colors.toolBorder};
       margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
   <h1>${escapeHtml(sessionTitle)}</h1>
-  <p style="color: #6b7280;">Generated: ${new Date().toLocaleString()}</p>
+  <p style="color: ${colors.textSecondary};">Generated: ${new Date().toLocaleString()} | Export Mode: ${mode === "formatted" ? "Formatted" : "Raw"} | Theme: ${theme === "dark" ? "Dark" : "Light"}</p>
 `;
 
   messages.forEach((message) => {
@@ -243,25 +399,61 @@ export async function exportToHTML(
       <span class="role ${role}">${escapeHtml(roleLabel)}</span>
       <span class="timestamp">${escapeHtml(timestamp)}</span>
     </div>
-    <div class="content">${escapeHtml(extractTextContent(message))}</div>
 `;
 
-    if (message.toolUse) {
-      html += `
+    // Render content based on mode
+    if (mode === "formatted") {
+      const contentBlocks = extractFormattedContent(message);
+
+      contentBlocks.forEach((block) => {
+        if (block.type === "text") {
+          html += `    <div class="content">${escapeHtml(block.content)}</div>\n`;
+        } else if (block.type === "code") {
+          html += `    <div class="content-block">
+      <div class="language-label">${escapeHtml(block.language || "text")}</div>
+      <pre>${escapeHtml(block.content)}</pre>
+    </div>\n`;
+        } else if (block.type === "thinking") {
+          html += `    <div class="thinking-block">
+      <div class="thinking-title">💭 Thinking</div>
+      <div>${escapeHtml(block.content)}</div>
+    </div>\n`;
+        } else if (block.type === "tool_use") {
+          html += `    <div class="tool-section">
+      <div class="tool-title">🔧 Tool: ${escapeHtml(block.toolName || "Unknown")}</div>
+      <pre>${escapeHtml(block.content)}</pre>
+    </div>\n`;
+        } else if (block.type === "tool_result") {
+          html += `    <div class="tool-section">
+      <div class="tool-title">📋 Tool Result</div>
+      <pre>${escapeHtml(block.content)}</pre>
+    </div>\n`;
+        }
+      });
+    } else {
+      // Raw mode - simple text extraction
+      html += `    <div class="content">${escapeHtml(extractTextContent(message))}</div>\n`;
+    }
+
+    // Add tool use/result for raw mode (already included in formatted mode)
+    if (mode === "raw") {
+      if (message.toolUse) {
+        html += `
     <div class="tool-section">
       <div class="tool-title">Tool Use</div>
       <pre>${escapeHtml(JSON.stringify(message.toolUse, null, 2))}</pre>
     </div>
 `;
-    }
+      }
 
-    if (message.toolUseResult) {
-      html += `
+      if (message.toolUseResult) {
+        html += `
     <div class="tool-section">
       <div class="tool-title">Tool Result</div>
       <pre>${escapeHtml(JSON.stringify(message.toolUseResult, null, 2))}</pre>
     </div>
 `;
+      }
     }
 
     if (message.usage) {
@@ -305,7 +497,9 @@ export async function exportToHTML(
 export async function exportToDocx(
   messages: UIMessage[],
   sessionTitle: string,
-  includeAttachments: boolean = false
+  includeAttachments: boolean = false,
+  mode: ExportMode = "formatted",
+  theme: ExportTheme = "light" // Theme not used in DOCX, but kept for consistency
 ): Promise<void> {
   const children: Paragraph[] = [];
 

@@ -687,5 +687,26 @@
       "downloadFailed": "下载失败",
       "unknownError": "未知错误"
     }
+  },
+  "export": {
+    "exportTo": "导出为",
+    "formatted": "格式化",
+    "raw": "原始数据",
+    "formattedTooltip": "以富文本格式导出（代码块、思考、工具使用）",
+    "rawTooltip": "仅导出简单文本内容",
+    "lightTheme": "浅色主题",
+    "darkTheme": "深色主题",
+    "withAttachments": "包含附件",
+    "noMessages": "没有可导出的消息",
+    "success": "成功导出为 {{format}} 格式",
+    "failed": "导出为 {{format}} 格式失败",
+    "copyPath": "复制路径",
+    "copyPathTooltip": "将会话文件路径复制到剪贴板",
+    "pathCopied": "路径已复制到剪贴板",
+    "pathCopyFailed": "复制路径失败",
+    "copied": "已复制",
+    "markdownTooltip": "将对话导出为 Markdown 格式",
+    "htmlTooltip": "将对话导出为 HTML 格式",
+    "docxTooltip": "将对话导出为 Word 文档"
   }
 }
