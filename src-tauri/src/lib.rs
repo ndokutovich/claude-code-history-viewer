@@ -2,7 +2,7 @@ mod models;
 mod commands;
 mod utils;
 
-use crate::commands::{project::*, session::*, stats::*, update::*, secure_update::*, feedback::*, cursor::*, files::*};
+use crate::commands::{project::*, session::*, stats::*, update::*, secure_update::*, feedback::*, cursor::*, files::*, session_writer::*};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -49,7 +49,11 @@ pub fn run() {
             get_universal_project_stats_summary,
             get_universal_session_comparison,
             // File Activities (v1.5.0+)
-            get_file_activities
+            get_file_activities,
+            // Session Writing (v1.6.0+)
+            create_claude_project,
+            create_claude_session,
+            append_to_claude_session
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
