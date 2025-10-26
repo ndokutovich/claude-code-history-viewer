@@ -122,8 +122,8 @@
       "sessionsCount": " 个会话",
       "projectName": "项目名称",
       "projectNamePlaceholder": "my-project",
-      "parentFolder": "父文件夹（可选，默认为 ~/.claude/projects/）",
-      "parentFolderPlaceholder": "~/.claude/projects/"
+      "parentFolder": "代码文件夹（路径将成为项目标识符）",
+      "parentFolderPlaceholder": "选择代码文件夹..."
     },
     "session": {
       "summaryLabel": "会话摘要（可选）",

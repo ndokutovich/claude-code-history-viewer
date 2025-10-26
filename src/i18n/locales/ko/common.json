@@ -163,8 +163,8 @@
       "sessionsCount": "개 세션",
       "projectName": "프로젝트 이름",
       "projectNamePlaceholder": "my-project",
-      "parentFolder": "상위 폴더 (선택사항, 기본값: ~/.claude/projects/)",
-      "parentFolderPlaceholder": "~/.claude/projects/"
+      "parentFolder": "코드 폴더 (경로가 프로젝트 식별자가 됩니다)",
+      "parentFolderPlaceholder": "코드 폴더 선택..."
     },
     "session": {
       "summaryLabel": "세션 요약 (선택사항)",

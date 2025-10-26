@@ -122,8 +122,8 @@
       "sessionsCount": "個のセッション",
       "projectName": "プロジェクト名",
       "projectNamePlaceholder": "my-project",
-      "parentFolder": "親フォルダ（オプション、デフォルト: ~/.claude/projects/）",
-      "parentFolderPlaceholder": "~/.claude/projects/"
+      "parentFolder": "コードフォルダ（パスがプロジェクト識別子になります）",
+      "parentFolderPlaceholder": "コードフォルダを選択..."
     },
     "session": {
       "summaryLabel": "セッション概要（オプション）",

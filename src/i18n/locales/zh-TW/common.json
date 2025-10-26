@@ -122,8 +122,8 @@
       "sessionsCount": " 個對話",
       "projectName": "專案名稱",
       "projectNamePlaceholder": "my-project",
-      "parentFolder": "父資料夾（選填，預設為 ~/.claude/projects/）",
-      "parentFolderPlaceholder": "~/.claude/projects/"
+      "parentFolder": "程式碼資料夾（路徑將成為專案識別碼）",
+      "parentFolderPlaceholder": "選擇程式碼資料夾..."
     },
     "session": {
       "summaryLabel": "對話摘要（選填）",

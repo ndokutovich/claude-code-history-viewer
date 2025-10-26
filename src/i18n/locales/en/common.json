@@ -163,8 +163,8 @@
       "sessionsCount": " sessions",
       "projectName": "Project Name",
       "projectNamePlaceholder": "my-project",
-      "parentFolder": "Parent Folder (optional, defaults to ~/.claude/projects/)",
-      "parentFolderPlaceholder": "~/.claude/projects/"
+      "parentFolder": "Code Folder (path will become project identifier)",
+      "parentFolderPlaceholder": "Browse for code folder..."
     },
     "session": {
       "summaryLabel": "Session Summary (optional)",

@@ -163,8 +163,8 @@
       "sessionsCount": " сессий",
       "projectName": "Название проекта",
       "projectNamePlaceholder": "my-project",
-      "parentFolder": "Родительская папка (опционально, по умолчанию ~/.claude/projects/)",
-      "parentFolderPlaceholder": "~/.claude/projects/"
+      "parentFolder": "Папка с кодом (путь станет идентификатором проекта)",
+      "parentFolderPlaceholder": "Выберите папку с кодом..."
     },
     "session": {
       "summaryLabel": "Описание сессии (опционально)",
