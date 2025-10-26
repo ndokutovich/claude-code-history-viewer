@@ -17,6 +17,7 @@ import { useAppStore } from '@/store/useAppStore';
 import { useSourceStore } from '@/store/useSourceStore';
 import {
   getAllSourcesWithCapabilities,
+  getWritableSources,
   getWriteDisabledMessage,
   type SourceWithCapability,
 } from '@/adapters/utils/capabilityHelpers';
@@ -51,14 +52,18 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
     return getAllSourcesWithCapabilities(allSources);
   }, [allSources]);
 
-  // Check if ANY writable sources exist
-  const hasWritableSources = sourcesWithCapabilities.some((s) => s.canWrite);
+  // Get writable sources using SSOT helper
+  const writableSources = React.useMemo(() => {
+    return getWritableSources(allSources);
+  }, [allSources]);
+
+  const hasWritableSources = writableSources.length > 0;
 
   // Source selection state (Step 1 - NEW!)
   const [selectedSource, setSelectedSource] = useState<SourceWithCapability | null>(() => {
-    const writableOnly = sourcesWithCapabilities.filter((s) => s.canWrite);
-    if (writableOnly.length === 1) {
-      return writableOnly[0] || null;
+    const enrichedWritable = sourcesWithCapabilities.filter((s) => s.canWrite);
+    if (enrichedWritable.length === 1) {
+      return enrichedWritable[0] || null;
     }
     return null;
   });
