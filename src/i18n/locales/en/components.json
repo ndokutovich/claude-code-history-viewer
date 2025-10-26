@@ -694,12 +694,6 @@
   },
   "export": {
     "exportTo": "Export to",
-    "formatted": "Formatted",
-    "raw": "Raw",
-    "formattedTooltip": "Export with rich formatting (code blocks, thinking, tool use)",
-    "rawTooltip": "Export with simple text content only",
-    "lightTheme": "Light theme",
-    "darkTheme": "Dark theme",
     "withAttachments": "With attachments",
     "noMessages": "No messages to export",
     "success": "Exported to {{format}} successfully",

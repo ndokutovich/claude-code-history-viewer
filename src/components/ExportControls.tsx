@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { FileText, FileCode, Globe, Copy, Check, MessageSquare, Code, Sun, Moon } from "lucide-react";
+import { useState, useMemo } from "react";
+import { FileText, FileCode, Globe, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/utils/cn";
@@ -8,37 +8,75 @@ import { exportToMarkdown, exportToHTML, exportToDocx } from "@/utils/exportUtil
 import type { UIMessage, UISession } from "@/types";
 import { getSessionTitle } from "@/utils/sessionUtils";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { useAppStore } from "@/store/useAppStore";
+import { useTheme } from "@/contexts/theme";
 
 interface ExportControlsProps {
   messages: UIMessage[];
   session: UISession;
 }
 
-type ExportMode = "formatted" | "raw";
-type ExportTheme = "light" | "dark";
-
 export function ExportControls({ messages, session }: ExportControlsProps) {
   const { t } = useTranslation("components");
   const [includeAttachments, setIncludeAttachments] = useState(false);
-  const [exportMode, setExportMode] = useState<ExportMode>("formatted");
-  const [exportTheme, setExportTheme] = useState<ExportTheme>("light");
   const [isExporting, setIsExporting] = useState(false);
   const [copiedPath, setCopiedPath] = useState(false);
 
+  // Get current view mode and theme from app settings
+  const { messageViewMode, messageFilters } = useAppStore();
+  const { isDarkMode } = useTheme();
+
   const sessionTitle = getSessionTitle(session, messages);
+
+  // Filter messages based on current filter settings
+  const filteredMessages = useMemo(() => {
+    if (!messageFilters.showBashOnly && !messageFilters.showToolUseOnly && !messageFilters.showMessagesOnly) {
+      return messages; // No filters active
+    }
+
+    return messages.filter((message) => {
+      // Bash only filter
+      if (messageFilters.showBashOnly) {
+        const hasBashTool = message.content &&
+          Array.isArray(message.content) &&
+          message.content.some((item) =>
+            item.type === "tool_use" && item.name === "Bash"
+          );
+        return hasBashTool;
+      }
+
+      // Tool use only filter
+      if (messageFilters.showToolUseOnly) {
+        const hasToolUse = message.content &&
+          Array.isArray(message.content) &&
+          message.content.some((item) => item.type === "tool_use");
+        return hasToolUse;
+      }
+
+      // Messages only filter
+      if (messageFilters.showMessagesOnly) {
+        const hasNoTools = !message.toolUse && !message.toolUseResult;
+        return hasNoTools;
+      }
+
+      return true;
+    });
+  }, [messages, messageFilters]);
 
   const handleExport = async (
     format: "markdown" | "html" | "docx",
-    exportFn: (messages: UIMessage[], title: string, includeAttachments: boolean, mode: ExportMode, theme: ExportTheme) => Promise<void>
+    exportFn: (messages: UIMessage[], title: string, includeAttachments: boolean, mode: "formatted" | "raw", theme: "light" | "dark") => Promise<void>
   ) => {
-    if (messages.length === 0) {
+    if (filteredMessages.length === 0) {
       toast.error(t("export.noMessages"));
       return;
     }
 
     setIsExporting(true);
     try {
-      await exportFn(messages, sessionTitle, includeAttachments, exportMode, exportTheme);
+      const mode = messageViewMode; // Use current view mode from app settings
+      const theme = isDarkMode ? "dark" : "light"; // Use current theme from theme context
+      await exportFn(filteredMessages, sessionTitle, includeAttachments, mode, theme);
       toast.success(t("export.success", { format: format.toUpperCase() }));
     } catch (error) {
       console.error(`Export to ${format} failed:`, error);
@@ -62,83 +100,6 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
 
   return (
     <div className="flex items-center gap-3">
-      {/* Export Mode Toggle (Formatted / Raw) */}
-      <div className={cn("flex items-center gap-1 rounded-lg p-1 bg-gray-100 dark:bg-gray-800")}>
-        <button
-          onClick={() => setExportMode("formatted")}
-          className={cn(
-            "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-colors",
-            exportMode === "formatted"
-              ? "bg-white dark:bg-gray-700 shadow-sm"
-              : "hover:bg-gray-100 dark:hover:bg-gray-700",
-            exportMode === "formatted"
-              ? COLORS.ui.text.primary
-              : COLORS.ui.text.secondary
-          )}
-          title={t("export.formattedTooltip")}
-        >
-          <MessageSquare className="w-3.5 h-3.5" />
-          <span>{t("export.formatted")}</span>
-        </button>
-
-        <button
-          onClick={() => setExportMode("raw")}
-          className={cn(
-            "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-colors",
-            exportMode === "raw"
-              ? "bg-white dark:bg-gray-700 shadow-sm"
-              : "hover:bg-gray-100 dark:hover:bg-gray-700",
-            exportMode === "raw"
-              ? COLORS.ui.text.primary
-              : COLORS.ui.text.secondary
-          )}
-          title={t("export.rawTooltip")}
-        >
-          <Code className="w-3.5 h-3.5" />
-          <span>{t("export.raw")}</span>
-        </button>
-      </div>
-
-      {/* Theme Toggle (Light / Dark) - Only for Formatted mode */}
-      {exportMode === "formatted" && (
-        <div className={cn("flex items-center gap-1 rounded-lg p-1 bg-gray-100 dark:bg-gray-800")}>
-          <button
-            onClick={() => setExportTheme("light")}
-            className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-colors",
-              exportTheme === "light"
-                ? "bg-white dark:bg-gray-700 shadow-sm"
-                : "hover:bg-gray-100 dark:hover:bg-gray-700",
-              exportTheme === "light"
-                ? COLORS.ui.text.primary
-                : COLORS.ui.text.secondary
-            )}
-            title={t("export.lightTheme")}
-          >
-            <Sun className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            onClick={() => setExportTheme("dark")}
-            className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm font-medium transition-colors",
-              exportTheme === "dark"
-                ? "bg-white dark:bg-gray-700 shadow-sm"
-                : "hover:bg-gray-100 dark:hover:bg-gray-700",
-              exportTheme === "dark"
-                ? COLORS.ui.text.primary
-                : COLORS.ui.text.secondary
-            )}
-            title={t("export.darkTheme")}
-          >
-            <Moon className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
-      {/* Separator */}
-      <div className={cn("h-6 w-px", COLORS.ui.border.light)} />
-
       {/* With Attachments Toggle */}
       <label className="flex items-center gap-2 text-sm cursor-pointer">
         <input

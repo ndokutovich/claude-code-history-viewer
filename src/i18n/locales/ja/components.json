@@ -671,12 +671,6 @@
   },
   "export": {
     "exportTo": "エクスポート",
-    "formatted": "フォーマット済み",
-    "raw": "生データ",
-    "formattedTooltip": "リッチフォーマットでエクスポート（コードブロック、思考、ツール使用）",
-    "rawTooltip": "シンプルなテキストコンテンツのみエクスポート",
-    "lightTheme": "ライトテーマ",
-    "darkTheme": "ダークテーマ",
     "withAttachments": "添付ファイルを含める",
     "noMessages": "エクスポートするメッセージがありません",
     "success": "{{format}}形式でエクスポートしました",

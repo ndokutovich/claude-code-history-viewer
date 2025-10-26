@@ -687,12 +687,6 @@
   },
   "export": {
     "exportTo": "내보내기",
-    "formatted": "서식 있음",
-    "raw": "원시 데이터",
-    "formattedTooltip": "서식이 적용된 내보내기 (코드 블록, 사고 과정, 도구 사용)",
-    "rawTooltip": "단순 텍스트 내용만 내보내기",
-    "lightTheme": "라이트 테마",
-    "darkTheme": "다크 테마",
     "withAttachments": "첨부 파일 포함",
     "noMessages": "내보낼 메시지가 없습니다",
     "success": "{{format}} 형식으로 내보내기 완료",

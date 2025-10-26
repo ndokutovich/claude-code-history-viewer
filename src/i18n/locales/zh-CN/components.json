@@ -690,12 +690,6 @@
   },
   "export": {
     "exportTo": "导出为",
-    "formatted": "格式化",
-    "raw": "原始数据",
-    "formattedTooltip": "以富文本格式导出（代码块、思考、工具使用）",
-    "rawTooltip": "仅导出简单文本内容",
-    "lightTheme": "浅色主题",
-    "darkTheme": "深色主题",
     "withAttachments": "包含附件",
     "noMessages": "没有可导出的消息",
     "success": "成功导出为 {{format}} 格式",
