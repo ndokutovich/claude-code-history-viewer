@@ -44,6 +44,21 @@
     "loadMore_plural": "さらに{{count}}件のメッセージを読み込む",
     "scrollToBottom": "最下部へ移動"
   },
+  "messageView": {
+    "formatted": "フォーマット済み",
+    "raw": "生データ",
+    "filters": "フィルタ",
+    "bashOnly": "Bashのみ",
+    "commandOnly": "コマンドのみ",
+    "toolUseOnly": "ツール使用のみ",
+    "messagesOnly": "メッセージのみ",
+    "clearFilters": "クリア",
+    "copyRaw": "JSONをコピー",
+    "rawCopied": "生メッセージをコピーしました",
+    "rawCopyFailed": "メッセージのコピーに失敗しました",
+    "copied": "コピーしました",
+    "noMessages": "表示するメッセージがありません"
+  },
   "folderPicker": {
     "notFound": "Claudeフォルダが見つかりません",
     "change": "Claudeフォルダを変更",

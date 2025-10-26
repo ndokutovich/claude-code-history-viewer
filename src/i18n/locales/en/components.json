@@ -52,6 +52,7 @@
     "raw": "Raw",
     "filters": "Filters",
     "bashOnly": "Bash only",
+    "commandOnly": "Command only",
     "toolUseOnly": "Tool use only",
     "messagesOnly": "Messages only",
     "clearFilters": "Clear",

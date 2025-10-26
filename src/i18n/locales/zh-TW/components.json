@@ -44,6 +44,21 @@
     "loadMore_plural": "載入更多{{count}}則訊息",
     "scrollToBottom": "捲動到底部"
   },
+  "messageView": {
+    "formatted": "格式化",
+    "raw": "原始資料",
+    "filters": "篩選",
+    "bashOnly": "僅Bash",
+    "commandOnly": "僅命令",
+    "toolUseOnly": "僅工具使用",
+    "messagesOnly": "僅訊息",
+    "clearFilters": "清除",
+    "copyRaw": "複製JSON",
+    "rawCopied": "已複製原始訊息",
+    "rawCopyFailed": "複製訊息失敗",
+    "copied": "已複製",
+    "noMessages": "沒有要顯示的訊息"
+  },
   "folderPicker": {
     "notFound": "找不到Claude資料夾",
     "change": "更改Claude資料夾",

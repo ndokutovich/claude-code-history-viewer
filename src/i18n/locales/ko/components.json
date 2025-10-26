@@ -47,6 +47,21 @@
     "loadMore_plural": "이전 메시지 {{count}}개 더 보기",
     "scrollToBottom": "맨 아래로 이동"
   },
+  "messageView": {
+    "formatted": "서식 있음",
+    "raw": "원시 데이터",
+    "filters": "필터",
+    "bashOnly": "Bash만",
+    "commandOnly": "명령어만",
+    "toolUseOnly": "도구 사용만",
+    "messagesOnly": "메시지만",
+    "clearFilters": "지우기",
+    "copyRaw": "JSON 복사",
+    "rawCopied": "원시 메시지 복사됨",
+    "rawCopyFailed": "메시지 복사 실패",
+    "copied": "복사됨",
+    "noMessages": "표시할 메시지가 없습니다"
+  },
   "folderPicker": {
     "notFound": "Claude 폴더를 찾을 수 없습니다",
     "change": "Claude 폴더 변경",

@@ -335,6 +335,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     showBashOnly: false,
     showToolUseOnly: false,
     showMessagesOnly: false,
+    showCommandOnly: false,
   },
 
   // Core state

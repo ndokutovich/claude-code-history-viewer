@@ -15,6 +15,34 @@ function isToolResultContent(item: ContentItem): item is { type: "tool_result"; 
 }
 
 /**
+ * Extract Bash command text from a message (for command-only display)
+ * Returns the command string or null if no Bash command found
+ */
+export function extractBashCommand(message: UIMessage): string | null {
+  // Check content array for Bash tool use
+  if (Array.isArray(message.content)) {
+    for (const item of message.content) {
+      if (isToolUseContent(item) && item.name === "Bash") {
+        const input = item.input as { command?: string; description?: string };
+        if (input.command) {
+          return input.command;
+        }
+      }
+    }
+  }
+
+  // Check legacy toolUse field
+  if (message.toolUse && typeof message.toolUse === "object") {
+    const toolUseObj = message.toolUse as { name?: string; input?: { command?: string } };
+    if (toolUseObj.name === "Bash" && toolUseObj.input?.command) {
+      return toolUseObj.input.command;
+    }
+  }
+
+  return null;
+}
+
+/**
  * Filter messages based on user-selected filters
  */
 export function filterMessages(
@@ -22,13 +50,13 @@ export function filterMessages(
   filters: MessageFilters
 ): UIMessage[] {
   // If no filters are active, return all messages
-  if (!filters.showBashOnly && !filters.showToolUseOnly && !filters.showMessagesOnly) {
+  if (!filters.showBashOnly && !filters.showToolUseOnly && !filters.showMessagesOnly && !filters.showCommandOnly) {
     return messages;
   }
 
   return messages.filter((message) => {
-    // Bash only filter - show messages with Bash tool use
-    if (filters.showBashOnly) {
+    // Bash only filter (Command only is a subset of this, so check both)
+    if (filters.showBashOnly || filters.showCommandOnly) {
       // Check content array for Bash tool use
       if (Array.isArray(message.content)) {
         const hasBashInContent = message.content.some((item) => {

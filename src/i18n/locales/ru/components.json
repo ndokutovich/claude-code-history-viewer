@@ -44,6 +44,21 @@
     "loadMore_plural": "Загрузить ещё {{count}} сообщений",
     "scrollToBottom": "Прокрутить вниз"
   },
+  "messageView": {
+    "formatted": "Форматированный",
+    "raw": "Необработанный",
+    "filters": "Фильтры",
+    "bashOnly": "Только Bash",
+    "commandOnly": "Только команды",
+    "toolUseOnly": "Только использование инструментов",
+    "messagesOnly": "Только сообщения",
+    "clearFilters": "Очистить",
+    "copyRaw": "Копировать JSON",
+    "rawCopied": "Необработанное сообщение скопировано",
+    "rawCopyFailed": "Не удалось скопировать сообщение",
+    "copied": "Скопировано",
+    "noMessages": "Нет сообщений для отображения"
+  },
   "folderPicker": {
     "notFound": "Папка Claude не найдена",
     "change": "Изменить папку Claude",

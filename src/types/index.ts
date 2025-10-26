@@ -232,6 +232,7 @@ export interface MessageFilters {
   showBashOnly: boolean;
   showToolUseOnly: boolean;
   showMessagesOnly: boolean;
+  showCommandOnly: boolean; // Show only bash commands (like bash history)
 }
 
 export interface AppState {

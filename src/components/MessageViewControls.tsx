@@ -74,6 +74,8 @@ export function MessageViewControls() {
               // Disable other filters when enabling this one
               showToolUseOnly: e.target.checked ? false : messageFilters.showToolUseOnly,
               showMessagesOnly: e.target.checked ? false : messageFilters.showMessagesOnly,
+              // Disable Command only if Bash only is disabled
+              showCommandOnly: e.target.checked ? messageFilters.showCommandOnly : false,
             })}
             className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
           />
@@ -81,6 +83,23 @@ export function MessageViewControls() {
             {t("messageView.bashOnly")}
           </span>
         </label>
+
+        {/* Command only - chained with Bash only */}
+        {messageFilters.showBashOnly && (
+          <label className="flex items-center gap-2 text-sm cursor-pointer hover:opacity-80 ml-2">
+            <input
+              type="checkbox"
+              checked={messageFilters.showCommandOnly}
+              onChange={(e) => setMessageFilters({
+                showCommandOnly: e.target.checked,
+              })}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <span className={cn(COLORS.ui.text.secondary)}>
+              {t("messageView.commandOnly")}
+            </span>
+          </label>
+        )}
 
         <label className="flex items-center gap-2 text-sm cursor-pointer hover:opacity-80">
           <input
@@ -91,6 +110,7 @@ export function MessageViewControls() {
               // Disable other filters when enabling this one
               showBashOnly: e.target.checked ? false : messageFilters.showBashOnly,
               showMessagesOnly: e.target.checked ? false : messageFilters.showMessagesOnly,
+              showCommandOnly: false, // Command only requires Bash only
             })}
             className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
           />
@@ -108,6 +128,7 @@ export function MessageViewControls() {
               // Disable other filters when enabling this one
               showBashOnly: e.target.checked ? false : messageFilters.showBashOnly,
               showToolUseOnly: e.target.checked ? false : messageFilters.showToolUseOnly,
+              showCommandOnly: false, // Command only requires Bash only
             })}
             className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
           />
@@ -123,6 +144,7 @@ export function MessageViewControls() {
               showBashOnly: false,
               showToolUseOnly: false,
               showMessagesOnly: false,
+              showCommandOnly: false,
             })}
             className={cn(
               "text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700",
