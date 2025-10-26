@@ -50,6 +50,11 @@ export interface ProviderCapabilities {
   requiresNetwork: boolean; // Needs network access
   isReadOnly: boolean; // Cannot modify data
 
+  // Write operations (v1.6.0+)
+  supportsProjectCreation?: boolean; // Can create new projects
+  supportsSessionCreation?: boolean; // Can create new sessions
+  supportsMessageAppending?: boolean; // Can append to existing sessions
+
   // Performance hints
   maxMessagesPerRequest: number; // Max messages to load at once
   preferredBatchSize: number; // Optimal batch size

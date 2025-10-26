@@ -16,6 +16,11 @@ import type {
   HealthStatus,
   ErrorRecovery,
   ErrorContext,
+  WriteResult,
+  ProjectInfo,
+  SessionInfo,
+  CreateSessionRequest,
+  MessageInput,
 } from '../base/IAdapter';
 import { classifyError } from '../base/IAdapter';
 import type {
@@ -60,7 +65,10 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       supportsModelInfo: true,
       requiresAuth: false,
       requiresNetwork: false,
-      isReadOnly: true,
+      isReadOnly: false, // v1.6.0+: Now supports writing
+      supportsProjectCreation: true, // v1.6.0+
+      supportsSessionCreation: true, // v1.6.0+
+      supportsMessageAppending: true, // v1.6.0+
       maxMessagesPerRequest: 10000,
       preferredBatchSize: 100,
       supportsPagination: true,
@@ -467,6 +475,132 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
           message: `Unexpected error: ${error.message}`,
           suggestion: 'Please report this issue if it persists.',
         };
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // WRITE OPERATIONS (OPTIONAL - v1.6.0+)
+  // ------------------------------------------------------------------------
+
+  async createProject(
+    sourcePath: string,
+    projectName: string
+  ): Promise<WriteResult<ProjectInfo>> {
+    this.ensureInitialized();
+
+    try {
+      const response = await invoke<{ project_path: string; project_name: string }>(
+        'create_claude_project',
+        {
+          request: {
+            name: projectName,
+            parent_path: sourcePath, // Use source path as parent
+          },
+        }
+      );
+
+      return {
+        success: true,
+        data: {
+          projectPath: response.project_path,
+          projectName: response.project_name,
+          projectId: response.project_path,
+        },
+      };
+    } catch (error) {
+      const errorCode = classifyError(error as Error);
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: error instanceof Error ? error.message : String(error),
+          recoverable: errorCode !== ErrorCode.ACCESS_DENIED,
+          retry: {
+            shouldRetry: errorCode === ErrorCode.OPERATION_TIMEOUT,
+            maxAttempts: 3,
+            delayMs: 1000,
+          },
+        },
+      };
+    }
+  }
+
+  async createSession(
+    projectPath: string,
+    request: CreateSessionRequest
+  ): Promise<WriteResult<SessionInfo>> {
+    this.ensureInitialized();
+
+    try {
+      const response = await invoke<{
+        session_path: string;
+        session_id: string;
+        message_count: number;
+      }>('create_claude_session', {
+        request: {
+          project_path: projectPath,
+          messages: request.messages,
+          summary: request.summary,
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          sessionPath: response.session_path,
+          sessionId: response.session_id,
+          messageCount: response.message_count,
+        },
+      };
+    } catch (error) {
+      const errorCode = classifyError(error as Error);
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: error instanceof Error ? error.message : String(error),
+          recoverable: errorCode !== ErrorCode.ACCESS_DENIED,
+          retry: {
+            shouldRetry: errorCode === ErrorCode.OPERATION_TIMEOUT,
+            maxAttempts: 3,
+            delayMs: 1000,
+          },
+        },
+      };
+    }
+  }
+
+  async appendMessages(
+    sessionPath: string,
+    messages: MessageInput[]
+  ): Promise<WriteResult<number>> {
+    this.ensureInitialized();
+
+    try {
+      const messageCount = await invoke<number>('append_to_claude_session', {
+        sessionPath,
+        messages,
+      });
+
+      return {
+        success: true,
+        data: messageCount,
+      };
+    } catch (error) {
+      const errorCode = classifyError(error as Error);
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: error instanceof Error ? error.message : String(error),
+          recoverable: errorCode !== ErrorCode.ACCESS_DENIED,
+          retry: {
+            shouldRetry: errorCode === ErrorCode.OPERATION_TIMEOUT,
+            maxAttempts: 3,
+            delayMs: 1000,
+          },
+        },
+      };
     }
   }
 

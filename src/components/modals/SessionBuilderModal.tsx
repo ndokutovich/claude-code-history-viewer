@@ -12,10 +12,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { FolderOpen, Plus, Save, X } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
+import { useSourceStore } from '@/store/useSourceStore';
+import { adapterRegistry } from '@/adapters/registry/AdapterRegistry';
 import {
   type MessageBuilder,
-  type CreateProjectRequest,
-  type CreateSessionRequest,
+  type UniversalSource,
 } from '@/types';
 import { open } from '@tauri-apps/plugin-dialog';
 import { MessageComposer } from './MessageComposer';
@@ -32,10 +33,27 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
   onClose,
   defaultProjectPath,
 }) => {
-  // Store actions
-  const createProject = useAppStore((state) => state.createProject);
-  const createSession = useAppStore((state) => state.createSession);
+  // Store state
   const projects = useAppStore((state) => state.projects);
+
+  // Sources (filtered to writable only)
+  const allSources = useSourceStore((state) => state.sources);
+  const writableSources = React.useMemo(() => {
+    return allSources.filter((source) => {
+      if (!source.isAvailable) return false;
+      const adapter = adapterRegistry.tryGet(source.providerId);
+      if (!adapter) return false;
+      return adapter.providerDefinition.capabilities.supportsSessionCreation === true;
+    });
+  }, [allSources]);
+
+  // Source selection state (Step 1 - NEW!)
+  const [selectedSource, setSelectedSource] = useState<UniversalSource | null>(() => {
+    if (writableSources.length === 1) {
+      return writableSources[0] || null;
+    }
+    return null;
+  });
 
   // Project selection state
   const [projectMode, setProjectMode] = useState<'existing' | 'new'>(
@@ -93,8 +111,24 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
     setMessages((prev) => prev.filter((msg) => msg.id !== id));
   }, []);
 
+  const resetForm = useCallback(() => {
+    setProjectMode('new');
+    setSelectedProjectPath('');
+    setNewProjectName('');
+    setCustomParentPath('');
+    setSessionSummary('');
+    setMessages([]);
+    setValidationErrors([]);
+    setActiveTab('compose');
+  }, []);
+
   const validateInputs = useCallback((): boolean => {
     const errors: string[] = [];
+
+    // Validate source selection (NEW!)
+    if (!selectedSource) {
+      errors.push('Please select a source');
+    }
 
     // Validate project
     if (projectMode === 'existing' && !selectedProjectPath) {
@@ -118,10 +152,10 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
 
     setValidationErrors(errors);
     return errors.length === 0;
-  }, [projectMode, selectedProjectPath, newProjectName, messages]);
+  }, [selectedSource, projectMode, selectedProjectPath, newProjectName, messages]);
 
   const handleSave = useCallback(async () => {
-    if (!validateInputs()) {
+    if (!validateInputs() || !selectedSource) {
       return;
     }
 
@@ -129,22 +163,30 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
     setValidationErrors([]);
 
     try {
+      // Get the adapter for this source
+      const adapter = adapterRegistry.tryGet(selectedSource.providerId);
+      if (!adapter?.createProject || !adapter?.createSession) {
+        throw new Error(`Provider ${selectedSource.providerId} does not support writing`);
+      }
+
       let projectPath = selectedProjectPath;
 
       // Step 1: Create project if needed
       if (projectMode === 'new') {
-        const projectRequest: CreateProjectRequest = {
-          name: newProjectName,
-          parent_path: customParentPath || undefined,
-        };
+        const createResult = await adapter.createProject(
+          selectedSource.path,  // Use source path!
+          newProjectName
+        );
 
-        const projectResponse = await createProject(projectRequest);
-        projectPath = projectResponse.project_path;
+        if (!createResult.success || !createResult.data) {
+          throw new Error(createResult.error?.message || 'Failed to create project');
+        }
+
+        projectPath = createResult.data.projectPath;
       }
 
-      // Step 2: Create session
-      const sessionRequest: CreateSessionRequest = {
-        project_path: projectPath,
+      // Step 2: Create session using adapter
+      const createResult = await adapter.createSession(projectPath, {
         messages: messages.map((msg) => ({
           role: msg.role,
           content: msg.content,
@@ -155,11 +197,14 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
           usage: msg.usage,
         })),
         summary: sessionSummary || undefined,
-      };
+      });
 
-      await createSession(sessionRequest);
+      if (!createResult.success) {
+        throw new Error(createResult.error?.message || 'Failed to create session');
+      }
 
-      // Success! Close modal
+      // Success! Refresh projects and close modal
+      await useAppStore.getState().scanProjects();
       onClose();
       resetForm();
     } catch (error) {
@@ -172,27 +217,15 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
     }
   }, [
     validateInputs,
+    selectedSource,
     projectMode,
     selectedProjectPath,
     newProjectName,
-    customParentPath,
     messages,
     sessionSummary,
-    createProject,
-    createSession,
     onClose,
+    resetForm,
   ]);
-
-  const resetForm = useCallback(() => {
-    setProjectMode('new');
-    setSelectedProjectPath('');
-    setNewProjectName('');
-    setCustomParentPath('');
-    setSessionSummary('');
-    setMessages([]);
-    setValidationErrors([]);
-    setActiveTab('compose');
-  }, []);
 
   const handleClose = useCallback(() => {
     if (!isSaving) {
@@ -213,9 +246,41 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
 
         <div className="flex-1 overflow-y-auto pr-4">
           <div className="space-y-6">
-            {/* Project Selection */}
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Project</Label>
+            {/* Source Selection - NEW! Step 1 */}
+            <div className="space-y-2">
+              <Label htmlFor="source-select" className="text-base font-semibold">
+                Source
+              </Label>
+              {writableSources.length === 0 ? (
+                <div className="p-4 bg-destructive/10 border border-destructive rounded-md">
+                  <p className="text-sm text-destructive">
+                    No writable sources available. Please add a Claude Code source in Settings.
+                  </p>
+                </div>
+              ) : (
+                <select
+                  id="source-select"
+                  className="w-full px-3 py-2 border rounded-md bg-background"
+                  value={selectedSource?.id || ''}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                    const source = writableSources.find((s) => s.id === e.target.value);
+                    setSelectedSource(source || null);
+                  }}
+                >
+                  <option value="">-- Select a source --</option>
+                  {writableSources.map((source) => (
+                    <option key={source.id} value={source.id}>
+                      {source.name} ({source.providerId}) - {source.path}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Project Selection - Step 2 */}
+            {selectedSource && (
+              <div className="space-y-4">
+                <Label className="text-base font-semibold">Project</Label>
 
               <div className="space-y-4">
                 <div className="flex gap-2">
@@ -293,10 +358,12 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                   </div>
                 )}
               </div>
-            </div>
+              </div>
+            )}
 
-            {/* Session Summary */}
-            <div className="space-y-2">
+            {/* Session Summary - Step 3 */}
+            {selectedSource && (
+              <div className="space-y-2">
               <Label htmlFor="summary">Session Summary (optional)</Label>
               <Input
                 id="summary"
@@ -304,10 +371,12 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                 value={sessionSummary}
                 onChange={(e) => setSessionSummary(e.target.value)}
               />
-            </div>
+              </div>
+            )}
 
-            {/* Messages */}
-            <div className="space-y-4">
+            {/* Messages - Step 4 */}
+            {selectedSource && (
+              <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label className="text-base font-semibold">Messages</Label>
                 <Button
@@ -380,7 +449,8 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                   </div>
                 )}
               </div>
-            </div>
+              </div>
+            )}
 
             {/* Validation Errors */}
             {validationErrors.length > 0 && (
