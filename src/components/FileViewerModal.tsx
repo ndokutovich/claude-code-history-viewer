@@ -12,7 +12,7 @@ import { formatRelativeTime } from "../utils/time";
 import { getFileName } from "../utils/pathUtils";
 import { getOperationColor } from "../utils/fileOperationUtils";
 import { toast } from "sonner";
-import { open } from "@tauri-apps/plugin-shell";
+import { openPath } from "@tauri-apps/plugin-opener";
 import { downloadDir } from "@tauri-apps/api/path";
 
 interface FileViewerModalProps {
@@ -30,7 +30,7 @@ export const FileViewerModal = ({
   const { projects, selectProject, loadProjectSessions, selectSession } = useAppStore();
   const { actions: analyticsActions } = useAnalytics();
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const content = file.content_after || file.content_before || "";
     if (!content) {
       console.warn("Cannot download: No content available", {
@@ -47,51 +47,52 @@ export const FileViewerModal = ({
 
     const fileName = getFileName(file.file_path) || "file.txt";
 
-    // Show download starting toast
-    const downloadToast = toast.loading(t("filesView.toast.downloading", { fileName }));
+    // Use toast.promise for smooth loading -> success transition
+    const downloadPromise = new Promise<void>((resolve, reject) => {
+      try {
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
 
-    try {
-      const blob = new Blob([content], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+    await toast.promise(downloadPromise, {
+      loading: t("filesView.toast.downloading", { fileName }),
+      success: t("filesView.toast.downloaded", { fileName }),
+      error: (error) =>
+        error instanceof Error ? error.message : t("filesView.toast.unknownError")
+    });
 
-      // Dismiss loading toast BEFORE showing success toast
-      toast.dismiss(downloadToast);
+    // After successful download, show a new toast with the "Open Folder" action
+    toast.success(t("filesView.toast.downloaded", { fileName }), {
+      description: t("filesView.toast.savedToDownloads"),
+      action: {
+        label: t("filesView.toast.openFolder"),
+        onClick: async () => {
+          try {
+            // Get the downloads directory path
+            const downloadsPath = await downloadDir();
 
-      // Show success toast with action to open folder
-      toast.success(t("filesView.toast.downloaded", { fileName }), {
-        description: t("filesView.toast.savedToDownloads"),
-        action: {
-          label: t("filesView.toast.openFolder"),
-          onClick: async () => {
-            try {
-              // Get the downloads directory path
-              const downloadsPath = await downloadDir();
-
-              // Use shell.open() to open the folder with the system default file manager
-              // This works cross-platform (Windows Explorer, macOS Finder, Linux file manager)
-              await open(downloadsPath);
-            } catch (error) {
-              console.error("Failed to open downloads folder:", error);
-              toast.error(t("filesView.toast.failedToOpenFolder"));
-            }
+            // Use opener plugin to open the folder with the system default file manager
+            // This works cross-platform (Windows Explorer, macOS Finder, Linux file manager)
+            await openPath(downloadsPath);
+          } catch (error) {
+            console.error("Failed to open downloads folder:", error);
+            toast.error(t("filesView.toast.failedToOpenFolder"));
           }
-        },
-        duration: 5000,
-      });
-    } catch (error) {
-      console.error("Download failed:", error);
-      toast.dismiss(downloadToast);
-      toast.error(t("filesView.toast.downloadFailed"), {
-        description: error instanceof Error ? error.message : t("filesView.toast.unknownError")
-      });
-    }
+        }
+      },
+      duration: 5000,
+    });
   };
 
   const handleJumpToMessage = async () => {
