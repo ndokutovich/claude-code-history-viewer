@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
+import { RawMessageView } from "./components/RawMessageView";
+import { MessageViewControls } from "./components/MessageViewControls";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
 import { FilesView } from "./components/FilesView";
@@ -9,10 +11,12 @@ import { SearchView } from "./components/SearchView";
 import { DebugConsole } from "./components/DebugConsole";
 import { SplashScreen } from "./components/SplashScreen";
 import { ResizableSplitter } from "./components/ResizableSplitter";
+import { ExportControls } from "./components/ExportControls";
 import { useAppStore } from "./store/useAppStore";
 import { useSourceStore } from "./store/useSourceStore";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { getSessionTitle } from "./utils/sessionUtils";
+import { filterMessages } from "./utils/messageFilters";
 
 import { useTranslation } from "react-i18next";
 import { AppErrorType, type UISession, type UIProject } from "./types";
@@ -45,6 +49,8 @@ function App() {
     projectTokenStats,
     projectStatsSummary,
     loadingProgress,
+    messageViewMode,
+    messageFilters,
     initializeApp,
     selectProject,
     selectSession,
@@ -52,6 +58,11 @@ function App() {
     loadMoreMessages,
     setLoadingProgress,
   } = useAppStore();
+
+  // Filter messages based on active filters
+  const filteredMessages = useMemo(() => {
+    return filterMessages(messages, messageFilters);
+  }, [messages, messageFilters]);
 
   const {
     actions: analyticsActions,
@@ -356,8 +367,8 @@ function App() {
                       COLORS.ui.border.light
                     )}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
                         <h2
                           className={cn(
                             "text-lg font-semibold",
@@ -399,7 +410,20 @@ function App() {
                           </p>
                         )}
                       </div>
+                      {/* Export Controls - Only show in Messages view */}
+                      {computed.isMessagesView && selectedSession && messages.length > 0 && (
+                        <div className="flex-shrink-0">
+                          <ExportControls messages={messages} session={selectedSession} />
+                        </div>
+                      )}
                     </div>
+
+                    {/* Message View Controls - Only show in Messages view with messages */}
+                    {computed.isMessagesView && selectedSession && messages.length > 0 && (
+                      <div className="mt-3 pt-3 border-t" style={{ borderColor: 'inherit' }}>
+                        <MessageViewControls />
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -432,13 +456,17 @@ function App() {
                   ) : computed.isFilesView ? (
                     <FilesView />
                   ) : selectedSession ? (
-                    <MessageViewer
-                      messages={messages}
-                      pagination={pagination}
-                      isLoading={isLoading}
-                      selectedSession={selectedSession}
-                      onLoadMore={loadMoreMessages}
-                    />
+                    messageViewMode === "raw" ? (
+                      <RawMessageView messages={filteredMessages} />
+                    ) : (
+                      <MessageViewer
+                        messages={filteredMessages}
+                        pagination={pagination}
+                        isLoading={isLoading}
+                        selectedSession={selectedSession}
+                        onLoadMore={loadMoreMessages}
+                      />
+                    )
                   ) : (
                     <div className="h-full flex items-center justify-center">
                       <div className={cn("text-center", COLORS.ui.text.muted)}>
@@ -487,9 +515,14 @@ function App() {
               {selectedSession && computed.isMessagesView && (
                 <span>
                   {tComponents("message.countWithTotal", {
-                    current: messages.length,
+                    current: filteredMessages.length,
                     total: pagination.totalCount || messages.length,
                   })}
+                  {filteredMessages.length !== messages.length && (
+                    <span className="text-blue-500 ml-1">
+                      ({tComponents("message.filtered")})
+                    </span>
+                  )}
                 </span>
               )}
               {computed.isTokenStatsView && sessionTokenStats && (

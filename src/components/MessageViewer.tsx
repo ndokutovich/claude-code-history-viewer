@@ -5,7 +5,7 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import { Loader2, MessageCircle, ChevronDown } from "lucide-react";
+import { Loader2, MessageCircle, ChevronDown, Link2, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { UIMessage, UISession, PaginationState } from "../types";
 import { ClaudeContentArrayRenderer } from "./contentRenderer";
@@ -41,10 +41,35 @@ interface MessageNodeProps {
   message: UIMessage;
   depth: number;
   providerName: string;
+  sessionFilePath?: string;
 }
 
-const UIMessageNode = ({ message, depth, providerName }: MessageNodeProps) => {
+const UIMessageNode = ({ message, depth, providerName, sessionFilePath }: MessageNodeProps) => {
   const { t } = useTranslation("components");
+  const [copiedReference, setCopiedReference] = React.useState(false);
+
+  const handleCopyReference = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Format: file_path:line_number or file_path#messageUUID
+      const reference = sessionFilePath
+        ? `${sessionFilePath}#${message.uuid}`
+        : message.uuid;
+
+      const { writeText } = await import("@tauri-apps/plugin-clipboard-manager");
+      await writeText(reference);
+      setCopiedReference(true);
+
+      const { toast } = await import("sonner");
+      toast.success(t("messageReference.referenceCopied"));
+
+      setTimeout(() => setCopiedReference(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy reference:", error);
+      const { toast } = await import("sonner");
+      toast.error(t("messageReference.referenceCopyFailed"));
+    }
+  };
 
   if (message.isSidechain) {
     return null;
@@ -93,6 +118,21 @@ const UIMessageNode = ({ message, depth, providerName }: MessageNodeProps) => {
               {t("messageViewer.branch")}
             </span>
           )}
+          {/* Copy Reference Button */}
+          <button
+            onClick={handleCopyReference}
+            className={cn(
+              "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
+              "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            )}
+            title={t("messageReference.referenceTooltip")}
+          >
+            {copiedReference ? (
+              <Check className="w-3.5 h-3.5 text-green-500" />
+            ) : (
+              <Link2 className="w-3.5 h-3.5" />
+            )}
+          </button>
           {message.type === "assistant" && (
             <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
           )}
@@ -416,7 +456,13 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 
     // Add current message first, then child messages
     const result: React.ReactNode[] = [
-      <UIMessageNode key={uniqueKey} message={message} depth={depth} providerName={providerName} />,
+      <UIMessageNode
+        key={uniqueKey}
+        message={message}
+        depth={depth}
+        providerName={providerName}
+        sessionFilePath={selectedSession?.file_path}
+      />,
     ];
 
     // Recursively add child messages (increase depth)

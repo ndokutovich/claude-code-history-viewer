@@ -21,6 +21,8 @@ import {
   type LoadingProgress,
   type FileActivity,
   type FileActivityFilters,
+  type MessageViewMode,
+  type MessageFilters,
 } from "../types";
 import { adapterRegistry } from "@/adapters/registry/AdapterRegistry";
 import { useSourceStore } from "./useSourceStore";
@@ -275,6 +277,10 @@ interface AppStore extends AppState {
   // Project list preferences
   setProjectListPreferences: (preferences: Partial<ProjectListPreferences>) => void;
 
+  // Message view preferences
+  setMessageViewMode: (mode: MessageViewMode) => void;
+  setMessageFilters: (filters: Partial<MessageFilters>) => void;
+
   // Loading progress
   setLoadingProgress: (progress: LoadingProgress | null) => void;
 
@@ -311,6 +317,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     sortOrder: 'desc',
     hideEmptyProjects: true,
     hideEmptySessions: true,
+  },
+
+  // Message view preferences
+  messageViewMode: "formatted" as MessageViewMode,
+  messageFilters: {
+    showBashOnly: false,
+    showToolUseOnly: false,
+    showMessagesOnly: false,
   },
 
   // Core state
@@ -1380,6 +1394,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
       projectListPreferences: {
         ...state.projectListPreferences,
         ...preferences,
+      },
+    }));
+  },
+
+  // Message view preferences
+  setMessageViewMode: (mode: MessageViewMode) => {
+    set({ messageViewMode: mode });
+  },
+
+  setMessageFilters: (filters: Partial<MessageFilters>) => {
+    set((state) => ({
+      messageFilters: {
+        ...state.messageFilters,
+        ...filters,
       },
     }));
   },

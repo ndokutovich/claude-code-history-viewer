@@ -37,6 +37,7 @@
     "count": "{{count}} message",
     "count_plural": "{{count}} messages",
     "countWithTotal": "Messages: {{current}} / {{total}}",
+    "filtered": "filtered",
     "branch": "Branch",
     "reply": "Reply (depth: {{depth}})",
     "renderError": "Message rendering error",
@@ -45,6 +46,20 @@
     "loadMore": "Load {{count}} more message",
     "loadMore_plural": "Load {{count}} more messages",
     "scrollToBottom": "Scroll to Bottom"
+  },
+  "messageView": {
+    "formatted": "Formatted",
+    "raw": "Raw",
+    "filters": "Filters",
+    "bashOnly": "Bash only",
+    "toolUseOnly": "Tool use only",
+    "messagesOnly": "Messages only",
+    "clearFilters": "Clear",
+    "copyRaw": "Copy JSON",
+    "rawCopied": "Raw message copied",
+    "rawCopyFailed": "Failed to copy message",
+    "copied": "Copied",
+    "noMessages": "No messages to display"
   },
   "folderPicker": {
     "notFound": "Claude folder not found",
@@ -676,5 +691,26 @@
       "downloadFailed": "Download failed",
       "unknownError": "Unknown error"
     }
+  },
+  "export": {
+    "exportTo": "Export to",
+    "withAttachments": "With attachments",
+    "noMessages": "No messages to export",
+    "success": "Exported to {{format}} successfully",
+    "failed": "Failed to export to {{format}}",
+    "copyPath": "Copy Path",
+    "copyPathTooltip": "Copy session file path to clipboard",
+    "pathCopied": "Path copied to clipboard",
+    "pathCopyFailed": "Failed to copy path",
+    "copied": "Copied",
+    "markdownTooltip": "Export conversation to Markdown format",
+    "htmlTooltip": "Export conversation to HTML format",
+    "docxTooltip": "Export conversation to Word document"
+  },
+  "messageReference": {
+    "copyReference": "Copy Reference",
+    "referenceTooltip": "Copy file path and message UUID for Claude",
+    "referenceCopied": "Message reference copied",
+    "referenceCopyFailed": "Failed to copy reference"
   }
 }

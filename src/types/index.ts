@@ -223,6 +223,17 @@ export interface ProjectListPreferences {
   hideEmptySessions: boolean;
 }
 
+/**
+ * Message view preferences
+ */
+export type MessageViewMode = 'formatted' | 'raw';
+
+export interface MessageFilters {
+  showBashOnly: boolean;
+  showToolUseOnly: boolean;
+  showMessagesOnly: boolean;
+}
+
 export interface AppState {
   // Root-level view state (single source of truth)
   currentView: AppView;
@@ -232,6 +243,10 @@ export interface AppState {
 
   // Project list preferences
   projectListPreferences: ProjectListPreferences;
+
+  // Message view preferences
+  messageViewMode: MessageViewMode;
+  messageFilters: MessageFilters;
 
   // Core state
   claudePath: string;
