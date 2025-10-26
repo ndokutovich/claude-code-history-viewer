@@ -18,6 +18,14 @@ export interface ProviderDefinition {
   // File patterns for detection
   detectionPatterns: DetectionPattern[];
 
+  // Path configuration (REQUIRED for write operations)
+  // Defines directory structure relative to source root
+  pathConfig: {
+    projectsPath: string; // Relative path from source root to projects directory
+                          // E.g., "projects" for Claude Code → source.path + "/projects/"
+                          // E.g., "User/workspaceStorage" for Cursor
+  };
+
   // Icon/branding
   icon: string; // Emoji or icon identifier
   color: string; // Hex color for UI

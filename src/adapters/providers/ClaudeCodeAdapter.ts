@@ -93,6 +93,9 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
         required: false,
       },
     ],
+    pathConfig: {
+      projectsPath: 'projects', // Claude Code stores projects at ~/.claude/projects/
+    },
     icon: 'claude-logo',
     color: '#D97706', // Claude brand amber
   };
@@ -484,12 +487,14 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
 
   /**
    * Get the projects root directory for Claude Code
+   * Uses provider's pathConfig to construct the path
    * @param sourcePath - Base Claude folder (e.g., ~/.claude)
    * @returns Projects root directory (e.g., ~/.claude/projects)
    */
   getProjectsRoot(sourcePath: string): string {
-    // Claude Code stores all projects under ~/.claude/projects/
-    return `${sourcePath}/projects`;
+    // Use provider definition's pathConfig
+    const { projectsPath } = this.providerDefinition.pathConfig;
+    return `${sourcePath}/${projectsPath}`;
   }
 
   /**

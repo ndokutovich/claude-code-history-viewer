@@ -108,6 +108,9 @@ export class CursorAdapter implements IConversationAdapter {
         required: false,
       },
     ],
+    pathConfig: {
+      projectsPath: 'User/workspaceStorage', // Cursor stores workspaces here
+    },
     icon: 'cursor-logo',
     color: '#000000', // Cursor brand black
   };
