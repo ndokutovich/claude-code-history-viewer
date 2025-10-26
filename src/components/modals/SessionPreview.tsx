@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronUp, ChevronDown, Trash2, GripVertical } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { MessageBuilder } from '@/types';
 
 interface SessionPreviewProps {
@@ -15,6 +16,7 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
   onReorder,
   onRemove,
 }) => {
+  const { t } = useTranslation("common");
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   // Estimate token count (rough approximation: 1 token ≈ 4 characters)
@@ -79,7 +81,7 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
   if (messages.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        No messages added yet. Compose manually or import from existing sessions.
+        {t('sessionBuilder.preview.empty')}
       </div>
     );
   }
@@ -89,11 +91,11 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
       {/* Summary Stats */}
       <div className="grid grid-cols-2 gap-4 p-4 bg-accent/30 rounded-md">
         <div>
-          <div className="text-sm text-muted-foreground">Total Messages</div>
+          <div className="text-sm text-muted-foreground">{t('sessionBuilder.preview.stats.totalMessages')}</div>
           <div className="text-2xl font-semibold">{messages.length}</div>
         </div>
         <div>
-          <div className="text-sm text-muted-foreground">Estimated Tokens</div>
+          <div className="text-sm text-muted-foreground">{t('sessionBuilder.preview.stats.estimatedTokens')}</div>
           <div className="text-2xl font-semibold">~{estimatedTokens.toLocaleString()}</div>
         </div>
       </div>
@@ -101,7 +103,7 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
       {/* Message List with Drag-Drop */}
       <div className="space-y-2">
         <div className="text-sm font-medium text-muted-foreground mb-2">
-          Session Order (drag to reorder)
+          {t('sessionBuilder.preview.order')}
         </div>
 
         {messages.map((msg, index) => (
@@ -156,7 +158,7 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
                 onClick={() => handleMoveUp(index)}
                 disabled={index === 0}
                 className="h-6 w-6 p-0"
-                title="Move up"
+                title={t('sessionBuilder.preview.actions.moveUp')}
               >
                 <ChevronUp className="h-3 w-3" />
               </Button>
@@ -167,7 +169,7 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
                 onClick={() => handleMoveDown(index)}
                 disabled={index === messages.length - 1}
                 className="h-6 w-6 p-0"
-                title="Move down"
+                title={t('sessionBuilder.preview.actions.moveDown')}
               >
                 <ChevronDown className="h-3 w-3" />
               </Button>
@@ -177,7 +179,7 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
                 size="sm"
                 onClick={() => onRemove(msg.id)}
                 className="h-6 w-6 p-0 text-destructive hover:text-destructive"
-                title="Remove"
+                title={t('sessionBuilder.preview.actions.remove')}
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
@@ -188,7 +190,7 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
 
       {/* Help Text */}
       <div className="text-xs text-muted-foreground italic">
-        💡 Tip: Drag messages to reorder, or use the up/down arrows. Click trash to remove.
+        {t('sessionBuilder.preview.helpText')}
       </div>
     </div>
   );

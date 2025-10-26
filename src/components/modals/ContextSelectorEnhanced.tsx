@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Search, Download, Plus, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/useAppStore';
 import type { UIMessage, UISession, UIProject } from '@/types';
 
@@ -21,6 +22,7 @@ interface SessionContext {
 }
 
 export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSelectMessages }) => {
+  const { t } = useTranslation("common");
   const projects = useAppStore((state) => state.projects);
   const loadProjectSessions = useAppStore((state) => state.loadProjectSessions);
   const selectSession = useAppStore((state) => state.selectSession);
@@ -158,7 +160,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
         <div className="p-4 bg-accent/30 border border-accent rounded-md">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold">
-              Accumulated Context ({totalAccumulatedMessages} messages from {accumulatedContexts.length} session{accumulatedContexts.length !== 1 ? 's' : ''})
+              {t('sessionBuilder.contextSelector.accumulated.title')}{totalAccumulatedMessages}{t('sessionBuilder.contextSelector.accumulated.messagesFrom')}{accumulatedContexts.length}{t('sessionBuilder.contextSelector.accumulated.session')}{accumulatedContexts.length !== 1 ? t('sessionBuilder.contextSelector.accumulated.sessions') : ''})
             </h3>
             <Button
               type="button"
@@ -167,7 +169,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
               className="gap-2"
             >
               <Download className="h-4 w-4" />
-              Import All
+              {t('sessionBuilder.contextSelector.accumulated.importAll')}
             </Button>
           </div>
 
@@ -178,7 +180,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
                   <Badge variant="outline" className="mr-2">{ctx.projectName}</Badge>
                   <span className="text-sm">{ctx.sessionName}</span>
                   <span className="text-xs text-muted-foreground ml-2">
-                    ({ctx.messages.length} messages)
+                    ({ctx.messages.length}{t('sessionBuilder.contextSelector.accumulated.messagesSuffix')})
                   </span>
                 </div>
                 <Button
@@ -197,7 +199,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
 
       {/* Project Selector */}
       <div className="space-y-2">
-        <Label htmlFor="context-project">Select Project</Label>
+        <Label htmlFor="context-project">{t('sessionBuilder.contextSelector.project.label')}</Label>
         <select
           id="context-project"
           className="w-full px-3 py-2 border rounded-md bg-background"
@@ -209,10 +211,10 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
             setSelectedMessageIds(new Set());
           }}
         >
-          <option value="">-- Select a project --</option>
+          <option value="">{t('sessionBuilder.contextSelector.project.selectOption')}</option>
           {projects.map((project) => (
             <option key={project.path} value={project.path}>
-              {project.name} ({project.session_count} sessions)
+              {project.name} ({project.session_count}{t('sessionBuilder.contextSelector.project.sessionsCount')})
             </option>
           ))}
         </select>
@@ -221,7 +223,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
       {/* Session Selector */}
       {selectedProject && (
         <div className="space-y-2">
-          <Label htmlFor="context-session">Select Session</Label>
+          <Label htmlFor="context-session">{t('sessionBuilder.contextSelector.session.label')}</Label>
           <select
             id="context-session"
             className="w-full px-3 py-2 border rounded-md bg-background"
@@ -232,11 +234,10 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
               setSelectedMessageIds(new Set());
             }}
           >
-            <option value="">-- Select a session --</option>
+            <option value="">{t('sessionBuilder.contextSelector.session.selectOption')}</option>
             {sessions.map((session) => (
               <option key={session.session_id} value={session.session_id}>
-                {session.summary || session.session_id.substring(0, 8)} ({session.message_count}{' '}
-                messages)
+                {session.summary || t('sessionBuilder.contextSelector.session.defaultName') + session.session_id.substring(0, 8)} ({session.message_count}{t('sessionBuilder.contextSelector.session.messagesCount')})
               </option>
             ))}
           </select>
@@ -248,7 +249,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
         <div className="space-y-3">
           {/* Selection Mode */}
           <div className="space-y-2">
-            <Label>Selection Mode</Label>
+            <Label>{t('sessionBuilder.contextSelector.selectionMode.label')}</Label>
             <div className="flex gap-2">
               <Button
                 type="button"
@@ -257,7 +258,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
                 onClick={() => setSelectionMode('individual')}
                 className="flex-1"
               >
-                Individual
+                {t('sessionBuilder.contextSelector.selectionMode.individual')}
               </Button>
               <Button
                 type="button"
@@ -266,7 +267,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
                 onClick={() => setSelectionMode('range')}
                 className="flex-1"
               >
-                Range
+                {t('sessionBuilder.contextSelector.selectionMode.range')}
               </Button>
               <Button
                 type="button"
@@ -275,7 +276,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
                 onClick={() => setSelectionMode('all')}
                 className="flex-1"
               >
-                All
+                {t('sessionBuilder.contextSelector.selectionMode.all')}
               </Button>
             </div>
           </div>
@@ -284,7 +285,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
           {selectionMode === 'range' && (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label htmlFor="range-start" className="text-xs">From Message #</Label>
+                <Label htmlFor="range-start" className="text-xs">{t('sessionBuilder.contextSelector.range.from')}</Label>
                 <Input
                   id="range-start"
                   type="number"
@@ -296,7 +297,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="range-end" className="text-xs">To Message #</Label>
+                <Label htmlFor="range-end" className="text-xs">{t('sessionBuilder.contextSelector.range.to')}</Label>
                 <Input
                   id="range-end"
                   type="number"
@@ -312,15 +313,15 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
 
           <div className="flex items-center justify-between">
             <Label>
-              Messages ({selectedMessageIds.size} of {filteredMessages.length} selected)
+              {t('sessionBuilder.contextSelector.messageList.label')}({selectedMessageIds.size}{t('sessionBuilder.contextSelector.messageList.of')}{filteredMessages.length}{t('sessionBuilder.contextSelector.messageList.selected')}
             </Label>
             {selectionMode === 'individual' && (
               <div className="flex gap-2">
                 <Button type="button" variant="ghost" size="sm" onClick={handleSelectAll}>
-                  Select All
+                  {t('sessionBuilder.contextSelector.messageList.selectAll')}
                 </Button>
                 <Button type="button" variant="ghost" size="sm" onClick={handleDeselectAll}>
-                  Deselect All
+                  {t('sessionBuilder.contextSelector.messageList.deselectAll')}
                 </Button>
               </div>
             )}
@@ -330,7 +331,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search messages..."
+              placeholder={t('sessionBuilder.contextSelector.messageList.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -341,7 +342,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
           <div className="h-64 border rounded-md overflow-y-auto">
             <div className="p-2 space-y-2">
               {filteredMessages.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">No messages found</div>
+                <div className="text-center py-8 text-muted-foreground">{t('sessionBuilder.contextSelector.messageList.noMessages')}</div>
               ) : (
                 filteredMessages.map((msg, index) => (
                   <div
@@ -389,7 +390,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
             variant="outline"
           >
             <Plus className="h-4 w-4" />
-            Add {selectedMessageIds.size} Message{selectedMessageIds.size !== 1 ? 's' : ''} to Context
+            {t('sessionBuilder.contextSelector.actions.addPrefix')}{selectedMessageIds.size}{t('sessionBuilder.contextSelector.actions.message')}{selectedMessageIds.size !== 1 ? t('sessionBuilder.contextSelector.actions.messagePlural') : ''}{t('sessionBuilder.contextSelector.actions.toContext')}
           </Button>
         </div>
       )}
@@ -397,7 +398,7 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
       {/* Empty State */}
       {!selectedProject && (
         <div className="text-center py-8 text-muted-foreground">
-          Select a project to browse its sessions and messages
+          {t('sessionBuilder.contextSelector.emptyState')}
         </div>
       )}
     </div>

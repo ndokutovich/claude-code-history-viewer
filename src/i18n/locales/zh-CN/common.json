@@ -78,5 +78,148 @@
     "enterQuery": "输入搜索词以查找消息",
     "foundResults": "在{{sessions}}个对话中找到{{count}}条消息",
     "matches": "个匹配"
+  },
+  "sessionBuilder": {
+    "modal": {
+      "title": "创建新会话",
+      "description": "创作新的 Claude Code 对话会话",
+      "cancel": "取消",
+      "creating": "创建中...",
+      "createSession": "创建会话"
+    },
+    "source": {
+      "label": "数据源",
+      "selectSource": "-- 选择数据源 --",
+      "noWritableSources": "没有可写的数据源",
+      "noWritableSourcesHint": "请在设置中添加 Claude Code 数据源，或等待 Cursor 写入支持（v1.7.0）。",
+      "readOnly": " 🔒 只读",
+      "writable": " ✓",
+      "readOnlyHint": "💡 只读数据源（🔒）暂时无法创建会话。",
+      "cursorPrefix": "Cursor IDE: ",
+      "cursorNotSupported": "Cursor 写入支持将在 v1.7.0 提供（SQLite 架构复杂）",
+      "notAvailable": "数据源不可用",
+      "providerReadOnly": "此提供商为只读模式",
+      "notImplemented": "写入支持尚未实现",
+      "unknownError": "未知错误",
+      "selectFolderDialog": "选择项目文件夹"
+    },
+    "project": {
+      "label": "项目",
+      "existingProject": "现有项目",
+      "newProject": "新建项目",
+      "selectProject": "选择项目",
+      "selectProjectOption": "-- 选择项目 --",
+      "sessionsCount": " 个会话",
+      "projectName": "项目名称",
+      "projectNamePlaceholder": "my-project",
+      "parentFolder": "父文件夹（可选，默认为 ~/.claude/projects/）",
+      "parentFolderPlaceholder": "~/.claude/projects/"
+    },
+    "session": {
+      "summaryLabel": "会话摘要（可选）",
+      "summaryPlaceholder": "此对话的简要描述"
+    },
+    "messages": {
+      "label": "消息",
+      "addMessage": "添加消息",
+      "noMessages": "还没有消息。点击「添加消息」开始。",
+      "compose": "编写",
+      "fromExisting": "从现有导入",
+      "preview": "预览 (",
+      "previewSuffix": ")"
+    },
+    "validation": {
+      "errorHeader": "请修复以下错误：",
+      "selectSource": "请选择数据源",
+      "selectProject": "请选择项目",
+      "enterProjectName": "请输入项目名称",
+      "addOneMessage": "请至少添加一条消息",
+      "messageEmpty": "消息 {{number}} 为空",
+      "providerNoWrite": "提供商 {{providerId}} 不支持写入",
+      "projectCreationFailed": "项目创建失败",
+      "sessionCreationFailed": "会话创建失败"
+    },
+    "messageComposer": {
+      "roles": {
+        "user": "用户",
+        "assistant": "助手",
+        "system": "系统"
+      },
+      "contentPlaceholder": "消息内容...",
+      "advancedOptions": "高级选项",
+      "removeMessage": "删除消息",
+      "advanced": {
+        "model": "模型（可选）",
+        "modelPlaceholder": "claude-opus-4-20250514",
+        "parentId": "父消息 ID（可选）",
+        "parentIdPlaceholder": "uuid-of-parent-message",
+        "tokenUsage": "令牌使用量（可选）",
+        "inputTokens": "输入令牌",
+        "outputTokens": "输出令牌",
+        "cacheCreation": "缓存创建",
+        "cacheRead": "缓存读取"
+      }
+    },
+    "contextSelector": {
+      "accumulated": {
+        "title": "累积上下文 (",
+        "messagesFrom": " 条消息来自 ",
+        "session": " 个会话",
+        "sessions": "",
+        "importAll": "全部导入",
+        "messagesSuffix": " 条消息)"
+      },
+      "project": {
+        "label": "选择项目",
+        "selectOption": "-- 选择项目 --",
+        "sessionsCount": " 个会话)"
+      },
+      "session": {
+        "label": "选择会话",
+        "selectOption": "-- 选择会话 --",
+        "messagesCount": " 条消息)",
+        "defaultName": "会话 "
+      },
+      "selectionMode": {
+        "label": "选择模式",
+        "individual": "单个",
+        "range": "范围",
+        "all": "全部"
+      },
+      "range": {
+        "from": "起始消息 #",
+        "to": "结束消息 #"
+      },
+      "messageList": {
+        "label": "消息 (",
+        "of": " / ",
+        "selected": " 已选)",
+        "selectAll": "全选",
+        "deselectAll": "全不选",
+        "searchPlaceholder": "搜索消息...",
+        "noMessages": "未找到消息"
+      },
+      "actions": {
+        "addPrefix": "添加 ",
+        "message": " 条消息",
+        "messagePlural": "",
+        "toContext": " 到上下文"
+      },
+      "emptyState": "选择项目以浏览其会话和消息"
+    },
+    "preview": {
+      "empty": "还没有添加消息。手动编写或从现有会话导入。",
+      "stats": {
+        "totalMessages": "总消息数",
+        "estimatedTokens": "预估令牌数"
+      },
+      "order": "会话顺序（拖动以重新排序）",
+      "actions": {
+        "moveUp": "上移",
+        "moveDown": "下移",
+        "remove": "删除"
+      },
+      "helpText": "💡 提示：拖动消息以重新排序，或使用上下箭头。点击垃圾桶删除。"
+    }
   }
 }

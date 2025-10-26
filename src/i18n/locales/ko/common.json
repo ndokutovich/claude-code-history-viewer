@@ -121,22 +121,43 @@
     "matches": "개 일치"
   },
   "sessionBuilder": {
-    "createSession": "세션 만들기",
-    "title": "새 세션 만들기",
-    "description": "새로운 Claude Code 대화 세션을 작성합니다",
+    "modal": {
+      "title": "새 세션 만들기",
+      "description": "새로운 Claude Code 대화 세션 작성",
+      "cancel": "취소",
+      "creating": "생성 중...",
+      "createSession": "세션 만들기"
+    },
+    "source": {
+      "label": "소스",
+      "selectSource": "-- 소스 선택 --",
+      "noWritableSources": "쓰기 가능한 소스가 없습니다",
+      "noWritableSourcesHint": "설정에서 Claude Code 소스를 추가하거나 Cursor 쓰기 지원(v1.7.0)을 기다려 주세요.",
+      "readOnly": " 🔒 읽기 전용",
+      "writable": " ✓",
+      "readOnlyHint": "💡 읽기 전용 소스(🔒)는 아직 세션을 만들 수 없습니다.",
+      "cursorPrefix": "Cursor IDE: ",
+      "cursorNotSupported": "Cursor 쓰기 지원은 v1.7.0에 제공 예정 (SQLite 스키마가 복잡함)",
+      "notAvailable": "소스를 사용할 수 없습니다",
+      "providerReadOnly": "이 제공자는 읽기 전용입니다",
+      "notImplemented": "쓰기 지원이 아직 구현되지 않았습니다",
+      "unknownError": "알 수 없는 오류",
+      "selectFolderDialog": "프로젝트 폴더 선택"
+    },
     "project": {
       "label": "프로젝트",
       "existingProject": "기존 프로젝트",
       "newProject": "새 프로젝트",
       "selectProject": "프로젝트 선택",
-      "selectPlaceholder": "-- 프로젝트를 선택하세요 --",
+      "selectProjectOption": "-- 프로젝트 선택 --",
+      "sessionsCount": "개 세션",
       "projectName": "프로젝트 이름",
       "projectNamePlaceholder": "my-project",
       "parentFolder": "상위 폴더 (선택사항, 기본값: ~/.claude/projects/)",
       "parentFolderPlaceholder": "~/.claude/projects/"
     },
     "session": {
-      "summary": "세션 요약 (선택사항)",
+      "summaryLabel": "세션 요약 (선택사항)",
       "summaryPlaceholder": "이 대화에 대한 간단한 설명"
     },
     "messages": {
@@ -145,70 +166,101 @@
       "noMessages": "아직 메시지가 없습니다. \"메시지 추가\"를 클릭하여 시작하세요.",
       "compose": "작성",
       "fromExisting": "기존에서 가져오기",
-      "preview": "미리보기",
-      "role": "역할",
-      "user": "사용자",
-      "assistant": "어시스턴트",
-      "system": "시스템",
+      "preview": "미리보기 (",
+      "previewSuffix": ")"
+    },
+    "validation": {
+      "errorHeader": "다음 오류를 수정해 주세요:",
+      "selectSource": "소스를 선택해 주세요",
+      "selectProject": "프로젝트를 선택해 주세요",
+      "enterProjectName": "프로젝트 이름을 입력해 주세요",
+      "addOneMessage": "최소한 하나의 메시지를 추가해 주세요",
+      "messageEmpty": "메시지 {{number}}이(가) 비어 있습니다",
+      "providerNoWrite": "제공자 {{providerId}}은(는) 쓰기를 지원하지 않습니다",
+      "projectCreationFailed": "프로젝트 생성 실패",
+      "sessionCreationFailed": "세션 생성 실패"
+    },
+    "messageComposer": {
+      "roles": {
+        "user": "사용자",
+        "assistant": "어시스턴트",
+        "system": "시스템"
+      },
       "contentPlaceholder": "메시지 내용...",
       "advancedOptions": "고급 옵션",
       "removeMessage": "메시지 제거",
-      "model": "모델 (선택사항)",
-      "modelPlaceholder": "claude-opus-4-20250514",
-      "parentId": "상위 ID (선택사항)",
-      "parentIdPlaceholder": "상위-메시지-uuid",
-      "tokenUsage": "토큰 사용량 (선택사항)",
-      "inputTokens": "입력 토큰",
-      "outputTokens": "출력 토큰",
-      "cacheCreation": "캐시 생성",
-      "cacheRead": "캐시 읽기"
+      "advanced": {
+        "model": "모델 (선택사항)",
+        "modelPlaceholder": "claude-opus-4-20250514",
+        "parentId": "부모 ID (선택사항)",
+        "parentIdPlaceholder": "uuid-of-parent-message",
+        "tokenUsage": "토큰 사용량 (선택사항)",
+        "inputTokens": "입력 토큰",
+        "outputTokens": "출력 토큰",
+        "cacheCreation": "캐시 생성",
+        "cacheRead": "캐시 읽기"
+      }
     },
-    "context": {
-      "selectProject": "프로젝트 선택",
-      "selectSession": "세션 선택",
-      "selectMessages": "메시지 선택",
-      "selected": "{{total}}개 중 {{count}}개 선택됨",
-      "selectAll": "모두 선택",
-      "deselectAll": "모두 선택 해제",
-      "searchPlaceholder": "메시지 검색...",
-      "noMessages": "메시지를 찾을 수 없습니다",
-      "import": "{{count}}개 메시지 가져오기",
-      "import_plural": "{{count}}개 메시지 가져오기",
-      "emptyState": "프로젝트를 선택하여 세션과 메시지를 찾아보세요",
-      "selectionMode": "선택 모드",
-      "individual": "개별",
-      "range": "범위",
-      "all": "전체",
-      "fromMessage": "메시지 #",
-      "toMessage": "~ 메시지 #",
-      "addToContext": "컨텍스트에 추가",
-      "accumulated": "누적된 컨텍스트 ({{sessions}}개 세션에서 {{count}}개 메시지)",
-      "importAll": "모두 가져오기"
+    "contextSelector": {
+      "accumulated": {
+        "title": "누적된 컨텍스트 (",
+        "messagesFrom": "개 메시지 / ",
+        "session": "개 세션",
+        "sessions": "",
+        "importAll": "모두 가져오기",
+        "messagesSuffix": "개 메시지)"
+      },
+      "project": {
+        "label": "프로젝트 선택",
+        "selectOption": "-- 프로젝트 선택 --",
+        "sessionsCount": "개 세션)"
+      },
+      "session": {
+        "label": "세션 선택",
+        "selectOption": "-- 세션 선택 --",
+        "messagesCount": "개 메시지)",
+        "defaultName": "세션 "
+      },
+      "selectionMode": {
+        "label": "선택 모드",
+        "individual": "개별",
+        "range": "범위",
+        "all": "전체"
+      },
+      "range": {
+        "from": "시작 메시지 #",
+        "to": "끝 메시지 #"
+      },
+      "messageList": {
+        "label": "메시지 (",
+        "of": " / ",
+        "selected": " 선택됨)",
+        "selectAll": "전체 선택",
+        "deselectAll": "전체 해제",
+        "searchPlaceholder": "메시지 검색...",
+        "noMessages": "메시지를 찾을 수 없습니다"
+      },
+      "actions": {
+        "addPrefix": "",
+        "message": "개 메시지",
+        "messagePlural": "",
+        "toContext": "를 컨텍스트에 추가"
+      },
+      "emptyState": "프로젝트를 선택하여 세션과 메시지를 탐색하세요"
     },
     "preview": {
-      "totalMessages": "전체 메시지",
-      "estimatedTokens": "예상 토큰",
-      "sessionOrder": "세션 순서 (드래그하여 재정렬)",
-      "dragTip": "💡 팁: 메시지를 드래그하여 재정렬하거나 위/아래 화살표를 사용하세요. 휴지통을 클릭하여 제거합니다."
-    },
-    "source": {
-      "label": "소스",
-      "select": "소스 선택",
-      "selectPlaceholder": "-- 소스를 선택하세요 --",
-      "noWritable": "사용 가능한 쓰기 가능 소스가 없습니다. 설정에서 Claude Code 소스를 추가하세요."
-    },
-    "validation": {
-      "errors": "다음 오류를 수정하세요:",
-      "selectSource": "소스를 선택하세요",
-      "selectProject": "프로젝트를 선택하세요",
-      "enterProjectName": "프로젝트 이름을 입력하세요",
-      "addMessages": "최소한 하나의 메시지를 추가하세요",
-      "emptyMessage": "메시지 {{index}}이(가) 비어 있습니다"
-    },
-    "actions": {
-      "cancel": "취소",
-      "creating": "생성 중...",
-      "createSession": "세션 만들기"
+      "empty": "아직 추가된 메시지가 없습니다. 수동으로 작성하거나 기존 세션에서 가져오세요.",
+      "stats": {
+        "totalMessages": "총 메시지",
+        "estimatedTokens": "예상 토큰"
+      },
+      "order": "세션 순서 (드래그하여 재정렬)",
+      "actions": {
+        "moveUp": "위로 이동",
+        "moveDown": "아래로 이동",
+        "remove": "제거"
+      },
+      "helpText": "💡 팁: 메시지를 드래그하여 재정렬하거나 위/아래 화살표를 사용하세요. 휴지통을 클릭하면 제거됩니다."
     }
   }
 }

@@ -121,22 +121,43 @@
     "matches": "matches"
   },
   "sessionBuilder": {
-    "createSession": "Create Session",
-    "title": "Create New Session",
-    "description": "Compose a new Claude Code conversation session",
+    "modal": {
+      "title": "Create New Session",
+      "description": "Compose a new Claude Code conversation session",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "createSession": "Create Session"
+    },
+    "source": {
+      "label": "Source",
+      "selectSource": "-- Select a source --",
+      "noWritableSources": "No writable sources available",
+      "noWritableSourcesHint": "Please add a Claude Code source in Settings, or wait for Cursor write support (v1.7.0).",
+      "readOnly": " 🔒 Read-only",
+      "writable": " ✓",
+      "readOnlyHint": "💡 Read-only sources (🔒) cannot create sessions yet.",
+      "cursorPrefix": "Cursor IDE: ",
+      "cursorNotSupported": "Cursor write support coming in v1.7.0 (SQLite schema is complex)",
+      "notAvailable": "Source is not available",
+      "providerReadOnly": "This provider is read-only",
+      "notImplemented": "Write support not yet implemented",
+      "unknownError": "Unknown error",
+      "selectFolderDialog": "Select Project Folder"
+    },
     "project": {
       "label": "Project",
       "existingProject": "Existing Project",
       "newProject": "New Project",
       "selectProject": "Select Project",
-      "selectPlaceholder": "-- Select a project --",
+      "selectProjectOption": "-- Select a project --",
+      "sessionsCount": " sessions",
       "projectName": "Project Name",
       "projectNamePlaceholder": "my-project",
       "parentFolder": "Parent Folder (optional, defaults to ~/.claude/projects/)",
       "parentFolderPlaceholder": "~/.claude/projects/"
     },
     "session": {
-      "summary": "Session Summary (optional)",
+      "summaryLabel": "Session Summary (optional)",
       "summaryPlaceholder": "Brief description of this conversation"
     },
     "messages": {
@@ -145,47 +166,101 @@
       "noMessages": "No messages yet. Click \"Add Message\" to start.",
       "compose": "Compose",
       "fromExisting": "From Existing",
-      "role": "Role",
-      "user": "User",
-      "assistant": "Assistant",
-      "system": "System",
+      "preview": "Preview (",
+      "previewSuffix": ")"
+    },
+    "validation": {
+      "errorHeader": "Please fix the following errors:",
+      "selectSource": "Please select a source",
+      "selectProject": "Please select a project",
+      "enterProjectName": "Please enter a project name",
+      "addOneMessage": "Please add at least one message",
+      "messageEmpty": "Message {{number}} is empty",
+      "providerNoWrite": "Provider {{providerId}} does not support writing",
+      "projectCreationFailed": "Failed to create project",
+      "sessionCreationFailed": "Failed to create session"
+    },
+    "messageComposer": {
+      "roles": {
+        "user": "User",
+        "assistant": "Assistant",
+        "system": "System"
+      },
       "contentPlaceholder": "Message content...",
       "advancedOptions": "Advanced options",
       "removeMessage": "Remove message",
-      "model": "Model (optional)",
-      "modelPlaceholder": "claude-opus-4-20250514",
-      "parentId": "Parent ID (optional)",
-      "parentIdPlaceholder": "uuid-of-parent-message",
-      "tokenUsage": "Token Usage (optional)",
-      "inputTokens": "Input Tokens",
-      "outputTokens": "Output Tokens",
-      "cacheCreation": "Cache Creation",
-      "cacheRead": "Cache Read"
+      "advanced": {
+        "model": "Model (optional)",
+        "modelPlaceholder": "claude-opus-4-20250514",
+        "parentId": "Parent ID (optional)",
+        "parentIdPlaceholder": "uuid-of-parent-message",
+        "tokenUsage": "Token Usage (optional)",
+        "inputTokens": "Input Tokens",
+        "outputTokens": "Output Tokens",
+        "cacheCreation": "Cache Creation",
+        "cacheRead": "Cache Read"
+      }
     },
-    "context": {
-      "selectProject": "Select Project",
-      "selectSession": "Select Session",
-      "selectMessages": "Select Messages",
-      "selected": "{{count}} of {{total}} selected",
-      "selectAll": "Select All",
-      "deselectAll": "Deselect All",
-      "searchPlaceholder": "Search messages...",
-      "noMessages": "No messages found",
-      "import": "Import {{count}} Message",
-      "import_plural": "Import {{count}} Messages",
+    "contextSelector": {
+      "accumulated": {
+        "title": "Accumulated Context (",
+        "messagesFrom": " messages from ",
+        "session": " session",
+        "sessions": "s",
+        "importAll": "Import All",
+        "messagesSuffix": " messages)"
+      },
+      "project": {
+        "label": "Select Project",
+        "selectOption": "-- Select a project --",
+        "sessionsCount": " sessions)"
+      },
+      "session": {
+        "label": "Select Session",
+        "selectOption": "-- Select a session --",
+        "messagesCount": " messages)",
+        "defaultName": "Session "
+      },
+      "selectionMode": {
+        "label": "Selection Mode",
+        "individual": "Individual",
+        "range": "Range",
+        "all": "All"
+      },
+      "range": {
+        "from": "From Message #",
+        "to": "To Message #"
+      },
+      "messageList": {
+        "label": "Messages (",
+        "of": " of ",
+        "selected": " selected)",
+        "selectAll": "Select All",
+        "deselectAll": "Deselect All",
+        "searchPlaceholder": "Search messages...",
+        "noMessages": "No messages found"
+      },
+      "actions": {
+        "addPrefix": "Add ",
+        "message": " Message",
+        "messagePlural": "s",
+        "toContext": " to Context"
+      },
       "emptyState": "Select a project to browse its sessions and messages"
     },
-    "validation": {
-      "errors": "Please fix the following errors:",
-      "selectProject": "Please select a project",
-      "enterProjectName": "Please enter a project name",
-      "addMessages": "Please add at least one message",
-      "emptyMessage": "Message {{index}} is empty"
-    },
-    "actions": {
-      "cancel": "Cancel",
-      "creating": "Creating...",
-      "createSession": "Create Session"
+    "preview": {
+      "empty": "No messages added yet. Compose manually or import from existing sessions.",
+      "stats": {
+        "totalMessages": "Total Messages",
+        "estimatedTokens": "Estimated Tokens"
+      },
+      "order": "Session Order (drag to reorder)",
+      "actions": {
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "remove": "Remove"
+      },
+      "helpText": "💡 Tip: Drag messages to reorder, or use the up/down arrows. Click trash to remove."
     }
   }
 }

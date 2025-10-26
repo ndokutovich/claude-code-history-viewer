@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Trash2, Settings } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { MessageBuilder } from '@/types';
 
 interface MessageComposerProps {
@@ -16,6 +17,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   onUpdate,
   onRemove,
 }) => {
+  const { t } = useTranslation("common");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
@@ -28,16 +30,16 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
             value={message.role}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onUpdate({ role: e.target.value })}
           >
-            <option value="user">User</option>
-            <option value="assistant">Assistant</option>
-            <option value="system">System</option>
+            <option value="user">{t('sessionBuilder.messageComposer.roles.user')}</option>
+            <option value="assistant">{t('sessionBuilder.messageComposer.roles.assistant')}</option>
+            <option value="system">{t('sessionBuilder.messageComposer.roles.system')}</option>
           </select>
         </div>
 
         {/* Content */}
         <div className="flex-1">
           <textarea
-            placeholder="Message content..."
+            placeholder={t('sessionBuilder.messageComposer.contentPlaceholder')}
             value={typeof message.content === 'string' ? message.content : JSON.stringify(message.content)}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => onUpdate({ content: e.target.value })}
             rows={3}
@@ -52,7 +54,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
             variant="ghost"
             size="icon"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            title="Advanced options"
+            title={t('sessionBuilder.messageComposer.advancedOptions')}
           >
             <Settings className="h-4 w-4" />
           </Button>
@@ -61,7 +63,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
             variant="ghost"
             size="icon"
             onClick={onRemove}
-            title="Remove message"
+            title={t('sessionBuilder.messageComposer.removeMessage')}
           >
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
@@ -74,11 +76,11 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor={`model-${message.id}`} className="text-xs">
-                Model (optional)
+                {t('sessionBuilder.messageComposer.advanced.model')}
               </Label>
               <Input
                 id={`model-${message.id}`}
-                placeholder="claude-opus-4-20250514"
+                placeholder={t('sessionBuilder.messageComposer.advanced.modelPlaceholder')}
                 value={message.model || ''}
                 onChange={(e) => onUpdate({ model: e.target.value || undefined })}
                 className="text-sm"
@@ -87,11 +89,11 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 
             <div className="space-y-2">
               <Label htmlFor={`parent-${message.id}`} className="text-xs">
-                Parent ID (optional)
+                {t('sessionBuilder.messageComposer.advanced.parentId')}
               </Label>
               <Input
                 id={`parent-${message.id}`}
-                placeholder="uuid-of-parent-message"
+                placeholder={t('sessionBuilder.messageComposer.advanced.parentIdPlaceholder')}
                 value={message.parent_id || ''}
                 onChange={(e) => onUpdate({ parent_id: e.target.value || undefined })}
                 className="text-sm"
@@ -102,11 +104,11 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           {/* Token Usage (for assistant messages) */}
           {message.role === 'assistant' && (
             <div>
-              <div className="text-sm font-medium mb-2">Token Usage (optional)</div>
+              <div className="text-sm font-medium mb-2">{t('sessionBuilder.messageComposer.advanced.tokenUsage')}</div>
               <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label htmlFor={`input-tokens-${message.id}`} className="text-xs">
-                      Input Tokens
+                      {t('sessionBuilder.messageComposer.advanced.inputTokens')}
                     </Label>
                     <Input
                       id={`input-tokens-${message.id}`}
@@ -127,7 +129,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 
                   <div className="space-y-1">
                     <Label htmlFor={`output-tokens-${message.id}`} className="text-xs">
-                      Output Tokens
+                      {t('sessionBuilder.messageComposer.advanced.outputTokens')}
                     </Label>
                     <Input
                       id={`output-tokens-${message.id}`}
@@ -148,7 +150,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 
                   <div className="space-y-1">
                     <Label htmlFor={`cache-create-${message.id}`} className="text-xs">
-                      Cache Creation
+                      {t('sessionBuilder.messageComposer.advanced.cacheCreation')}
                     </Label>
                     <Input
                       id={`cache-create-${message.id}`}
@@ -171,7 +173,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
 
                   <div className="space-y-1">
                     <Label htmlFor={`cache-read-${message.id}`} className="text-xs">
-                      Cache Read
+                      {t('sessionBuilder.messageComposer.advanced.cacheRead')}
                     </Label>
                     <Input
                       id={`cache-read-${message.id}`}
