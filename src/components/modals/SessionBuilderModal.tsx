@@ -266,6 +266,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
     projectMode,
     selectedProjectPath,
     newProjectName,
+    customParentPath,
     messages,
     sessionSummary,
     onClose,
@@ -331,14 +332,17 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                   {sourcesWithCapabilities.some((s) => !s.canWrite) && (
                     <div className="text-xs text-muted-foreground italic">
                       {t('sessionBuilder.source.readOnlyHint')}
-                      {sourcesWithCapabilities.find((s) => s.providerId === 'cursor' && !s.canWrite) && (
-                        <span className="block mt-1">
-                          {t('sessionBuilder.source.cursorPrefix')}{getWriteDisabledMessage(
-                            sourcesWithCapabilities.find((s) => s.providerId === 'cursor')!,
-                            t
-                          )}
-                        </span>
-                      )}
+                      {(() => {
+                        const cursorSource = sourcesWithCapabilities.find((s) => s.providerId === 'cursor' && !s.canWrite);
+                        return cursorSource && (
+                          <span className="block mt-1">
+                            {t('sessionBuilder.source.cursorPrefix')}{getWriteDisabledMessage(
+                              cursorSource,
+                              t
+                            )}
+                          </span>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
