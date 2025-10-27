@@ -675,7 +675,18 @@
     "filters": {
       "searchPlaceholder": "按路径或名称搜索文件...",
       "operations": "操作",
-      "extensions": "文件扩展名"
+      "extensions": "文件扩展名",
+      "apply": "应用筛选",
+      "clear": "清除筛选"
+    },
+    "operationLabels": {
+      "read": "读取",
+      "write": "写入",
+      "edit": "编辑",
+      "delete": "删除",
+      "create": "创建",
+      "glob": "查找文件",
+      "multiedit": "多重编辑"
     },
     "viewer": {
       "operation": "操作",

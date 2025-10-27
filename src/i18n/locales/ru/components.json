@@ -638,10 +638,14 @@
   "filesView": {
     "title": "Файлы",
     "subtitle": "{{count}} активностей с файлами в {{project}}",
+    "subtitle_plural": "{{count}} активностей с файлами в {{project}}",
     "allProjects": "Все проекты",
     "noProjectSelected": "Проект не выбран",
     "selectProjectToViewFiles": "Выберите проект для просмотра файловых активностей",
     "loadingFiles": "Загрузка файловых активностей...",
+    "errorLoadingFiles": "Ошибка загрузки файлов",
+    "noFilesFound": "Файловые активности не найдены",
+    "noFilesDescription": "В этом проекте не было зарегистрировано операций с файлами",
     "table": {
       "filePath": "Путь к файлу",
       "operation": "Операция",
@@ -656,11 +660,22 @@
     "filters": {
       "searchPlaceholder": "Поиск файлов по пути или имени...",
       "operations": "Операции",
-      "extensions": "Расширения файлов"
+      "extensions": "Расширения файлов",
+      "apply": "Применить фильтры",
+      "clear": "Очистить фильтры"
+    },
+    "operationLabels": {
+      "read": "Чтение",
+      "write": "Запись",
+      "edit": "Редактирование",
+      "delete": "Удаление",
+      "create": "Создание",
+      "glob": "Поиск файлов",
+      "multiedit": "Множественное редактирование"
     },
     "viewer": {
       "operation": "Операция",
-      "timestamp": "Временная метка",
+      "timestamp": "Время",
       "changes": "Изменения",
       "jumpToMessage": "Перейти к сообщению",
       "download": "Скачать",

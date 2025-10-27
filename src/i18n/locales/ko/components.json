@@ -654,10 +654,14 @@
   "filesView": {
     "title": "파일",
     "subtitle": "{{project}}의 {{count}}개 파일 활동",
+    "subtitle_plural": "{{project}}의 {{count}}개 파일 활동",
     "allProjects": "모든 프로젝트",
     "noProjectSelected": "프로젝트가 선택되지 않음",
     "selectProjectToViewFiles": "파일 활동을 보려면 프로젝트를 선택하세요",
     "loadingFiles": "파일 활동 로딩 중...",
+    "errorLoadingFiles": "파일 로딩 중 오류 발생",
+    "noFilesFound": "파일 활동을 찾을 수 없음",
+    "noFilesDescription": "이 프로젝트에서 기록된 파일 작업이 없습니다",
     "table": {
       "filePath": "파일 경로",
       "operation": "작업",
@@ -672,7 +676,18 @@
     "filters": {
       "searchPlaceholder": "경로 또는 이름으로 파일 검색...",
       "operations": "작업",
-      "extensions": "파일 확장자"
+      "extensions": "파일 확장자",
+      "apply": "필터 적용",
+      "clear": "필터 지우기"
+    },
+    "operationLabels": {
+      "read": "읽기",
+      "write": "쓰기",
+      "edit": "편집",
+      "delete": "삭제",
+      "create": "생성",
+      "glob": "파일 찾기",
+      "multiedit": "다중 편집"
     },
     "viewer": {
       "operation": "작업",

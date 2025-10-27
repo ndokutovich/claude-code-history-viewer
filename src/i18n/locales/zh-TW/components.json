@@ -675,7 +675,18 @@
     "filters": {
       "searchPlaceholder": "按路徑或名稱搜尋檔案...",
       "operations": "操作",
-      "extensions": "檔案副檔名"
+      "extensions": "檔案副檔名",
+      "apply": "套用篩選",
+      "clear": "清除篩選"
+    },
+    "operationLabels": {
+      "read": "讀取",
+      "write": "寫入",
+      "edit": "編輯",
+      "delete": "刪除",
+      "create": "建立",
+      "glob": "搜尋檔案",
+      "multiedit": "多重編輯"
     },
     "viewer": {
       "operation": "操作",

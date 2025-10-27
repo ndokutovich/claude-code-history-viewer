@@ -665,7 +665,18 @@
     "filters": {
       "searchPlaceholder": "Search files by path or name...",
       "operations": "Operations",
-      "extensions": "File Extensions"
+      "extensions": "File Extensions",
+      "apply": "Apply filters",
+      "clear": "Clear filters"
+    },
+    "operationLabels": {
+      "read": "Read",
+      "write": "Write",
+      "edit": "Edit",
+      "delete": "Delete",
+      "create": "Create",
+      "glob": "Find Files",
+      "multiedit": "Multi Edit"
     },
     "viewer": {
       "operation": "Operation",

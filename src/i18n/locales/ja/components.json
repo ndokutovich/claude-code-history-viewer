@@ -638,10 +638,14 @@
   "filesView": {
     "title": "ファイル",
     "subtitle": "{{project}}の{{count}}件のファイル活動",
+    "subtitle_plural": "{{project}}の{{count}}件のファイル活動",
     "allProjects": "全プロジェクト",
     "noProjectSelected": "プロジェクトが選択されていません",
     "selectProjectToViewFiles": "ファイル活動を表示するにはプロジェクトを選択してください",
     "loadingFiles": "ファイル活動を読み込み中...",
+    "errorLoadingFiles": "ファイル読み込み中にエラーが発生しました",
+    "noFilesFound": "ファイル活動が見つかりません",
+    "noFilesDescription": "このプロジェクトではファイル操作が記録されていません",
     "table": {
       "filePath": "ファイルパス",
       "operation": "操作",
@@ -656,7 +660,18 @@
     "filters": {
       "searchPlaceholder": "パスまたは名前でファイルを検索...",
       "operations": "操作",
-      "extensions": "ファイル拡張子"
+      "extensions": "ファイル拡張子",
+      "apply": "フィルタを適用",
+      "clear": "フィルタをクリア"
+    },
+    "operationLabels": {
+      "read": "読み取り",
+      "write": "書き込み",
+      "edit": "編集",
+      "delete": "削除",
+      "create": "作成",
+      "glob": "ファイル検索",
+      "multiedit": "複数編集"
     },
     "viewer": {
       "operation": "操作",
