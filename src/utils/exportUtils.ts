@@ -6,7 +6,8 @@ import {
   HeadingLevel,
   convertInchesToTwip,
 } from "docx";
-import type { UIMessage, ContentItem } from "@/types";
+import type { UIMessage, ContentItem, MessageFilters } from "@/types";
+import { extractBashCommand } from "@/utils/messageFilters";
 
 export type ExportMode = "formatted" | "raw";
 export type ExportTheme = "light" | "dark";
@@ -168,40 +169,61 @@ export async function exportToMarkdown(
   sessionTitle: string,
   includeAttachments: boolean = false,
   mode: ExportMode = "formatted",
-  theme: ExportTheme = "light" // Theme not used in Markdown, but kept for consistency
+  theme: ExportTheme = "light", // Theme not used in Markdown, but kept for consistency
+  filters?: MessageFilters
 ): Promise<string> {
+  const isCommandOnly = filters?.showCommandOnly ?? false;
+
   let markdown = `# ${sessionTitle}\n\n`;
-  markdown += `Generated: ${new Date().toISOString()}\n\n`;
-  markdown += `---\n\n`;
+  markdown += `Generated: ${new Date().toISOString()}\n`;
+  if (isCommandOnly) {
+    markdown += `Mode: Command Only (Bash commands)\n`;
+  }
+  markdown += `\n---\n\n`;
 
-  messages.forEach((message, index) => {
-    const role = message.type === "user" ? "👤 User" : "🤖 Assistant";
-    const timestamp = new Date(message.timestamp).toLocaleString();
+  if (isCommandOnly) {
+    // Command only mode - just list bash commands
+    markdown += `## Bash Commands\n\n`;
+    markdown += `\`\`\`bash\n`;
+    messages.forEach((message) => {
+      const command = extractBashCommand(message);
+      if (command) {
+        const timestamp = new Date(message.timestamp).toLocaleString();
+        markdown += `# ${timestamp}\n${command}\n\n`;
+      }
+    });
+    markdown += `\`\`\`\n`;
+  } else {
+    // Normal export with full message content
+    messages.forEach((message, index) => {
+      const role = message.type === "user" ? "👤 User" : "🤖 Assistant";
+      const timestamp = new Date(message.timestamp).toLocaleString();
 
-    markdown += `## Message ${index + 1}: ${role}\n`;
-    markdown += `**Time:** ${timestamp}\n\n`;
+      markdown += `## Message ${index + 1}: ${role}\n`;
+      markdown += `**Time:** ${timestamp}\n\n`;
 
-    const content = extractTextContent(message);
-    if (content) {
-      markdown += `${content}\n\n`;
-    }
+      const content = extractTextContent(message);
+      if (content) {
+        markdown += `${content}\n\n`;
+      }
 
-    // Add tool usage info
-    if (message.toolUse) {
-      markdown += `### Tool Use\n\`\`\`json\n${JSON.stringify(message.toolUse, null, 2)}\n\`\`\`\n\n`;
-    }
+      // Add tool usage info
+      if (message.toolUse) {
+        markdown += `### Tool Use\n\`\`\`json\n${JSON.stringify(message.toolUse, null, 2)}\n\`\`\`\n\n`;
+      }
 
-    if (message.toolUseResult) {
-      markdown += `### Tool Result\n\`\`\`json\n${JSON.stringify(message.toolUseResult, null, 2)}\n\`\`\`\n\n`;
-    }
+      if (message.toolUseResult) {
+        markdown += `### Tool Result\n\`\`\`json\n${JSON.stringify(message.toolUseResult, null, 2)}\n\`\`\`\n\n`;
+      }
 
-    // Add token usage for assistant messages
-    if (message.usage) {
-      markdown += `**Tokens:** Input: ${message.usage.input_tokens || 0}, Output: ${message.usage.output_tokens || 0}\n\n`;
-    }
+      // Add token usage for assistant messages
+      if (message.usage) {
+        markdown += `**Tokens:** Input: ${message.usage.input_tokens || 0}, Output: ${message.usage.output_tokens || 0}\n\n`;
+      }
 
-    markdown += `---\n\n`;
-  });
+      markdown += `---\n\n`;
+    });
+  }
 
   // Add attachments section if requested
   if (includeAttachments) {
@@ -228,8 +250,10 @@ export async function exportToHTML(
   sessionTitle: string,
   includeAttachments: boolean = false,
   mode: ExportMode = "formatted",
-  theme: ExportTheme = "light"
+  theme: ExportTheme = "light",
+  filters?: MessageFilters
 ): Promise<string> {
+  const isCommandOnly = filters?.showCommandOnly ?? false;
   // Theme colors
   const isDark = theme === "dark";
   const colors = isDark ? {
@@ -390,15 +414,37 @@ export async function exportToHTML(
 </head>
 <body>
   <h1>${escapeHtml(sessionTitle)}</h1>
-  <p style="color: ${colors.textSecondary};">Generated: ${new Date().toLocaleString()} | Export Mode: ${mode === "formatted" ? "Formatted" : "Raw"} | Theme: ${theme === "dark" ? "Dark" : "Light"}</p>
+  <p style="color: ${colors.textSecondary};">Generated: ${new Date().toLocaleString()}${isCommandOnly ? " | Mode: Command Only (Bash commands)" : ` | Export Mode: ${mode === "formatted" ? "Formatted" : "Raw"}`} | Theme: ${theme === "dark" ? "Dark" : "Light"}</p>
 `;
 
-  messages.forEach((message) => {
-    const role = message.type === "user" ? "user" : "assistant";
-    const roleLabel = message.type === "user" ? "👤 User" : "🤖 Assistant";
-    const timestamp = new Date(message.timestamp).toLocaleString();
-
+  if (isCommandOnly) {
+    // Command only mode - list bash commands in a code block
     html += `
+  <div class="message">
+    <div class="message-header">
+      <span class="role assistant">🔧 Bash Commands</span>
+    </div>
+    <pre style="white-space: pre-wrap;">`;
+
+    messages.forEach((message) => {
+      const command = extractBashCommand(message);
+      if (command) {
+        const timestamp = new Date(message.timestamp).toLocaleString();
+        html += `<span style="color: ${colors.textSecondary};"># ${escapeHtml(timestamp)}</span>\n${escapeHtml(command)}\n\n`;
+      }
+    });
+
+    html += `</pre>
+  </div>
+`;
+  } else {
+    // Normal export with full message content
+    messages.forEach((message) => {
+      const role = message.type === "user" ? "user" : "assistant";
+      const roleLabel = message.type === "user" ? "👤 User" : "🤖 Assistant";
+      const timestamp = new Date(message.timestamp).toLocaleString();
+
+      html += `
   <div class="message">
     <div class="message-header">
       <span class="role ${role}">${escapeHtml(roleLabel)}</span>
@@ -406,71 +452,72 @@ export async function exportToHTML(
     </div>
 `;
 
-    // Render content based on mode
-    if (mode === "formatted") {
-      const contentBlocks = extractFormattedContent(message);
+      // Render content based on mode
+      if (mode === "formatted") {
+        const contentBlocks = extractFormattedContent(message);
 
-      contentBlocks.forEach((block) => {
-        if (block.type === "text") {
-          html += `    <div class="content">${escapeHtml(block.content)}</div>\n`;
-        } else if (block.type === "code") {
-          html += `    <div class="content-block">
+        contentBlocks.forEach((block) => {
+          if (block.type === "text") {
+            html += `    <div class="content">${escapeHtml(block.content)}</div>\n`;
+          } else if (block.type === "code") {
+            html += `    <div class="content-block">
       <div class="language-label">${escapeHtml(block.language || "text")}</div>
       <pre>${escapeHtml(block.content)}</pre>
     </div>\n`;
-        } else if (block.type === "thinking") {
-          html += `    <div class="thinking-block">
+          } else if (block.type === "thinking") {
+            html += `    <div class="thinking-block">
       <div class="thinking-title">💭 Thinking</div>
       <div>${escapeHtml(block.content)}</div>
     </div>\n`;
-        } else if (block.type === "tool_use") {
-          html += `    <div class="tool-section">
+          } else if (block.type === "tool_use") {
+            html += `    <div class="tool-section">
       <div class="tool-title">🔧 Tool: ${escapeHtml(block.toolName || "Unknown")}</div>
       <pre>${escapeHtml(block.content)}</pre>
     </div>\n`;
-        } else if (block.type === "tool_result") {
-          html += `    <div class="tool-section">
+          } else if (block.type === "tool_result") {
+            html += `    <div class="tool-section">
       <div class="tool-title">📋 Tool Result</div>
       <pre>${escapeHtml(block.content)}</pre>
     </div>\n`;
-        }
-      });
-    } else {
-      // Raw mode - simple text extraction
-      html += `    <div class="content">${escapeHtml(extractTextContent(message))}</div>\n`;
-    }
+          }
+        });
+      } else {
+        // Raw mode - simple text extraction
+        html += `    <div class="content">${escapeHtml(extractTextContent(message))}</div>\n`;
+      }
 
-    // Add tool use/result for raw mode (already included in formatted mode)
-    if (mode === "raw") {
-      if (message.toolUse) {
-        html += `
+      // Add tool use/result for raw mode (already included in formatted mode)
+      if (mode === "raw") {
+        if (message.toolUse) {
+          html += `
     <div class="tool-section">
       <div class="tool-title">Tool Use</div>
       <pre>${escapeHtml(JSON.stringify(message.toolUse, null, 2))}</pre>
     </div>
 `;
-      }
+        }
 
-      if (message.toolUseResult) {
-        html += `
+        if (message.toolUseResult) {
+          html += `
     <div class="tool-section">
       <div class="tool-title">Tool Result</div>
       <pre>${escapeHtml(JSON.stringify(message.toolUseResult, null, 2))}</pre>
     </div>
 `;
+        }
       }
-    }
 
-    if (message.usage) {
-      html += `
+      if (message.usage) {
+        html += `
     <div class="tokens">
       Tokens: Input: ${message.usage.input_tokens || 0}, Output: ${message.usage.output_tokens || 0}
     </div>
 `;
-    }
+      }
 
-    html += `  </div>\n`;
-  });
+      html += `  </div>\n`;
+    });
+  }
 
   // Add attachments
   if (includeAttachments) {
@@ -506,8 +553,10 @@ export async function exportToDocx(
   sessionTitle: string,
   includeAttachments: boolean = false,
   mode: ExportMode = "formatted",
-  theme: ExportTheme = "light" // Theme not used in DOCX, but kept for consistency
+  theme: ExportTheme = "light", // Theme not used in DOCX, but kept for consistency
+  filters?: MessageFilters
 ): Promise<string> {
+  const isCommandOnly = filters?.showCommandOnly ?? false;
   const children: Paragraph[] = [];
 
   // Title
@@ -524,7 +573,7 @@ export async function exportToDocx(
     new Paragraph({
       children: [
         new TextRun({
-          text: `Generated: ${new Date().toLocaleString()}`,
+          text: `Generated: ${new Date().toLocaleString()}${isCommandOnly ? " | Mode: Command Only (Bash commands)" : ""}`,
           italics: true,
           color: "666666",
         }),
@@ -533,88 +582,67 @@ export async function exportToDocx(
     })
   );
 
-  // Messages
-  messages.forEach((message, index) => {
-    const role = message.type === "user" ? "👤 User" : "🤖 Assistant";
-    const timestamp = new Date(message.timestamp).toLocaleString();
-
-    // Message header
+  if (isCommandOnly) {
+    // Command only mode - list bash commands
     children.push(
       new Paragraph({
-        text: `Message ${index + 1}: ${role}`,
+        text: "Bash Commands",
         heading: HeadingLevel.HEADING_2,
-        spacing: { before: 400, after: 100 },
+        spacing: { before: 400, after: 200 },
       })
     );
 
-    children.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: `Time: ${timestamp}`,
-            italics: true,
-            color: "666666",
-          }),
-        ],
-        spacing: { after: 200 },
-      })
-    );
+    messages.forEach((message) => {
+      const command = extractBashCommand(message);
+      if (command) {
+        const timestamp = new Date(message.timestamp).toLocaleString();
 
-    // Content
-    const content = extractTextContent(message);
-    if (content) {
-      content.split("\n").forEach((line) => {
+        // Timestamp comment
         children.push(
           new Paragraph({
-            text: line,
-            spacing: { after: 100 },
+            children: [
+              new TextRun({
+                text: `# ${timestamp}`,
+                italics: true,
+                color: "666666",
+              }),
+            ],
+            spacing: { before: 200, after: 50 },
           })
         );
-      });
-    }
 
-    // Tool usage
-    if (message.toolUse) {
-      children.push(
-        new Paragraph({
-          text: "Tool Use:",
-          heading: HeadingLevel.HEADING_3,
-          spacing: { before: 200, after: 100 },
-        })
-      );
-      children.push(
-        new Paragraph({
-          text: JSON.stringify(message.toolUse, null, 2),
-          spacing: { after: 200 },
-          indent: { left: convertInchesToTwip(0.5) },
-        })
-      );
-    }
+        // Command
+        command.split("\n").forEach((line) => {
+          children.push(
+            new Paragraph({
+              text: line,
+              spacing: { after: 50 },
+              indent: { left: convertInchesToTwip(0.25) },
+            })
+          );
+        });
+      }
+    });
+  } else {
+    // Normal export with full message content
+    messages.forEach((message, index) => {
+      const role = message.type === "user" ? "👤 User" : "🤖 Assistant";
+      const timestamp = new Date(message.timestamp).toLocaleString();
 
-    if (message.toolUseResult) {
+      // Message header
       children.push(
         new Paragraph({
-          text: "Tool Result:",
-          heading: HeadingLevel.HEADING_3,
-          spacing: { before: 200, after: 100 },
+          text: `Message ${index + 1}: ${role}`,
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 400, after: 100 },
         })
       );
-      children.push(
-        new Paragraph({
-          text: JSON.stringify(message.toolUseResult, null, 2),
-          spacing: { after: 200 },
-          indent: { left: convertInchesToTwip(0.5) },
-        })
-      );
-    }
 
-    // Token usage
-    if (message.usage) {
       children.push(
         new Paragraph({
           children: [
             new TextRun({
-              text: `Tokens: Input: ${message.usage.input_tokens || 0}, Output: ${message.usage.output_tokens || 0}`,
+              text: `Time: ${timestamp}`,
               italics: true,
               color: "666666",
             }),
@@ -622,8 +650,72 @@ export async function exportToDocx(
           spacing: { after: 200 },
         })
       );
-    }
-  });
+
+      // Content
+      const content = extractTextContent(message);
+      if (content) {
+        content.split("\n").forEach((line) => {
+          children.push(
+            new Paragraph({
+              text: line,
+              spacing: { after: 100 },
+            })
+          );
+        });
+      }
+
+      // Tool usage
+      if (message.toolUse) {
+        children.push(
+          new Paragraph({
+            text: "Tool Use:",
+            heading: HeadingLevel.HEADING_3,
+            spacing: { before: 200, after: 100 },
+          })
+        );
+        children.push(
+          new Paragraph({
+            text: JSON.stringify(message.toolUse, null, 2),
+            spacing: { after: 200 },
+            indent: { left: convertInchesToTwip(0.5) },
+          })
+        );
+      }
+
+      if (message.toolUseResult) {
+        children.push(
+          new Paragraph({
+            text: "Tool Result:",
+            heading: HeadingLevel.HEADING_3,
+            spacing: { before: 200, after: 100 },
+          })
+        );
+        children.push(
+          new Paragraph({
+            text: JSON.stringify(message.toolUseResult, null, 2),
+            spacing: { after: 200 },
+            indent: { left: convertInchesToTwip(0.5) },
+          })
+        );
+      }
+
+      // Token usage
+      if (message.usage) {
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Tokens: Input: ${message.usage.input_tokens || 0}, Output: ${message.usage.output_tokens || 0}`,
+                italics: true,
+                color: "666666",
+              }),
+            ],
+            spacing: { after: 200 },
+          })
+        );
+      }
+    });
+  }
 
   // Attachments
   if (includeAttachments) {

@@ -38,7 +38,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
 
   const handleExport = async (
     format: "markdown" | "html" | "docx",
-    exportFn: (messages: UIMessage[], title: string, includeAttachments: boolean, mode: "formatted" | "raw", theme: "light" | "dark") => Promise<void>
+    exportFn: (messages: UIMessage[], title: string, includeAttachments: boolean, mode: "formatted" | "raw", theme: "light" | "dark", filters?: typeof messageFilters) => Promise<string>
   ) => {
     if (filteredMessages.length === 0) {
       toast.error(t("export.noMessages"));
@@ -49,7 +49,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
     try {
       const mode = messageViewMode; // Use current view mode from app settings
       const theme = isDarkMode ? "dark" : "light"; // Use current theme from theme context
-      const filename = await exportFn(filteredMessages, sessionTitle, includeAttachments, mode, theme);
+      const filename = await exportFn(filteredMessages, sessionTitle, includeAttachments, mode, theme, messageFilters);
 
       // Get full path to exported file in Downloads folder
       const downloadsPath = await downloadDir();
