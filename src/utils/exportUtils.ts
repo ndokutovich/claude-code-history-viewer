@@ -28,7 +28,10 @@ function extractTextContent(message: UIMessage): string {
         if (item.type === "thinking") return `[Thinking]\n${item.thinking}`;
         if (item.type === "tool_use")
           return `[Tool: ${item.name}]\n${JSON.stringify(item.input, null, 2)}`;
-        if (item.type === "tool_result") return `[Tool Result]\n${item.content}`;
+        if (item.type === "tool_result") {
+          const c = typeof item.content === "string" ? item.content : JSON.stringify(item.content, null, 2);
+          return `[Tool Result]\n${c}`;
+        }
         return "";
       })
       .join("\n\n");
@@ -131,18 +134,18 @@ export function extractFileAttachments(messages: UIMessage[]): Map<string, strin
       const result = message.toolUseResult;
 
       // File read results
-      if (typeof result === "object" && "file" in result) {
-        const fileData = result.file as {
+      if (result && typeof result === "object" && "file" in (result as Record<string, unknown>)) {
+        const fileData = (result as { file?: { filePath?: string; content?: string } }).file ?? ({} as {
           filePath?: string;
           content?: string;
-        };
+        });
         if (fileData.filePath && fileData.content) {
           files.set(fileData.filePath, fileData.content);
         }
       }
 
       // Multi-edit results
-      if (typeof result === "object" && "filePath" in result && "originalFileContents" in result) {
+      if (result && typeof result === "object" && "filePath" in (result as Record<string, unknown>) && "originalFileContents" in (result as Record<string, unknown>)) {
         const editData = result as {
           filePath?: string;
           originalFileContents?: string;
@@ -670,10 +673,14 @@ export async function exportToDocx(
  * Sanitize filename for safe file system usage
  */
 function sanitizeFilename(filename: string): string {
-  return filename
+  const sanitized = filename
     .replace(/[<>:"/\\|?*]/g, "-")
     .replace(/\s+/g, "_")
-    .substring(0, 200);
+    .substring(0, 200)
+    .trim();
+
+  // Fallback to "session" if empty or only contains dashes/underscores
+  return sanitized && sanitized.replace(/[-_]/g, "").length > 0 ? sanitized : "session";
 }
 
 /**
