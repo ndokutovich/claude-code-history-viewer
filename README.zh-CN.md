@@ -3,6 +3,7 @@
 一款用于浏览 Claude Code 和 Cursor IDE 对话历史（存储在 `~/.claude` 和 Cursor 数据文件夹）的跨平台桌面应用程序。
 
 ![Version](https://img.shields.io/github/v/release/ndokutovich/claude-code-history-viewer?label=Version&color=blue)
+![Downloads](https://img.shields.io/github/downloads/ndokutovich/claude-code-history-viewer/total?label=Downloads&color=brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 

@@ -3,6 +3,7 @@
 Claude Code 및 Cursor IDE의 대화 기록(`~/.claude`와 Cursor 데이터 폴더)을 보기 편하게 탐색할 수 있는 크로스 플랫폼 데스크톱 앱입니다.
 
 ![Version](https://img.shields.io/github/v/release/ndokutovich/claude-code-history-viewer?label=Version&color=blue)
+![Downloads](https://img.shields.io/github/downloads/ndokutovich/claude-code-history-viewer/total?label=Downloads&color=brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
