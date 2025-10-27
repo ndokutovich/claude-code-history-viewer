@@ -40,55 +40,87 @@ Per-project token usage breakdown and session-level analysis
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
 
-## What's New in v1.5.0
+## What's New in v1.6.0
 
-**🔌 Cursor IDE Support** (New!):
+**📁 File Activity Tracking**:
+- Browse all files touched by Claude/Cursor AI sessions across all projects
+- Filter by operation type (read, edit, create, delete), file extension, and date range
+- View file content snapshots from any point in history
+- Jump directly to the session and message where a file was accessed
+- Download files from file viewer modal with "Open File" and "Open Folder" buttons
+- Multi-source aggregation showing files from both Claude Code and Cursor IDE
+
+**✍️ Session Creation & Project Management**:
+- Create new Claude Code projects directly from the app
+- Start new conversation sessions with custom messages and context
+- Append messages to existing sessions programmatically
+- Provider-aware architecture supporting multi-source session writing
+- Session builder UI with message composer and context selectors
+
+**📤 Advanced Export Features**:
+- Export conversations to Markdown, HTML, and DOCX formats
+- Formatted and raw export modes with syntax highlighting
+- Light/dark theme support in HTML exports
+- Include file attachments in exports
+- "Load All Messages" button for complete conversation exports (respects pagination)
+- Command-only export mode for extracting bash command history
+- "Open File" and "Open Folder" buttons in export notifications
+
+**🔍 Enhanced Message Filtering & Views**:
+- Command-only filter to view just bash commands as a history log
+- Raw message view showing underlying JSONL data structure
+- Bash-only filter for tool use analysis
+- Messages-only filter for text-focused reading
+- Tool use filter for debugging AI operations
+- Line-numbered command history view with unselectable line numbers
+
+**🔌 Cursor IDE Support** (from v1.5.0):
 - Multi-provider architecture supporting both Claude Code and Cursor IDE
 - Auto-detection of Cursor's SQLite conversation database
 - Universal message format for provider-agnostic data handling
 - Seamless switching between Claude Code and Cursor conversations
 - Backend Rust adapters for efficient file/database parsing
 
-**🛡️ Security & Stability Improvements**:
-- Content Security Policy (CSP) hardening against XSS attacks
-- Cross-platform path handling fixes for Windows compatibility
-- Division-by-zero protection in analytics calculations
-- Fixed download progress tracking in auto-updater
-- CodeRabbit AI code review integration
-
-**🔍 Full Search Functionality**:
+**🔍 Full Search Functionality** (from v1.5.0):
 - Powerful full-text search with Cmd/Ctrl+F keyboard shortcut
 - Quoted phrase support for exact matches
 - Search result highlighting and jump-to-message
 - Session-grouped results with expandable previews
+
+**🌏 Complete Internationalization**:
+- 6 languages: English, Korean, Japanese, Simplified Chinese, Traditional Chinese, Russian
+- Automatic language detection from system locale
+- Full UI translation coverage including all new features
 
 **🌍 Cross-Platform Support**:
 - Runs on macOS (universal binary), Windows, and Linux
 - Platform-specific installers (.dmg, .exe, .msi, .deb, .AppImage, .rpm)
 - Multi-package manager support (npm, pnpm, yarn, bun)
 
-**🌏 Complete Internationalization**:
-- 6 languages: English, Korean, Japanese, Simplified Chinese, Traditional Chinese, Russian
-- Automatic language detection from system locale
-- Full UI translation coverage
-
-**🎨 Enhanced UI/UX**:
-- Improved light/dark mode with better message bubble styling
-- Clear selection with X button and ESC key
-- Better session title display
-- Unified view state architecture
-
-**🔧 Developer Experience**:
+**⚡ Performance & Developer Experience**:
+- React.memo() optimization for expensive components
+- useCallback hooks to prevent unnecessary re-renders
 - Comprehensive E2E test suite with Playwright
 - Automated release workflow via GitHub Actions
-- Better documentation (see CLAUDE.md)
 - Multi-platform build scripts
 
 ## What it does
 
 **Browse conversations**: Navigate through projects and sessions with a tree view on the left, conversation view on the right. Clean, intuitive interface with support for light/dark themes.
 
+**Track file changes**: New Files view shows all files accessed by Claude/Cursor across all your projects. Filter by operation type, extension, or date. View file content snapshots and jump to the exact session where each file was modified.
+
+**Create and manage sessions**: Start new Claude Code projects and conversation sessions directly from the app. Compose custom messages, select context, and append to existing sessions.
+
+**Export conversations**: Save conversations in Markdown, HTML, or DOCX format with syntax highlighting, attachments, and customizable themes. Export complete histories or filtered views (including command-only mode for bash history extraction).
+
 **Powerful search**: Full-text search across all conversations with Cmd/Ctrl+F. Supports quoted phrases, highlights matches, and lets you jump directly to any message in context. Search results are grouped by session for easy navigation.
+
+**Advanced filtering**: Multiple view modes for different use cases:
+- Command-only: Extract bash command history as a log
+- Raw message view: See the underlying JSONL data structure
+- Bash/Tool use filters: Focus on specific AI operations
+- Messages-only: Text-focused reading without tool output
 
 **Usage analytics**: Comprehensive analytics dashboard with:
 - Activity heatmaps showing your usage patterns over time
@@ -101,6 +133,7 @@ Per-project token usage breakdown and session-level analysis
 - Properly formatted diffs and git operations
 - Readable message threads with collapsible sections
 - Virtual scrolling for smooth performance with large conversations
+- Line-numbered command history view
 
 **Tool output visualization**: Specialized renderers for:
 - Web search results with structured display
@@ -111,7 +144,7 @@ Per-project token usage breakdown and session-level analysis
 
 **Cross-platform & internationalized**:
 - Runs on macOS (universal binary), Windows, and Linux
-- Full support for 5 languages: English, Korean, Japanese, Simplified Chinese, Traditional Chinese, and Russian
+- Full support for 6 languages: English, Korean, Japanese, Simplified Chinese, Traditional Chinese, and Russian
 - Automatic language detection
 
 The app handles large conversation histories efficiently with virtual scrolling and pagination, and features a secure auto-update system.
@@ -167,13 +200,42 @@ pnpm tauri:build:linux    # Linux x86_64
 
 ### Basic Navigation
 1. Launch the app
-2. It automatically scans `~/.claude` for conversation data
+2. It automatically scans `~/.claude` and Cursor data folders for conversation data
 3. Browse projects in the left sidebar tree
 4. Click any session to view messages
 5. Use the tabs at the top to switch between:
    - **Messages**: Read full conversations
+   - **Files**: Browse all files accessed by AI sessions
    - **Analytics**: View activity heatmaps and patterns
    - **Token Stats**: Analyze token usage
+
+### File Activity Tracking
+- Switch to the **Files** tab to see all files touched by AI sessions
+- Filter by:
+  - **Operation type**: Read, Edit, Create, Delete
+  - **File extension**: .ts, .js, .py, .md, etc.
+  - **Date range**: Find files from specific time periods
+- Click **View** to see file content snapshots
+- Click **Jump to Session** to see the exact conversation where the file was modified
+- Use **Download** to save file content locally
+- Click **All Projects** to aggregate files from all sources (Claude Code + Cursor)
+
+### Export Conversations
+- Click the **Export** button (top-right of message view)
+- Choose format: **Markdown**, **HTML**, or **DOCX**
+- Toggle **Formatted/Raw** mode for different detail levels
+- Enable **Include Attachments** to embed file contents
+- Select **Light/Dark** theme for HTML exports
+- Use **Command Only** filter + export to extract bash command history
+- Click **Load All** to export complete conversations (respects current filters)
+
+### Session Creation
+- Click the **Session Builder** button (⊕ icon in header)
+- Select source (Claude Code or Cursor - if writable)
+- Choose existing project or create new one
+- Compose messages with optional context files
+- Preview session structure before creation
+- Session is immediately available in the app after creation
 
 ### Search Functionality
 - Press **Cmd+F** (macOS) or **Ctrl+F** (Windows/Linux) to open search
@@ -181,6 +243,12 @@ pnpm tauri:build:linux    # Linux x86_64
 - Use quotes for exact phrases: `"error message"`
 - Click on any result to jump directly to that message in context
 - Results are grouped by session with expandable previews
+
+### Message Filtering
+- **Bash Only**: Show only messages with bash tool use
+- **Tool Use Only**: Focus on AI tool operations
+- **Messages Only**: Hide tool output, show just text
+- **Command Only**: Extract bash commands as a history log (great for export)
 
 ### Keyboard Shortcuts
 - **Cmd/Ctrl+F**: Open search
@@ -197,12 +265,12 @@ pnpm tauri:build:linux    # Linux x86_64
 
 - **Beta software** - expect some rough edges and occasional bugs
 - Large conversation histories (10,000+ messages) may take a moment to load initially
-- Read-only access - cannot edit or delete conversations from the app
-- No export functionality yet (planned for future release)
+- Session creation only supports Claude Code (Cursor support planned)
+- Cannot delete conversations or projects from the app (read-only for existing sessions)
 
 ## Data privacy
 
-Everything runs locally. No data is sent to any servers. The app only reads files from your `~/.claude` directory.
+Everything runs locally. No data is sent to any servers. The app reads files from your `~/.claude` directory and Cursor's data folder. When creating new sessions, data is written only to your local Claude Code projects folder.
 
 ## Claude directory structure
 
