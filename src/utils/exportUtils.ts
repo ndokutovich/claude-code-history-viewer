@@ -169,7 +169,7 @@ export async function exportToMarkdown(
   includeAttachments: boolean = false,
   mode: ExportMode = "formatted",
   theme: ExportTheme = "light" // Theme not used in Markdown, but kept for consistency
-): Promise<void> {
+): Promise<string> {
   let markdown = `# ${sessionTitle}\n\n`;
   markdown += `Generated: ${new Date().toISOString()}\n\n`;
   markdown += `---\n\n`;
@@ -215,7 +215,9 @@ export async function exportToMarkdown(
   }
 
   const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-  saveAs(blob, `${sanitizeFilename(sessionTitle)}.md`);
+  const filename = `${sanitizeFilename(sessionTitle)}.md`;
+  saveAs(blob, filename);
+  return filename;
 }
 
 /**
@@ -227,7 +229,7 @@ export async function exportToHTML(
   includeAttachments: boolean = false,
   mode: ExportMode = "formatted",
   theme: ExportTheme = "light"
-): Promise<void> {
+): Promise<string> {
   // Theme colors
   const isDark = theme === "dark";
   const colors = isDark ? {
@@ -491,7 +493,9 @@ export async function exportToHTML(
 </html>`;
 
   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-  saveAs(blob, `${sanitizeFilename(sessionTitle)}.html`);
+  const filename = `${sanitizeFilename(sessionTitle)}.html`;
+  saveAs(blob, filename);
+  return filename;
 }
 
 /**
@@ -503,7 +507,7 @@ export async function exportToDocx(
   includeAttachments: boolean = false,
   mode: ExportMode = "formatted",
   theme: ExportTheme = "light" // Theme not used in DOCX, but kept for consistency
-): Promise<void> {
+): Promise<string> {
   const children: Paragraph[] = [];
 
   // Title
@@ -666,7 +670,9 @@ export async function exportToDocx(
   // Generate and save
   const { Packer } = await import("docx");
   const blob = await Packer.toBlob(doc);
-  saveAs(blob, `${sanitizeFilename(sessionTitle)}.docx`);
+  const filename = `${sanitizeFilename(sessionTitle)}.docx`;
+  saveAs(blob, filename);
+  return filename;
 }
 
 /**

@@ -11,6 +11,8 @@ import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useAppStore } from "@/store/useAppStore";
 import { useTheme } from "@/contexts/theme";
 import { filterMessages } from "@/utils/messageFilters";
+import { downloadDir, join } from "@tauri-apps/api/path";
+import { createFileActions } from "@/utils/fileActions";
 
 interface ExportControlsProps {
   messages: UIMessage[];
@@ -47,8 +49,18 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
     try {
       const mode = messageViewMode; // Use current view mode from app settings
       const theme = isDarkMode ? "dark" : "light"; // Use current theme from theme context
-      await exportFn(filteredMessages, sessionTitle, includeAttachments, mode, theme);
-      toast.success(t("export.success", { format: format.toUpperCase() }));
+      const filename = await exportFn(filteredMessages, sessionTitle, includeAttachments, mode, theme);
+
+      // Get full path to exported file in Downloads folder
+      const downloadsPath = await downloadDir();
+      const fullFilePath = await join(downloadsPath, filename);
+      const actions = createFileActions(fullFilePath, { t: (key) => t(`common:${key}`) });
+
+      // Show success toast with Open File and Open Folder buttons
+      toast.success(t("export.success", { format: format.toUpperCase() }), {
+        action: actions.openFile,
+        cancel: actions.openFolder,
+      });
     } catch (error) {
       console.error(`Export to ${format} failed:`, error);
       toast.error(t("export.failed", { format: format.toUpperCase() }));
