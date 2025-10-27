@@ -73,20 +73,20 @@ export const CommandHistoryView: React.FC<CommandHistoryViewProps> = ({ messages
               )}
             >
               <div className="flex items-start gap-4">
-                {/* Index number (like bash history) */}
-                <span className={cn("flex-shrink-0 w-12 text-right", COLORS.ui.text.muted)}>
+                {/* Index number (like bash history) - not selectable */}
+                <span className={cn("flex-shrink-0 w-12 text-right select-none", COLORS.ui.text.muted)}>
                   {index}
                 </span>
 
-                {/* Command text */}
+                {/* Command text - selectable for copying */}
                 <span className={cn("flex-1 break-all", COLORS.ui.text.primary)}>
                   {command}
                 </span>
 
-                {/* Timestamp (hidden by default, shown on hover) */}
+                {/* Timestamp (hidden by default, shown on hover) - not selectable */}
                 <span
                   className={cn(
-                    "flex-shrink-0 text-xs opacity-0 group-hover:opacity-100 transition-opacity",
+                    "flex-shrink-0 text-xs opacity-0 group-hover:opacity-100 transition-opacity select-none",
                     COLORS.ui.text.muted
                   )}
                 >
