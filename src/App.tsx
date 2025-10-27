@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { RawMessageView } from "./components/RawMessageView";
+import { CommandHistoryView } from "./components/CommandHistoryView";
 import { MessageViewControls } from "./components/MessageViewControls";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
@@ -456,7 +457,9 @@ function App() {
                   ) : computed.isFilesView ? (
                     <FilesView />
                   ) : selectedSession ? (
-                    messageViewMode === "raw" ? (
+                    messageFilters.showCommandOnly ? (
+                      <CommandHistoryView messages={filteredMessages} />
+                    ) : messageViewMode === "raw" ? (
                       <RawMessageView messages={filteredMessages} />
                     ) : (
                       <MessageViewer
