@@ -18,6 +18,19 @@
     "store:allow-delete",
     "store:allow-clear",
     "store:allow-has",
-    "store:allow-keys"
+    "store:allow-keys",
+    "shell:allow-open",
+    "opener:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
+    },
+    "clipboard-manager:default",
+    "clipboard-manager:allow-write-text",
+    "clipboard-manager:allow-read-text"
   ]
 }

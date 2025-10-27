@@ -16,6 +16,7 @@
     "refresh": "Refresh Sessions",
     "scanning": "Scanning projects...",
     "loading": "Loading sessions...",
+    "loadingContent": "Loading content...",
     "count": "Sessions: {{count}}",
     "selected": "Selected session",
     "noSessions": "No sessions found"
@@ -36,6 +37,7 @@
     "count": "{{count}} message",
     "count_plural": "{{count}} messages",
     "countWithTotal": "Messages: {{current}} / {{total}}",
+    "filtered": "filtered",
     "branch": "Branch",
     "reply": "Reply (depth: {{depth}})",
     "renderError": "Message rendering error",
@@ -44,6 +46,21 @@
     "loadMore": "Load {{count}} more message",
     "loadMore_plural": "Load {{count}} more messages",
     "scrollToBottom": "Scroll to Bottom"
+  },
+  "messageView": {
+    "formatted": "Formatted",
+    "raw": "Raw",
+    "filters": "Filters",
+    "bashOnly": "Bash only",
+    "commandOnly": "Command only",
+    "toolUseOnly": "Tool use only",
+    "messagesOnly": "Messages only",
+    "clearFilters": "Clear",
+    "copyRaw": "Copy JSON",
+    "rawCopied": "Raw message copied",
+    "rawCopyFailed": "Failed to copy message",
+    "copied": "Copied",
+    "noMessages": "No messages to display"
   },
   "folderPicker": {
     "notFound": "Claude folder not found",
@@ -202,7 +219,18 @@
     "hour": "hour",
     "hours": "hours",
     "minute": "minute",
-    "minutes": "minutes"
+    "minutes": "minutes",
+    "justNow": "just now",
+    "minutesAgo": "{{count}} minute ago",
+    "minutesAgo_plural": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hour ago",
+    "hoursAgo_plural": "{{count}} hours ago",
+    "daysAgo": "{{count}} day ago",
+    "daysAgo_plural": "{{count}} days ago",
+    "monthsAgo": "{{count}} month ago",
+    "monthsAgo_plural": "{{count}} months ago",
+    "yearsAgo": "{{count}} year ago",
+    "yearsAgo_plural": "{{count}} years ago"
   },
   "tools": {
     "terminal": "🐚 Terminal",
@@ -611,5 +639,95 @@
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
     }
+  },
+  "filesView": {
+    "title": "Files",
+    "subtitle": "{{count}} file activities in {{project}}",
+    "subtitle_plural": "{{count}} file activities in {{project}}",
+    "allProjects": "All Projects",
+    "noProjectSelected": "No Project Selected",
+    "selectProjectToViewFiles": "Select a project to view file activities",
+    "loadingFiles": "Loading file activities...",
+    "errorLoadingFiles": "Error Loading Files",
+    "noFilesFound": "No File Activities Found",
+    "noFilesDescription": "No file operations were recorded in this project",
+    "table": {
+      "filePath": "File Path",
+      "operation": "Operation",
+      "timestamp": "Time",
+      "changes": "Changes",
+      "actions": "Actions",
+      "download": "Download File",
+      "view": "View Details",
+      "changeCount": "{{count}} change",
+      "changeCount_plural": "{{count}} changes"
+    },
+    "filters": {
+      "searchPlaceholder": "Search files by path or name...",
+      "operations": "Operations",
+      "extensions": "File Extensions",
+      "apply": "Apply filters",
+      "clear": "Clear filters"
+    },
+    "operationLabels": {
+      "read": "Read",
+      "write": "Write",
+      "edit": "Edit",
+      "delete": "Delete",
+      "create": "Create",
+      "glob": "Find Files",
+      "multiedit": "Multi Edit"
+    },
+    "viewer": {
+      "operation": "Operation",
+      "timestamp": "Timestamp",
+      "changes": "Changes",
+      "jumpToMessage": "Jump to Message",
+      "download": "Download",
+      "fileContent": "File Content",
+      "noContentAvailable": "No content available for this file"
+    },
+    "errors": {
+      "sessionNotFound": "Session not found",
+      "messageNotFound": "Message not found in session",
+      "jumpError": "Failed to jump to message"
+    },
+    "toast": {
+      "cannotDownload": "Cannot download",
+      "noContentAvailable": "No content available for this file",
+      "downloading": "Downloading {{fileName}}...",
+      "downloaded": "Downloaded {{fileName}}",
+      "savedToDownloads": "File saved to Downloads folder",
+      "openFolder": "Open Folder",
+      "failedToOpenFolder": "Failed to open folder",
+      "downloadFailed": "Download failed",
+      "unknownError": "Unknown error"
+    }
+  },
+  "export": {
+    "exportTo": "Export to",
+    "withAttachments": "With attachments",
+    "noMessages": "No messages to export",
+    "success": "Exported to {{format}} successfully",
+    "failed": "Failed to export to {{format}}",
+    "copyPath": "Copy Path",
+    "copyPathTooltip": "Copy session file path to clipboard",
+    "pathCopied": "Path copied to clipboard",
+    "pathCopyFailed": "Failed to copy path",
+    "copied": "Copied",
+    "loadAll": "Load All",
+    "loadAllTooltip": "Load all messages for complete export (currently showing first 100)",
+    "loading": "Loading...",
+    "allMessagesLoaded": "All {{count}} messages loaded",
+    "failedToLoadAll": "Failed to load all messages",
+    "markdownTooltip": "Export conversation to Markdown format",
+    "htmlTooltip": "Export conversation to HTML format",
+    "docxTooltip": "Export conversation to Word document"
+  },
+  "messageReference": {
+    "copyReference": "Copy Reference",
+    "referenceTooltip": "Copy file path and message UUID for Claude",
+    "referenceCopied": "Message reference copied",
+    "referenceCopyFailed": "Failed to copy reference"
   }
 }

@@ -3,7 +3,6 @@ use crate::models::universal::UniversalMessage;
 use crate::commands::adapters::claude_code::{claude_message_to_universal, extract_project_id};
 use crate::utils::extract_project_name;
 use std::fs;
-use std::path::PathBuf;
 use walkdir::WalkDir;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
@@ -280,7 +279,7 @@ pub async fn load_project_sessions(
 #[tauri::command]
 pub async fn load_session_messages(session_path: String) -> Result<Vec<UniversalMessage>, String> {
     let content = fs::read_to_string(&session_path)
-        .map_err(|e| format!("Failed to read session file: {}", e))?;
+        .map_err(|e| format!("SESSION_READ_ERROR: Failed to read session file: {}", e))?;
 
     let mut messages = Vec::new();
 
@@ -382,7 +381,22 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<Universal
     }
 
     // Convert ClaudeMessages to UniversalMessages
-    let project_id = extract_project_id(&None, &session_path);
+    // Extract full project path from session path for consistency with search_messages
+    // E.g., "/path/to/.claude/projects/my-project/session.jsonl" -> "/path/to/.claude/projects/my-project"
+    let project_id = if let Some(projects_idx) = session_path.find("projects") {
+        let after_projects = &session_path[projects_idx + "projects".len()..];
+        let parts: Vec<&str> = after_projects.split(|c| c == '/' || c == '\\').filter(|s| !s.is_empty()).collect();
+        if !parts.is_empty() {
+            // Reconstruct full path up to project directory
+            let up_to_projects = &session_path[..projects_idx + "projects".len()];
+            format!("{}/{}", up_to_projects, parts[0])
+        } else {
+            "unknown".to_string()
+        }
+    } else {
+        "unknown".to_string()
+    };
+
     let source_id = session_path
         .split("projects")
         .next()
@@ -418,14 +432,14 @@ pub async fn load_session_messages_paginated(
     use std::fs::File;
     
     let file = File::open(&session_path)
-        .map_err(|e| format!("Failed to open session file: {}", e))?;
+        .map_err(|e| format!("SESSION_FILE_ERROR: Failed to open session file: {}", e))?;
     let reader = BufReader::new(file);
-    
+
     // First pass: collect all messages to get total count and support reverse ordering
     let mut all_messages: Vec<ClaudeMessage> = Vec::new();
-    
+
     for (line_num, line_result) in reader.lines().enumerate() {
-        let line = line_result.map_err(|e| format!("Failed to read line: {}", e))?;
+        let line = line_result.map_err(|e| format!("SESSION_READ_ERROR: Failed to read line: {}", e))?;
         
         if line.trim().is_empty() {
             continue;
@@ -481,7 +495,22 @@ pub async fn load_session_messages_paginated(
     }
 
     // Convert ClaudeMessages to UniversalMessages
-    let project_id = extract_project_id(&None, &session_path);
+    // Extract full project path from session path for consistency with search_messages
+    // E.g., "/path/to/.claude/projects/my-project/session.jsonl" -> "/path/to/.claude/projects/my-project"
+    let project_id = if let Some(projects_idx) = session_path.find("projects") {
+        let after_projects = &session_path[projects_idx + "projects".len()..];
+        let parts: Vec<&str> = after_projects.split(|c| c == '/' || c == '\\').filter(|s| !s.is_empty()).collect();
+        if !parts.is_empty() {
+            // Reconstruct full path up to project directory
+            let up_to_projects = &session_path[..projects_idx + "projects".len()];
+            format!("{}/{}", up_to_projects, parts[0])
+        } else {
+            "unknown".to_string()
+        }
+    } else {
+        "unknown".to_string()
+    };
+
     let source_id = session_path
         .split("projects")
         .next()
@@ -582,7 +611,7 @@ pub async fn get_session_message_count(
     exclude_sidechain: Option<bool>,
 ) -> Result<usize, String> {
     let content = fs::read_to_string(&session_path)
-        .map_err(|e| format!("Failed to read session file: {}", e))?;
+        .map_err(|e| format!("SESSION_READ_ERROR: Failed to read session file: {}", e))?;
 
     let mut count = 0;
     
@@ -701,7 +730,14 @@ pub async fn search_messages(
     query: String,
     filters: SearchFilters
 ) -> Result<Vec<UniversalMessage>, String> {
-    let projects_path = PathBuf::from(&claude_path).join("projects");
+    // Validate and canonicalize the path for better error handling.
+    // Note: Path traversal is not a security concern for desktop apps where the user
+    // already has full filesystem access. This validation catches programming errors
+    // and provides clearer error messages when the path doesn't exist.
+    let canonical_claude_path = std::fs::canonicalize(&claude_path)
+        .map_err(|e| format!("SEARCH_INVALID_PATH: Failed to resolve claude path: {}", e))?;
+
+    let projects_path = canonical_claude_path.join("projects");
     let mut all_messages = Vec::new();
 
     if !projects_path.exists() {
@@ -863,11 +899,12 @@ pub async fn search_messages(
         .iter()
         .enumerate()
         .map(|(i, msg)| {
+            // Use the full project path, not just the last component
+            // This ensures the frontend can match it against project.path
             let project_id = msg.project_path
                 .as_ref()
-                .and_then(|path| path.split('/').last())
-                .unwrap_or("unknown")
-                .to_string();
+                .map(|path| path.to_string())
+                .unwrap_or_else(|| "unknown".to_string());
 
             claude_message_to_universal(
                 msg,

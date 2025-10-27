@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   BarChart3,
@@ -60,8 +60,8 @@ export const AnalyticsDashboard: React.FC = () => {
     return num.toString();
   };
 
-  // Generate daily data for 7 days (fill in missing dates)
-  const generateDailyData = () => {
+  // Generate daily data for 7 days (fill in missing dates) - Memoized for performance
+  const dailyData = useMemo(() => {
     if (!projectSummary?.daily_stats) return [];
 
     // Create array of last 7 days
@@ -72,7 +72,7 @@ export const AnalyticsDashboard: React.FC = () => {
     });
 
     // Aggregate data by date
-    const dailyData = last7Days.map((date) => {
+    return last7Days.map((date) => {
       const dayStats = projectSummary.daily_stats.find(
         (stat) => stat.date === date
       );
@@ -85,9 +85,7 @@ export const AnalyticsDashboard: React.FC = () => {
         active_hours: dayStats?.active_hours || 0,
       };
     });
-
-    return dailyData;
-  };
+  }, [projectSummary?.daily_stats]);
 
   // Activity heatmap component
   const ActivityHeatmapComponent = ({ data }: { data: ActivityHeatmap[] }) => {
@@ -511,8 +509,7 @@ export const AnalyticsDashboard: React.FC = () => {
               {/* Enhanced bar chart */}
               <div className="relative h-48">
                 <div className="absolute  inset-0 flex items-end justify-between gap-1">
-                  {generateDailyData().map((stat) => {
-                    const dailyData = generateDailyData();
+                  {dailyData.map((stat) => {
                     const maxTokens = Math.max(
                       ...dailyData.map((s) => s.total_tokens),
                       1
@@ -596,14 +593,14 @@ export const AnalyticsDashboard: React.FC = () => {
                   <div
                     className={cn("text-lg font-bold", COLORS.ui.text.primary)}
                   >
-                    {generateDailyData().reduce(
+                    {dailyData.reduce(
                       (sum, s) => sum + s.total_tokens,
                       0
                     ) > 0
                       ? formatNumber(
                           Math.round(
-                            generateDailyData().reduce(
-                              (sum, s) => sum + s.total_tokens,
+                            dailyData.reduce(
+                              (sum: number, s) => sum + s.total_tokens,
                               0
                             ) / 7
                           )
@@ -619,8 +616,8 @@ export const AnalyticsDashboard: React.FC = () => {
                     className={cn("text-lg font-bold", COLORS.ui.text.primary)}
                   >
                     {Math.round(
-                      generateDailyData().reduce(
-                        (sum, s) => sum + s.message_count,
+                      dailyData.reduce(
+                        (sum: number, s) => sum + s.message_count,
                         0
                       ) / 7
                     )}
@@ -634,7 +631,7 @@ export const AnalyticsDashboard: React.FC = () => {
                     className={cn("text-lg font-bold", COLORS.ui.text.primary)}
                   >
                     {
-                      generateDailyData().filter((s) => s.total_tokens > 0)
+                      dailyData.filter((s) => s.total_tokens > 0)
                         .length
                     }
                   </div>

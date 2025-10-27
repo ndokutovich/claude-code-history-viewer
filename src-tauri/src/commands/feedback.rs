@@ -55,7 +55,7 @@ pub async fn send_feedback(feedback: FeedbackData) -> Result<(), String> {
 
     // Open system default email app
     tauri_plugin_opener::open_url(mailto_url, None::<String>)
-        .map_err(|e| format!("Failed to open email client: {}", e))?;
+        .map_err(|e| format!("FEEDBACK_OPEN_ERROR: Failed to open email client: {}", e))?;
 
     Ok(())
 }
@@ -75,7 +75,7 @@ pub async fn open_github_issues() -> Result<(), String> {
     let github_url = "https://github.com/ndokutovich/claude-code-history-viewer/issues/new";
 
     tauri_plugin_opener::open_url(github_url, None::<String>)
-        .map_err(|e| format!("Failed to open GitHub: {}", e))?;
+        .map_err(|e| format!("FEEDBACK_OPEN_ERROR: Failed to open GitHub: {}", e))?;
 
     Ok(())
 }

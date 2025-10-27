@@ -16,6 +16,11 @@ import type {
   HealthStatus,
   ErrorRecovery,
   ErrorContext,
+  WriteResult,
+  ProjectInfo,
+  SessionInfo,
+  CreateSessionRequest,
+  MessageInput,
 } from '../base/IAdapter';
 import { classifyError } from '../base/IAdapter';
 import type {
@@ -60,7 +65,10 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       supportsModelInfo: true,
       requiresAuth: false,
       requiresNetwork: false,
-      isReadOnly: true,
+      isReadOnly: false, // v1.6.0+: Now supports writing
+      supportsProjectCreation: true, // v1.6.0+
+      supportsSessionCreation: true, // v1.6.0+
+      supportsMessageAppending: true, // v1.6.0+
       maxMessagesPerRequest: 10000,
       preferredBatchSize: 100,
       supportsPagination: true,
@@ -85,6 +93,9 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
         required: false,
       },
     ],
+    pathConfig: {
+      projectsPath: 'projects', // Claude Code stores projects at ~/.claude/projects/
+    },
     icon: 'claude-logo',
     color: '#D97706', // Claude brand amber
   };
@@ -467,6 +478,181 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
           message: `Unexpected error: ${error.message}`,
           suggestion: 'Please report this issue if it persists.',
         };
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // PATH MANAGEMENT (OPTIONAL - v1.6.0+)
+  // ------------------------------------------------------------------------
+
+  /**
+   * Get the projects root directory for Claude Code
+   * Uses provider's pathConfig to construct the path
+   * @param sourcePath - Base Claude folder (e.g., ~/.claude)
+   * @returns Projects root directory (e.g., ~/.claude/projects)
+   */
+  getProjectsRoot(sourcePath: string): string {
+    // Use provider definition's pathConfig
+    const { projectsPath } = this.providerDefinition.pathConfig;
+    return `${sourcePath}/${projectsPath}`;
+  }
+
+  /**
+   * Convert a project name to absolute project path
+   * @param sourcePath - Base Claude folder (e.g., ~/.claude)
+   * @param projectName - Name of the project
+   * @returns Absolute project path (e.g., ~/.claude/projects/my-project)
+   */
+  convertToProjectPath(sourcePath: string, projectName: string): string {
+    const projectsRoot = this.getProjectsRoot(sourcePath);
+    return `${projectsRoot}/${projectName}`;
+  }
+
+  /**
+   * Sanitize a full path to create a unique project identifier
+   * Example: "C:\_init\w\_proj\my-code" → "c---init-w--proj-my-code"
+   * @param fullPath - Full absolute path
+   * @returns Sanitized project name
+   */
+  sanitizePathToProjectName(fullPath: string): string {
+    return fullPath
+      .toLowerCase()                    // Lowercase everything
+      .replace(/:/g, '-')              // C: → c-
+      .replace(/\\/g, '-')             // \ → -
+      .replace(/\//g, '-')             // / → -
+      .replace(/_/g, '-')              // _ → -
+      .replace(/\s+/g, '-')            // spaces → -
+      .replace(/[^a-z0-9-]/g, '-')     // any other invalid chars → -
+      .replace(/-+/g, '-')             // collapse multiple dashes
+      .replace(/^-+|-+$/g, '');        // trim leading/trailing dashes
+  }
+
+  // ------------------------------------------------------------------------
+  // WRITE OPERATIONS (OPTIONAL - v1.6.0+)
+  // ------------------------------------------------------------------------
+
+  async createProject(
+    sourcePath: string,
+    projectName: string
+  ): Promise<WriteResult<ProjectInfo>> {
+    this.ensureInitialized();
+
+    try {
+      // Use provider's projects root directory
+      const projectsRoot = this.getProjectsRoot(sourcePath);
+
+      const response = await invoke<{ project_path: string; project_name: string }>(
+        'create_claude_project',
+        {
+          request: {
+            name: projectName,
+            parent_path: projectsRoot, // Use projects root, not source root
+          },
+        }
+      );
+
+      return {
+        success: true,
+        data: {
+          projectPath: response.project_path,
+          projectName: response.project_name,
+          projectId: response.project_path,
+        },
+      };
+    } catch (error) {
+      const errorCode = classifyError(error as Error);
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: error instanceof Error ? error.message : String(error),
+          recoverable: errorCode !== ErrorCode.ACCESS_DENIED,
+          retry: {
+            shouldRetry: errorCode === ErrorCode.OPERATION_TIMEOUT,
+            maxAttempts: 3,
+            delayMs: 1000,
+          },
+        },
+      };
+    }
+  }
+
+  async createSession(
+    projectPath: string,
+    request: CreateSessionRequest
+  ): Promise<WriteResult<SessionInfo>> {
+    this.ensureInitialized();
+
+    try {
+      const response = await invoke<{
+        session_path: string;
+        session_id: string;
+        message_count: number;
+      }>('create_claude_session', {
+        request: {
+          project_path: projectPath,
+          messages: request.messages,
+          summary: request.summary,
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          sessionPath: response.session_path,
+          sessionId: response.session_id,
+          messageCount: response.message_count,
+        },
+      };
+    } catch (error) {
+      const errorCode = classifyError(error as Error);
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: error instanceof Error ? error.message : String(error),
+          recoverable: errorCode !== ErrorCode.ACCESS_DENIED,
+          retry: {
+            shouldRetry: errorCode === ErrorCode.OPERATION_TIMEOUT,
+            maxAttempts: 3,
+            delayMs: 1000,
+          },
+        },
+      };
+    }
+  }
+
+  async appendMessages(
+    sessionPath: string,
+    messages: MessageInput[]
+  ): Promise<WriteResult<number>> {
+    this.ensureInitialized();
+
+    try {
+      const messageCount = await invoke<number>('append_to_claude_session', {
+        sessionPath,
+        messages,
+      });
+
+      return {
+        success: true,
+        data: messageCount,
+      };
+    } catch (error) {
+      const errorCode = classifyError(error as Error);
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: error instanceof Error ? error.message : String(error),
+          recoverable: errorCode !== ErrorCode.ACCESS_DENIED,
+          retry: {
+            shouldRetry: errorCode === ErrorCode.OPERATION_TIMEOUT,
+            maxAttempts: 3,
+            delayMs: 1000,
+          },
+        },
+      };
     }
   }
 

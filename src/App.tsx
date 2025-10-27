@@ -1,23 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
+import { RawMessageView } from "./components/RawMessageView";
+import { CommandHistoryView } from "./components/CommandHistoryView";
+import { MessageViewControls } from "./components/MessageViewControls";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
+import { FilesView } from "./components/FilesView";
 import { SimpleUpdateManager } from "./components/SimpleUpdateManager";
 import { SearchView } from "./components/SearchView";
 import { DebugConsole } from "./components/DebugConsole";
 import { SplashScreen } from "./components/SplashScreen";
 import { ResizableSplitter } from "./components/ResizableSplitter";
+import { ExportControls } from "./components/ExportControls";
 import { useAppStore } from "./store/useAppStore";
 import { useSourceStore } from "./store/useSourceStore";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { getSessionTitle } from "./utils/sessionUtils";
+import { filterMessages } from "./utils/messageFilters";
 
 import { useTranslation } from "react-i18next";
 import { AppErrorType, type UISession, type UIProject } from "./types";
 import { AlertTriangle, Loader2, MessageSquare } from "lucide-react";
 import { useLanguageStore } from "./store/useLanguageStore";
 import { type SupportedLanguage } from "./i18n.config";
+import { Toaster } from "sonner";
 
 import "./App.css";
 import { cn } from "./utils/cn";
@@ -43,6 +50,8 @@ function App() {
     projectTokenStats,
     projectStatsSummary,
     loadingProgress,
+    messageViewMode,
+    messageFilters,
     initializeApp,
     selectProject,
     selectSession,
@@ -50,6 +59,11 @@ function App() {
     loadMoreMessages,
     setLoadingProgress,
   } = useAppStore();
+
+  // Filter messages based on active filters
+  const filteredMessages = useMemo(() => {
+    return filterMessages(messages, messageFilters);
+  }, [messages, messageFilters]);
 
   const {
     actions: analyticsActions,
@@ -354,8 +368,8 @@ function App() {
                       COLORS.ui.border.light
                     )}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
                         <h2
                           className={cn(
                             "text-lg font-semibold",
@@ -397,12 +411,37 @@ function App() {
                           </p>
                         )}
                       </div>
+                      {/* Export Controls - Only show in Messages view */}
+                      {computed.isMessagesView && selectedSession && messages.length > 0 && (
+                        <div className="flex-shrink-0">
+                          <ExportControls messages={messages} session={selectedSession} />
+                        </div>
+                      )}
                     </div>
+
+                    {/* Message View Controls - Only show in Messages view with messages */}
+                    {computed.isMessagesView && selectedSession && messages.length > 0 && (
+                      <div className="mt-3 pt-3 border-t" style={{ borderColor: 'inherit' }}>
+                        <MessageViewControls />
+                      </div>
+                    )}
                   </div>
                 )}
 
                 {/* Content */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden relative">
+                  {/* Loading overlay when switching sessions/loading content */}
+                  {isLoadingMessages && selectedSession && (
+                    <div className="absolute inset-0 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
+                      <div className="text-center">
+                        <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-500" />
+                        <p className={cn("text-sm font-medium", COLORS.ui.text.secondary)}>
+                          {tComponents("session.loadingContent")}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {computed.isAnalyticsView ? (
                     <div className="h-full overflow-y-auto">
                       <AnalyticsDashboard />
@@ -415,14 +454,22 @@ function App() {
                         projectStats={projectTokenStats}
                       />
                     </div>
+                  ) : computed.isFilesView ? (
+                    <FilesView />
                   ) : selectedSession ? (
-                    <MessageViewer
-                      messages={messages}
-                      pagination={pagination}
-                      isLoading={isLoading}
-                      selectedSession={selectedSession}
-                      onLoadMore={loadMoreMessages}
-                    />
+                    messageFilters.showCommandOnly ? (
+                      <CommandHistoryView messages={filteredMessages} />
+                    ) : messageViewMode === "raw" ? (
+                      <RawMessageView messages={filteredMessages} />
+                    ) : (
+                      <MessageViewer
+                        messages={filteredMessages}
+                        pagination={pagination}
+                        isLoading={isLoading}
+                        selectedSession={selectedSession}
+                        onLoadMore={loadMoreMessages}
+                      />
+                    )
                   ) : (
                     <div className="h-full flex items-center justify-center">
                       <div className={cn("text-center", COLORS.ui.text.muted)}>
@@ -471,9 +518,14 @@ function App() {
               {selectedSession && computed.isMessagesView && (
                 <span>
                   {tComponents("message.countWithTotal", {
-                    current: messages.length,
+                    current: filteredMessages.length,
                     total: pagination.totalCount || messages.length,
                   })}
+                  {filteredMessages.length !== messages.length && (
+                    <span className="text-blue-500 ml-1">
+                      ({tComponents("message.filtered")})
+                    </span>
+                  )}
                 </span>
               )}
               {computed.isTokenStatsView && sessionTokenStats && (
@@ -522,6 +574,9 @@ function App() {
 
       {/* Debug Console */}
       <DebugConsole />
+
+      {/* Toast Notifications */}
+      <Toaster position="bottom-right" richColors closeButton />
     </>
   );
 }

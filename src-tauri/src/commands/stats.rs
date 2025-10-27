@@ -122,9 +122,9 @@ async fn load_universal_session_messages(
             // We'll use a placeholder timestamp since load_cursor_messages extracts from the global DB anyway
             let encoded_path = format!("{}#session={}#timestamp=unknown", global_db.to_string_lossy(), session_id);
 
-            load_cursor_messages(encoded_path).await
+            load_cursor_messages(source_path.to_string(), encoded_path).await
         }
-        _ => Err(format!("Unknown provider: {}", provider_id)),
+        _ => Err(format!("STATS_UNKNOWN_PROVIDER: Unknown provider: {}", provider_id)),
     }
 }
 
@@ -146,16 +146,21 @@ async fn get_project_session_ids(
             let sessions = load_cursor_sessions(source_path.to_string(), Some(project_id.to_string())).await?;
             Ok(sessions.into_iter().map(|s| s.id).collect())
         }
-        _ => Err(format!("Unknown provider: {}", provider_id)),
+        _ => Err(format!("STATS_UNKNOWN_PROVIDER: Unknown provider: {}", provider_id)),
     }
 }
 
 #[tauri::command]
 pub async fn get_session_token_stats(session_path: String) -> Result<SessionTokenStats, String> {
+    // Validate absolute path
+    if !std::path::Path::new(&session_path).is_absolute() {
+        return Err("STATS_INVALID_ARGUMENT: session_path must be absolute".to_string());
+    }
+
     let messages = load_session_messages(session_path.clone()).await?;
 
     if messages.is_empty() {
-        return Err("No valid messages found in session".to_string());
+        return Err("STATS_NO_MESSAGES: No valid messages found in session".to_string());
     }
 
     let session_id = messages[0].session_id.clone();
@@ -210,6 +215,11 @@ pub async fn get_session_token_stats(session_path: String) -> Result<SessionToke
 
 #[tauri::command]
 pub async fn get_project_token_stats(project_path: String) -> Result<Vec<SessionTokenStats>, String> {
+    // Validate absolute path
+    if !std::path::Path::new(&project_path).is_absolute() {
+        return Err("STATS_INVALID_ARGUMENT: project_path must be absolute".to_string());
+    }
+
     let mut session_stats = Vec::new();
 
     for entry in WalkDir::new(&project_path)
@@ -232,6 +242,11 @@ pub async fn get_project_token_stats(project_path: String) -> Result<Vec<Session
 
 #[tauri::command]
 pub async fn get_project_stats_summary(project_path: String) -> Result<ProjectStatsSummary, String> {
+    // Validate absolute path
+    if !std::path::Path::new(&project_path).is_absolute() {
+        return Err("STATS_INVALID_ARGUMENT: project_path must be absolute".to_string());
+    }
+
     let project_name = PathBuf::from(&project_path)
         .file_name()
         .and_then(|n| n.to_str())
@@ -488,10 +503,15 @@ pub async fn get_universal_session_token_stats(
     source_path: String,
     session_id: String,
 ) -> Result<SessionTokenStats, String> {
+    // Validate absolute path
+    if !std::path::Path::new(&source_path).is_absolute() {
+        return Err("STATS_INVALID_ARGUMENT: source_path must be absolute".to_string());
+    }
+
     let messages = load_universal_session_messages(&provider_id, &source_path, &session_id).await?;
 
     if messages.is_empty() {
-        return Err("No valid messages found in session".to_string());
+        return Err("STATS_NO_MESSAGES: No valid messages found in session".to_string());
     }
 
     // Extract project name from first message's project_id
@@ -557,6 +577,11 @@ pub async fn get_universal_project_token_stats(
     source_path: String,
     project_id: String,
 ) -> Result<Vec<SessionTokenStats>, String> {
+    // Validate absolute path
+    if !std::path::Path::new(&source_path).is_absolute() {
+        return Err("STATS_INVALID_ARGUMENT: source_path must be absolute".to_string());
+    }
+
     let session_ids = get_project_session_ids(&provider_id, &source_path, &project_id).await?;
 
     let mut session_stats = Vec::new();
@@ -588,6 +613,11 @@ pub async fn get_universal_project_stats_summary(
     source_path: String,
     project_id: String,
 ) -> Result<ProjectStatsSummary, String> {
+    // Validate absolute path
+    if !std::path::Path::new(&source_path).is_absolute() {
+        return Err("STATS_INVALID_ARGUMENT: source_path must be absolute".to_string());
+    }
+
     let project_name = project_id.clone();
 
     let mut summary = ProjectStatsSummary::default();

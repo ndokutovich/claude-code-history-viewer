@@ -16,6 +16,7 @@
     "refresh": "セッションを更新",
     "scanning": "プロジェクトをスキャン中...",
     "loading": "セッションを読み込み中...",
+    "loadingContent": "コンテンツを読み込み中...",
     "count": "セッション：{{count}}件",
     "selected": "選択されたセッション",
     "noSessions": "セッションが見つかりません"
@@ -29,6 +30,7 @@
     "previous": "以前のメッセージを表示",
     "allLoaded": "すべてのメッセージを読み込みました",
     "loading": "メッセージを読み込み中...",
+    "loadingContent": "コンテンツを読み込み中...",
     "none": "メッセージがありません",
     "count": "{{count}}件のメッセージ",
     "count_plural": "{{count}}件のメッセージ",
@@ -41,6 +43,21 @@
     "loadMore": "さらに{{count}}件のメッセージを読み込む",
     "loadMore_plural": "さらに{{count}}件のメッセージを読み込む",
     "scrollToBottom": "最下部へ移動"
+  },
+  "messageView": {
+    "formatted": "フォーマット済み",
+    "raw": "生データ",
+    "filters": "フィルタ",
+    "bashOnly": "Bashのみ",
+    "commandOnly": "コマンドのみ",
+    "toolUseOnly": "ツール使用のみ",
+    "messagesOnly": "メッセージのみ",
+    "clearFilters": "クリア",
+    "copyRaw": "JSONをコピー",
+    "rawCopied": "生メッセージをコピーしました",
+    "rawCopyFailed": "メッセージのコピーに失敗しました",
+    "copied": "コピーしました",
+    "noMessages": "表示するメッセージがありません"
   },
   "folderPicker": {
     "notFound": "Claudeフォルダが見つかりません",
@@ -98,6 +115,7 @@
     "noData": "ツール使用データがありません",
     "noActivity": "アクティビティデータがありません",
     "loading": "トークン統計を読み込み中...",
+    "loadingContent": "コンテンツを読み込み中...",
     "currentSessionTokens": "現在のセッショントークン：{{count}}個",
     "projectTokens": "プロジェクトトークン：{{count}}個",
     "performanceInsights": "🎯 パフォーマンス洞察",
@@ -199,7 +217,18 @@
     "hour": "時間",
     "hours": "時間",
     "minute": "分",
-    "minutes": "分"
+    "minutes": "分",
+    "justNow": "たった今",
+    "minutesAgo": "{{count}}分前",
+    "minutesAgo_plural": "{{count}}分前",
+    "hoursAgo": "{{count}}時間前",
+    "hoursAgo_plural": "{{count}}時間前",
+    "daysAgo": "{{count}}日前",
+    "daysAgo_plural": "{{count}}日前",
+    "monthsAgo": "{{count}}ヶ月前",
+    "monthsAgo_plural": "{{count}}ヶ月前",
+    "yearsAgo": "{{count}}年前",
+    "yearsAgo_plural": "{{count}}年前"
   },
   "tools": {
     "terminal": "🐚 ターミナル",
@@ -385,6 +414,7 @@
       "offset": "オフセット: {{offset}}",
       "hasMore": "もっとある: {{hasMore}}",
       "loading": "読み込み中: {{loading}}",
+    "loadingContent": "コンテンツを読み込み中...",
       "session": "セッション: {{sessionId}}",
       "file": "ファイル: {{fileName}}",
       "firstMessage": "最初のメッセージ: {{timestamp}}",
@@ -604,5 +634,84 @@
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
     }
+  },
+  "filesView": {
+    "title": "ファイル",
+    "subtitle": "{{project}}の{{count}}件のファイル活動",
+    "subtitle_plural": "{{project}}の{{count}}件のファイル活動",
+    "allProjects": "全プロジェクト",
+    "noProjectSelected": "プロジェクトが選択されていません",
+    "selectProjectToViewFiles": "ファイル活動を表示するにはプロジェクトを選択してください",
+    "loadingFiles": "ファイル活動を読み込み中...",
+    "errorLoadingFiles": "ファイル読み込み中にエラーが発生しました",
+    "noFilesFound": "ファイル活動が見つかりません",
+    "noFilesDescription": "このプロジェクトではファイル操作が記録されていません",
+    "table": {
+      "filePath": "ファイルパス",
+      "operation": "操作",
+      "timestamp": "時刻",
+      "changes": "変更",
+      "actions": "操作",
+      "download": "ファイルをダウンロード",
+      "view": "詳細を表示",
+      "changeCount": "{{count}}件の変更",
+      "changeCount_plural": "{{count}}件の変更"
+    },
+    "filters": {
+      "searchPlaceholder": "パスまたは名前でファイルを検索...",
+      "operations": "操作",
+      "extensions": "ファイル拡張子",
+      "apply": "フィルタを適用",
+      "clear": "フィルタをクリア"
+    },
+    "operationLabels": {
+      "read": "読み取り",
+      "write": "書き込み",
+      "edit": "編集",
+      "delete": "削除",
+      "create": "作成",
+      "glob": "ファイル検索",
+      "multiedit": "複数編集"
+    },
+    "viewer": {
+      "operation": "操作",
+      "timestamp": "タイムスタンプ",
+      "changes": "変更",
+      "jumpToMessage": "メッセージに移動",
+      "download": "ダウンロード",
+      "fileContent": "ファイル内容",
+      "noContentAvailable": "このファイルには利用可能なコンテンツがありません"
+    },
+    "errors": {
+      "sessionNotFound": "セッションが見つかりません",
+      "messageNotFound": "セッション内にメッセージが見つかりません",
+      "jumpError": "メッセージへの移動に失敗しました"
+    },
+    "toast": {
+      "cannotDownload": "ダウンロードできません",
+      "noContentAvailable": "このファイルには利用可能なコンテンツがありません",
+      "downloading": "{{fileName}}をダウンロード中...",
+      "downloaded": "{{fileName}}をダウンロードしました",
+      "savedToDownloads": "ファイルをダウンロードフォルダに保存しました",
+      "openFolder": "フォルダを開く",
+      "failedToOpenFolder": "フォルダを開けませんでした",
+      "downloadFailed": "ダウンロードに失敗しました",
+      "unknownError": "不明なエラー"
+    }
+  },
+  "export": {
+    "exportTo": "エクスポート",
+    "withAttachments": "添付ファイルを含める",
+    "noMessages": "エクスポートするメッセージがありません",
+    "success": "{{format}}形式でエクスポートしました",
+    "failed": "{{format}}形式でのエクスポートに失敗しました",
+    "copyPath": "パスをコピー",
+    "copyPathTooltip": "セッションファイルパスをクリップボードにコピー",
+    "pathCopied": "パスをクリップボードにコピーしました",
+    "pathCopyFailed": "パスのコピーに失敗しました",
+    "copied": "コピー済み",
+    "markdownTooltip": "会話をMarkdown形式でエクスポート",
+    "htmlTooltip": "会話をHTML形式でエクスポート",
+    "docxTooltip": "会話をWord文書でエクスポート"
   }
 }

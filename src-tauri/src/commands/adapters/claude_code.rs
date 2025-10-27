@@ -325,11 +325,14 @@ fn convert_content_item(item: &Value) -> Option<UniversalContent> {
 }
 
 /// Convert tool_use field to ToolCall structures
+/// Extracts tool calls from both:
+/// 1. The legacy tool_use field (if present)
+/// 2. The content array items with type: "tool_use" (modern Claude Code format)
 fn convert_tool_use(msg: &ClaudeMessage) -> Option<Vec<ToolCall>> {
-    msg.tool_use.as_ref().map(|tool_value| {
-        let mut tool_calls = Vec::new();
+    let mut tool_calls = Vec::new();
 
-        // Tool use can be an object or array
+    // Extract from legacy tool_use field (if present)
+    if let Some(tool_value) = &msg.tool_use {
         match tool_value {
             Value::Object(obj) => {
                 if let Some(tool_call) = parse_tool_use_object(obj) {
@@ -347,9 +350,36 @@ fn convert_tool_use(msg: &ClaudeMessage) -> Option<Vec<ToolCall>> {
             }
             _ => {}
         }
+    }
 
-        tool_calls
-    })
+    // Extract from content array (modern Claude Code format)
+    // Tool calls are stored as content items with type: "tool_use"
+    if let Some(ref content_value) = msg.content {
+        if let Value::Array(items) = content_value {
+            for item in items {
+                if let Some(item_type) = item.get("type").and_then(|t| t.as_str()) {
+                    if item_type == "tool_use" {
+                        if let Value::Object(obj) = item {
+                            if let Some(tool_call) = parse_tool_use_object(obj) {
+                                tool_calls.push(tool_call);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if tool_calls.is_empty() {
+        None
+    } else {
+        // Deduplicate by ID (in case tool calls appear in both legacy and modern formats)
+        use std::collections::HashSet;
+        let mut seen_ids = HashSet::new();
+        tool_calls.retain(|tc| seen_ids.insert(tc.id.clone()));
+
+        Some(tool_calls)
+    }
 }
 
 /// Parse a tool use object into ToolCall

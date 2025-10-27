@@ -1,0 +1,91 @@
+{
+  "createSession": "セッションを作成",
+  "title": "新しいセッションを作成",
+  "description": "新しいClaude Codeの会話セッションを作成します",
+  "project": {
+    "label": "プロジェクト",
+    "existingProject": "既存のプロジェクト",
+    "newProject": "新しいプロジェクト",
+    "selectProject": "プロジェクトを選択",
+    "selectPlaceholder": "-- プロジェクトを選択してください --",
+    "projectName": "プロジェクト名",
+    "projectNamePlaceholder": "my-project",
+    "parentFolder": "親フォルダ（オプション、デフォルト: ~/.claude/projects/）",
+    "parentFolderPlaceholder": "~/.claude/projects/"
+  },
+  "session": {
+    "summary": "セッション概要（オプション）",
+    "summaryPlaceholder": "この会話の簡単な説明"
+  },
+  "messages": {
+    "label": "メッセージ",
+    "addMessage": "メッセージを追加",
+    "noMessages": "まだメッセージがありません。「メッセージを追加」をクリックして開始してください。",
+    "compose": "作成",
+    "fromExisting": "既存から取得",
+    "preview": "プレビュー",
+    "role": "役割",
+    "user": "ユーザー",
+    "assistant": "アシスタント",
+    "system": "システム",
+    "contentPlaceholder": "メッセージ内容...",
+    "advancedOptions": "詳細オプション",
+    "removeMessage": "メッセージを削除",
+    "model": "モデル（オプション）",
+    "modelPlaceholder": "claude-opus-4-20250514",
+    "parentId": "親ID（オプション）",
+    "parentIdPlaceholder": "親メッセージのUUID",
+    "tokenUsage": "トークン使用量（オプション）",
+    "inputTokens": "入力トークン",
+    "outputTokens": "出力トークン",
+    "cacheCreation": "キャッシュ作成",
+    "cacheRead": "キャッシュ読み取り"
+  },
+  "context": {
+    "selectProject": "プロジェクトを選択",
+    "selectSession": "セッションを選択",
+    "selectMessages": "メッセージを選択",
+    "selected": "{{total}}件中{{count}}件選択済み",
+    "selectAll": "すべて選択",
+    "deselectAll": "すべて選択解除",
+    "searchPlaceholder": "メッセージを検索...",
+    "noMessages": "メッセージが見つかりません",
+    "import": "{{count}}件のメッセージをインポート",
+    "import_plural": "{{count}}件のメッセージをインポート",
+    "emptyState": "プロジェクトを選択してセッションとメッセージを参照してください",
+    "selectionMode": "選択モード",
+    "individual": "個別",
+    "range": "範囲",
+    "all": "すべて",
+    "fromMessage": "メッセージ #",
+    "toMessage": "～ メッセージ #",
+    "addToContext": "コンテキストに追加",
+    "accumulated": "累積コンテキスト（{{sessions}}セッションから{{count}}メッセージ）",
+    "importAll": "すべてインポート"
+  },
+  "preview": {
+    "totalMessages": "合計メッセージ数",
+    "estimatedTokens": "推定トークン数",
+    "sessionOrder": "セッション順序（ドラッグして並び替え）",
+    "dragTip": "💡 ヒント: メッセージをドラッグして並び替えるか、上下矢印を使用してください。ゴミ箱をクリックして削除します。"
+  },
+  "source": {
+    "label": "ソース",
+    "select": "ソースを選択",
+    "selectPlaceholder": "-- ソースを選択してください --",
+    "noWritable": "利用可能な書き込み可能なソースがありません。設定でClaude Codeソースを追加してください。"
+  },
+  "validation": {
+    "errors": "次のエラーを修正してください：",
+    "selectSource": "ソースを選択してください",
+    "selectProject": "プロジェクトを選択してください",
+    "enterProjectName": "プロジェクト名を入力してください",
+    "addMessages": "少なくとも1つのメッセージを追加してください",
+    "emptyMessage": "メッセージ{{index}}が空です"
+  },
+  "actions": {
+    "cancel": "キャンセル",
+    "creating": "作成中...",
+    "createSession": "セッションを作成"
+  }
+}

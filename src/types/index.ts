@@ -188,6 +188,7 @@ export enum AppErrorType {
   TAURI_NOT_AVAILABLE = "TAURI_NOT_AVAILABLE",
   PERMISSION_DENIED = "PERMISSION_DENIED",
   INVALID_PATH = "INVALID_PATH",
+  LOAD_FILE_ACTIVITIES = "LOAD_FILE_ACTIVITIES",
   UNKNOWN = "UNKNOWN",
 }
 
@@ -199,7 +200,7 @@ export interface AppError {
 /**
  * App-wide view type (unified view state)
  */
-export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search';
+export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search' | 'files';
 
 /**
  * Loading progress tracking
@@ -222,6 +223,18 @@ export interface ProjectListPreferences {
   hideEmptySessions: boolean;
 }
 
+/**
+ * Message view preferences
+ */
+export type MessageViewMode = 'formatted' | 'raw';
+
+export interface MessageFilters {
+  showBashOnly: boolean;
+  showToolUseOnly: boolean;
+  showMessagesOnly: boolean;
+  showCommandOnly: boolean; // Show only bash commands (like bash history)
+}
+
 export interface AppState {
   // Root-level view state (single source of truth)
   currentView: AppView;
@@ -231,6 +244,10 @@ export interface AppState {
 
   // Project list preferences
   projectListPreferences: ProjectListPreferences;
+
+  // Message view preferences
+  messageViewMode: MessageViewMode;
+  messageFilters: MessageFilters;
 
   // Core state
   claudePath: string;
@@ -246,6 +263,11 @@ export interface AppState {
   searchQuery: string;
   searchResults: UIMessage[];
   searchFilters: SearchFilters;
+
+  // File activities state (v1.5.0+)
+  fileActivities: FileActivity[];
+  fileActivityFilters: FileActivityFilters;
+  isLoadingFileActivities: boolean;
 
   // Loading states
   isLoading: boolean; // For overall app initialization
@@ -365,6 +387,56 @@ export interface UpdateInfo {
 }
 
 // ============================================================================
+// FILE ACTIVITY TYPES (v1.5.0+)
+// ============================================================================
+
+export type FileOperation =
+  | 'read'
+  | 'write'
+  | 'edit'
+  | 'delete'
+  | 'create'
+  | 'glob'
+  | 'multiedit';
+
+export interface FileChange {
+  old_string: string;
+  new_string: string;
+  line_start?: number;
+  line_end?: number;
+}
+
+export interface FileActivity {
+  file_path: string;
+  operation: FileOperation;
+  timestamp: string;
+  session_id: string;
+  project_id: string;
+  message_id: string;
+  tool_name: string;
+
+  // Content tracking
+  content_before?: string;
+  content_after?: string;
+  size_before?: number;
+  size_after?: number;
+
+  // Diff information
+  changes?: FileChange[];
+  lines_added?: number;
+  lines_removed?: number;
+}
+
+export interface FileActivityFilters {
+  dateRange?: [string, string]; // Tuple for start/end dates
+  projects?: string[];
+  sessionId?: string;
+  operations?: FileOperation[]; // Use typed FileOperation instead of string
+  fileExtensions?: string[];
+  searchQuery?: string;
+}
+
+// ============================================================================
 // UNIVERSAL TYPES (v2.0.0 - Multi-Provider Support)
 // ============================================================================
 
@@ -374,3 +446,9 @@ export * from './providers';
 
 // Deprecated type aliases remain for backwards compatibility
 // New code should use Universal* types from './universal'
+
+// ============================================================================
+// SESSION WRITER TYPES (v1.6.0+)
+// ============================================================================
+
+export * from './sessionWriter';

@@ -78,5 +78,158 @@
     "enterQuery": "輸入搜尋詞以查找訊息",
     "foundResults": "在{{sessions}}個對話中找到{{count}}條訊息",
     "matches": "個匹配"
+  },
+  "fileActions": {
+    "openFile": "開啟檔案",
+    "openFolder": "開啟資料夾",
+    "openedFile": "已開啟檔案",
+    "openedFolder": "已開啟資料夾",
+    "failedToOpen": "開啟失敗",
+    "failedToOpenFile": "開啟檔案失敗",
+    "failedToOpenFolder": "開啟資料夾失敗"
+  },
+  "sessionBuilder": {
+    "button": "建立新對話",
+    "modal": {
+      "title": "建立新對話",
+      "description": "撰寫新的 Claude Code 對話工作階段",
+      "cancel": "取消",
+      "creating": "建立中...",
+      "createSession": "建立對話"
+    },
+    "source": {
+      "label": "資料來源",
+      "selectSource": "-- 選擇資料來源 --",
+      "noWritableSources": "沒有可寫入的資料來源",
+      "noWritableSourcesHint": "請在設定中新增 Claude Code 資料來源，或等待 Cursor 寫入支援（v1.7.0）。",
+      "readOnly": " 🔒 唯讀",
+      "writable": " ✓",
+      "readOnlyHint": "💡 唯讀資料來源（🔒）暫時無法建立對話。",
+      "cursorPrefix": "Cursor IDE: ",
+      "cursorNotSupported": "Cursor 寫入支援將在 v1.7.0 提供（SQLite 架構複雜）",
+      "notAvailable": "資料來源無法使用",
+      "providerReadOnly": "此提供者為唯讀模式",
+      "notImplemented": "寫入支援尚未實作",
+      "unknownError": "未知錯誤",
+      "selectFolderDialog": "選擇專案資料夾"
+    },
+    "project": {
+      "label": "專案",
+      "existingProject": "現有專案",
+      "newProject": "新建專案",
+      "selectProject": "選擇專案",
+      "selectProjectOption": "-- 選擇專案 --",
+      "sessionsCount": " 個對話",
+      "projectName": "專案名稱",
+      "projectNamePlaceholder": "my-project",
+      "parentFolder": "程式碼資料夾（路徑將成為專案識別碼）",
+      "parentFolderPlaceholder": "選擇程式碼資料夾..."
+    },
+    "session": {
+      "summaryLabel": "對話摘要（選填）",
+      "summaryPlaceholder": "此對話的簡要描述"
+    },
+    "messages": {
+      "label": "訊息",
+      "addMessage": "新增訊息",
+      "noMessages": "還沒有訊息。點擊「新增訊息」開始。",
+      "compose": "撰寫",
+      "fromExisting": "從現有匯入",
+      "preview": "預覽 (",
+      "previewSuffix": ")"
+    },
+    "validation": {
+      "errorHeader": "請修正以下錯誤：",
+      "selectSource": "請選擇資料來源",
+      "selectProject": "請選擇專案",
+      "enterProjectName": "請輸入專案名稱",
+      "addOneMessage": "請至少新增一條訊息",
+      "messageEmpty": "訊息 {{number}} 為空",
+      "providerNoWrite": "提供者 {{providerId}} 不支援寫入",
+      "projectCreationFailed": "專案建立失敗",
+      "sessionCreationFailed": "對話建立失敗"
+    },
+    "messageComposer": {
+      "roles": {
+        "user": "使用者",
+        "assistant": "助理",
+        "system": "系統"
+      },
+      "contentPlaceholder": "訊息內容...",
+      "advancedOptions": "進階選項",
+      "removeMessage": "移除訊息",
+      "advanced": {
+        "model": "模型（選填）",
+        "modelPlaceholder": "claude-opus-4-20250514",
+        "parentId": "父訊息 ID（選填）",
+        "parentIdPlaceholder": "uuid-of-parent-message",
+        "tokenUsage": "代幣使用量（選填）",
+        "inputTokens": "輸入代幣",
+        "outputTokens": "輸出代幣",
+        "cacheCreation": "快取建立",
+        "cacheRead": "快取讀取"
+      }
+    },
+    "contextSelector": {
+      "accumulated": {
+        "title": "累積上下文 (",
+        "messagesFrom": " 條訊息來自 ",
+        "session": " 個對話",
+        "sessions": "",
+        "importAll": "全部匯入",
+        "messagesSuffix": " 條訊息)"
+      },
+      "project": {
+        "label": "選擇專案",
+        "selectOption": "-- 選擇專案 --",
+        "sessionsCount": " 個對話)"
+      },
+      "session": {
+        "label": "選擇對話",
+        "selectOption": "-- 選擇對話 --",
+        "messagesCount": " 條訊息)",
+        "defaultName": "對話 "
+      },
+      "selectionMode": {
+        "label": "選擇模式",
+        "individual": "單一",
+        "range": "範圍",
+        "all": "全部"
+      },
+      "range": {
+        "from": "起始訊息 #",
+        "to": "結束訊息 #"
+      },
+      "messageList": {
+        "label": "訊息 (",
+        "of": " / ",
+        "selected": " 已選)",
+        "selectAll": "全選",
+        "deselectAll": "全不選",
+        "searchPlaceholder": "搜尋訊息...",
+        "noMessages": "未找到訊息"
+      },
+      "actions": {
+        "addPrefix": "新增 ",
+        "message": " 條訊息",
+        "messagePlural": "",
+        "toContext": " 到上下文"
+      },
+      "emptyState": "選擇專案以瀏覽其對話和訊息"
+    },
+    "preview": {
+      "empty": "還沒有新增訊息。手動撰寫或從現有對話匯入。",
+      "stats": {
+        "totalMessages": "總訊息數",
+        "estimatedTokens": "預估代幣數"
+      },
+      "order": "對話順序（拖曳以重新排序）",
+      "actions": {
+        "moveUp": "上移",
+        "moveDown": "下移",
+        "remove": "移除"
+      },
+      "helpText": "💡 提示：拖曳訊息以重新排序，或使用上下箭頭。點擊垃圾桶刪除。"
+    }
   }
 }

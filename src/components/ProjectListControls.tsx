@@ -33,6 +33,7 @@ export const ProjectListControls = () => {
           }}
           className="text-xs"
           title={t(`projectListControls.groupBy.${projectListPreferences.groupBy}`)}
+          aria-label={t(`projectListControls.groupBy.${projectListPreferences.groupBy}`)}
         >
           {projectListPreferences.groupBy === "source" ? (
             <Group className="w-4 h-4" />
@@ -53,6 +54,7 @@ export const ProjectListControls = () => {
             }}
             className="text-xs"
             title={t("projectListControls.expandAll")}
+            aria-label={t("projectListControls.expandAll")}
           >
             <ChevronsDown className="w-4 h-4" />
           </Button>
@@ -68,6 +70,7 @@ export const ProjectListControls = () => {
             }}
             className="text-xs"
             title={t("projectListControls.collapseAll")}
+            aria-label={t("projectListControls.collapseAll")}
           >
             <ChevronsUp className="w-4 h-4" />
           </Button>
@@ -118,7 +121,12 @@ export const ProjectListControls = () => {
       {/* Filter Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-xs">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            aria-label={t("projectListControls.filterSettings")}
+          >
             {projectListPreferences.hideEmptyProjects ||
             projectListPreferences.hideEmptySessions ? (
               <EyeOff className="w-4 h-4 mr-1" />

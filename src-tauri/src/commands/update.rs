@@ -70,7 +70,7 @@ pub async fn check_for_updates() -> Result<UpdateInfo, String> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10)) // Reduced from 30s to 10s
         .build()
-        .map_err(|e| format!("HTTP client creation error: {}", e))?;
+        .map_err(|e| format!("UPDATE_HTTP_ERROR: HTTP client creation error: {}", e))?;
 
     // Retry logic (max 2 attempts)
     let mut last_error = String::new();
@@ -89,7 +89,7 @@ pub async fn check_for_updates() -> Result<UpdateInfo, String> {
         }
     }
 
-    Err(format!("Failed after 2 attempts: {}", last_error))
+    Err(format!("UPDATE_NETWORK_ERROR: Failed after 2 attempts: {}", last_error))
 }
 
 pub async fn fetch_release_info(client: &reqwest::Client) -> Result<GitHubRelease, String> {
@@ -99,18 +99,18 @@ pub async fn fetch_release_info(client: &reqwest::Client) -> Result<GitHubReleas
         .header("Accept", "application/vnd.github.v3+json")
         .send()
         .await
-        .map_err(|e| format!("Network error: {}", e))?;
+        .map_err(|e| format!("UPDATE_NETWORK_ERROR: Network error: {}", e))?;
 
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.unwrap_or_default();
-        return Err(format!("Cannot fetch release information (HTTP {}): {}", status, error_text));
+        return Err(format!("UPDATE_FETCH_ERROR: Cannot fetch release information (HTTP {}): {}", status, error_text));
     }
 
     let release: GitHubRelease = response
         .json()
         .await
-        .map_err(|e| format!("Response parsing error: {}", e))?;
+        .map_err(|e| format!("UPDATE_PARSE_ERROR: Response parsing error: {}", e))?;
 
     Ok(release)
 }
@@ -169,7 +169,7 @@ pub fn parse_metadata_from_body(body: &str) -> Option<UpdateMetadata> {
 
 fn calculate_days_until_deadline(deadline: &str) -> Result<i64, String> {
     let deadline_dt = DateTime::parse_from_rfc3339(deadline)
-        .map_err(|e| format!("Date format error: {}", e))?;
+        .map_err(|e| format!("UPDATE_DATE_ERROR: Date format error: {}", e))?;
     let now = Utc::now();
     let duration = deadline_dt.signed_duration_since(now);
 

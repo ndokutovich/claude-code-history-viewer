@@ -16,6 +16,7 @@
     "refresh": "重新整理會話",
     "scanning": "正在掃描專案...",
     "loading": "正在載入會話...",
+    "loadingContent": "正在載入內容...",
     "count": "會話：{{count}}個",
     "selected": "已選會話",
     "noSessions": "未找到會話"
@@ -29,6 +30,7 @@
     "previous": "顯示之前的訊息",
     "allLoaded": "已載入所有訊息",
     "loading": "正在載入訊息...",
+    "loadingContent": "正在載入內容...",
     "none": "沒有訊息",
     "count": "{{count}}則訊息",
     "count_plural": "{{count}}則訊息",
@@ -41,6 +43,21 @@
     "loadMore": "載入更多{{count}}則訊息",
     "loadMore_plural": "載入更多{{count}}則訊息",
     "scrollToBottom": "捲動到底部"
+  },
+  "messageView": {
+    "formatted": "格式化",
+    "raw": "原始資料",
+    "filters": "篩選",
+    "bashOnly": "僅Bash",
+    "commandOnly": "僅命令",
+    "toolUseOnly": "僅工具使用",
+    "messagesOnly": "僅訊息",
+    "clearFilters": "清除",
+    "copyRaw": "複製JSON",
+    "rawCopied": "已複製原始訊息",
+    "rawCopyFailed": "複製訊息失敗",
+    "copied": "已複製",
+    "noMessages": "沒有要顯示的訊息"
   },
   "folderPicker": {
     "notFound": "找不到Claude資料夾",
@@ -102,6 +119,7 @@
     "noActivity": "沒有活動資料",
     "noToolData": "沒有工具使用資料",
     "loading": "正在載入權杖統計...",
+    "loadingContent": "正在載入內容...",
     "totalTokenUsage": "總權杖使用量",
     "performanceInsights": "🎯 效能洞察",
     "tokenAnalysis": "💾 權杖使用分析",
@@ -214,7 +232,18 @@
     "hour": "小時",
     "hours": "小時",
     "minute": "分鐘",
-    "minutes": "分鐘"
+    "minutes": "分鐘",
+    "justNow": "剛剛",
+    "minutesAgo": "{{count}}分鐘前",
+    "minutesAgo_plural": "{{count}}分鐘前",
+    "hoursAgo": "{{count}}小時前",
+    "hoursAgo_plural": "{{count}}小時前",
+    "daysAgo": "{{count}}天前",
+    "daysAgo_plural": "{{count}}天前",
+    "monthsAgo": "{{count}}個月前",
+    "monthsAgo_plural": "{{count}}個月前",
+    "yearsAgo": "{{count}}年前",
+    "yearsAgo_plural": "{{count}}年前"
   },
   "tools": {
     "terminal": "🐚 終端機",
@@ -400,6 +429,7 @@
       "offset": "偏移量: {{offset}}",
       "hasMore": "還有更多: {{hasMore}}",
       "loading": "載入中: {{loading}}",
+    "loadingContent": "正在載入內容...",
       "session": "會話: {{sessionId}}",
       "file": "檔案: {{fileName}}",
       "firstMessage": "第一則訊息: {{timestamp}}",
@@ -619,5 +649,84 @@
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
     }
+  },
+  "filesView": {
+    "title": "檔案",
+    "subtitle": "{{project}} 中的 {{count}} 個檔案活動",
+    "subtitle_plural": "{{project}} 中的 {{count}} 個檔案活動",
+    "allProjects": "所有專案",
+    "noProjectSelected": "未選擇專案",
+    "selectProjectToViewFiles": "選擇專案以檢視檔案活動",
+    "loadingFiles": "正在載入檔案活動...",
+    "errorLoadingFiles": "載入檔案時發生錯誤",
+    "noFilesFound": "未找到檔案活動",
+    "noFilesDescription": "此專案中未記錄任何檔案操作",
+    "table": {
+      "filePath": "檔案路徑",
+      "operation": "操作",
+      "timestamp": "時間",
+      "changes": "變更",
+      "actions": "操作",
+      "download": "下載檔案",
+      "view": "檢視詳情",
+      "changeCount": "{{count}}處變更",
+      "changeCount_plural": "{{count}}處變更"
+    },
+    "filters": {
+      "searchPlaceholder": "按路徑或名稱搜尋檔案...",
+      "operations": "操作",
+      "extensions": "檔案副檔名",
+      "apply": "套用篩選",
+      "clear": "清除篩選"
+    },
+    "operationLabels": {
+      "read": "讀取",
+      "write": "寫入",
+      "edit": "編輯",
+      "delete": "刪除",
+      "create": "建立",
+      "glob": "搜尋檔案",
+      "multiedit": "多重編輯"
+    },
+    "viewer": {
+      "operation": "操作",
+      "timestamp": "時間戳記",
+      "changes": "變更",
+      "jumpToMessage": "跳轉到訊息",
+      "download": "下載",
+      "fileContent": "檔案內容",
+      "noContentAvailable": "此檔案沒有可用內容"
+    },
+    "errors": {
+      "sessionNotFound": "未找到工作階段",
+      "messageNotFound": "工作階段中未找到訊息",
+      "jumpError": "跳轉到訊息失敗"
+    },
+    "toast": {
+      "cannotDownload": "無法下載",
+      "noContentAvailable": "此檔案沒有可用內容",
+      "downloading": "正在下載 {{fileName}}...",
+      "downloaded": "已下載 {{fileName}}",
+      "savedToDownloads": "檔案已儲存到下載資料夾",
+      "openFolder": "開啟資料夾",
+      "failedToOpenFolder": "無法開啟資料夾",
+      "downloadFailed": "下載失敗",
+      "unknownError": "未知錯誤"
+    }
+  },
+  "export": {
+    "exportTo": "匯出為",
+    "withAttachments": "包含附件",
+    "noMessages": "沒有可匯出的訊息",
+    "success": "成功匯出為 {{format}} 格式",
+    "failed": "匯出為 {{format}} 格式失敗",
+    "copyPath": "複製路徑",
+    "copyPathTooltip": "將對話檔案路徑複製到剪貼簿",
+    "pathCopied": "路徑已複製到剪貼簿",
+    "pathCopyFailed": "複製路徑失敗",
+    "copied": "已複製",
+    "markdownTooltip": "將對話匯出為 Markdown 格式",
+    "htmlTooltip": "將對話匯出為 HTML 格式",
+    "docxTooltip": "將對話匯出為 Word 文件"
   }
 }

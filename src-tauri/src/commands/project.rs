@@ -7,18 +7,18 @@ use chrono::{DateTime, Utc};
 
 #[tauri::command]
 pub async fn get_claude_folder_path() -> Result<String, String> {
-    let home_dir = dirs::home_dir().ok_or("HOME_DIRECTORY_NOT_FOUND:Could not determine home directory")?;
+    let home_dir = dirs::home_dir().ok_or("HOME_DIRECTORY_NOT_FOUND: Could not determine home directory")?;
     let claude_path = home_dir.join(".claude");
 
     if !claude_path.exists() {
         return Err(format!(
-            "CLAUDE_FOLDER_NOT_FOUND:Claude folder not found at {}",
+            "CLAUDE_FOLDER_NOT_FOUND: Claude folder not found at {}",
             claude_path.display()
         ));
     }
 
     if fs::read_dir(&claude_path).is_err() {
-        return Err("PERMISSION_DENIED:Cannot access Claude folder. Please check permissions.".to_string());
+        return Err("PERMISSION_DENIED: Cannot access Claude folder. Please check permissions.".to_string());
     }
 
     Ok(claude_path.to_string_lossy().to_string())

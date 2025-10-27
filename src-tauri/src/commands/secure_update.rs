@@ -33,7 +33,7 @@ pub async fn check_for_updates_secure() -> Result<SecureUpdateInfo, String> {
         &reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(10))
             .build()
-            .map_err(|e| format!("HTTP client creation error: {}", e))?
+            .map_err(|e| format!("UPDATE_HTTP_ERROR: HTTP client creation error: {}", e))?
     ).await?;
 
     let latest_version = release.tag_name.trim_start_matches('v');
@@ -113,11 +113,11 @@ pub async fn verify_download_integrity(
 
     // Read file
     let mut file = File::open(&file_path)
-        .map_err(|e| format!("Failed to open file: {}", e))?;
+        .map_err(|e| format!("FILE_READ_ERROR: Failed to open file: {}", e))?;
 
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
+        .map_err(|e| format!("FILE_READ_ERROR: Failed to read file: {}", e))?;
 
     // Calculate SHA256 hash
     let mut hasher = Sha256::new();

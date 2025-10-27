@@ -80,7 +80,10 @@ export class CursorAdapter implements IConversationAdapter {
       supportsModelInfo: false,
       requiresAuth: false,
       requiresNetwork: false,
-      isReadOnly: true,
+      isReadOnly: true, // TODO v1.7.0: Implement write support (SQLite schema is complex)
+      supportsProjectCreation: false, // Cursor doesn't have "projects", only workspaces
+      supportsSessionCreation: false, // TODO v1.7.0: Implement composer creation
+      supportsMessageAppending: false, // TODO v1.7.0: Implement message appending
       maxMessagesPerRequest: 10000,
       preferredBatchSize: 100,
       supportsPagination: false,
@@ -105,6 +108,9 @@ export class CursorAdapter implements IConversationAdapter {
         required: false,
       },
     ],
+    pathConfig: {
+      projectsPath: 'User/workspaceStorage', // Cursor stores workspaces here
+    },
     icon: 'cursor-logo',
     color: '#000000', // Cursor brand black
   };

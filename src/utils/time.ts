@@ -51,3 +51,34 @@ export const formatDuration = (minutes: number): string => {
 
   return parts.join(" ");
 };
+
+export const formatRelativeTime = (date: Date | string): string => {
+  const now = new Date();
+  const targetDate = typeof date === 'string' ? new Date(date) : date;
+  const diffMs = now.getTime() - targetDate.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  if (diffSec < 60) {
+    return i18n.t("time.justNow", { ns: "components" });
+  }
+  if (diffMin < 60) {
+    return i18n.t("time.minutesAgo", { count: diffMin, ns: "components" });
+  }
+  if (diffHour < 24) {
+    return i18n.t("time.hoursAgo", { count: diffHour, ns: "components" });
+  }
+  if (diffDay < 30) {
+    return i18n.t("time.daysAgo", { count: diffDay, ns: "components" });
+  }
+
+  const diffMonth = Math.floor(diffDay / 30);
+  if (diffMonth < 12) {
+    return i18n.t("time.monthsAgo", { count: diffMonth, ns: "components" });
+  }
+
+  const diffYear = Math.floor(diffDay / 365);
+  return i18n.t("time.yearsAgo", { count: diffYear, ns: "components" });
+};

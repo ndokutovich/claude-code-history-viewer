@@ -19,9 +19,62 @@ import {
   type UniversalSource,
   type ProjectListPreferences,
   type LoadingProgress,
+  type FileActivity,
+  type FileActivityFilters,
+  type MessageViewMode,
+  type MessageFilters,
+  type CreateProjectRequest,
+  type CreateProjectResponse,
+  type CreateSessionRequest,
+  type CreateSessionResponse,
+  type MessageInput,
 } from "../types";
 import { adapterRegistry } from "@/adapters/registry/AdapterRegistry";
 import { useSourceStore } from "./useSourceStore";
+
+// ============================================================================
+// VIEW MANAGEMENT SYSTEM (v1.5.1+)
+// ============================================================================
+/**
+ * Comprehensive View State Management
+ *
+ * DESIGN PRINCIPLES:
+ * 1. **User Intent is Paramount**: Only explicit user actions (clicking view buttons)
+ *    should change the currentView. System operations (selecting projects/sessions)
+ *    preserve the user's view choice.
+ *
+ * 2. **View Persistence**: The user's view selection persists across:
+ *    - Project switches (controlled by viewPreferences.preserveViewOnProjectSwitch)
+ *    - Session switches (controlled by viewPreferences.preserveViewOnSessionSwitch)
+ *    - Application restarts (future: localStorage persistence)
+ *
+ * 3. **Extensibility**: New views can be added easily:
+ *    - Add to AppView type in types/index.ts
+ *    - Add case in switchView() function
+ *    - Add UI button in Header/navigation
+ *    - System automatically preserves user preference
+ *
+ * KEY FUNCTIONS:
+ * - switchView(view): ONLY function that should change currentView (except errors)
+ * - selectProject(): Does NOT change view - preserves user preference
+ * - selectSession(): Does NOT change view - preserves user preference
+ * - setViewPreferences(): Configure view persistence behavior
+ *
+ * CURRENT VIEWS:
+ * - messages: Conversation messages (default)
+ * - search: Global search across all conversations
+ * - tokenStats: Token usage statistics
+ * - analytics: Analytics dashboard
+ * - files: File activity viewer (v1.5.0+)
+ *
+ * ADDING NEW VIEWS:
+ * 1. Add type to AppView union
+ * 2. Add case in switchView() with data loading logic
+ * 3. Add view component to App.tsx
+ * 4. Add navigation button to Header
+ * 5. Document here
+ */
+// ============================================================================
 
 // Function to check if Tauri API is available
 const isTauriAvailable = () => {
@@ -162,12 +215,34 @@ function universalToUIMessage(msg: UniversalMessage): UIMessage {
   };
 }
 
+/**
+ * View Preferences - Preserves user's view selection across navigation
+ *
+ * Design principles:
+ * 1. User's view selection should persist when switching projects/sessions
+ * 2. Only explicit user actions (clicking view buttons) should change views
+ * 3. System should remember the last view the user was in
+ * 4. Extensible for future views
+ */
+interface ViewPreferences {
+  /** Last view the user explicitly selected */
+  lastSelectedView: AppView;
+  /** Whether to preserve view when switching projects (default: true) */
+  preserveViewOnProjectSwitch: boolean;
+  /** Whether to preserve view when switching sessions (default: true) */
+  preserveViewOnSessionSwitch: boolean;
+}
+
 interface AppStore extends AppState {
   // Filter state
   excludeSidechain: boolean;
 
+  // View preferences
+  viewPreferences: ViewPreferences;
+
   // Actions - View Management
   switchView: (view: AppView) => Promise<void>;
+  setViewPreferences: (preferences: Partial<ViewPreferences>) => void;
 
   // Actions - Data Loading
   initializeApp: () => Promise<void>;
@@ -177,6 +252,7 @@ interface AppStore extends AppState {
   selectSession: (session: UISession | null, pageSize?: number) => Promise<void>;
   clearSelection: () => void;
   loadMoreMessages: () => Promise<void>;
+  loadAllMessages: () => Promise<void>;
   refreshCurrentSession: () => Promise<void>;
   searchMessages: (query: string, filters?: SearchFilters) => Promise<void>;
   setSearchFilters: (filters: SearchFilters) => void;
@@ -207,8 +283,22 @@ interface AppStore extends AppState {
   // Project list preferences
   setProjectListPreferences: (preferences: Partial<ProjectListPreferences>) => void;
 
+  // Message view preferences
+  setMessageViewMode: (mode: MessageViewMode) => void;
+  setMessageFilters: (filters: Partial<MessageFilters>) => void;
+
   // Loading progress
   setLoadingProgress: (progress: LoadingProgress | null) => void;
+
+  // File activities actions (v1.5.0+)
+  loadFileActivities: (projectPath: string, filters?: FileActivityFilters) => Promise<void>;
+  setFileActivityFilters: (filters: FileActivityFilters) => void;
+  clearFileActivities: () => void;
+
+  // Session writer actions (v1.6.0+)
+  createProject: (request: CreateProjectRequest) => Promise<CreateProjectResponse>;
+  createSession: (request: CreateSessionRequest) => Promise<CreateSessionResponse>;
+  appendToSession: (sessionPath: string, messages: MessageInput[]) => Promise<number>;
 }
 
 const DEFAULT_PAGE_SIZE = 100; // Load 100 messages on initial loading
@@ -216,6 +306,13 @@ const DEFAULT_PAGE_SIZE = 100; // Load 100 messages on initial loading
 export const useAppStore = create<AppStore>((set, get) => ({
   // Root-level view state (single source of truth)
   currentView: "messages" as AppView,
+
+  // View preferences - Controls view persistence behavior
+  viewPreferences: {
+    lastSelectedView: "messages",
+    preserveViewOnProjectSwitch: true,
+    preserveViewOnSessionSwitch: true,
+  },
 
   // Loading progress - Start with initializing state
   loadingProgress: {
@@ -231,6 +328,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
     sortOrder: 'desc',
     hideEmptyProjects: true,
     hideEmptySessions: true,
+  },
+
+  // Message view preferences
+  messageViewMode: "formatted" as MessageViewMode,
+  messageFilters: {
+    showBashOnly: false,
+    showToolUseOnly: false,
+    showMessagesOnly: false,
+    showCommandOnly: false,
   },
 
   // Core state
@@ -253,6 +359,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   searchQuery: "",
   searchResults: [],
   searchFilters: {},
+
+  // File activities state (v1.5.0+)
+  fileActivities: [],
+  fileActivityFilters: {},
+  isLoadingFileActivities: false,
 
   // Loading states
   isLoading: false,
@@ -399,6 +510,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   selectProject: async (project: UIProject | null) => {
+    // ============================================================================
+    // VIEW PRESERVATION BEHAVIOR
+    // ============================================================================
+    // This function does NOT change currentView - it preserves the user's view
+    // selection as per viewPreferences.preserveViewOnProjectSwitch
+    // ============================================================================
+
     // Clear selection if null is passed
     if (project === null) {
       console.log('🔄 selectProject: Clearing selection');
@@ -416,6 +534,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       providerId: project.providerId,
     });
 
+    // Note: currentView is intentionally NOT set here to preserve user's view preference
     set({
       selectedProject: project,
       sessions: [],
@@ -525,6 +644,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     session: UISession | null,
     pageSize = DEFAULT_PAGE_SIZE
   ) => {
+    // ============================================================================
+    // VIEW PRESERVATION BEHAVIOR
+    // ============================================================================
+    // This function does NOT change currentView - it preserves the user's view
+    // selection as per viewPreferences.preserveViewOnSessionSwitch
+    // ============================================================================
+
     // Clear selection if null is passed
     if (session === null) {
       set({
@@ -541,6 +667,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
       return;
     }
 
+    // Auto-select parent project when session is selected directly
+    // (e.g., from search results or jump-to-message)
+    const currentState = get();
+    // Extract project path (directory containing the session file)
+    // Handle both forward and backward slashes for cross-platform compatibility
+    const lastSlashIndex = Math.max(
+      session.file_path.lastIndexOf('/'),
+      session.file_path.lastIndexOf('\\')
+    );
+    const projectPath = session.file_path.substring(0, lastSlashIndex);
+    const matchingProject = currentState.projects.find(p => p.path === projectPath);
+
+    if (matchingProject && currentState.selectedProject?.path !== projectPath) {
+      console.log(`🔄 selectSession: Auto-selecting parent project: ${matchingProject.name}`);
+      // Don't await - let selectProject run in parallel to avoid blocking
+      get().selectProject(matchingProject);
+    }
+
+    // Note: currentView is intentionally NOT set here to preserve user's view preference
     set({
       selectedSession: session,
       messages: [],
@@ -709,6 +854,82 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     } catch (error) {
       console.error("Failed to load more messages:", error);
+      set({
+        error: { type: AppErrorType.UNKNOWN, message: String(error) },
+        pagination: {
+          ...pagination,
+          isLoadingMore: false,
+        },
+      });
+    }
+  },
+
+  loadAllMessages: async () => {
+    const { selectedSession, pagination, messages } = get();
+
+    if (!selectedSession || pagination.isLoadingMore) {
+      return;
+    }
+
+    // If already loaded all, do nothing
+    if (!pagination.hasMore) {
+      console.log("✓ All messages already loaded");
+      return;
+    }
+
+    set({
+      pagination: {
+        ...pagination,
+        isLoadingMore: true,
+      },
+    });
+
+    try {
+      const sessionPath = selectedSession.file_path;
+      const source = findSourceForPath(sessionPath);
+      if (!source) {
+        throw new Error(`No source found for session path: ${sessionPath}`);
+      }
+
+      const adapter = adapterRegistry.get(source.providerId);
+      if (!adapter) {
+        throw new Error(`No adapter found for provider: ${source.providerId}`);
+      }
+
+      // Load ALL remaining messages by requesting a very large limit
+      // Most sessions have < 10,000 messages, so 100,000 is safe
+      const result = await adapter.loadMessages(
+        sessionPath,
+        selectedSession.session_id,
+        {
+          offset: pagination.currentOffset,
+          limit: 100000, // Load all remaining
+          sortOrder: 'desc',
+          includeMetadata: true,
+        }
+      );
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error?.message || 'Failed to load all messages');
+      }
+
+      const uiMessages = result.data.map(universalToUIMessage);
+      const allMessages = [...uiMessages, ...messages];
+
+      console.log(`✓ Loaded ALL messages: ${allMessages.length} total`);
+
+      set({
+        messages: allMessages,
+        pagination: {
+          ...pagination,
+          currentOffset: result.pagination?.nextOffset || pagination.currentOffset + uiMessages.length,
+          hasMore: false, // All loaded
+          totalCount: allMessages.length,
+          isLoadingMore: false,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to load all messages:", error);
       set({
         error: { type: AppErrorType.UNKNOWN, message: String(error) },
         pagination: {
@@ -1048,18 +1269,42 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
+  // Set view preferences
+  setViewPreferences: (preferences: Partial<ViewPreferences>) => {
+    set((state) => ({
+      viewPreferences: {
+        ...state.viewPreferences,
+        ...preferences,
+      }
+    }));
+  },
+
   // Unified view switching
   switchView: async (view: AppView) => {
     const { currentView, selectedProject, selectedSession } = get();
 
+    console.log(`🔀 Switching view: ${currentView} → ${view}`);
+
     // If already on this view and it's not messages, go back to messages
     if (currentView === view && view !== 'messages') {
-      set({ currentView: 'messages' });
+      set({
+        currentView: 'messages',
+        viewPreferences: {
+          ...get().viewPreferences,
+          lastSelectedView: 'messages',
+        }
+      });
       return;
     }
 
-    // Set the new view
-    set({ currentView: view });
+    // Set the new view and remember user's preference
+    set({
+      currentView: view,
+      viewPreferences: {
+        ...get().viewPreferences,
+        lastSelectedView: view,
+      }
+    });
 
     // Clear search results when leaving search view
     if (view !== 'search') {
@@ -1241,8 +1486,225 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }));
   },
 
+  // Message view preferences
+  setMessageViewMode: (mode: MessageViewMode) => {
+    set({ messageViewMode: mode });
+  },
+
+  setMessageFilters: (filters: Partial<MessageFilters>) => {
+    set((state) => ({
+      messageFilters: {
+        ...state.messageFilters,
+        ...filters,
+      },
+    }));
+  },
+
   // Loading progress
   setLoadingProgress: (progress: LoadingProgress | null) => {
     set({ loadingProgress: progress });
+  },
+
+  // ============================================================================
+  // FILE ACTIVITIES ACTIONS (v1.5.0+)
+  // ============================================================================
+
+  loadFileActivities: async (projectPath: string, filters?: FileActivityFilters) => {
+    set({ isLoadingFileActivities: true, error: null });
+    try {
+      const state = get();
+      const effectiveFilters = filters || state.fileActivityFilters;
+
+      let fileActivities: FileActivity[];
+
+      if (projectPath === "*") {
+        // Load from all available sources and aggregate results
+        const { sources } = useSourceStore.getState();
+        const availableSources = sources.filter(s => s.isAvailable);
+
+        if (availableSources.length === 0) {
+          throw new Error("No available sources found");
+        }
+
+        // Fetch from all sources in parallel
+        const results = await Promise.allSettled(
+          availableSources.map(source =>
+            invoke<FileActivity[]>("get_file_activities", {
+              projectPath: "*",
+              sourcePath: source.path,
+              filters: effectiveFilters,
+            })
+          )
+        );
+
+        // Merge successful results
+        fileActivities = results.flatMap(r =>
+          r.status === "fulfilled" ? r.value : []
+        );
+      } else {
+        // Load from specific project's source
+        const source = findSourceForPath(projectPath);
+        if (!source) {
+          throw new Error(`No source found for project path: ${projectPath}`);
+        }
+
+        fileActivities = await invoke<FileActivity[]>("get_file_activities", {
+          projectPath,
+          sourcePath: source.path,
+          filters: effectiveFilters,
+        });
+      }
+
+      set({
+        fileActivities,
+        isLoadingFileActivities: false,
+      });
+    } catch (error) {
+      console.error("Failed to load file activities:", error);
+      set({
+        error: {
+          type: AppErrorType.LOAD_FILE_ACTIVITIES,
+          message: `Failed to load file activities: ${error}`,
+        },
+        isLoadingFileActivities: false,
+      });
+    }
+  },
+
+  setFileActivityFilters: (filters: FileActivityFilters) => {
+    set({ fileActivityFilters: filters });
+  },
+
+  clearFileActivities: () => {
+    set({
+      fileActivities: [],
+      fileActivityFilters: {},
+      isLoadingFileActivities: false,
+    });
+  },
+
+  // ============================================================================
+  // SESSION WRITER ACTIONS (v1.6.0+)
+  // ============================================================================
+
+  /**
+   * Create a new Claude Code project folder
+   *
+   * @param request - Project creation request with name and optional parent path
+   * @returns Response with created project path and name
+   * @throws Error if project creation fails
+   */
+  createProject: async (request: CreateProjectRequest): Promise<CreateProjectResponse> => {
+    try {
+      if (!isTauriAvailable()) {
+        throw new Error("Tauri API is not available. Please run in the desktop app.");
+      }
+
+      const response = await invoke<CreateProjectResponse>("create_claude_project", {
+        request,
+      });
+
+      console.log(`✅ Created project: ${response.project_name} at ${response.project_path}`);
+
+      // Refresh project list to show the new project
+      await get().scanProjects();
+
+      return response;
+    } catch (error) {
+      console.error("Failed to create project:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      set({
+        error: {
+          type: AppErrorType.UNKNOWN,
+          message: `Failed to create project: ${errorMessage}`,
+        },
+      });
+      throw error;
+    }
+  },
+
+  /**
+   * Create a new Claude Code session (JSONL file)
+   *
+   * @param request - Session creation request with project path, messages, and optional summary
+   * @returns Response with created session path, ID, and message count
+   * @throws Error if session creation fails
+   */
+  createSession: async (request: CreateSessionRequest): Promise<CreateSessionResponse> => {
+    try {
+      if (!isTauriAvailable()) {
+        throw new Error("Tauri API is not available. Please run in the desktop app.");
+      }
+
+      const response = await invoke<CreateSessionResponse>("create_claude_session", {
+        request,
+      });
+
+      console.log(
+        `✅ Created session: ${response.session_id} with ${response.message_count} messages`
+      );
+
+      // Refresh sessions for the project to show the new session
+      const { selectedProject } = get();
+      if (selectedProject && selectedProject.path === request.project_path) {
+        await get().selectProject(selectedProject);
+      }
+
+      return response;
+    } catch (error) {
+      console.error("Failed to create session:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      set({
+        error: {
+          type: AppErrorType.UNKNOWN,
+          message: `Failed to create session: ${errorMessage}`,
+        },
+      });
+      throw error;
+    }
+  },
+
+  /**
+   * Append messages to an existing session
+   *
+   * @param sessionPath - Path to the session JSONL file
+   * @param messages - Array of messages to append
+   * @returns Number of messages appended
+   * @throws Error if append fails
+   */
+  appendToSession: async (
+    sessionPath: string,
+    messages: MessageInput[]
+  ): Promise<number> => {
+    try {
+      if (!isTauriAvailable()) {
+        throw new Error("Tauri API is not available. Please run in the desktop app.");
+      }
+
+      const messageCount = await invoke<number>("append_to_claude_session", {
+        sessionPath,
+        messages,
+      });
+
+      console.log(`✅ Appended ${messageCount} messages to session: ${sessionPath}`);
+
+      // Refresh current session if it matches
+      const { selectedSession } = get();
+      if (selectedSession && selectedSession.file_path === sessionPath) {
+        await get().refreshCurrentSession();
+      }
+
+      return messageCount;
+    } catch (error) {
+      console.error("Failed to append to session:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      set({
+        error: {
+          type: AppErrorType.UNKNOWN,
+          message: `Failed to append to session: ${errorMessage}`,
+        },
+      });
+      throw error;
+    }
   },
 }));

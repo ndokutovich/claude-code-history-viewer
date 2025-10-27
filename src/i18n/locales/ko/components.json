@@ -16,6 +16,7 @@
     "refresh": "세션 새로고침",
     "scanning": "프로젝트 스캔 중...",
     "loading": "세션 로딩 중...",
+    "loadingContent": "콘텐츠 로딩 중...",
     "count": "세션: {{count}}개",
     "selected": "선택된 세션",
     "noSessions": "세션을 찾을 수 없습니다"
@@ -32,6 +33,7 @@
     "previous": "이전 메시지 보기",
     "allLoaded": "모든 메시지를 불러왔습니다",
     "loading": "메시지를 불러오는 중...",
+    "loadingContent": "콘텐츠 로딩 중...",
     "none": "메시지가 없습니다",
     "count": "{{count}}개 메시지",
     "count_plural": "{{count}}개 메시지",
@@ -44,6 +46,21 @@
     "loadMore": "이전 메시지 {{count}}개 더 보기",
     "loadMore_plural": "이전 메시지 {{count}}개 더 보기",
     "scrollToBottom": "맨 아래로 이동"
+  },
+  "messageView": {
+    "formatted": "서식 있음",
+    "raw": "원시 데이터",
+    "filters": "필터",
+    "bashOnly": "Bash만",
+    "commandOnly": "명령어만",
+    "toolUseOnly": "도구 사용만",
+    "messagesOnly": "메시지만",
+    "clearFilters": "지우기",
+    "copyRaw": "JSON 복사",
+    "rawCopied": "원시 메시지 복사됨",
+    "rawCopyFailed": "메시지 복사 실패",
+    "copied": "복사됨",
+    "noMessages": "표시할 메시지가 없습니다"
   },
   "folderPicker": {
     "notFound": "Claude 폴더를 찾을 수 없습니다",
@@ -105,6 +122,7 @@
     "noActivity": "활동 데이터가 없습니다",
     "noToolData": "도구 사용 데이터가 없습니다",
     "loading": "토큰 통계 로딩 중...",
+    "loadingContent": "콘텐츠 로딩 중...",
     "totalTokenUsage": "총 토큰 사용량",
     "performanceInsights": "🎯 성능 인사이트",
     "tokenAnalysis": "💾 토큰 사용 분석",
@@ -219,6 +237,17 @@
     "hours": "시간",
     "minute": "분",
     "minutes": "분"
+    ,"justNow": "방금 전",
+    "minutesAgo": "{{count}}분 전",
+    "minutesAgo_plural": "{{count}}분 전",
+    "hoursAgo": "{{count}}시간 전",
+    "hoursAgo_plural": "{{count}}시간 전",
+    "daysAgo": "{{count}}일 전",
+    "daysAgo_plural": "{{count}}일 전",
+    "monthsAgo": "{{count}}개월 전",
+    "monthsAgo_plural": "{{count}}개월 전",
+    "yearsAgo": "{{count}}년 전",
+    "yearsAgo_plural": "{{count}}년 전"
   },
   "tools": {
     "terminal": "🐚 터미널",
@@ -404,6 +433,7 @@
       "offset": "오프셋: {{offset}}",
       "hasMore": "더 있음: {{hasMore}}",
       "loading": "로딩중: {{loading}}",
+    "loadingContent": "콘텐츠 로딩 중...",
       "session": "세션: {{sessionId}}",
       "file": "파일: {{fileName}}",
       "firstMessage": "첫번째 메시지: {{timestamp}}",
@@ -620,5 +650,84 @@
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
     }
+  },
+  "filesView": {
+    "title": "파일",
+    "subtitle": "{{project}}의 {{count}}개 파일 활동",
+    "subtitle_plural": "{{project}}의 {{count}}개 파일 활동",
+    "allProjects": "모든 프로젝트",
+    "noProjectSelected": "프로젝트가 선택되지 않음",
+    "selectProjectToViewFiles": "파일 활동을 보려면 프로젝트를 선택하세요",
+    "loadingFiles": "파일 활동 로딩 중...",
+    "errorLoadingFiles": "파일 로딩 중 오류 발생",
+    "noFilesFound": "파일 활동을 찾을 수 없음",
+    "noFilesDescription": "이 프로젝트에서 기록된 파일 작업이 없습니다",
+    "table": {
+      "filePath": "파일 경로",
+      "operation": "작업",
+      "timestamp": "시간",
+      "changes": "변경사항",
+      "actions": "작업",
+      "download": "파일 다운로드",
+      "view": "세부정보 보기",
+      "changeCount": "{{count}}개 변경",
+      "changeCount_plural": "{{count}}개 변경"
+    },
+    "filters": {
+      "searchPlaceholder": "경로 또는 이름으로 파일 검색...",
+      "operations": "작업",
+      "extensions": "파일 확장자",
+      "apply": "필터 적용",
+      "clear": "필터 지우기"
+    },
+    "operationLabels": {
+      "read": "읽기",
+      "write": "쓰기",
+      "edit": "편집",
+      "delete": "삭제",
+      "create": "생성",
+      "glob": "파일 찾기",
+      "multiedit": "다중 편집"
+    },
+    "viewer": {
+      "operation": "작업",
+      "timestamp": "타임스탬프",
+      "changes": "변경사항",
+      "jumpToMessage": "메시지로 이동",
+      "download": "다운로드",
+      "fileContent": "파일 내용",
+      "noContentAvailable": "이 파일에 사용 가능한 내용이 없습니다"
+    },
+    "errors": {
+      "sessionNotFound": "세션을 찾을 수 없습니다",
+      "messageNotFound": "세션에서 메시지를 찾을 수 없습니다",
+      "jumpError": "메시지로 이동하는 데 실패했습니다"
+    },
+    "toast": {
+      "cannotDownload": "다운로드할 수 없습니다",
+      "noContentAvailable": "이 파일에 사용 가능한 내용이 없습니다",
+      "downloading": "{{fileName}} 다운로드 중...",
+      "downloaded": "{{fileName}} 다운로드 완료",
+      "savedToDownloads": "다운로드 폴더에 파일이 저장되었습니다",
+      "openFolder": "폴더 열기",
+      "failedToOpenFolder": "폴더를 열지 못했습니다",
+      "downloadFailed": "다운로드 실패",
+      "unknownError": "알 수 없는 오류"
+    }
+  },
+  "export": {
+    "exportTo": "내보내기",
+    "withAttachments": "첨부 파일 포함",
+    "noMessages": "내보낼 메시지가 없습니다",
+    "success": "{{format}} 형식으로 내보내기 완료",
+    "failed": "{{format}} 형식으로 내보내기 실패",
+    "copyPath": "경로 복사",
+    "copyPathTooltip": "세션 파일 경로를 클립보드에 복사",
+    "pathCopied": "경로가 클립보드에 복사되었습니다",
+    "pathCopyFailed": "경로 복사 실패",
+    "copied": "복사됨",
+    "markdownTooltip": "대화를 Markdown 형식으로 내보내기",
+    "htmlTooltip": "대화를 HTML 형식으로 내보내기",
+    "docxTooltip": "대화를 Word 문서로 내보내기"
   }
 }

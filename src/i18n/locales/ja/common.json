@@ -68,7 +68,48 @@
     "later": "後で（7日）",
     "now": "今すぐアップデート",
     "download": "アップデートをダウンロード",
-    "upToDate": "最新バージョンです"
+    "upToDate": "最新バージョンです",
+    "newUpdateAvailable": "新しいアップデートがあります",
+    "important": "重要",
+    "currentVersion": "現在のバージョン",
+    "newVersion": "新しいバージョン",
+    "downloading": "ダウンロード中...",
+    "downloadingProgress": "ダウンロード中... {{progress}}%",
+    "installing": "インストール中...",
+    "installingWaitRestart": "インストール中... アプリはまもなく再起動します。",
+    "errorOccurred": "エラーが発生しました：{{error}}",
+    "showDetails": "詳細を表示",
+    "hideDetails": "詳細を非表示",
+    "releaseName": "リリース名：",
+    "changelog": "変更履歴：",
+    "viewOnGitHub": "GitHubで表示",
+    "downloadAndInstall": "ダウンロードしてインストール",
+    "postpone24h": "24時間後に通知",
+    "skipVersion": "このバージョンをスキップ",
+    "intro": {
+      "title": "アップデートシステムガイド",
+      "description": "Claude Code History Viewer は、より良い体験を提供するために自動的にアップデートをチェックします。",
+      "howItWorks": "動作方法：",
+      "features": {
+        "backgroundCheck": "アプリ起動時にバックグラウンドでアップデートをチェック",
+        "notification": "新しいアップデートが見つかった場合に通知モーダルを表示",
+        "userControl": "ダウンロード/インストールはユーザーが開始",
+        "caching": "30分間の結果キャッシュによる効率的な動作"
+      },
+      "benefits": "利点：",
+      "benefitsList": {
+        "security": "セキュリティパッチの迅速な適用",
+        "newFeatures": "新機能への高速アクセス",
+        "offlineDisable": "オフライン時は自動的に無効化",
+        "changeable": "設定でいつでも変更可能"
+      },
+      "tip": "💡 設定 → アップデートで自動チェックを無効にできます。",
+      "disableAutoCheck": "自動チェックを無効にする",
+      "understood": "理解しました"
+    },
+    "items": " 項目",
+    "itemCount": "{{count}} 項目",
+    "itemCount_plural": "{{count}} 項目"
   },
   "search": {
     "title": "検索",
@@ -78,5 +119,158 @@
     "enterQuery": "メッセージを検索するには検索語を入力してください",
     "foundResults": "{{sessions}}件の会話で{{count}}件のメッセージが見つかりました",
     "matches": "件一致"
+  },
+  "fileActions": {
+    "openFile": "ファイルを開く",
+    "openFolder": "フォルダを開く",
+    "openedFile": "ファイルを開きました",
+    "openedFolder": "フォルダを開きました",
+    "failedToOpen": "開けませんでした",
+    "failedToOpenFile": "ファイルを開けませんでした",
+    "failedToOpenFolder": "フォルダを開けませんでした"
+  },
+  "sessionBuilder": {
+    "button": "新しいセッションを作成",
+    "modal": {
+      "title": "新しいセッションを作成",
+      "description": "新しいClaude Code会話セッションを作成",
+      "cancel": "キャンセル",
+      "creating": "作成中...",
+      "createSession": "セッションを作成"
+    },
+    "source": {
+      "label": "ソース",
+      "selectSource": "-- ソースを選択 --",
+      "noWritableSources": "書き込み可能なソースがありません",
+      "noWritableSourcesHint": "設定でClaude Codeソースを追加するか、Cursor書き込みサポート（v1.7.0）をお待ちください。",
+      "readOnly": " 🔒 読み取り専用",
+      "writable": " ✓",
+      "readOnlyHint": "💡 読み取り専用ソース（🔒）ではまだセッションを作成できません。",
+      "cursorPrefix": "Cursor IDE: ",
+      "cursorNotSupported": "Cursor書き込みサポートはv1.7.0で提供予定（SQLiteスキーマが複雑です）",
+      "notAvailable": "ソースが利用できません",
+      "providerReadOnly": "このプロバイダーは読み取り専用です",
+      "notImplemented": "書き込みサポートはまだ実装されていません",
+      "unknownError": "不明なエラー",
+      "selectFolderDialog": "プロジェクトフォルダを選択"
+    },
+    "project": {
+      "label": "プロジェクト",
+      "existingProject": "既存のプロジェクト",
+      "newProject": "新しいプロジェクト",
+      "selectProject": "プロジェクトを選択",
+      "selectProjectOption": "-- プロジェクトを選択 --",
+      "sessionsCount": "個のセッション",
+      "projectName": "プロジェクト名",
+      "projectNamePlaceholder": "my-project",
+      "parentFolder": "コードフォルダ（パスがプロジェクト識別子になります）",
+      "parentFolderPlaceholder": "コードフォルダを選択..."
+    },
+    "session": {
+      "summaryLabel": "セッション概要（オプション）",
+      "summaryPlaceholder": "この会話の簡単な説明"
+    },
+    "messages": {
+      "label": "メッセージ",
+      "addMessage": "メッセージを追加",
+      "noMessages": "まだメッセージがありません。「メッセージを追加」をクリックして開始してください。",
+      "compose": "作成",
+      "fromExisting": "既存からインポート",
+      "preview": "プレビュー (",
+      "previewSuffix": ")"
+    },
+    "validation": {
+      "errorHeader": "以下のエラーを修正してください：",
+      "selectSource": "ソースを選択してください",
+      "selectProject": "プロジェクトを選択してください",
+      "enterProjectName": "プロジェクト名を入力してください",
+      "addOneMessage": "少なくとも1つのメッセージを追加してください",
+      "messageEmpty": "メッセージ{{number}}が空です",
+      "providerNoWrite": "プロバイダー{{providerId}}は書き込みをサポートしていません",
+      "projectCreationFailed": "プロジェクトの作成に失敗しました",
+      "sessionCreationFailed": "セッションの作成に失敗しました"
+    },
+    "messageComposer": {
+      "roles": {
+        "user": "ユーザー",
+        "assistant": "アシスタント",
+        "system": "システム"
+      },
+      "contentPlaceholder": "メッセージ内容...",
+      "advancedOptions": "詳細オプション",
+      "removeMessage": "メッセージを削除",
+      "advanced": {
+        "model": "モデル（オプション）",
+        "modelPlaceholder": "claude-opus-4-20250514",
+        "parentId": "親ID（オプション）",
+        "parentIdPlaceholder": "uuid-of-parent-message",
+        "tokenUsage": "トークン使用量（オプション）",
+        "inputTokens": "入力トークン",
+        "outputTokens": "出力トークン",
+        "cacheCreation": "キャッシュ作成",
+        "cacheRead": "キャッシュ読み取り"
+      }
+    },
+    "contextSelector": {
+      "accumulated": {
+        "title": "累積コンテキスト (",
+        "messagesFrom": "個のメッセージ / ",
+        "session": "個のセッション",
+        "sessions": "",
+        "importAll": "すべてインポート",
+        "messagesSuffix": "個のメッセージ)"
+      },
+      "project": {
+        "label": "プロジェクトを選択",
+        "selectOption": "-- プロジェクトを選択 --",
+        "sessionsCount": "個のセッション)"
+      },
+      "session": {
+        "label": "セッションを選択",
+        "selectOption": "-- セッションを選択 --",
+        "messagesCount": "個のメッセージ)",
+        "defaultName": "セッション "
+      },
+      "selectionMode": {
+        "label": "選択モード",
+        "individual": "個別",
+        "range": "範囲",
+        "all": "すべて"
+      },
+      "range": {
+        "from": "開始メッセージ #",
+        "to": "終了メッセージ #"
+      },
+      "messageList": {
+        "label": "メッセージ (",
+        "of": " / ",
+        "selected": " 選択中)",
+        "selectAll": "すべて選択",
+        "deselectAll": "すべて解除",
+        "searchPlaceholder": "メッセージを検索...",
+        "noMessages": "メッセージが見つかりません"
+      },
+      "actions": {
+        "addPrefix": "",
+        "message": "個のメッセージ",
+        "messagePlural": "",
+        "toContext": "をコンテキストに追加"
+      },
+      "emptyState": "プロジェクトを選択してセッションとメッセージを閲覧してください"
+    },
+    "preview": {
+      "empty": "まだメッセージが追加されていません。手動で作成するか、既存のセッションからインポートしてください。",
+      "stats": {
+        "totalMessages": "総メッセージ数",
+        "estimatedTokens": "推定トークン数"
+      },
+      "order": "セッション順序（ドラッグして並べ替え）",
+      "actions": {
+        "moveUp": "上に移動",
+        "moveDown": "下に移動",
+        "remove": "削除"
+      },
+      "helpText": "💡 ヒント: メッセージをドラッグして並べ替えるか、上下矢印を使用してください。ゴミ箱をクリックすると削除されます。"
+    }
   }
 }

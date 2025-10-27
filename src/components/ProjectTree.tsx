@@ -8,6 +8,7 @@ import {
   ChevronRight,
   MessageCircle,
   X,
+  Loader2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { UIProject, UISession } from "../types";
@@ -42,6 +43,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   isLoading,
 }) => {
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [loadingProjects, setLoadingProjects] = useState<Set<string>>(new Set());
   const { t, i18n } = useTranslation('components');
   const { projectListPreferences, loadProjectSessions } = useAppStore();
 
@@ -240,6 +242,13 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   const loadSessionsForProjects = async (projectPaths: string[]) => {
     console.log(`📥 Loading sessions for ${projectPaths.length} projects in parallel...`);
 
+    // Mark projects as loading
+    setLoadingProjects((prev) => {
+      const newSet = new Set(prev);
+      projectPaths.forEach((path) => newSet.add(path));
+      return newSet;
+    });
+
     // Load all projects' sessions in parallel
     // Use loadProjectSessions directly to avoid changing selectedProject
     const loadPromises = projectPaths.map(async (path) => {
@@ -248,6 +257,13 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
         console.log(`  ✅ Loaded sessions for ${path}`);
       } catch (error) {
         console.error(`  ❌ Failed to load sessions for ${path}:`, error);
+      } finally {
+        // Remove from loading state when done
+        setLoadingProjects((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(path);
+          return newSet;
+        });
       }
     });
 
@@ -411,50 +427,64 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                 {/* Projects in this group */}
                 {groupProjects.map((project) => {
                   const isExpanded = expandedProjects.has(project.path);
+                  const isLoadingProject = loadingProjects.has(project.path);
 
                   return (
                     <div key={project.path}>
                       {/* Project Header */}
-                      <button
-                        onClick={() => {
-                          const wasExpanded = isExpanded;
-                          const isAlreadySelected = selectedProject?.path === project.path;
+                      <div className="flex items-center w-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                        {/* Expand/Collapse Chevron - Separate clickable area */}
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation(); // Don't trigger project selection
 
-                          // Always select/load sessions for this project
-                          onProjectSelect(project);
+                            const willBeExpanded = !isExpanded;
 
-                          // Expansion logic:
-                          // - If already selected and expanded, allow toggle (collapse)
-                          // - If not expanded, expand to show sessions
-                          // - If expanded but not selected, keep expanded (we just selected it)
-                          if (isAlreadySelected && wasExpanded) {
-                            // Clicking selected project again: toggle collapse
+                            // Toggle expansion state
                             toggleProject(project.path);
-                          } else if (!wasExpanded) {
-                            // Collapsed project: expand it
-                            toggleProject(project.path);
-                          }
-                          // else: already expanded, newly selected - keep expanded
-                        }}
-                        className="text-left w-full p-3 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
-                      >
-                    <div className="flex items-center space-x-2">
-                      {isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                      )}
-                      <ProviderIcon
-                        providerId={project.providerId || ""}
-                        className={cn("w-4 h-4", getProviderColorClass(project.providerId))}
-                      />
-                      <div className="min-w-0 flex-1 flex items-center">
-                        <p className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm max-w-56">
-                          {project.name}
-                        </p>
+
+                            // If expanding, load sessions for this project (without selecting it)
+                            if (willBeExpanded) {
+                              await loadSessionsForProjects([project.path]);
+                            }
+                          }}
+                          className="p-3 pr-1 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-l transition-colors"
+                          title={isExpanded ? "Collapse" : "Expand"}
+                          disabled={isLoadingProject}
+                        >
+                          {isLoadingProject ? (
+                            <Loader2 className="w-4 h-4 text-blue-500 dark:text-blue-400 animate-spin" />
+                          ) : isExpanded ? (
+                            <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                          )}
+                        </button>
+
+                        {/* Project Name - Clickable area for selection */}
+                        <button
+                          onClick={() => {
+                            // Select project and expand if collapsed
+                            onProjectSelect(project);
+
+                            // Auto-expand when selecting a project (if not already expanded)
+                            if (!isExpanded) {
+                              toggleProject(project.path);
+                            }
+                          }}
+                          className="flex-1 text-left p-3 pl-1 flex items-center space-x-2"
+                        >
+                          <ProviderIcon
+                            providerId={project.providerId || ""}
+                            className={cn("w-4 h-4", getProviderColorClass(project.providerId))}
+                          />
+                          <div className="min-w-0 flex-1 flex items-center">
+                            <p className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm max-w-56">
+                              {project.name}
+                            </p>
+                          </div>
+                        </button>
                       </div>
-                    </div>
-                  </button>
 
                   {/* Sessions for expanded project */}
                   {isExpanded && !isLoading && (() => {

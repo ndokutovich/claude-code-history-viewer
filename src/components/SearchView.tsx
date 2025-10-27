@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Search, X, ChevronDown, ChevronRight, MessageSquare } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { useAnalytics } from "@/hooks/useAnalytics";
@@ -125,35 +125,38 @@ export const SearchView = () => {
     );
   }, [searchResults, searchResultSessions, expandedSessions]);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = useCallback(async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (query.trim()) {
       await searchMessages(query);
     }
-  };
+  }, [query, searchMessages]);
 
-  const handleClear = () => {
+  const handleClear = useCallback((): void => {
     setQuery("");
     searchMessages("", {});
-  };
+  }, [searchMessages]);
 
-  const toggleSession = (sessionId: string) => {
-    const newExpanded = new Set(expandedSessions);
-    if (newExpanded.has(sessionId)) {
-      newExpanded.delete(sessionId);
-    } else {
-      newExpanded.add(sessionId);
-    }
-    setExpandedSessions(newExpanded);
-  };
+  const toggleSession = useCallback((sessionId: string): void => {
+    setExpandedSessions(prev => {
+      const newExpanded = new Set(prev);
+      if (newExpanded.has(sessionId)) {
+        newExpanded.delete(sessionId);
+      } else {
+        newExpanded.add(sessionId);
+      }
+      return newExpanded;
+    });
+  }, []);
 
   const { t: tComponents } = useTranslation("components");
 
   const handleJumpToMessage = async (
     group: GroupedSearchResult,
-    messageUuid: string
+    messageUuid: string,
+    messageIndex: number
   ) => {
-    console.log("Jump to message clicked:", { group, messageUuid });
+    console.log("Jump to message clicked:", { group, messageUuid, messageIndex });
 
     try {
       if (!group.projectPath) {
@@ -215,8 +218,15 @@ export const SearchView = () => {
       console.log("Waiting for render...");
       // Scroll to message after a brief delay to allow rendering
       setTimeout(() => {
-        console.log("Attempting to find element:", `message-${messageUuid}`);
-        const element = document.getElementById(`message-${messageUuid}`);
+        // For search results, we use compound IDs to handle duplicate UUIDs
+        // Try compound ID first (message-uuid-index), fallback to simple ID
+        const compoundId = `message-${messageUuid}-${messageIndex}`;
+        const simpleId = `message-${messageUuid}`;
+        console.log("Attempting to find element:", compoundId, "or", simpleId);
+        let element = document.getElementById(compoundId);
+        if (!element) {
+          element = document.getElementById(simpleId);
+        }
         if (element) {
           console.log("Element found, scrolling to it");
           element.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -419,14 +429,14 @@ export const SearchView = () => {
                 {/* Expanded Messages */}
                 {group.isExpanded && (
                   <div className="border-t divide-y">
-                    {group.messages.map((message) => (
+                    {group.messages.map((message, index) => (
                       <div
-                        key={message.uuid}
+                        key={`${message.uuid}-${index}`}
                         className={cn(
                           "p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                         )}
                         onClick={() =>
-                          handleJumpToMessage(group, message.uuid)
+                          handleJumpToMessage(group, message.uuid, index)
                         }
                       >
                         <div className="flex items-start justify-between mb-2">

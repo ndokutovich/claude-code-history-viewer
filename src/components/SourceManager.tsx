@@ -3,7 +3,7 @@
 // ============================================================================
 // UI for managing multiple conversation data sources
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSourceStore } from '../store/useSourceStore';
 import type { UniversalSource, HealthStatus } from '../types/universal';
@@ -26,6 +26,7 @@ import {
   Clock
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
+import { getProviderColor } from '../constants/providers';
 
 export const SourceManager: React.FC = () => {
   const { t } = useTranslation('sourceManager');
@@ -56,7 +57,7 @@ export const SourceManager: React.FC = () => {
   // No need to reinitialize here to avoid duplicate calls
 
   // Handle add source
-  const handleAddSource = async () => {
+  const handleAddSource = useCallback(async (): Promise<void> => {
     clearErrors();
     setValidationError(null);
 
@@ -84,10 +85,10 @@ export const SourceManager: React.FC = () => {
     } catch (err) {
       setValidationError((err as Error).message);
     }
-  };
+  }, [newSourcePath, newSourceName, validatePath, addSource, clearErrors, t]);
 
   // Handle browse for folder
-  const handleBrowseFolder = async () => {
+  const handleBrowseFolder = useCallback(async (): Promise<void> => {
     try {
       const selected = await open({
         directory: true,
@@ -101,10 +102,10 @@ export const SourceManager: React.FC = () => {
     } catch (err) {
       console.error('Failed to open folder browser:', err);
     }
-  };
+  }, [t]);
 
   // Handle remove source
-  const handleRemoveSource = async (sourceId: string) => {
+  const handleRemoveSource = useCallback(async (sourceId: string): Promise<void> => {
     if (confirm(t('dialog.confirmRemove'))) {
       try {
         await removeSource(sourceId);
@@ -113,19 +114,19 @@ export const SourceManager: React.FC = () => {
         console.error('Failed to remove source:', err);
       }
     }
-  };
+  }, [removeSource, t]);
 
   // Handle set default
-  const handleSetDefault = async (sourceId: string) => {
+  const handleSetDefault = useCallback(async (sourceId: string): Promise<void> => {
     try {
       await setDefaultSource(sourceId);
     } catch (err) {
       console.error('Failed to set default source:', err);
     }
-  };
+  }, [setDefaultSource]);
 
   // Render health status icon
-  const renderHealthIcon = (status: HealthStatus) => {
+  const renderHealthIcon = (status: HealthStatus): React.ReactNode => {
     switch (status) {
       case 'healthy':
         return <CheckCircle2 className="h-4 w-4 text-green-500" />;
@@ -139,14 +140,8 @@ export const SourceManager: React.FC = () => {
   };
 
   // Render provider badge
-  const renderProviderBadge = (providerId: string) => {
-    const colors: Record<string, string> = {
-      'claude-code': 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-      'cursor': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-      'copilot': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-    };
-
-    const colorClass = colors[providerId] || 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+  const renderProviderBadge = (providerId: string): React.ReactNode => {
+    const colorClass = getProviderColor(providerId);
 
     return (
       <Badge variant="secondary" className={`text-xs ${colorClass}`}>
