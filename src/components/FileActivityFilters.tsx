@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { useTranslation } from "react-i18next";
 import { Search, X, Filter } from "lucide-react";
@@ -17,8 +17,15 @@ export const FileActivityFilters = () => {
     fileActivityFilters.fileExtensions || []
   );
 
-  const operations = ["read", "write", "edit", "delete", "create", "glob", "multiedit"];
-  const commonExtensions = ["ts", "tsx", "js", "jsx", "py", "rs", "json", "md", "css", "html"];
+  // Sync local state when global store filters change
+  useEffect(() => {
+    setSearchQuery(fileActivityFilters.searchQuery || "");
+    setSelectedOperations(fileActivityFilters.operations || []);
+    setSelectedExtensions(fileActivityFilters.fileExtensions || []);
+  }, [fileActivityFilters]);
+
+  const operations = useMemo(() => ["read", "write", "edit", "delete", "create", "glob", "multiedit"], []);
+  const commonExtensions = useMemo(() => ["ts", "tsx", "js", "jsx", "py", "rs", "json", "md", "css", "html"], []);
 
   const applyFilters = () => {
     const filters = {
@@ -57,7 +64,7 @@ export const FileActivityFilters = () => {
     );
   };
 
-  const hasActiveFilters = searchQuery || selectedOperations.length > 0 || selectedExtensions.length > 0;
+  const hasActiveFilters = !!searchQuery || selectedOperations.length > 0 || selectedExtensions.length > 0;
 
   return (
     <div className={cn("px-4 py-3 border-b", COLORS.ui.border.light, COLORS.ui.background.primary)}>
