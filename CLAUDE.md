@@ -10,6 +10,13 @@ The enhanced prompts will follow the language of the original prompt (e.g., Kore
 
 First, You must use command "gemini -p {prompt}" and then use the result that returned response
 
+**🚫 CRITICAL: Git Commit Messages - NEVER ADD BRANDING:**
+- **NEVER** include "🤖 Generated with [Claude Code](https://claude.com/claude-code)" in commit messages
+- **NEVER** include "Co-Authored-By: Claude <noreply@anthropic.com>" in commit messages
+- **NEVER** add any AI assistant branding, attribution, or signature to commits
+- Commit messages should contain ONLY the actual change description
+- This is a strict requirement - do not add any footer branding under any circumstances
+
 **Package Manager Support**: This project supports **npm, pnpm, yarn, and bun**. All commands in this document use `pnpm` as the default, but you can substitute with your preferred package manager:
 - `pnpm <command>` → `npm run <command>` or `yarn <command>` or `bun run <command>`
 - The build system automatically detects your package manager via `scripts/run-with-pm.cjs`
