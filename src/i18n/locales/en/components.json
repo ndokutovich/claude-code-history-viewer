@@ -715,6 +715,11 @@
     "pathCopied": "Path copied to clipboard",
     "pathCopyFailed": "Failed to copy path",
     "copied": "Copied",
+    "loadAll": "Load All",
+    "loadAllTooltip": "Load all messages for complete export (currently showing first 100)",
+    "loading": "Loading...",
+    "allMessagesLoaded": "All {{count}} messages loaded",
+    "failedToLoadAll": "Failed to load all messages",
     "markdownTooltip": "Export conversation to Markdown format",
     "htmlTooltip": "Export conversation to HTML format",
     "docxTooltip": "Export conversation to Word document"

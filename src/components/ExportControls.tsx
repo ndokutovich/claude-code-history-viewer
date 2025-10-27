@@ -25,8 +25,8 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [copiedPath, setCopiedPath] = useState(false);
 
-  // Get current view mode and theme from app settings
-  const { messageViewMode, messageFilters } = useAppStore();
+  // Get current view mode, theme, and pagination state from app settings
+  const { messageViewMode, messageFilters, pagination, loadAllMessages } = useAppStore();
   const { isDarkMode } = useTheme();
 
   const sessionTitle = getSessionTitle(session, messages);
@@ -78,6 +78,16 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
     } catch (error) {
       console.error("Failed to copy path:", error);
       toast.error(t("export.pathCopyFailed"));
+    }
+  };
+
+  const handleLoadAll = async () => {
+    try {
+      await loadAllMessages();
+      toast.success(t("export.allMessagesLoaded", { count: pagination.totalCount }));
+    } catch (error) {
+      console.error("Failed to load all messages:", error);
+      toast.error(t("export.failedToLoadAll"));
     }
   };
 
@@ -153,6 +163,26 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
 
       {/* Separator */}
       <div className={cn("h-6 w-px", COLORS.ui.border.light)} />
+
+      {/* Load All Messages Button */}
+      {pagination.hasMore && (
+        <button
+          onClick={handleLoadAll}
+          disabled={pagination.isLoadingMore}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+            "bg-blue-500 hover:bg-blue-600 text-white",
+            "disabled:opacity-50 disabled:cursor-not-allowed"
+          )}
+          title={t("export.loadAllTooltip")}
+        >
+          {pagination.isLoadingMore ? (
+            <span>{t("export.loading")}</span>
+          ) : (
+            <span>{t("export.loadAll")}</span>
+          )}
+        </button>
+      )}
 
       {/* Copy Path Button */}
       <button

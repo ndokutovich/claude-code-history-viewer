@@ -252,6 +252,7 @@ interface AppStore extends AppState {
   selectSession: (session: UISession | null, pageSize?: number) => Promise<void>;
   clearSelection: () => void;
   loadMoreMessages: () => Promise<void>;
+  loadAllMessages: () => Promise<void>;
   refreshCurrentSession: () => Promise<void>;
   searchMessages: (query: string, filters?: SearchFilters) => Promise<void>;
   setSearchFilters: (filters: SearchFilters) => void;
@@ -853,6 +854,82 @@ export const useAppStore = create<AppStore>((set, get) => ({
       });
     } catch (error) {
       console.error("Failed to load more messages:", error);
+      set({
+        error: { type: AppErrorType.UNKNOWN, message: String(error) },
+        pagination: {
+          ...pagination,
+          isLoadingMore: false,
+        },
+      });
+    }
+  },
+
+  loadAllMessages: async () => {
+    const { selectedSession, pagination, messages } = get();
+
+    if (!selectedSession || pagination.isLoadingMore) {
+      return;
+    }
+
+    // If already loaded all, do nothing
+    if (!pagination.hasMore) {
+      console.log("✓ All messages already loaded");
+      return;
+    }
+
+    set({
+      pagination: {
+        ...pagination,
+        isLoadingMore: true,
+      },
+    });
+
+    try {
+      const sessionPath = selectedSession.file_path;
+      const source = findSourceForPath(sessionPath);
+      if (!source) {
+        throw new Error(`No source found for session path: ${sessionPath}`);
+      }
+
+      const adapter = adapterRegistry.get(source.providerId);
+      if (!adapter) {
+        throw new Error(`No adapter found for provider: ${source.providerId}`);
+      }
+
+      // Load ALL remaining messages by requesting a very large limit
+      // Most sessions have < 10,000 messages, so 100,000 is safe
+      const result = await adapter.loadMessages(
+        sessionPath,
+        selectedSession.session_id,
+        {
+          offset: pagination.currentOffset,
+          limit: 100000, // Load all remaining
+          sortOrder: 'desc',
+          includeMetadata: true,
+        }
+      );
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error?.message || 'Failed to load all messages');
+      }
+
+      const uiMessages = result.data.map(universalToUIMessage);
+      const allMessages = [...uiMessages, ...messages];
+
+      console.log(`✓ Loaded ALL messages: ${allMessages.length} total`);
+
+      set({
+        messages: allMessages,
+        pagination: {
+          ...pagination,
+          currentOffset: result.pagination?.nextOffset || pagination.currentOffset + uiMessages.length,
+          hasMore: false, // All loaded
+          totalCount: allMessages.length,
+          isLoadingMore: false,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to load all messages:", error);
       set({
         error: { type: AppErrorType.UNKNOWN, message: String(error) },
         pagination: {
