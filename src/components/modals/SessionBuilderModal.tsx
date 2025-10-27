@@ -45,6 +45,18 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
 
   // Store state
   const projects = useAppStore((state) => state.projects);
+  const adapterForSource = React.useMemo(
+    () => (selectedSource ? adapterRegistry.tryGet(selectedSource.providerId) : null),
+    [selectedSource]
+  );
+  const projectsForSelectedSource = React.useMemo(() => {
+    if (!selectedSource) return [];
+    const root = adapterForSource?.getProjectsRoot
+      ? adapterForSource.getProjectsRoot(selectedSource.path)
+      : selectedSource.path;
+    const normalizedRoot = root.replace(/[\\/]+$/, "");
+    return projects.filter((p) => typeof p.path === "string" && p.path.startsWith(normalizedRoot));
+  }, [projects, selectedSource, adapterForSource]);
 
   // Sources with capability metadata (SINGLE POINT OF TRUTH!)
   const allSources = useSourceStore((state) => state.sources);
@@ -366,7 +378,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                     onChange={(e) => setSelectedProjectPath(e.target.value)}
                   >
                     <option value="">{t('sessionBuilder.project.selectProjectOption')}</option>
-                    {projects.map((project) => (
+                    {projectsForSelectedSource.map((project) => (
                       <option key={project.path} value={project.path}>
                         {project.name} ({project.session_count}{t('sessionBuilder.project.sessionsCount')})
                       </option>
