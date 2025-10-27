@@ -1,4 +1,4 @@
-import type { UIMessage, MessageFilters, ContentItem } from "@/types";
+import type { UIMessage, MessageFilters, ContentItem, ToolResultContent } from "@/types";
 
 /**
  * Check if a content item is a tool use item with proper typing
@@ -10,7 +10,7 @@ function isToolUseContent(item: ContentItem): item is { type: "tool_use"; id: st
 /**
  * Check if a content item is a tool result item with proper typing
  */
-function isToolResultContent(item: ContentItem): item is { type: "tool_result"; tool_use_id: string; content: unknown; is_error?: boolean } {
+function isToolResultContent(item: ContentItem): item is ToolResultContent {
   return item.type === "tool_result";
 }
 

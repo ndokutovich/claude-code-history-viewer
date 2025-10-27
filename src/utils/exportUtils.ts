@@ -73,10 +73,12 @@ function extractFormattedContent(message: UIMessage): FormattedContentBlock[] {
       }
 
       // Add code block
+      const language: string = match[1] || "text";
+      const codeContent: string = match[2] || "";
       blocks.push({
         type: "code",
-        content: match[2],
-        language: match[1] || "text",
+        content: codeContent,
+        language,
       });
 
       lastIndex = match.index + match[0].length;
@@ -168,8 +170,8 @@ export async function exportToMarkdown(
   messages: UIMessage[],
   sessionTitle: string,
   includeAttachments: boolean = false,
-  mode: ExportMode = "formatted",
-  theme: ExportTheme = "light", // Theme not used in Markdown, but kept for consistency
+  _mode: ExportMode = "formatted", // Unused but kept for API consistency
+  _theme: ExportTheme = "light", // Unused but kept for API consistency
   filters?: MessageFilters
 ): Promise<string> {
   const isCommandOnly = filters?.showCommandOnly ?? false;
@@ -552,8 +554,8 @@ export async function exportToDocx(
   messages: UIMessage[],
   sessionTitle: string,
   includeAttachments: boolean = false,
-  mode: ExportMode = "formatted",
-  theme: ExportTheme = "light", // Theme not used in DOCX, but kept for consistency
+  _mode: ExportMode = "formatted", // Unused but kept for API consistency
+  _theme: ExportTheme = "light", // Unused but kept for API consistency
   filters?: MessageFilters
 ): Promise<string> {
   const isCommandOnly = filters?.showCommandOnly ?? false;
