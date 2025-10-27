@@ -68,7 +68,48 @@
     "later": "稍后（7天）",
     "now": "立即更新",
     "download": "下载更新",
-    "upToDate": "已是最新版本"
+    "upToDate": "已是最新版本",
+    "newUpdateAvailable": "有新更新可用",
+    "important": "重要",
+    "currentVersion": "当前版本",
+    "newVersion": "新版本",
+    "downloading": "下载中...",
+    "downloadingProgress": "下载中... {{progress}}%",
+    "installing": "安装中...",
+    "installingWaitRestart": "安装中... 应用即将重启。",
+    "errorOccurred": "发生错误：{{error}}",
+    "showDetails": "显示详情",
+    "hideDetails": "隐藏详情",
+    "releaseName": "版本名称：",
+    "changelog": "更新日志：",
+    "viewOnGitHub": "在 GitHub 查看",
+    "downloadAndInstall": "下载并安装",
+    "postpone24h": "24小时后提醒",
+    "skipVersion": "跳过此版本",
+    "intro": {
+      "title": "更新系统指南",
+      "description": "Claude Code History Viewer 自动检查更新以提供更好的体验。",
+      "howItWorks": "工作原理：",
+      "features": {
+        "backgroundCheck": "应用启动时在后台检查更新",
+        "notification": "发现新更新时显示通知模态框",
+        "userControl": "下载/安装由用户发起",
+        "caching": "30分钟结果缓存的高效操作"
+      },
+      "benefits": "优势：",
+      "benefitsList": {
+        "security": "快速应用安全补丁",
+        "newFeatures": "快速访问新功能",
+        "offlineDisable": "离线时自动禁用",
+        "changeable": "可随时在设置中更改"
+      },
+      "tip": "💡 您可以在设置 → 更新中禁用自动检查。",
+      "disableAutoCheck": "禁用自动检查",
+      "understood": "我知道了"
+    },
+    "items": " 项",
+    "itemCount": "{{count}} 项",
+    "itemCount_plural": "{{count}} 项"
   },
   "search": {
     "title": "搜索",

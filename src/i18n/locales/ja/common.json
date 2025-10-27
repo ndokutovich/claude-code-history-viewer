@@ -68,7 +68,48 @@
     "later": "後で（7日）",
     "now": "今すぐアップデート",
     "download": "アップデートをダウンロード",
-    "upToDate": "最新バージョンです"
+    "upToDate": "最新バージョンです",
+    "newUpdateAvailable": "新しいアップデートがあります",
+    "important": "重要",
+    "currentVersion": "現在のバージョン",
+    "newVersion": "新しいバージョン",
+    "downloading": "ダウンロード中...",
+    "downloadingProgress": "ダウンロード中... {{progress}}%",
+    "installing": "インストール中...",
+    "installingWaitRestart": "インストール中... アプリはまもなく再起動します。",
+    "errorOccurred": "エラーが発生しました：{{error}}",
+    "showDetails": "詳細を表示",
+    "hideDetails": "詳細を非表示",
+    "releaseName": "リリース名：",
+    "changelog": "変更履歴：",
+    "viewOnGitHub": "GitHubで表示",
+    "downloadAndInstall": "ダウンロードしてインストール",
+    "postpone24h": "24時間後に通知",
+    "skipVersion": "このバージョンをスキップ",
+    "intro": {
+      "title": "アップデートシステムガイド",
+      "description": "Claude Code History Viewer は、より良い体験を提供するために自動的にアップデートをチェックします。",
+      "howItWorks": "動作方法：",
+      "features": {
+        "backgroundCheck": "アプリ起動時にバックグラウンドでアップデートをチェック",
+        "notification": "新しいアップデートが見つかった場合に通知モーダルを表示",
+        "userControl": "ダウンロード/インストールはユーザーが開始",
+        "caching": "30分間の結果キャッシュによる効率的な動作"
+      },
+      "benefits": "利点：",
+      "benefitsList": {
+        "security": "セキュリティパッチの迅速な適用",
+        "newFeatures": "新機能への高速アクセス",
+        "offlineDisable": "オフライン時は自動的に無効化",
+        "changeable": "設定でいつでも変更可能"
+      },
+      "tip": "💡 設定 → アップデートで自動チェックを無効にできます。",
+      "disableAutoCheck": "自動チェックを無効にする",
+      "understood": "理解しました"
+    },
+    "items": " 項目",
+    "itemCount": "{{count}} 項目",
+    "itemCount_plural": "{{count}} 項目"
   },
   "search": {
     "title": "検索",
