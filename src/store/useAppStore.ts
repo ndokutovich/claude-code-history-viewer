@@ -1513,13 +1513,47 @@ export const useAppStore = create<AppStore>((set, get) => ({
     set({ isLoadingFileActivities: true, error: null });
     try {
       const state = get();
-      const sourcePath = projectPath === "*" ? state.claudePath : null;
+      const effectiveFilters = filters || state.fileActivityFilters;
 
-      const fileActivities = await invoke<FileActivity[]>("get_file_activities", {
-        projectPath,
-        sourcePath,
-        filters: filters || state.fileActivityFilters,
-      });
+      let fileActivities: FileActivity[];
+
+      if (projectPath === "*") {
+        // Load from all available sources and aggregate results
+        const { sources } = useSourceStore.getState();
+        const availableSources = sources.filter(s => s.isAvailable);
+
+        if (availableSources.length === 0) {
+          throw new Error("No available sources found");
+        }
+
+        // Fetch from all sources in parallel
+        const results = await Promise.allSettled(
+          availableSources.map(source =>
+            invoke<FileActivity[]>("get_file_activities", {
+              projectPath: "*",
+              sourcePath: source.path,
+              filters: effectiveFilters,
+            })
+          )
+        );
+
+        // Merge successful results
+        fileActivities = results.flatMap(r =>
+          r.status === "fulfilled" ? r.value : []
+        );
+      } else {
+        // Load from specific project's source
+        const source = findSourceForPath(projectPath);
+        if (!source) {
+          throw new Error(`No source found for project path: ${projectPath}`);
+        }
+
+        fileActivities = await invoke<FileActivity[]>("get_file_activities", {
+          projectPath,
+          sourcePath: source.path,
+          filters: effectiveFilters,
+        });
+      }
 
       set({
         fileActivities,

@@ -381,7 +381,22 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<Universal
     }
 
     // Convert ClaudeMessages to UniversalMessages
-    let project_id = extract_project_id(&None, &session_path);
+    // Extract full project path from session path for consistency with search_messages
+    // E.g., "/path/to/.claude/projects/my-project/session.jsonl" -> "/path/to/.claude/projects/my-project"
+    let project_id = if let Some(projects_idx) = session_path.find("projects") {
+        let after_projects = &session_path[projects_idx + "projects".len()..];
+        let parts: Vec<&str> = after_projects.split(|c| c == '/' || c == '\\').filter(|s| !s.is_empty()).collect();
+        if !parts.is_empty() {
+            // Reconstruct full path up to project directory
+            let up_to_projects = &session_path[..projects_idx + "projects".len()];
+            format!("{}/{}", up_to_projects, parts[0])
+        } else {
+            "unknown".to_string()
+        }
+    } else {
+        "unknown".to_string()
+    };
+
     let source_id = session_path
         .split("projects")
         .next()
@@ -480,7 +495,22 @@ pub async fn load_session_messages_paginated(
     }
 
     // Convert ClaudeMessages to UniversalMessages
-    let project_id = extract_project_id(&None, &session_path);
+    // Extract full project path from session path for consistency with search_messages
+    // E.g., "/path/to/.claude/projects/my-project/session.jsonl" -> "/path/to/.claude/projects/my-project"
+    let project_id = if let Some(projects_idx) = session_path.find("projects") {
+        let after_projects = &session_path[projects_idx + "projects".len()..];
+        let parts: Vec<&str> = after_projects.split(|c| c == '/' || c == '\\').filter(|s| !s.is_empty()).collect();
+        if !parts.is_empty() {
+            // Reconstruct full path up to project directory
+            let up_to_projects = &session_path[..projects_idx + "projects".len()];
+            format!("{}/{}", up_to_projects, parts[0])
+        } else {
+            "unknown".to_string()
+        }
+    } else {
+        "unknown".to_string()
+    };
+
     let source_id = session_path
         .split("projects")
         .next()

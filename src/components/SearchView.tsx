@@ -153,9 +153,10 @@ export const SearchView = () => {
 
   const handleJumpToMessage = async (
     group: GroupedSearchResult,
-    messageUuid: string
+    messageUuid: string,
+    messageIndex: number
   ) => {
-    console.log("Jump to message clicked:", { group, messageUuid });
+    console.log("Jump to message clicked:", { group, messageUuid, messageIndex });
 
     try {
       if (!group.projectPath) {
@@ -217,8 +218,15 @@ export const SearchView = () => {
       console.log("Waiting for render...");
       // Scroll to message after a brief delay to allow rendering
       setTimeout(() => {
-        console.log("Attempting to find element:", `message-${messageUuid}`);
-        const element = document.getElementById(`message-${messageUuid}`);
+        // For search results, we use compound IDs to handle duplicate UUIDs
+        // Try compound ID first (message-uuid-index), fallback to simple ID
+        const compoundId = `message-${messageUuid}-${messageIndex}`;
+        const simpleId = `message-${messageUuid}`;
+        console.log("Attempting to find element:", compoundId, "or", simpleId);
+        let element = document.getElementById(compoundId);
+        if (!element) {
+          element = document.getElementById(simpleId);
+        }
         if (element) {
           console.log("Element found, scrolling to it");
           element.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -428,7 +436,7 @@ export const SearchView = () => {
                           "p-3 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                         )}
                         onClick={() =>
-                          handleJumpToMessage(group, message.uuid)
+                          handleJumpToMessage(group, message.uuid, index)
                         }
                       >
                         <div className="flex items-start justify-between mb-2">
