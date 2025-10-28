@@ -1,6 +1,6 @@
 {
-  "appName": "Просмотр истории Claude Code & Cursor IDE",
-  "appDescription": "Исследуйте и анализируйте историю разговоров Claude Code и Cursor IDE",
+  "appName": "Просмотр истории Claude Code, Cursor IDE & Gemini CLI",
+  "appDescription": "Исследуйте и анализируйте историю разговоров Claude Code, Cursor IDE и Gemini CLI",
   "errorOccurred": "Произошла ошибка",
   "loading": "Загрузка...",
   "back": "Назад",

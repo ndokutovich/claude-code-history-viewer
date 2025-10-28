@@ -1,5 +1,5 @@
 {
-  "appTitle": "Просмотр истории Claude Code & Cursor IDE",
+  "appTitle": "Просмотр истории Claude Code, Cursor IDE & Gemini CLI",
   "loadingMessage": "Загрузка истории разговоров",
   "status": {
     "initializing": "Инициализация приложения",

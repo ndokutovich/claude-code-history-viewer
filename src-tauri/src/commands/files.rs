@@ -4,15 +4,15 @@
 // Extracts file operations from conversation history across all providers
 // Supports: Claude Code, Cursor IDE, and future providers via UniversalMessage
 
-use crate::models::*;
-use crate::models::universal::*;
-use crate::commands::session::load_project_sessions;
-use crate::commands::project::scan_projects;
 use crate::commands::adapters::claude_code::{claude_message_to_universal, extract_project_id};
 use crate::commands::cursor::{load_cursor_messages, load_cursor_sessions};
+use crate::commands::project::scan_projects;
+use crate::commands::session::load_project_sessions;
+use crate::models::universal::*;
+use crate::models::*;
 use chrono::{DateTime, Utc};
-use uuid::Uuid;
 use std::path::Path;
+use uuid::Uuid;
 
 /// Extract file activities from a single project or all projects
 /// If project_path is empty or "*", loads from all available projects
@@ -23,7 +23,10 @@ pub async fn get_file_activities(
     filters: FileActivityFilters,
 ) -> Result<Vec<FileActivity>, String> {
     // Enforce absolute paths if provided
-    if !project_path.is_empty() && project_path != "*" && !std::path::Path::new(&project_path).is_absolute() {
+    if !project_path.is_empty()
+        && project_path != "*"
+        && !std::path::Path::new(&project_path).is_absolute()
+    {
         return Err("FILES_INVALID_ARGUMENT: project_path must be absolute".to_string());
     }
     if let Some(ref sp) = source_path {
@@ -73,29 +76,36 @@ pub async fn get_file_activities(
         // Detect if this is a Cursor workspace by checking path components
         // More robust than string.contains() - checks actual path components
         let path = Path::new(&project_path);
-        let components: Vec<_> = path.components()
+        let components: Vec<_> = path
+            .components()
             .filter_map(|c| c.as_os_str().to_str())
             .collect();
 
         let has_cursor = components.iter().any(|c| c.eq_ignore_ascii_case("cursor"));
-        let has_workspace_storage = components.iter().any(|c| c.eq_ignore_ascii_case("workspaceStorage"));
+        let has_workspace_storage = components
+            .iter()
+            .any(|c| c.eq_ignore_ascii_case("workspaceStorage"));
         let is_cursor_workspace = has_cursor && has_workspace_storage;
 
         if is_cursor_workspace {
             // Extract Cursor base path from workspace path
             // Format: C:\Users\xxx\AppData\Roaming\Cursor\User\workspaceStorage\{workspace-id}
-            let cursor_base = path.parent()  // workspaceStorage
-                .and_then(|p| p.parent())    // User
-                .and_then(|p| p.parent())    // Cursor
-                .ok_or_else(|| "FILES_CURSOR_INVALID_WORKSPACE_PATH: Invalid Cursor workspace path".to_string())?;
+            let cursor_base = path
+                .parent() // workspaceStorage
+                .and_then(|p| p.parent()) // User
+                .and_then(|p| p.parent()) // Cursor
+                .ok_or_else(|| {
+                    "FILES_CURSOR_INVALID_WORKSPACE_PATH: Invalid Cursor workspace path".to_string()
+                })?;
 
             println!("📂 Loading Cursor files from workspace: {}", project_path);
 
             // Load Cursor sessions for this workspace
             let sessions = load_cursor_sessions(
                 cursor_base.to_string_lossy().to_string(),
-                Some(project_path.clone())
-            ).await?;
+                Some(project_path.clone()),
+            )
+            .await?;
 
             println!("  Found {} Cursor sessions", sessions.len());
 
@@ -105,16 +115,15 @@ pub async fn get_file_activities(
                 // Build session DB path: {db_path}#session={id}#timestamp={last_modified}
                 let session_db_path = format!(
                     "{}#session={}#timestamp={}",
-                    session.db_path,
-                    session.id,
-                    session.last_modified
+                    session.db_path, session.id, session.last_modified
                 );
 
                 // Load messages with tool_calls populated
                 let messages = load_cursor_messages(
                     cursor_base.to_string_lossy().to_string(),
-                    session_db_path
-                ).await?;
+                    session_db_path,
+                )
+                .await?;
 
                 println!("    Loaded {} messages", messages.len());
 
@@ -174,8 +183,8 @@ pub async fn get_file_activities(
 async fn load_session_messages_for_files(
     session_path: &str,
 ) -> Result<Vec<UniversalMessage>, String> {
-    use std::io::{BufRead, BufReader};
     use std::fs::File;
+    use std::io::{BufRead, BufReader};
 
     // Clone path for move into spawn_blocking
     let session_path = session_path.to_string();
@@ -189,74 +198,74 @@ async fn load_session_messages_for_files(
         let mut messages = Vec::new();
 
         for (line_num, line_result) in reader.lines().enumerate() {
-            let line = line_result.map_err(|e| format!("FILE_READ_ERROR: Failed to read line: {}", e))?;
+            let line =
+                line_result.map_err(|e| format!("FILE_READ_ERROR: Failed to read line: {}", e))?;
 
-        if line.trim().is_empty() {
-            continue;
-        }
+            if line.trim().is_empty() {
+                continue;
+            }
 
-        match serde_json::from_str::<RawLogEntry>(&line) {
-            Ok(log_entry) => {
-                if log_entry.message_type == "summary" {
-                    continue;
+            match serde_json::from_str::<RawLogEntry>(&line) {
+                Ok(log_entry) => {
+                    if log_entry.message_type == "summary" {
+                        continue;
+                    }
+
+                    let (role, message_id, model, stop_reason, usage) =
+                        if let Some(ref msg) = log_entry.message {
+                            (
+                                Some(msg.role.clone()),
+                                msg.id.clone(),
+                                msg.model.clone(),
+                                msg.stop_reason.clone(),
+                                msg.usage.clone(),
+                            )
+                        } else {
+                            (None, None, None, None, None)
+                        };
+
+                    let claude_message = ClaudeMessage {
+                        uuid: log_entry
+                            .uuid
+                            .unwrap_or_else(|| format!("{}-line-{}", Uuid::new_v4(), line_num + 1)),
+                        parent_uuid: log_entry.parent_uuid,
+                        session_id: log_entry
+                            .session_id
+                            .unwrap_or_else(|| "unknown-session".to_string()),
+                        timestamp: log_entry
+                            .timestamp
+                            .unwrap_or_else(|| Utc::now().to_rfc3339()),
+                        message_type: log_entry.message_type.clone(),
+                        content: log_entry.message.map(|m| m.content),
+                        tool_use: log_entry.tool_use,
+                        tool_use_result: log_entry.tool_use_result,
+                        is_sidechain: log_entry.is_sidechain,
+                        usage,
+                        role,
+                        message_id,
+                        model,
+                        stop_reason,
+                        project_path: None,
+                    };
+
+                    let project_id = extract_project_id(&None, &session_path);
+                    let source_id = session_path.clone();
+
+                    let universal_msg =
+                        claude_message_to_universal(&claude_message, project_id, source_id, 0);
+
+                    messages.push(universal_msg);
                 }
-
-                let (role, message_id, model, stop_reason, usage) = if let Some(ref msg) =
-                    log_entry.message
-                {
-                    (
-                        Some(msg.role.clone()),
-                        msg.id.clone(),
-                        msg.model.clone(),
-                        msg.stop_reason.clone(),
-                        msg.usage.clone(),
-                    )
-                } else {
-                    (None, None, None, None, None)
-                };
-
-                let claude_message = ClaudeMessage {
-                    uuid: log_entry
-                        .uuid
-                        .unwrap_or_else(|| format!("{}-line-{}", Uuid::new_v4(), line_num + 1)),
-                    parent_uuid: log_entry.parent_uuid,
-                    session_id: log_entry
-                        .session_id
-                        .unwrap_or_else(|| "unknown-session".to_string()),
-                    timestamp: log_entry
-                        .timestamp
-                        .unwrap_or_else(|| Utc::now().to_rfc3339()),
-                    message_type: log_entry.message_type.clone(),
-                    content: log_entry.message.map(|m| m.content),
-                    tool_use: log_entry.tool_use,
-                    tool_use_result: log_entry.tool_use_result,
-                    is_sidechain: log_entry.is_sidechain,
-                    usage,
-                    role,
-                    message_id,
-                    model,
-                    stop_reason,
-                    project_path: None,
-                };
-
-                let project_id = extract_project_id(&None, &session_path);
-                let source_id = session_path.clone();
-
-                let universal_msg =
-                    claude_message_to_universal(&claude_message, project_id, source_id, 0);
-
-                messages.push(universal_msg);
-            }
-            Err(e) => {
-                eprintln!(
-                    "Failed to parse line {} in {}: {}",
-                    line_num + 1,
-                    session_path,
-                    e
-                );
+                Err(e) => {
+                    eprintln!(
+                        "Failed to parse line {} in {}: {}",
+                        line_num + 1,
+                        session_path,
+                        e
+                    );
+                }
             }
         }
-    }
 
         Ok(messages)
     })
@@ -294,7 +303,8 @@ fn extract_read_activity(
 
     // Try to get content from tool output
     let content = if let Some(ref output) = tool_call.output {
-        output.get("file")
+        output
+            .get("file")
             .and_then(|f| f.get("content"))
             .and_then(|c| c.as_str())
             .map(String::from)
@@ -363,7 +373,8 @@ fn extract_edit_activity(
 
     // Try to get original file content from output
     let content_before = if let Some(ref output) = tool_call.output {
-        output.get("originalFile")
+        output
+            .get("originalFile")
             .and_then(|f| f.as_str())
             .map(String::from)
     } else {
@@ -417,7 +428,8 @@ fn extract_glob_activity(
 
     // Count files from output
     let file_count = if let Some(ref output) = tool_call.output {
-        output.get("filenames")
+        output
+            .get("filenames")
             .and_then(|f| f.as_array())
             .map(|arr| arr.len())
             .unwrap_or(0)
@@ -533,7 +545,8 @@ fn should_include_activity(activity: &FileActivity, filters: &FileActivityFilter
 
     // Filter by file extensions
     if let Some(ref extensions) = filters.file_extensions {
-        let file_ext = activity.file_path
+        let file_ext = activity
+            .file_path
             .split('.')
             .last()
             .unwrap_or("")

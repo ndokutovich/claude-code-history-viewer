@@ -1,12 +1,18 @@
-mod models;
 mod commands;
+mod models;
 mod utils;
 
-use crate::commands::{project::*, session::*, stats::*, update::*, secure_update::*, feedback::*, cursor::*, files::*, session_writer::*};
+use crate::commands::adapters::gemini::GeminiHashResolver;
+use crate::commands::{
+    cursor::*, feedback::*, files::*, gemini::*, project::*, secure_update::*, session::*,
+    session_writer::*, stats::*, update::*,
+};
+use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .manage(GeminiResolverState(Mutex::new(GeminiHashResolver::new())))
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::default().build())
@@ -18,7 +24,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_os::init())
         .invoke_handler(tauri::generate_handler![
-                        get_claude_folder_path,
+            get_claude_folder_path,
             validate_claude_folder,
             scan_projects,
             load_project_sessions,
@@ -53,7 +59,14 @@ pub fn run() {
             // Session Writing (v1.6.0+)
             create_claude_project,
             create_claude_session,
-            append_to_claude_session
+            append_to_claude_session,
+            // Gemini CLI support (v1.7.0)
+            get_gemini_path,
+            validate_gemini_folder,
+            scan_gemini_projects,
+            load_gemini_sessions,
+            load_gemini_messages,
+            seed_gemini_resolver
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

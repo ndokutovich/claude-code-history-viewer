@@ -1,8 +1,8 @@
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File, OpenOptions};
-use std::io::{Write, BufWriter};
+use std::io::{BufWriter, Write};
 use std::path::PathBuf;
-use chrono::Utc;
 use uuid::Uuid;
 
 // ============================================================================
@@ -12,7 +12,7 @@ use uuid::Uuid;
 /// Simple message input for creating sessions
 #[derive(Debug, Clone, Deserialize)]
 pub struct MessageInput {
-    pub role: String, // "user" | "assistant" | "system"
+    pub role: String,               // "user" | "assistant" | "system"
     pub content: serde_json::Value, // Can be string or array of content items
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,
@@ -70,15 +70,17 @@ pub struct CreateSessionResponse {
 
 /// Create a new Claude Code project folder
 #[tauri::command]
-pub async fn create_claude_project(request: CreateProjectRequest) -> Result<CreateProjectResponse, String> {
+pub async fn create_claude_project(
+    request: CreateProjectRequest,
+) -> Result<CreateProjectResponse, String> {
     // Determine parent path
     let is_default_path = request.parent_path.is_none();
     let parent_path = if let Some(path) = request.parent_path {
         PathBuf::from(path)
     } else {
         // Use ~/.claude/projects/ as default
-        let home_dir = dirs::home_dir()
-            .ok_or_else(|| "Could not determine home directory".to_string())?;
+        let home_dir =
+            dirs::home_dir().ok_or_else(|| "Could not determine home directory".to_string())?;
         home_dir.join(".claude").join("projects")
     };
 
@@ -89,7 +91,10 @@ pub async fn create_claude_project(request: CreateProjectRequest) -> Result<Crea
             fs::create_dir_all(&parent_path)
                 .map_err(|e| format!("Failed to create .claude/projects directory: {}", e))?;
         } else {
-            return Err(format!("Parent path does not exist: {}", parent_path.display()));
+            return Err(format!(
+                "Parent path does not exist: {}",
+                parent_path.display()
+            ));
         }
     }
 
@@ -98,7 +103,10 @@ pub async fn create_claude_project(request: CreateProjectRequest) -> Result<Crea
 
     // Check if project already exists
     if project_path.exists() {
-        return Err(format!("Project already exists: {}", project_path.display()));
+        return Err(format!(
+            "Project already exists: {}",
+            project_path.display()
+        ));
     }
 
     // Create the directory
@@ -113,12 +121,17 @@ pub async fn create_claude_project(request: CreateProjectRequest) -> Result<Crea
 
 /// Create a new Claude Code session (JSONL file)
 #[tauri::command]
-pub async fn create_claude_session(request: CreateSessionRequest) -> Result<CreateSessionResponse, String> {
+pub async fn create_claude_session(
+    request: CreateSessionRequest,
+) -> Result<CreateSessionResponse, String> {
     let project_path = PathBuf::from(&request.project_path);
 
     // Validate project path exists
     if !project_path.exists() {
-        return Err(format!("Project path does not exist: {}", project_path.display()));
+        return Err(format!(
+            "Project path does not exist: {}",
+            project_path.display()
+        ));
     }
 
     // Generate session ID (UUID)
@@ -129,7 +142,10 @@ pub async fn create_claude_session(request: CreateSessionRequest) -> Result<Crea
 
     // Check if session file already exists
     if session_file_path.exists() {
-        return Err(format!("Session file already exists: {}", session_file_path.display()));
+        return Err(format!(
+            "Session file already exists: {}",
+            session_file_path.display()
+        ));
     }
 
     // Create the JSONL file
@@ -152,7 +168,8 @@ pub async fn create_claude_session(request: CreateSessionRequest) -> Result<Crea
     }
 
     // Flush to ensure all data is written
-    writer.flush()
+    writer
+        .flush()
         .map_err(|e| format!("Failed to flush writer: {}", e))?;
 
     Ok(CreateSessionResponse {
@@ -166,13 +183,16 @@ pub async fn create_claude_session(request: CreateSessionRequest) -> Result<Crea
 #[tauri::command]
 pub async fn append_to_claude_session(
     session_path: String,
-    messages: Vec<MessageInput>
+    messages: Vec<MessageInput>,
 ) -> Result<usize, String> {
     let session_file_path = PathBuf::from(&session_path);
 
     // Validate session file exists
     if !session_file_path.exists() {
-        return Err(format!("Session file does not exist: {}", session_file_path.display()));
+        return Err(format!(
+            "Session file does not exist: {}",
+            session_file_path.display()
+        ));
     }
 
     // Extract session ID from filename
@@ -198,7 +218,8 @@ pub async fn append_to_claude_session(
     }
 
     // Flush to ensure all data is written
-    writer.flush()
+    writer
+        .flush()
         .map_err(|e| format!("Failed to flush writer: {}", e))?;
 
     Ok(message_count)
@@ -212,7 +233,7 @@ pub async fn append_to_claude_session(
 fn create_summary_message(
     summary: &str,
     session_id: &str,
-    _messages: &[MessageInput]
+    _messages: &[MessageInput],
 ) -> serde_json::Value {
     // Generate a UUID for the summary message
     let summary_uuid = Uuid::new_v4().to_string();
@@ -249,7 +270,10 @@ fn convert_to_jsonl_format(
     // Add optional fields to message object
     if let Some(message_obj_map) = message_obj.as_object_mut() {
         if let Some(model) = &msg.model {
-            message_obj_map.insert("model".to_string(), serde_json::Value::String(model.clone()));
+            message_obj_map.insert(
+                "model".to_string(),
+                serde_json::Value::String(model.clone()),
+            );
         }
 
         if let Some(usage) = &msg.usage {
@@ -261,10 +285,16 @@ fn convert_to_jsonl_format(
                 usage_obj.insert("output_tokens".to_string(), serde_json::json!(output));
             }
             if let Some(cache_creation) = usage.cache_creation_input_tokens {
-                usage_obj.insert("cache_creation_input_tokens".to_string(), serde_json::json!(cache_creation));
+                usage_obj.insert(
+                    "cache_creation_input_tokens".to_string(),
+                    serde_json::json!(cache_creation),
+                );
             }
             if let Some(cache_read) = usage.cache_read_input_tokens {
-                usage_obj.insert("cache_read_input_tokens".to_string(), serde_json::json!(cache_read));
+                usage_obj.insert(
+                    "cache_read_input_tokens".to_string(),
+                    serde_json::json!(cache_read),
+                );
             }
             if !usage_obj.is_empty() {
                 message_obj_map.insert("usage".to_string(), serde_json::Value::Object(usage_obj));
@@ -284,7 +314,10 @@ fn convert_to_jsonl_format(
     // Add optional parent_id
     if let Some(parent_id) = &msg.parent_id {
         if let Some(obj) = jsonl_msg.as_object_mut() {
-            obj.insert("parentUuid".to_string(), serde_json::Value::String(parent_id.clone()));
+            obj.insert(
+                "parentUuid".to_string(),
+                serde_json::Value::String(parent_id.clone()),
+            );
         }
     }
 
@@ -306,12 +339,9 @@ fn convert_to_jsonl_format(
 }
 
 /// Helper: Write a JSON object as a JSONL line
-fn write_jsonl_line<W: Write>(
-    writer: &mut W,
-    value: &serde_json::Value
-) -> Result<(), String> {
-    let json_string = serde_json::to_string(value)
-        .map_err(|e| format!("Failed to serialize JSON: {}", e))?;
+fn write_jsonl_line<W: Write>(writer: &mut W, value: &serde_json::Value) -> Result<(), String> {
+    let json_string =
+        serde_json::to_string(value).map_err(|e| format!("Failed to serialize JSON: {}", e))?;
 
     writeln!(writer, "{}", json_string)
         .map_err(|e| format!("Failed to write JSONL line: {}", e))?;

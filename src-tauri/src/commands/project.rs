@@ -1,13 +1,14 @@
 use crate::models::*;
-use crate::utils::{extract_project_name, estimate_message_count_from_size};
+use crate::utils::{estimate_message_count_from_size, extract_project_name};
+use chrono::{DateTime, Utc};
 use std::fs;
 use std::path::PathBuf;
 use walkdir::WalkDir;
-use chrono::{DateTime, Utc};
 
 #[tauri::command]
 pub async fn get_claude_folder_path() -> Result<String, String> {
-    let home_dir = dirs::home_dir().ok_or("HOME_DIRECTORY_NOT_FOUND: Could not determine home directory")?;
+    let home_dir =
+        dirs::home_dir().ok_or("HOME_DIRECTORY_NOT_FOUND: Could not determine home directory")?;
     let claude_path = home_dir.join(".claude");
 
     if !claude_path.exists() {
@@ -18,7 +19,9 @@ pub async fn get_claude_folder_path() -> Result<String, String> {
     }
 
     if fs::read_dir(&claude_path).is_err() {
-        return Err("PERMISSION_DENIED: Cannot access Claude folder. Please check permissions.".to_string());
+        return Err(
+            "PERMISSION_DENIED: Cannot access Claude folder. Please check permissions.".to_string(),
+        );
     }
 
     Ok(claude_path.to_string_lossy().to_string())
@@ -86,7 +89,10 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
                     }
                 } else {
                     #[cfg(debug_assertions)]
-                    eprintln!("⚠️ Failed to get modified time for: {:?}", jsonl_entry.path());
+                    eprintln!(
+                        "⚠️ Failed to get modified time for: {:?}",
+                        jsonl_entry.path()
+                    );
                 }
 
                 // Estimate message count from file size - much faster
@@ -126,8 +132,11 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
 
     let _elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
-    println!("📊 scan_projects performance: {} projects scanned in {}ms",
-             projects.len(), _elapsed.as_millis());
+    println!(
+        "📊 scan_projects performance: {} projects scanned in {}ms",
+        projects.len(),
+        _elapsed.as_millis()
+    );
 
     Ok(projects)
 }

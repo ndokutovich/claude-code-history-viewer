@@ -8,3 +8,4 @@
 // Backend returns UniversalMessage → Frontend converts to UIMessage for display.
 
 pub mod claude_code;
+pub mod gemini;

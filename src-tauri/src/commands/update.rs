@@ -1,7 +1,7 @@
+use chrono::{DateTime, Utc};
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use tauri::command;
-use regex::Regex;
-use chrono::{DateTime, Utc};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "lowercase")]
@@ -89,7 +89,10 @@ pub async fn check_for_updates() -> Result<UpdateInfo, String> {
         }
     }
 
-    Err(format!("UPDATE_NETWORK_ERROR: Failed after 2 attempts: {}", last_error))
+    Err(format!(
+        "UPDATE_NETWORK_ERROR: Failed after 2 attempts: {}",
+        last_error
+    ))
 }
 
 pub async fn fetch_release_info(client: &reqwest::Client) -> Result<GitHubRelease, String> {
@@ -104,7 +107,10 @@ pub async fn fetch_release_info(client: &reqwest::Client) -> Result<GitHubReleas
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.unwrap_or_default();
-        return Err(format!("UPDATE_FETCH_ERROR: Cannot fetch release information (HTTP {}): {}", status, error_text));
+        return Err(format!(
+            "UPDATE_FETCH_ERROR: Cannot fetch release information (HTTP {}): {}",
+            status, error_text
+        ));
     }
 
     let release: GitHubRelease = response
@@ -115,21 +121,24 @@ pub async fn fetch_release_info(client: &reqwest::Client) -> Result<GitHubReleas
     Ok(release)
 }
 
-fn process_release_info(current_version: &str, release: GitHubRelease) -> Result<UpdateInfo, String> {
+fn process_release_info(
+    current_version: &str,
+    release: GitHubRelease,
+) -> Result<UpdateInfo, String> {
     let latest_version = release.tag_name.trim_start_matches('v');
     let has_update = version_is_newer(current_version, latest_version);
 
     let metadata = parse_metadata_from_body(&release.body);
-    let is_forced = metadata.as_ref()
-        .map(|m| m.force_update)
-        .unwrap_or(false);
+    let is_forced = metadata.as_ref().map(|m| m.force_update).unwrap_or(false);
 
-    let days_until_deadline = metadata.as_ref()
+    let days_until_deadline = metadata
+        .as_ref()
         .and_then(|m| m.deadline.as_ref())
         .and_then(|deadline| calculate_days_until_deadline(deadline).ok());
 
     // Check minimum version requirement
-    let meets_minimum_version = metadata.as_ref()
+    let meets_minimum_version = metadata
+        .as_ref()
         .and_then(|m| m.minimum_version.as_ref())
         .map(|min_ver| version_is_newer_or_equal(current_version, min_ver))
         .unwrap_or(true);
@@ -137,7 +146,9 @@ fn process_release_info(current_version: &str, release: GitHubRelease) -> Result
     let final_is_forced = is_forced && meets_minimum_version;
 
     // Find DMG download URL (macOS)
-    let dmg_asset = release.assets.iter()
+    let dmg_asset = release
+        .assets
+        .iter()
         .find(|asset| asset.name.ends_with(".dmg"));
 
     Ok(UpdateInfo {
@@ -178,12 +189,8 @@ fn calculate_days_until_deadline(deadline: &str) -> Result<i64, String> {
 
 pub fn version_is_newer(current: &str, latest: &str) -> bool {
     // Simple version comparison (semantic versioning)
-    let current_parts: Vec<u32> = current.split('.')
-        .filter_map(|s| s.parse().ok())
-        .collect();
-    let latest_parts: Vec<u32> = latest.split('.')
-        .filter_map(|s| s.parse().ok())
-        .collect();
+    let current_parts: Vec<u32> = current.split('.').filter_map(|s| s.parse().ok()).collect();
+    let latest_parts: Vec<u32> = latest.split('.').filter_map(|s| s.parse().ok()).collect();
 
     for i in 0..std::cmp::max(current_parts.len(), latest_parts.len()) {
         let current_part = current_parts.get(i).unwrap_or(&0);
@@ -200,12 +207,8 @@ pub fn version_is_newer(current: &str, latest: &str) -> bool {
 }
 
 fn version_is_newer_or_equal(current: &str, minimum: &str) -> bool {
-    let current_parts: Vec<u32> = current.split('.')
-        .filter_map(|s| s.parse().ok())
-        .collect();
-    let minimum_parts: Vec<u32> = minimum.split('.')
-        .filter_map(|s| s.parse().ok())
-        .collect();
+    let current_parts: Vec<u32> = current.split('.').filter_map(|s| s.parse().ok()).collect();
+    let minimum_parts: Vec<u32> = minimum.split('.').filter_map(|s| s.parse().ok()).collect();
 
     for i in 0..std::cmp::max(current_parts.len(), minimum_parts.len()) {
         let current_part = current_parts.get(i).unwrap_or(&0);

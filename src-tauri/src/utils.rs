@@ -1,4 +1,3 @@
-
 pub fn extract_project_name(raw_project_name: &str) -> String {
     if raw_project_name.starts_with('-') {
         let parts: Vec<&str> = raw_project_name.splitn(4, '-').collect();

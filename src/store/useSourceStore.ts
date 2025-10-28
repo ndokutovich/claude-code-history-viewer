@@ -186,6 +186,19 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       console.log('  ✗ Cursor not found:', (error as Error).message);
     }
 
+    // Try to detect Gemini CLI folder (v1.7.0)
+    try {
+      const geminiPath = await invoke<string>('get_gemini_path');
+      const validation = await get().validatePath(geminiPath);
+
+      if (validation.isValid && validation.providerId === 'gemini') {
+        console.log(`  ✓ Found Gemini CLI at: ${geminiPath}`);
+        detectedSources.push(geminiPath);
+      }
+    } catch (error) {
+      console.log('  ✗ Gemini CLI not found:', (error as Error).message);
+    }
+
     // Add all detected sources
     if (detectedSources.length === 0) {
       console.warn('⚠️  No conversation data sources found');

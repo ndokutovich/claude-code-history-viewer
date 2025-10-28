@@ -6,8 +6,8 @@
 // CRITICAL: This adapter preserves ALL original Claude Code fields to ensure
 // zero data loss during the migration to universal types.
 
-use crate::models::ClaudeMessage;
 use crate::models::universal::*;
+use crate::models::ClaudeMessage;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
@@ -119,7 +119,7 @@ pub fn claude_message_to_universal(
 
         // HIERARCHY (preserve parent relationship)
         parent_id: msg.parent_uuid.clone(),
-        depth: None, // Could be calculated if needed
+        depth: None,     // Could be calculated if needed
         branch_id: None, // Claude Code doesn't have explicit branches yet
 
         // METADATA
@@ -266,38 +266,32 @@ fn convert_content_item(item: &Value) -> Option<UniversalContent> {
             })
         }
 
-        "tool_use" => {
-            Some(UniversalContent {
-                content_type: ContentType::ToolUse,
-                data: item.clone(),
-                encoding: None,
-                mime_type: Some("application/json".to_string()),
-                size: None,
-                hash: None,
-            })
-        }
+        "tool_use" => Some(UniversalContent {
+            content_type: ContentType::ToolUse,
+            data: item.clone(),
+            encoding: None,
+            mime_type: Some("application/json".to_string()),
+            size: None,
+            hash: None,
+        }),
 
-        "tool_result" => {
-            Some(UniversalContent {
-                content_type: ContentType::ToolResult,
-                data: item.clone(),
-                encoding: None,
-                mime_type: Some("application/json".to_string()),
-                size: None,
-                hash: None,
-            })
-        }
+        "tool_result" => Some(UniversalContent {
+            content_type: ContentType::ToolResult,
+            data: item.clone(),
+            encoding: None,
+            mime_type: Some("application/json".to_string()),
+            size: None,
+            hash: None,
+        }),
 
-        "thinking" => {
-            Some(UniversalContent {
-                content_type: ContentType::Thinking,
-                data: item.clone(),
-                encoding: None,
-                mime_type: Some("application/json".to_string()),
-                size: None,
-                hash: None,
-            })
-        }
+        "thinking" => Some(UniversalContent {
+            content_type: ContentType::Thinking,
+            data: item.clone(),
+            encoding: None,
+            mime_type: Some("application/json".to_string()),
+            size: None,
+            hash: None,
+        }),
 
         "image" => {
             Some(UniversalContent {
@@ -414,7 +408,10 @@ fn extract_thinking(msg: &ClaudeMessage) -> Option<ThinkingBlock> {
                         if let Some(thinking_text) = item.get("thinking").and_then(|t| t.as_str()) {
                             return Some(ThinkingBlock {
                                 content: thinking_text.to_string(),
-                                signature: item.get("signature").and_then(|s| s.as_str()).map(String::from),
+                                signature: item
+                                    .get("signature")
+                                    .and_then(|s| s.as_str())
+                                    .map(String::from),
                                 model: msg.model.clone(),
                             });
                         }
@@ -447,7 +444,8 @@ fn extract_errors(msg: &ClaudeMessage) -> Option<Vec<ErrorInfo>> {
         // Check if it's an object with is_error flag
         if let Value::Object(obj) = tool_result {
             if let Some(Value::Bool(true)) = obj.get("is_error") {
-                let error_msg = obj.get("content")
+                let error_msg = obj
+                    .get("content")
                     .and_then(|c| c.as_str())
                     .unwrap_or("Unknown error")
                     .to_string();
@@ -468,7 +466,8 @@ fn extract_errors(msg: &ClaudeMessage) -> Option<Vec<ErrorInfo>> {
             for item in items {
                 if let Some("tool_result") = item.get("type").and_then(|t| t.as_str()) {
                     if let Some(Value::Bool(true)) = item.get("is_error") {
-                        let error_msg = item.get("content")
+                        let error_msg = item
+                            .get("content")
                             .and_then(|c| c.as_str())
                             .unwrap_or("Unknown error")
                             .to_string();

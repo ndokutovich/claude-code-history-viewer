@@ -35,7 +35,7 @@ pub struct RawLogEntry {
     pub timestamp: Option<String>,
     #[serde(rename = "type")]
     pub message_type: String,
-    
+
     // Fields for summary
     pub summary: Option<String>,
     #[serde(rename = "leafUuid")]
@@ -98,8 +98,8 @@ pub struct ClaudeProject {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClaudeSession {
-    pub session_id: String,  // Unique ID based on file path
-    pub actual_session_id: String,  // Actual session ID from the messages
+    pub session_id: String,        // Unique ID based on file path
+    pub actual_session_id: String, // Actual session ID from the messages
     pub file_path: String,
     pub project_name: String,
     pub message_count: usize,
@@ -118,7 +118,6 @@ pub struct MessagePage {
     pub has_more: bool,
     pub next_offset: usize,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionTokenStats {

@@ -1,5 +1,5 @@
 {
-  "appTitle": "Claude Code & Cursor IDE 히스토리 뷰어",
+  "appTitle": "Claude Code, Cursor IDE & Gemini CLI 히스토리 뷰어",
   "loadingMessage": "대화 기록 로딩 중",
   "status": {
     "initializing": "애플리케이션 초기화 중",
