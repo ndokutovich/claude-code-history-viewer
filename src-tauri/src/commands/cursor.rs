@@ -489,12 +489,13 @@ pub async fn load_cursor_sessions(
                     session_id, message_count, last_modified_timestamp
                 );
 
-                // Encode session ID and timestamp in db_path
-                // Format: <db-path>#session=<session-id>#timestamp=<iso-timestamp>
+                // Encode session ID, workspace ID, and timestamp in db_path
+                // Format: <db-path>#session=<session-id>#workspace=<workspace-id>#timestamp=<iso-timestamp>
                 let db_path_with_session = format!(
-                    "{}#session={}#timestamp={}",
+                    "{}#session={}#workspace={}#timestamp={}",
                     global_db.to_string_lossy(),
                     session_id,
+                    workspace_id.clone().unwrap_or_else(|| "unknown".to_string()),
                     last_modified_timestamp
                 );
 
@@ -580,31 +581,52 @@ pub async fn load_cursor_messages(
     println!("  cursor_path: {}", cursor_path);
     println!("  session_db_path: {}", session_db_path);
 
-    // Parse session ID and timestamp from db_path
-    // Format: <db-path>#session=<session-id>#timestamp=<iso-timestamp>
+    // Parse session ID, workspace ID, and timestamp from db_path
+    // Format: <db-path>#session=<session-id>#workspace=<workspace-id>#timestamp=<iso-timestamp>
     let (db_path_str, session_id, session_timestamp) = if let Some(session_pos) =
         session_db_path.find("#session=")
     {
         let db_path = &session_db_path[..session_pos];
         let after_session = &session_db_path[session_pos + 9..]; // Skip "#session="
 
-        // Look for timestamp
-        if let Some(timestamp_pos) = after_session.find("#timestamp=") {
-            let session_id = &after_session[..timestamp_pos];
-            let timestamp_str = &after_session[timestamp_pos + 11..]; // Skip "#timestamp="
+        // Look for workspace marker (new format)
+        if let Some(workspace_pos) = after_session.find("#workspace=") {
+            let session_id = &after_session[..workspace_pos];
+            let after_workspace = &after_session[workspace_pos + 11..]; // Skip "#workspace="
 
-            // Parse the ISO timestamp
-            let session_time = chrono::DateTime::parse_from_rfc3339(timestamp_str)
-                .map(|dt| dt.with_timezone(&Utc))
-                .unwrap_or_else(|_| Utc::now());
+            // Look for timestamp
+            if let Some(timestamp_pos) = after_workspace.find("#timestamp=") {
+                let timestamp_str = &after_workspace[timestamp_pos + 11..]; // Skip "#timestamp="
 
-            (db_path, session_id.to_string(), session_time)
+                // Parse the ISO timestamp
+                let session_time = chrono::DateTime::parse_from_rfc3339(timestamp_str)
+                    .map(|dt| dt.with_timezone(&Utc))
+                    .unwrap_or_else(|_| Utc::now());
+
+                (db_path, session_id.to_string(), session_time)
+            } else {
+                // No timestamp, use current time
+                (db_path, session_id.to_string(), Utc::now())
+            }
         } else {
-            // No timestamp encoded, use current time as fallback
-            (db_path, after_session.to_string(), Utc::now())
+            // Old format without workspace: <path>#session=<id>#timestamp=<ts>
+            // Look for timestamp directly after session
+            if let Some(timestamp_pos) = after_session.find("#timestamp=") {
+                let session_id = &after_session[..timestamp_pos];
+                let timestamp_str = &after_session[timestamp_pos + 11..]; // Skip "#timestamp="
+
+                let session_time = chrono::DateTime::parse_from_rfc3339(timestamp_str)
+                    .map(|dt| dt.with_timezone(&Utc))
+                    .unwrap_or_else(|_| Utc::now());
+
+                (db_path, session_id.to_string(), session_time)
+            } else {
+                // No timestamp encoded, use current time as fallback
+                (db_path, after_session.to_string(), Utc::now())
+            }
         }
     } else {
-        return Err("CURSOR_INVALID_ARGUMENT: Session ID not found in db_path. Expected format: <path>#session=<id>#timestamp=<timestamp>".to_string());
+        return Err("CURSOR_INVALID_ARGUMENT: Session ID not found in db_path. Expected format: <path>#session=<id>#workspace=<ws-id>#timestamp=<timestamp>".to_string());
     };
 
     println!("  📂 Database: {}", db_path_str);
