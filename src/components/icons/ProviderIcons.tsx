@@ -1,5 +1,5 @@
 import React from "react";
-import { Code2 } from "lucide-react";
+import { Code2, Sparkles, Zap } from "lucide-react";
 
 interface ProviderIconProps {
   providerId: string;
@@ -63,6 +63,20 @@ export const CursorIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 /**
+ * Gemini CLI Icon - Teal/Green color scheme
+ */
+export const GeminiIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <Sparkles className={className} />
+);
+
+/**
+ * Codex CLI Icon - Orange/Amber color scheme
+ */
+export const CodexIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <Zap className={className} />
+);
+
+/**
  * Generic provider icon (fallback)
  */
 export const GenericProviderIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -78,6 +92,10 @@ export const ProviderIcon: React.FC<ProviderIconProps> = ({ providerId, classNam
       return <ClaudeCodeIcon className={className} />;
     case "cursor":
       return <CursorIcon className={className} />;
+    case "gemini":
+      return <GeminiIcon className={className} />;
+    case "codex":
+      return <CodexIcon className={className} />;
     default:
       return <GenericProviderIcon className={className} />;
   }
@@ -92,6 +110,10 @@ export const getProviderColorClass = (providerId?: string): string => {
       return "text-blue-500";
     case "cursor":
       return "text-purple-500";
+    case "gemini":
+      return "text-teal-500";
+    case "codex":
+      return "text-orange-500";
     default:
       return "text-gray-500";
   }

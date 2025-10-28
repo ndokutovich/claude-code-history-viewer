@@ -55,7 +55,9 @@ interface SourceStoreState {
 
   // Actions - Initialization
   initializeSources: () => Promise<void>;
+  detectAllProviders: () => Promise<string[]>;
   autoDetectDefaultSource: () => Promise<void>;
+  autoDetectAndMerge: () => Promise<void>;
 
   // Actions - Source CRUD
   addSource: (path: string, name?: string) => Promise<UniversalSource>;
@@ -120,12 +122,20 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       if (savedSources && Array.isArray(savedSources) && savedSources.length > 0) {
         set({ sources: savedSources, selectedSourceId: savedSelectedId || null });
 
+        console.log(`✅ Loaded ${savedSources.length} sources from storage`);
+
+        // ALWAYS run auto-detection to find new providers
+        console.log('🔍 Checking for new providers...');
+        try {
+          await get().autoDetectAndMerge();
+        } catch (err) {
+          console.error('Failed to auto-detect new sources:', err);
+        }
+
         // Refresh all source health status in background
         get().refreshAllSources().catch((err) => {
           console.error('Failed to refresh sources:', err);
         });
-
-        console.log(`✅ Loaded ${savedSources.length} sources from storage`);
       } else {
         // No saved sources - try to auto-detect default Claude Code folder
         console.log('No saved sources found, attempting auto-detection...');
@@ -156,61 +166,69 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
   // AUTO-DETECTION (INTERNAL)
   // ------------------------------------------------------------------------
 
-  autoDetectDefaultSource: async () => {
-    console.log('🔍 Auto-detecting conversation data sources...');
+  // Unified detection: scans for all available providers
+  detectAllProviders: async (): Promise<string[]> => {
     const detectedSources: string[] = [];
 
-    // Try to detect Claude Code folder
-    try {
-      const claudePath = await invoke<string>('get_claude_folder_path');
-      const validation = await get().validatePath(claudePath);
+    // List of all providers to detect
+    const providers = [
+      { name: 'Claude Code', command: 'get_claude_folder_path', id: 'claude-code' },
+      { name: 'Cursor IDE', command: 'get_cursor_path', id: 'cursor' },
+      { name: 'Gemini CLI', command: 'get_gemini_path', id: 'gemini' },
+      { name: 'Codex CLI', command: 'get_codex_path', id: 'codex' },
+    ];
 
-      if (validation.isValid && validation.providerId === 'claude-code') {
-        console.log(`  ✓ Found Claude Code at: ${claudePath}`);
-        detectedSources.push(claudePath);
+    for (const provider of providers) {
+      try {
+        const path = await invoke<string>(provider.command);
+        const validation = await get().validatePath(path);
+
+        if (validation.isValid && validation.providerId === provider.id) {
+          console.log(`  ✓ Found ${provider.name} at: ${path}`);
+          detectedSources.push(path);
+        }
+      } catch (error) {
+        console.log(`  ✗ ${provider.name} not found:`, (error as Error).message);
       }
-    } catch (error) {
-      console.log('  ✗ Claude Code not found:', (error as Error).message);
     }
 
-    // Try to detect Cursor folder
-    try {
-      const cursorPath = await invoke<string>('get_cursor_path');
-      const validation = await get().validatePath(cursorPath);
+    return detectedSources;
+  },
 
-      if (validation.isValid && validation.providerId === 'cursor') {
-        console.log(`  ✓ Found Cursor at: ${cursorPath}`);
-        detectedSources.push(cursorPath);
-      }
-    } catch (error) {
-      console.log('  ✗ Cursor not found:', (error as Error).message);
+  // Auto-detect and merge new sources (doesn't replace existing)
+  autoDetectAndMerge: async () => {
+    const existingSources = get().sources;
+    const detectedSources = await get().detectAllProviders();
+
+    // Filter out already existing sources
+    const newSources = detectedSources.filter(
+      (path) => !existingSources.some((s) => s.path === path)
+    );
+
+    if (newSources.length === 0) {
+      console.log('  ℹ️ No new sources to add (all already exist)');
+      return;
     }
 
-    // Try to detect Gemini CLI folder (v1.7.0)
-    try {
-      const geminiPath = await invoke<string>('get_gemini_path');
-      const validation = await get().validatePath(geminiPath);
+    console.log(`📦 Adding ${newSources.length} new source(s)...`);
 
-      if (validation.isValid && validation.providerId === 'gemini') {
-        console.log(`  ✓ Found Gemini CLI at: ${geminiPath}`);
-        detectedSources.push(geminiPath);
+    for (const path of newSources) {
+      try {
+        const currentSources = get().sources;
+        const sourceNumber = currentSources.length + 1;
+        await get().addSource(path, i18n.t('sourceManager:autoDetected', { number: sourceNumber }));
+        console.log(`  ✓ Added new source: ${path}`);
+      } catch (error) {
+        console.error(`  ✗ Failed to add source ${path}:`, error);
       }
-    } catch (error) {
-      console.log('  ✗ Gemini CLI not found:', (error as Error).message);
     }
 
-    // Try to detect Codex CLI folder (v1.8.0)
-    try {
-      const codexPath = await invoke<string>('get_codex_path');
-      const validation = await get().validatePath(codexPath);
+    console.log(`✅ Auto-detection complete: ${newSources.length} new source(s) added`);
+  },
 
-      if (validation.isValid && validation.providerId === 'codex') {
-        console.log(`  ✓ Found Codex CLI at: ${codexPath}`);
-        detectedSources.push(codexPath);
-      }
-    } catch (error) {
-      console.log('  ✗ Codex CLI not found:', (error as Error).message);
-    }
+  autoDetectDefaultSource: async () => {
+    console.log('🔍 Auto-detecting conversation data sources...');
+    const detectedSources = await get().detectAllProviders();
 
     // Add all detected sources
     if (detectedSources.length === 0) {
