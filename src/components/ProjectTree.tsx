@@ -4,6 +4,7 @@ import {
   Folder,
   Wrench,
   AlertTriangle,
+  AlertCircle,
   ChevronDown,
   ChevronRight,
   MessageCircle,
@@ -389,19 +390,27 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                       </p>
 
                       {/* Metadata row */}
-                      <div className="flex items-center space-x-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        <span>{t("message.count", { count: session.message_count })}</span>
+                      <div className="flex items-center space-x-2 mt-1 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+                        <span className="whitespace-nowrap">{t("message.count", { count: session.message_count })}</span>
                         <span>•</span>
-                        <span>{formatTimeAgo(session.last_modified)}</span>
+                        <span className="whitespace-nowrap">{formatTimeAgo(session.last_modified)}</span>
+                        {/* Debug: Log session flags */}
+                        {(() => {
+                          console.log(`Session ${session.session_id.slice(-8)}:`, {
+                            has_tool_use: session.has_tool_use,
+                            has_errors: session.has_errors,
+                            is_problematic: session.is_problematic
+                          });
+                          return null;
+                        })()}
                         {session.has_tool_use && (
-                          <>
-                            <Wrench className="w-3 h-3" />
-                          </>
+                          <Wrench className="w-3 h-3 flex-shrink-0" />
                         )}
                         {session.has_errors && (
-                          <>
-                            <AlertTriangle className="w-3 h-3 text-yellow-600 dark:text-yellow-500" />
-                          </>
+                          <AlertTriangle className="w-3 h-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                        )}
+                        {session.is_problematic && (
+                          <AlertCircle className="w-3 h-3 text-red-600 dark:text-red-500 flex-shrink-0" />
                         )}
                       </div>
                     </div>
@@ -519,14 +528,23 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                             <div className="flex items-start space-x-3">
                               <MessageCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
                               <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between gap-2">
                                   <h3
-                                    className="font-medium text-gray-800 dark:text-gray-200 text-xs truncate"
+                                    className="font-medium text-gray-800 dark:text-gray-200 text-xs truncate flex-1 min-w-0"
                                     title={getSessionTitle(session)}
                                   >
                                     {getSessionTitle(session)}
                                   </h3>
-                                  <div className="flex items-center space-x-1">
+                                  <div className="flex items-center space-x-1 flex-shrink-0">
+                                    {/* Debug: Log session flags */}
+                                    {(() => {
+                                      console.log(`Session ${session.session_id.slice(-8)}:`, {
+                                        has_tool_use: session.has_tool_use,
+                                        has_errors: session.has_errors,
+                                        is_problematic: session.is_problematic
+                                      });
+                                      return null;
+                                    })()}
                                     {session.has_tool_use && (
                                       <span
                                         title={t(
@@ -534,7 +552,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                           "Tool used"
                                         )}
                                       >
-                                        <Wrench className="w-3 h-3 text-blue-400" />
+                                        <Wrench className="w-3 h-3 text-blue-400 flex-shrink-0" />
                                       </span>
                                     )}
                                     {session.has_errors && (
@@ -544,7 +562,17 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                           "Error occurred"
                                         )}
                                       >
-                                        <AlertTriangle className="w-3 h-3 text-red-400" />
+                                        <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                                      </span>
+                                    )}
+                                    {session.is_problematic && (
+                                      <span
+                                        title={t(
+                                          "components:tools.sessionProblematic",
+                                          "Session not resumable (fix available)"
+                                        )}
+                                      >
+                                        <AlertCircle className="w-3 h-3 text-red-500 flex-shrink-0" />
                                       </span>
                                     )}
                                   </div>

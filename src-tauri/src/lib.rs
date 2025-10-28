@@ -4,8 +4,8 @@ mod utils;
 
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::{
-    cursor::*, feedback::*, files::*, gemini::*, project::*, secure_update::*, session::*,
-    session_writer::*, stats::*, update::*,
+    codex::*, cursor::*, feedback::*, files::*, gemini::*, project::*, secure_update::*,
+    session::*, session_writer::*, stats::*, update::*,
 };
 use std::sync::Mutex;
 
@@ -32,6 +32,7 @@ pub fn run() {
             load_session_messages_paginated,
             get_session_message_count,
             search_messages,
+            fix_session,
             get_session_token_stats,
             get_project_token_stats,
             get_project_stats_summary,
@@ -66,7 +67,13 @@ pub fn run() {
             scan_gemini_projects,
             load_gemini_sessions,
             load_gemini_messages,
-            seed_gemini_resolver
+            seed_gemini_resolver,
+            // Codex CLI support (v1.8.0)
+            get_codex_path,
+            validate_codex_folder,
+            scan_codex_projects,
+            load_codex_sessions,
+            load_codex_messages
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

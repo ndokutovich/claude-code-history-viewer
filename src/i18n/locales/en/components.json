@@ -19,7 +19,8 @@
     "loadingContent": "Loading content...",
     "count": "Sessions: {{count}}",
     "selected": "Selected session",
-    "noSessions": "No sessions found"
+    "noSessions": "No sessions found",
+    "fix": "Fix Session (Restore Resumability)"
   },
   "selection": {
     "clear": "Clear selection (ESC)"
@@ -252,6 +253,7 @@
     "toolUsed": "Tool Used",
     "generalConversation": "General Conversation",
     "errorOccurred": "Error Occurred",
+    "sessionProblematic": "Session not resumable (fix available)",
     "todoUpdate": "Todo List Update",
     "currentStatus": "Current Status:",
     "fileCreate": "File Creation",
@@ -269,7 +271,8 @@
     "loadingSessions": "Loading sessions...",
     "loadingMessages": "Loading messages...",
     "loadingStats": "Loading token statistics...",
-    "checking": "Checking..."
+    "checking": "Checking...",
+    "fixing": "Fixing..."
   },
   "error": {
     "unexpectedError": "An unexpected error occurred",
@@ -722,7 +725,8 @@
     "failedToLoadAll": "Failed to load all messages",
     "markdownTooltip": "Export conversation to Markdown format",
     "htmlTooltip": "Export conversation to HTML format",
-    "docxTooltip": "Export conversation to Word document"
+    "docxTooltip": "Export conversation to Word document",
+    "fixSession": "Fix Session"
   },
   "messageReference": {
     "copyReference": "Copy Reference",

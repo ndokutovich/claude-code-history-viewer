@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { FileText, FileCode, Globe, Copy, Check } from "lucide-react";
+import { FileText, FileCode, Globe, Copy, Check, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/utils/cn";
@@ -21,12 +21,14 @@ interface ExportControlsProps {
 
 export function ExportControls({ messages, session }: ExportControlsProps) {
   const { t } = useTranslation("components");
+  const { t: tCommon } = useTranslation("common");
   const [includeAttachments, setIncludeAttachments] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [copiedPath, setCopiedPath] = useState(false);
+  const [isFixingSession, setIsFixingSession] = useState(false);
 
   // Get current view mode, theme, and pagination state from app settings
-  const { messageViewMode, messageFilters, pagination, loadAllMessages } = useAppStore();
+  const { messageViewMode, messageFilters, pagination, loadAllMessages, refreshCurrentSession } = useAppStore();
   const { isDarkMode } = useTheme();
 
   const sessionTitle = getSessionTitle(session, messages);
@@ -88,6 +90,26 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
     } catch (error) {
       console.error("Failed to load all messages:", error);
       toast.error(t("export.failedToLoadAll"));
+    }
+  };
+
+  const handleFixSession = async () => {
+    if (!session.is_problematic) return;
+
+    try {
+      setIsFixingSession(true);
+      const { invoke } = await import("@tauri-apps/api/core");
+      const result = await invoke<string>("fix_session", {
+        sessionFilePath: session.file_path,
+      });
+
+      toast.success(result);
+      await refreshCurrentSession();
+    } catch (error) {
+      console.error("Failed to fix session:", error);
+      toast.error(`Failed to fix session: ${error}`);
+    } finally {
+      setIsFixingSession(false);
     }
   };
 
@@ -206,6 +228,25 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
           </>
         )}
       </button>
+
+      {/* Fix Session Button - Only show if session is problematic */}
+      {session.is_problematic && (
+        <button
+          onClick={handleFixSession}
+          disabled={isFixingSession}
+          className={cn(
+            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors border-2",
+            "bg-orange-50 dark:bg-orange-900/20 border-orange-400 dark:border-orange-600",
+            "hover:bg-orange-100 dark:hover:bg-orange-900/30",
+            "text-orange-700 dark:text-orange-400",
+            "disabled:opacity-50 disabled:cursor-not-allowed"
+          )}
+          title={tCommon("session.fix")}
+        >
+          <Wrench className={cn("w-4 h-4", isFixingSession && "animate-pulse")} />
+          <span>{isFixingSession ? t("status.fixing") : t("export.fixSession")}</span>
+        </button>
+      )}
     </div>
   );
 }

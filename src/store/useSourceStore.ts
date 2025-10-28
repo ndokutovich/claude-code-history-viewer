@@ -199,6 +199,19 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       console.log('  ✗ Gemini CLI not found:', (error as Error).message);
     }
 
+    // Try to detect Codex CLI folder (v1.8.0)
+    try {
+      const codexPath = await invoke<string>('get_codex_path');
+      const validation = await get().validatePath(codexPath);
+
+      if (validation.isValid && validation.providerId === 'codex') {
+        console.log(`  ✓ Found Codex CLI at: ${codexPath}`);
+        detectedSources.push(codexPath);
+      }
+    } catch (error) {
+      console.log('  ✗ Codex CLI not found:', (error as Error).message);
+    }
+
     // Add all detected sources
     if (detectedSources.length === 0) {
       console.warn('⚠️  No conversation data sources found');

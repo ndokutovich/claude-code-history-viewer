@@ -142,6 +142,7 @@ export interface UISession {
   last_modified: string; // Last modification time of the file
   has_tool_use: boolean;
   has_errors: boolean;
+  is_problematic: boolean; // Session ends in unclean state (not resumable in Claude Code)
   summary?: string;
   // Provider information
   providerId?: string;

@@ -203,6 +203,7 @@ export const SearchView = () => {
           last_modified: new Date().toISOString(),
           has_tool_use: false,
           has_errors: false,
+          is_problematic: false,
           summary: group.messages[0]?.content?.toString().substring(0, 100)
         };
       }

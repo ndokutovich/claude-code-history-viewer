@@ -108,6 +108,7 @@ pub struct ClaudeSession {
     pub last_modified: String,
     pub has_tool_use: bool,
     pub has_errors: bool,
+    pub is_problematic: bool,      // Session ends in unclean state (not resumable in Claude Code)
     pub summary: Option<String>,
 }
 

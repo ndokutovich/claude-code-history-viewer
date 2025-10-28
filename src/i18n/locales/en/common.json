@@ -1,6 +1,6 @@
 {
-  "appName": "Claude Code, Cursor IDE & Gemini CLI History Viewer",
-  "appDescription": "Explore and analyze your Claude Code, Cursor IDE, and Gemini CLI conversation history",
+  "appName": "Claude Code, Cursor IDE, Gemini CLI & Codex CLI History Viewer",
+  "appDescription": "Explore and analyze your Claude Code, Cursor IDE, Gemini CLI, and Codex CLI conversation history",
   "errorOccurred": "An error occurred",
   "loading": "Loading...",
   "back": "Back",
@@ -119,6 +119,9 @@
     "enterQuery": "Enter a search query to find messages",
     "foundResults": "Found {{count}} messages in {{sessions}} conversations",
     "matches": "matches"
+  },
+  "session": {
+    "fix": "Fix Session (Restore Resumability)"
   },
   "fileActions": {
     "openFile": "Open File",

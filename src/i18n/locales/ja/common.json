@@ -1,6 +1,6 @@
 {
-  "appName": "Claude Code, Cursor IDE & Gemini CLI 履歴ビューア",
-  "appDescription": "Claude Code, Cursor IDEおよびGemini CLIの会話履歴を探索・分析します",
+  "appName": "Claude Code, Cursor IDE, Gemini CLI および Codex CLI 履歴ビューア",
+  "appDescription": "Claude Code, Cursor IDE, Gemini CLIおよびCodex CLIの会話履歴を探索・分析します",
   "errorOccurred": "エラーが発生しました",
   "loading": "読み込み中...",
   "back": "戻る",

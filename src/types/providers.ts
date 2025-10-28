@@ -88,6 +88,7 @@ export enum ProviderID {
   CLAUDE_CODE = 'claude-code',
   CURSOR = 'cursor',
   GEMINI = 'gemini', // v1.7.0 - Gemini CLI support
+  CODEX = 'codex',   // v1.8.0 - Codex CLI support
   COPILOT = 'copilot',
   CLINE = 'cline',
   AIDER = 'aider',

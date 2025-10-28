@@ -1,4 +1,4 @@
-use crate::commands::adapters::claude_code::{claude_message_to_universal, extract_project_id};
+use crate::commands::adapters::claude_code::claude_message_to_universal;
 use crate::models::universal::UniversalMessage;
 use crate::models::*;
 use crate::utils::extract_project_name;
@@ -130,6 +130,8 @@ pub async fn load_project_sessions(
             }
 
             if !messages.is_empty() {
+                eprintln!("📁 Loaded {} messages from {}", messages.len(), file_path);
+
                 // Extract actual session ID from messages
                 let actual_session_id = messages
                     .iter()
@@ -169,6 +171,24 @@ pub async fn load_project_sessions(
                 let last_message_time = messages.last().unwrap().timestamp.clone();
 
                 let has_tool_use = messages.iter().any(|m| {
+                    // Debug: Check first message structure
+                    if messages.len() > 0 && m.uuid == messages[0].uuid {
+                        eprintln!("🔍 First message in session:");
+                        eprintln!("  - type: {}", m.message_type);
+                        eprintln!("  - has content: {}", m.content.is_some());
+                        eprintln!("  - has tool_use: {}", m.tool_use.is_some());
+                        eprintln!("  - has tool_use_result: {}", m.tool_use_result.is_some());
+                        if let Some(ref content) = m.content {
+                            eprintln!("  - content is array: {}", content.is_array());
+                            if let Some(arr) = content.as_array() {
+                                eprintln!("  - array length: {}", arr.len());
+                                if let Some(first) = arr.first() {
+                                    eprintln!("  - first item type: {:?}", first.get("type"));
+                                }
+                            }
+                        }
+                    }
+
                     if m.message_type == "assistant" {
                         if let Some(content) = &m.content {
                             if let Some(content_array) = content.as_array() {
@@ -177,6 +197,7 @@ pub async fn load_project_sessions(
                                         item.get("type").and_then(|v| v.as_str())
                                     {
                                         if item_type == "tool_use" {
+                                            eprintln!("✅ Found tool_use in content array!");
                                             return true;
                                         }
                                     }
@@ -184,16 +205,84 @@ pub async fn load_project_sessions(
                             }
                         }
                     }
-                    m.tool_use.is_some() || m.tool_use_result.is_some()
+                    if m.tool_use.is_some() || m.tool_use_result.is_some() {
+                        eprintln!("✅ Found tool_use/tool_use_result field!");
+                        return true;
+                    }
+                    false
                 });
+
                 let has_errors = messages.iter().any(|m| {
                     if let Some(result) = &m.tool_use_result {
                         if let Some(stderr) = result.get("stderr") {
-                            return !stderr.as_str().unwrap_or("").is_empty();
+                            let has_err = !stderr.as_str().unwrap_or("").is_empty();
+                            if has_err {
+                                eprintln!("✅ Found stderr in tool_use_result!");
+                            }
+                            return has_err;
                         }
                     }
                     false
                 });
+
+                // Debug logging
+                if has_tool_use || has_errors {
+                    eprintln!("📊 Session {}: has_tool_use={}, has_errors={}",
+                        &session_id[..8], has_tool_use, has_errors);
+                }
+
+                // Detect if session is problematic (won't be resumable in Claude Code)
+                // A session is problematic if the last non-sidechain message:
+                // 1. Is NOT from assistant
+                // 2. Contains interruption markers
+                // 3. Is a tool_use without corresponding completion
+                let is_problematic = {
+                    let last_non_sidechain = messages
+                        .iter()
+                        .filter(|m| !m.is_sidechain.unwrap_or(false))
+                        .last();
+
+                    if let Some(msg) = last_non_sidechain {
+                        // Debug logging
+                        eprintln!("🔍 Session {}: Last message type={}, role={:?}",
+                            &session_id[..8], msg.message_type, msg.role);
+
+                        // Check 1: Last message is not from assistant
+                        if msg.message_type != "assistant" {
+                            eprintln!("⚠️ Session {}: Problematic - last message type is '{}'",
+                                &session_id[..8], msg.message_type);
+                            true
+                        } else if let Some(role) = &msg.role {
+                            // Also check role field if present
+                            if role != "assistant" {
+                                eprintln!("⚠️ Session {}: Problematic - last message role is '{}'",
+                                    &session_id[..8], role);
+                                true
+                            } else {
+                                // Check 2: Assistant message contains error or interruption markers
+                                let has_interruption = if let Some(content) = &msg.content {
+                                    let content_str = content.to_string();
+                                    content_str.contains("[Request interrupted")
+                                        || content_str.contains("is_error\":true")
+                                } else {
+                                    false
+                                };
+
+                                if has_interruption {
+                                    eprintln!("⚠️ Session {}: Problematic - contains interruption marker",
+                                        &session_id[..8]);
+                                }
+
+                                has_interruption
+                            }
+                        } else {
+                            false
+                        }
+                    } else {
+                        // Empty session, not problematic
+                        false
+                    }
+                };
 
                 // Extract text from first user message only when summary is not present
                 let final_summary = if session_summary.is_none() {
@@ -263,6 +352,7 @@ pub async fn load_project_sessions(
                     last_modified: last_modified.clone(),
                     has_tool_use,
                     has_errors,
+                    is_problematic,
                     summary: final_summary,
                 });
             }
@@ -1024,4 +1114,89 @@ pub async fn search_messages(
         .collect();
 
     Ok(universal_messages)
+}
+
+/// Fixes a problematic session by removing interrupted messages
+/// Creates a backup first, then removes lines after the last clean assistant message
+#[tauri::command]
+pub async fn fix_session(session_file_path: String) -> Result<String, String> {
+    use std::io::{BufRead, BufReader, Write};
+    use std::path::Path;
+
+    let path = Path::new(&session_file_path);
+
+    // Validate file exists
+    if !path.exists() {
+        return Err(format!("Session file not found: {}", session_file_path));
+    }
+
+    // Read all lines and find last clean assistant message
+    let file = fs::File::open(path)
+        .map_err(|e| format!("Failed to open file: {}", e))?;
+    let reader = BufReader::new(file);
+    let lines: Vec<String> = reader.lines().filter_map(|l| l.ok()).collect();
+
+    if lines.is_empty() {
+        return Err("Session file is empty".to_string());
+    }
+
+    // Find the last clean assistant message (non-sidechain)
+    let mut last_clean_line: Option<usize> = None;
+
+    for (index, line) in lines.iter().enumerate() {
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        if let Ok(entry) = serde_json::from_str::<RawLogEntry>(line) {
+            // Skip sidechain messages
+            if entry.is_sidechain.unwrap_or(false) {
+                continue;
+            }
+
+            // Check if this is a clean assistant message
+            if entry.message_type == "assistant" {
+                if let Some(ref msg) = entry.message {
+                    if msg.role == "assistant" {
+                        // Check content doesn't contain interruption markers
+                        let content_str = serde_json::to_string(&msg.content).unwrap_or_default();
+                        if !content_str.contains("[Request interrupted")
+                            && !content_str.contains("is_error\":true") {
+                            last_clean_line = Some(index);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let last_clean_line = match last_clean_line {
+        Some(line) => line,
+        None => return Err("No clean assistant message found in session".to_string()),
+    };
+
+    // Create backup with .backup extension
+    let backup_path = format!("{}.backup", session_file_path);
+    fs::copy(&session_file_path, &backup_path)
+        .map_err(|e| format!("Failed to create backup: {}", e))?;
+
+    // Write only up to last clean line
+    let mut output_file = fs::File::create(&session_file_path)
+        .map_err(|e| format!("Failed to create output file: {}", e))?;
+
+    for (index, line) in lines.iter().enumerate() {
+        if index <= last_clean_line {
+            writeln!(output_file, "{}", line)
+                .map_err(|e| format!("Failed to write line: {}", e))?;
+        } else {
+            break;
+        }
+    }
+
+    let removed_count = lines.len() - last_clean_line - 1;
+    Ok(format!(
+        "Session fixed successfully. Removed {} problematic message(s). Backup saved to: {}",
+        removed_count,
+        backup_path
+    ))
 }

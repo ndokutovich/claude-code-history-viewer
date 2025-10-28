@@ -137,6 +137,7 @@ function universalToUISession(session: UniversalSession): UISession {
   // Extract summary and file path from metadata if available
   const summary = session.metadata.summary as string | undefined;
   const filePath = session.metadata.filePath as string | undefined;
+  const isProblematic = session.metadata.isProblematic as boolean | undefined;
 
   // Get provider name from adapter registry
   const adapter = adapterRegistry.tryGet(session.providerId);
@@ -151,8 +152,9 @@ function universalToUISession(session: UniversalSession): UISession {
     first_message_time: session.firstMessageAt,
     last_message_time: session.lastMessageAt,
     last_modified: session.lastMessageAt,
-    has_tool_use: session.toolCallCount > 0,
-    has_errors: session.errorCount > 0,
+    has_tool_use: session.toolCallCount > 0 || session.toolCallCount === -1, // -1 means "has but count unknown"
+    has_errors: session.errorCount > 0 || session.errorCount === -1,
+    is_problematic: isProblematic ?? false, // Extract from metadata, default false for non-Claude sources
     summary,
     providerId: session.providerId,
     providerName,

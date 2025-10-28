@@ -345,9 +345,21 @@ export class CursorAdapter implements IConversationAdapter {
     this.ensureInitialized();
 
     try {
+      // Extract cursor base path from the encoded sessionPath
+      // Format: <full_db_path>#session=<session_id>#timestamp=<timestamp>
+      // We need to extract the Cursor base folder from the full DB path
+      const cursorPath = this.extractCursorPathFromDbPath(sessionPath);
+
+      console.log('🔍 CursorAdapter.loadMessages called with:', {
+        sessionPath,
+        extractedCursorPath: cursorPath,
+        sessionId,
+      });
+
       // Call Rust command to load messages from Cursor session DB
       const cursorMessages = await invoke<UniversalMessage[]>('load_cursor_messages', {
-        sessionDbPath: sessionPath,
+        cursorPath,           // Base Cursor folder path
+        sessionDbPath: sessionPath,  // Encoded path with session info
       });
 
       // Apply offset/limit if specified
@@ -608,6 +620,30 @@ export class CursorAdapter implements IConversationAdapter {
       },
       checksum: this.generateChecksum(session.db_path + session.last_modified),
     };
+  }
+
+  /**
+   * Extract Cursor base path from the encoded DB path
+   * Example input: "C:/Users/xxx/AppData/Roaming/Cursor/User/workspaceStorage/abc123/state.vscdb#session=xyz#timestamp=..."
+   * Example output: "C:/Users/xxx/AppData/Roaming/Cursor"
+   */
+  private extractCursorPathFromDbPath(dbPath: string): string {
+    // Remove encoded session info if present
+    const parts = dbPath.split('#');
+    const cleanPath = parts[0] || dbPath;
+
+    // Find the Cursor folder in the path
+    // Path structure: .../Cursor/User/workspaceStorage/...
+    const cursorIndex = cleanPath.toLowerCase().indexOf('/cursor/');
+    if (cursorIndex === -1) {
+      // Try backslash for Windows
+      const cursorIndexWin = cleanPath.toLowerCase().indexOf('\\cursor\\');
+      if (cursorIndexWin === -1) {
+        throw new Error(`Cannot extract Cursor base path from: ${dbPath}`);
+      }
+      return cleanPath.substring(0, cursorIndexWin + 7); // Include '\Cursor'
+    }
+    return cleanPath.substring(0, cursorIndex + 7); // Include '/Cursor'
   }
 
   private generateChecksum(input: string): string {
