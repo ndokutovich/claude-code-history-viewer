@@ -286,7 +286,9 @@
     "loadingSessions": "세션 로딩 중...",
     "loadingMessages": "메시지 로딩 중...",
     "loadingStats": "토큰 통계 로딩 중...",
-    "checking": "확인 중..."
+    "checking": "확인 중...",
+    "resuming": "재개 중...",
+    "fixing": "수정 중..."
   },
   "error": {
     "unexpectedError": "예기치 않은 오류가 발생했습니다",
@@ -624,6 +626,7 @@
     "currentVersionLatest": "현재 버전 {{version}}이 최신입니다"
   },
   "projectListControls": {
+    "refreshAll": "Refresh All Sessions",
     "groupBySource": "소스별 그룹화",
     "ungroup": "그룹 해제",
     "groupBy": {
@@ -728,6 +731,16 @@
     "copied": "복사됨",
     "markdownTooltip": "대화를 Markdown 형식으로 내보내기",
     "htmlTooltip": "대화를 HTML 형식으로 내보내기",
-    "docxTooltip": "대화를 Word 문서로 내보내기"
+    "docxTooltip": "대화를 Word 문서로 내보내기",
+    "resume": "재개",
+    "resumeTooltip": "터미널에서 세션 재개 (Shift+클릭하면 명령어 복사)",
+    "resumeCommandCopied": "재개 명령어가 클립보드에 복사되었습니다",
+    "sessionResumed": "터미널에서 세션을 여는 중...",
+    "fixSession": "세션 수정",
+    "loadAll": "전체 로드",
+    "loadAllTooltip": "모든 메시지 로드",
+    "loading": "로딩 중...",
+    "allMessagesLoaded": "{{count}}개의 메시지가 모두 로드되었습니다",
+    "failedToLoadAll": "모든 메시지 로드 실패"
   }
 }

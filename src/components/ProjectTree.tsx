@@ -43,10 +43,30 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   onClearSelection,
   isLoading,
 }) => {
-  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(() => {
+    // Load expanded projects from localStorage on mount
+    try {
+      const stored = localStorage.getItem('expandedProjects');
+      if (stored) {
+        return new Set(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error('Failed to load expanded projects:', e);
+    }
+    return new Set();
+  });
   const [loadingProjects, setLoadingProjects] = useState<Set<string>>(new Set());
   const { t, i18n } = useTranslation('components');
   const { projectListPreferences, loadProjectSessions } = useAppStore();
+
+  // Save expanded projects to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('expandedProjects', JSON.stringify(Array.from(expandedProjects)));
+    } catch (e) {
+      console.error('Failed to save expanded projects:', e);
+    }
+  }, [expandedProjects]);
 
   // Apply filtering and sorting to projects
   const filteredAndSortedProjects = useMemo(() => {
@@ -286,12 +306,28 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       setExpandedProjects(new Set());
     };
 
+    const handleExpandProject = async (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { path } = customEvent.detail;
+
+      setExpandedProjects(prev => {
+        const newSet = new Set(prev);
+        newSet.add(path);
+        return newSet;
+      });
+
+      // Load sessions for this project
+      await loadSessionsForProjects([path]);
+    };
+
     window.addEventListener('expandAllProjects', handleExpandAll);
     window.addEventListener('collapseAllProjects', handleCollapseAll);
+    window.addEventListener('expandProject', handleExpandProject as EventListener);
 
     return () => {
       window.removeEventListener('expandAllProjects', handleExpandAll);
       window.removeEventListener('collapseAllProjects', handleCollapseAll);
+      window.removeEventListener('expandProject', handleExpandProject as EventListener);
     };
   }, [filteredAndSortedProjects]);
 
@@ -394,15 +430,6 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                         <span className="whitespace-nowrap">{t("message.count", { count: session.message_count })}</span>
                         <span>•</span>
                         <span className="whitespace-nowrap">{formatTimeAgo(session.last_modified)}</span>
-                        {/* Debug: Log session flags */}
-                        {(() => {
-                          console.log(`Session ${session.session_id.slice(-8)}:`, {
-                            has_tool_use: session.has_tool_use,
-                            has_errors: session.has_errors,
-                            is_problematic: session.is_problematic
-                          });
-                          return null;
-                        })()}
                         {session.has_tool_use && (
                           <Wrench className="w-3 h-3 flex-shrink-0" />
                         )}
@@ -488,7 +515,10 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                             className={cn("w-4 h-4", getProviderColorClass(project.providerId))}
                           />
                           <div className="min-w-0 flex-1 flex items-center">
-                            <p className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm max-w-56">
+                            <p
+                              className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm"
+                              title={project.name}
+                            >
                               {project.name}
                             </p>
                           </div>
@@ -536,15 +566,6 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                     {getSessionTitle(session)}
                                   </h3>
                                   <div className="flex items-center space-x-1 flex-shrink-0">
-                                    {/* Debug: Log session flags */}
-                                    {(() => {
-                                      console.log(`Session ${session.session_id.slice(-8)}:`, {
-                                        has_tool_use: session.has_tool_use,
-                                        has_errors: session.has_errors,
-                                        is_problematic: session.is_problematic
-                                      });
-                                      return null;
-                                    })()}
                                     {session.has_tool_use && (
                                       <span
                                         title={t(
@@ -578,7 +599,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                   </div>
                                 </div>
 
-                                <div className="flex items-center space-x-1 text-xs text-gray-400 mt-1">
+                                <div className="flex items-center space-x-1 text-xs text-gray-400 mt-1 overflow-hidden">
                                   <span className="whitespace-nowrap">
                                     {formatTimeAgo(session.last_modified)}
                                   </span>
@@ -600,8 +621,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                       "Actual ID"
                                     )}: ${session.actual_session_id}`}
                                   >
-                                    ID: {session.actual_session_id.slice(0, 8)}
-                                    ...
+                                    ID: {session.actual_session_id}
                                   </span>
                                 </div>
                               </div>

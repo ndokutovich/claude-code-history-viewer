@@ -147,6 +147,9 @@ export interface UISession {
   // Provider information
   providerId?: string;
   providerName?: string;
+  // Git information
+  git_branch?: string; // Git branch name
+  git_commit?: string; // Git commit hash (short, 8 chars)
 }
 
 export interface SearchFilters {

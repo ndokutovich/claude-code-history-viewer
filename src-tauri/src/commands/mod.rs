@@ -5,6 +5,7 @@ pub mod feedback;
 pub mod files; // v1.5.0+ - File activity tracking
 pub mod gemini; // v1.7.0 - Gemini CLI support
 pub mod project;
+pub mod resume; // Session resume functionality
 pub mod secure_update;
 pub mod session;
 pub mod session_writer; // v1.6.0+ - Session creation and writing

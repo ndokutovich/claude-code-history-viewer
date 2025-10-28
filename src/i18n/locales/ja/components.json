@@ -267,7 +267,9 @@
     "loadingSessions": "セッションを読み込み中...",
     "loadingMessages": "メッセージを読み込み中...",
     "loadingStats": "トークン統計を読み込み中...",
-    "checking": "確認中..."
+    "checking": "確認中...",
+    "resuming": "再開中...",
+    "fixing": "修正中..."
   },
   "error": {
     "unexpectedError": "予期しないエラーが発生しました",
@@ -605,6 +607,7 @@
     "currentVersionLatest": "現在のバージョン {{version}} が最新です"
   },
   "projectListControls": {
+    "refreshAll": "Refresh All Sessions",
     "groupBySource": "ソース別にグループ化",
     "ungroup": "グループ解除",
     "groupBy": {
@@ -712,6 +715,16 @@
     "copied": "コピー済み",
     "markdownTooltip": "会話をMarkdown形式でエクスポート",
     "htmlTooltip": "会話をHTML形式でエクスポート",
-    "docxTooltip": "会話をWord文書でエクスポート"
+    "docxTooltip": "会話をWord文書でエクスポート",
+    "resume": "再開",
+    "resumeTooltip": "ターミナルでセッションを再開（Shift+クリックでコマンドをコピー）",
+    "resumeCommandCopied": "再開コマンドをクリップボードにコピーしました",
+    "sessionResumed": "ターミナルでセッションを開いています...",
+    "fixSession": "セッションを修正",
+    "loadAll": "すべて読み込み",
+    "loadAllTooltip": "すべてのメッセージを読み込む",
+    "loading": "読み込み中...",
+    "allMessagesLoaded": "{{count}}件のメッセージをすべて読み込みました",
+    "failedToLoadAll": "すべてのメッセージの読み込みに失敗しました"
   }
 }

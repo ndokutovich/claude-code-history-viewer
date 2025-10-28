@@ -1,7 +1,7 @@
 use crate::commands::adapters::claude_code::claude_message_to_universal;
 use crate::models::universal::UniversalMessage;
 use crate::models::*;
-use crate::utils::extract_project_name;
+use crate::utils::{extract_git_info, extract_project_name, filter_preamble_from_title};
 use chrono::{DateTime, Utc};
 use std::fs;
 use uuid::Uuid;
@@ -39,6 +39,8 @@ pub async fn load_project_sessions(
             let reader = BufReader::new(file);
             let mut messages: Vec<ClaudeMessage> = Vec::new();
             let mut session_summary: Option<String> = None;
+            let mut git_branch: Option<String> = None;
+            let mut git_commit: Option<String> = None;
 
             for (line_num, line_result) in reader.lines().enumerate() {
                 if let Ok(line) = line_result {
@@ -48,9 +50,18 @@ pub async fn load_project_sessions(
 
                     match serde_json::from_str::<RawLogEntry>(&line) {
                         Ok(log_entry) => {
+                            // Extract git info from first message that has it
+                            if git_branch.is_none() && log_entry.git_branch.is_some() {
+                                git_branch = log_entry.git_branch.clone();
+                            }
+                            if git_commit.is_none() && log_entry.git_commit.is_some() {
+                                git_commit = log_entry.git_commit.clone();
+                            }
+
                             if log_entry.message_type == "summary" {
                                 if session_summary.is_none() {
-                                    session_summary = log_entry.summary;
+                                    // Apply preamble filtering to summary messages
+                                    session_summary = log_entry.summary.map(|s| filter_preamble_from_title(&s));
                                 }
                             } else {
                                 if log_entry.session_id.is_none() && log_entry.timestamp.is_none() {
@@ -296,12 +307,16 @@ pub async fn load_project_sessions(
                                     serde_json::Value::String(text) => {
                                         if text.trim().is_empty() {
                                             None
-                                        } else if text.chars().count() > 100 {
-                                            let truncated: String =
-                                                text.chars().take(100).collect();
-                                            Some(format!("{}...", truncated))
                                         } else {
-                                            Some(text.clone())
+                                            // Apply preamble filtering first
+                                            let filtered = filter_preamble_from_title(text);
+                                            if filtered.chars().count() > 100 {
+                                                let truncated: String =
+                                                    filtered.chars().take(100).collect();
+                                                Some(format!("{}...", truncated))
+                                            } else {
+                                                Some(filtered)
+                                            }
                                         }
                                     }
                                     // Array case: find type="text"
@@ -315,14 +330,16 @@ pub async fn load_project_sessions(
                                                         item.get("text").and_then(|v| v.as_str())
                                                     {
                                                         if !text.trim().is_empty() {
-                                                            return if text.chars().count() > 100 {
-                                                                let truncated: String = text
+                                                            // Apply preamble filtering first
+                                                            let filtered = filter_preamble_from_title(text);
+                                                            return if filtered.chars().count() > 100 {
+                                                                let truncated: String = filtered
                                                                     .chars()
                                                                     .take(100)
                                                                     .collect();
                                                                 Some(format!("{}...", truncated))
                                                             } else {
-                                                                Some(text.to_string())
+                                                                Some(filtered)
                                                             };
                                                         }
                                                     }
@@ -341,7 +358,38 @@ pub async fn load_project_sessions(
                     session_summary
                 };
 
-                sessions.push(ClaudeSession {
+                // Extract git information from tool outputs
+                let tool_outputs: Vec<String> = messages
+                    .iter()
+                    .filter_map(|m| {
+                        if let Some(result) = &m.tool_use_result {
+                            // Extract stdout from Bash tool results
+                            if let Some(stdout) = result.get("stdout").and_then(|v| v.as_str()) {
+                                return Some(stdout.to_string());
+                            }
+                            // Also check for direct string results
+                            if let Some(text) = result.as_str() {
+                                return Some(text.to_string());
+                            }
+                        }
+                        None
+                    })
+                    .collect();
+
+                // Git info is already extracted from messages during parsing
+                // Keep extract_git_info call as fallback for sessions without gitBranch field
+                let (fallback_branch, fallback_commit) = extract_git_info(&None, &tool_outputs);
+                let final_git_branch = git_branch.or(fallback_branch);
+                let final_git_commit = git_commit.or(fallback_commit);
+
+                if final_git_branch.is_some() || final_git_commit.is_some() {
+                    eprintln!("📍 Git info for {}: branch={:?}, commit={:?}",
+                        &file_path[file_path.len().saturating_sub(50)..],
+                        final_git_branch,
+                        final_git_commit);
+                }
+
+                let session = ClaudeSession {
                     session_id,
                     actual_session_id,
                     file_path,
@@ -354,7 +402,14 @@ pub async fn load_project_sessions(
                     has_errors,
                     is_problematic,
                     summary: final_summary,
-                });
+                    git_branch: final_git_branch.clone(),
+                    git_commit: final_git_commit.clone(),
+                };
+
+                eprintln!("✅ Created session with git_branch={:?}, git_commit={:?}",
+                    final_git_branch, final_git_commit);
+
+                sessions.push(session);
             }
         }
     }

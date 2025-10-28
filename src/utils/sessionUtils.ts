@@ -45,7 +45,15 @@ export function getSessionTitle(
     }
   }
 
-  // Fallback to session ID
+  // Fallback to filename from file_path (without .jsonl extension)
+  if (session?.file_path) {
+    const filename = session.file_path.split(/[/\\]/).pop() || "";
+    if (filename) {
+      // Remove .jsonl extension
+      return filename.replace(/\.jsonl$/i, "");
+    }
+  }
+
   const sessionId = session?.actual_session_id || session?.session_id || "";
-  return `Session ${sessionId.slice(-8)}`;
+  return sessionId || "Unknown";
 }

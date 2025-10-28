@@ -282,7 +282,9 @@
     "loadingSessions": "正在載入會話...",
     "loadingMessages": "正在載入訊息...",
     "loadingStats": "正在載入權杖統計...",
-    "checking": "正在檢查..."
+    "checking": "正在檢查...",
+    "resuming": "正在恢復...",
+    "fixing": "正在修復..."
   },
   "error": {
     "unexpectedError": "發生了意外錯誤",
@@ -620,6 +622,7 @@
     "currentVersionLatest": "目前版本 {{version}} 為最新版本"
   },
   "projectListControls": {
+    "refreshAll": "Refresh All Sessions",
     "groupBySource": "按來源分組",
     "ungroup": "取消分組",
     "groupBy": {
@@ -727,6 +730,16 @@
     "copied": "已複製",
     "markdownTooltip": "將對話匯出為 Markdown 格式",
     "htmlTooltip": "將對話匯出為 HTML 格式",
-    "docxTooltip": "將對話匯出為 Word 文件"
+    "docxTooltip": "將對話匯出為 Word 文件",
+    "resume": "恢復",
+    "resumeTooltip": "在終端機中恢復會話（按住 Shift 點擊複製指令）",
+    "resumeCommandCopied": "恢復指令已複製到剪貼簿",
+    "sessionResumed": "正在終端機中開啟會話...",
+    "fixSession": "修復會話",
+    "loadAll": "載入全部",
+    "loadAllTooltip": "載入所有訊息",
+    "loading": "載入中...",
+    "allMessagesLoaded": "已載入全部 {{count}} 則訊息",
+    "failedToLoadAll": "載入所有訊息失敗"
   }
 }

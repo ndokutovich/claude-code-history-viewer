@@ -708,6 +708,8 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
         actualSessionId: uiSession.actual_session_id,
         projectName: uiSession.project_name,
         isProblematic: uiSession.is_problematic, // Preserve is_problematic flag
+        gitBranch: uiSession.git_branch, // Git branch from session metadata
+        gitCommit: uiSession.git_commit, // Git commit hash from session metadata
       },
       checksum: this.generateChecksum(uiSession.file_path + uiSession.last_modified),
     };

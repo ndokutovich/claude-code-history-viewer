@@ -76,7 +76,7 @@ function App() {
   const { language, loadLanguage } = useLanguageStore();
 
   // Sidebar width state for resizable splitter
-  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [sidebarWidth, setSidebarWidth] = useState(336);
 
   // Source store for multi-source management
   const {
@@ -346,7 +346,7 @@ function App() {
           <ResizableSplitter
             minWidth={200}
             maxWidth={800}
-            defaultWidth={320}
+            defaultWidth={336}
             onWidthChange={setSidebarWidth}
           />
 
@@ -396,6 +396,23 @@ function App() {
                               {selectedSession.has_errors &&
                                 ` • ${tComponents("tools.errorOccurred")}`}
                             </p>
+                            {(selectedSession.git_branch || selectedSession.git_commit) && (
+                              <p className={cn("text-xs mt-1", COLORS.ui.text.muted)}>
+                                {selectedSession.git_branch && (
+                                  <span className="inline-flex items-center gap-1">
+                                    <span>📍</span>
+                                    <span className="font-mono">{selectedSession.git_branch}</span>
+                                  </span>
+                                )}
+                                {selectedSession.git_branch && selectedSession.git_commit && " • "}
+                                {selectedSession.git_commit && (
+                                  <span className="inline-flex items-center gap-1">
+                                    <span>🔖</span>
+                                    <span className="font-mono text-gray-500">{selectedSession.git_commit}</span>
+                                  </span>
+                                )}
+                              </p>
+                            )}
                           </div>
                         )}
                         {computed.isTokenStatsView && (

@@ -1,7 +1,9 @@
-import { Settings2, SortAsc, SortDesc, Group, Ungroup, Eye, EyeOff, ChevronsDown, ChevronsUp, MessageCircle } from "lucide-react";
+import { Settings2, SortAsc, SortDesc, Group, Ungroup, Eye, EyeOff, ChevronsDown, ChevronsUp, MessageCircle, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../store/useAppStore";
 import { Button } from "./ui/button";
+import { toast } from "sonner";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,11 +15,89 @@ import {
 
 export const ProjectListControls = () => {
   const { t } = useTranslation("components");
-  const { projectListPreferences, setProjectListPreferences } = useAppStore();
+  const {
+    projectListPreferences,
+    setProjectListPreferences,
+    initializeApp,
+    selectedProject,
+    selectedSession,
+    selectProject,
+    selectSession,
+  } = useAppStore();
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefreshAll = async () => {
+    if (isRefreshing) return; // Prevent multiple refreshes
+
+    setIsRefreshing(true);
+    const loadingToast = toast.loading(t("projectListControls.refreshing", "Refreshing..."));
+
+    try {
+      // Save current state before refresh
+      const savedProject = selectedProject;
+      const savedSession = selectedSession;
+
+      // Get currently expanded projects from localStorage or event
+      const expandedProjects = new Set<string>();
+      try {
+        const stored = localStorage.getItem('expandedProjects');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          parsed.forEach((path: string) => expandedProjects.add(path));
+        }
+      } catch (e) {
+        console.error('Failed to load expanded projects:', e);
+      }
+
+      // Re-initialize the app to refresh sources and projects
+      await initializeApp();
+
+      // Restore expanded projects after a short delay
+      if (expandedProjects.size > 0) {
+        setTimeout(() => {
+          expandedProjects.forEach(path => {
+            window.dispatchEvent(new CustomEvent('expandProject', { detail: { path } }));
+          });
+        }, 100);
+      }
+
+      // Restore selected project and session
+      if (savedProject) {
+        await selectProject(savedProject);
+        if (savedSession) {
+          await selectSession(savedSession);
+        }
+      }
+
+      toast.success(t("projectListControls.refreshed", "Refreshed successfully"), {
+        id: loadingToast,
+      });
+    } catch (error) {
+      console.error('Refresh failed:', error);
+      toast.error(t("projectListControls.refreshFailed", "Refresh failed"), {
+        id: loadingToast,
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
       <div className="flex items-center space-x-2">
+        {/* Refresh All Sessions */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefreshAll}
+          disabled={isRefreshing}
+          className="text-xs"
+          title={t("projectListControls.refreshAll", "Refresh all sessions")}
+          aria-label={t("projectListControls.refreshAll", "Refresh all sessions")}
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </Button>
         {/* Group/Ungroup - Cycles through: source → none → sessions → source */}
         <Button
           variant="ghost"

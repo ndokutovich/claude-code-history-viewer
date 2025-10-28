@@ -272,7 +272,8 @@
     "loadingMessages": "Loading messages...",
     "loadingStats": "Loading token statistics...",
     "checking": "Checking...",
-    "fixing": "Fixing..."
+    "fixing": "Fixing...",
+    "resuming": "Resuming..."
   },
   "error": {
     "unexpectedError": "An unexpected error occurred",
@@ -508,6 +509,10 @@
     "title": "Thinking Process"
   },
   "projectListControls": {
+    "refreshAll": "Refresh All Sessions",
+    "refreshing": "Refreshing...",
+    "refreshed": "Refreshed successfully",
+    "refreshFailed": "Refresh failed",
     "groupBySource": "Group by Source",
     "ungroup": "Ungroup",
     "groupBy": {
@@ -726,7 +731,11 @@
     "markdownTooltip": "Export conversation to Markdown format",
     "htmlTooltip": "Export conversation to HTML format",
     "docxTooltip": "Export conversation to Word document",
-    "fixSession": "Fix Session"
+    "fixSession": "Fix Session",
+    "resume": "Resume",
+    "resumeTooltip": "Resume session in terminal (Shift+Click to copy command)",
+    "resumeCommandCopied": "Resume command copied to clipboard",
+    "sessionResumed": "Opening session in terminal..."
   },
   "messageReference": {
     "copyReference": "Copy Reference",

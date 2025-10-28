@@ -267,7 +267,9 @@
     "loadingSessions": "Загрузка сеансов...",
     "loadingMessages": "Загрузка сообщений...",
     "loadingStats": "Загрузка статистики токенов...",
-    "checking": "Проверка..."
+    "checking": "Проверка...",
+    "resuming": "Возобновление...",
+    "fixing": "Исправление..."
   },
   "error": {
     "unexpectedError": "Произошла непредвиденная ошибка",
@@ -605,6 +607,7 @@
     "currentVersionLatest": "Текущая версия {{version}} является последней"
   },
   "projectListControls": {
+    "refreshAll": "Refresh All Sessions",
     "groupBySource": "Группировать по источнику",
     "ungroup": "Разгруппировать",
     "groupBy": {
@@ -712,6 +715,16 @@
     "copied": "Скопировано",
     "markdownTooltip": "Экспортировать разговор в формат Markdown",
     "htmlTooltip": "Экспортировать разговор в формат HTML",
-    "docxTooltip": "Экспортировать разговор в документ Word"
+    "docxTooltip": "Экспортировать разговор в документ Word",
+    "resume": "Возобновить",
+    "resumeTooltip": "Возобновить сеанс в терминале (Shift+клик для копирования команды)",
+    "resumeCommandCopied": "Команда возобновления скопирована в буфер обмена",
+    "sessionResumed": "Открытие сеанса в терминале...",
+    "fixSession": "Исправить сеанс",
+    "loadAll": "Загрузить всё",
+    "loadAllTooltip": "Загрузить все сообщения",
+    "loading": "Загрузка...",
+    "allMessagesLoaded": "Все {{count}} сообщений загружены",
+    "failedToLoadAll": "Не удалось загрузить все сообщения"
   }
 }

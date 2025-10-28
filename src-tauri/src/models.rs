@@ -36,6 +36,12 @@ pub struct RawLogEntry {
     #[serde(rename = "type")]
     pub message_type: String,
 
+    // Git information (top-level fields in Claude Code format)
+    #[serde(rename = "gitBranch")]
+    pub git_branch: Option<String>,
+    #[serde(rename = "gitCommit")]
+    pub git_commit: Option<String>,
+
     // Fields for summary
     pub summary: Option<String>,
     #[serde(rename = "leafUuid")]
@@ -110,6 +116,8 @@ pub struct ClaudeSession {
     pub has_errors: bool,
     pub is_problematic: bool,      // Session ends in unclean state (not resumable in Claude Code)
     pub summary: Option<String>,
+    pub git_branch: Option<String>, // Git branch name
+    pub git_commit: Option<String>, // Git commit hash (short, 8 chars)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
