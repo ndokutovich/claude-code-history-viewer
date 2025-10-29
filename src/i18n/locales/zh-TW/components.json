@@ -622,7 +622,10 @@
     "currentVersionLatest": "目前版本 {{version}} 為最新版本"
   },
   "projectListControls": {
-    "refreshAll": "Refresh All Sessions",
+    "refreshAll": "重新整理所有會話",
+    "refreshing": "重新整理中...",
+    "refreshed": "重新整理成功",
+    "refreshFailed": "重新整理失敗",
     "groupBySource": "按來源分組",
     "ungroup": "取消分組",
     "groupBy": {
@@ -642,7 +645,11 @@
     },
     "hideEmptyProjects": "隱藏空專案",
     "hideEmptySessions": "隱藏空會話",
-    "showAll": "顯示全部"
+    "hideAgentSessions": "隱藏代理會話",
+    "showAll": "顯示全部",
+    "searchPlaceholder": "搜尋會話...",
+    "clearSearch": "清除搜尋",
+    "filterSettings": "篩選設定"
   },
   "selection": {
     "clear": "清除選擇 (ESC)"

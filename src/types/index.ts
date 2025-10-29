@@ -225,6 +225,8 @@ export interface ProjectListPreferences {
   sortOrder: 'asc' | 'desc';
   hideEmptyProjects: boolean;
   hideEmptySessions: boolean;
+  hideAgentSessions: boolean; // Filter sessions that start with "agent-"
+  sessionSearchQuery: string; // Filter sessions by name/summary
 }
 
 /**

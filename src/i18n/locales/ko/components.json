@@ -626,7 +626,10 @@
     "currentVersionLatest": "현재 버전 {{version}}이 최신입니다"
   },
   "projectListControls": {
-    "refreshAll": "Refresh All Sessions",
+    "refreshAll": "모든 세션 새로고침",
+    "refreshing": "새로고침 중...",
+    "refreshed": "새로고침 완료",
+    "refreshFailed": "새로고침 실패",
     "groupBySource": "소스별 그룹화",
     "ungroup": "그룹 해제",
     "groupBy": {
@@ -646,7 +649,11 @@
     },
     "hideEmptyProjects": "빈 프로젝트 숨기기",
     "hideEmptySessions": "빈 세션 숨기기",
-    "showAll": "모두 표시"
+    "hideAgentSessions": "에이전트 세션 숨기기",
+    "showAll": "모두 표시",
+    "searchPlaceholder": "세션 검색...",
+    "clearSearch": "검색 지우기",
+    "filterSettings": "필터 설정"
   },
   "projectTree": {
     "sources": {

@@ -1,9 +1,10 @@
-import { Settings2, SortAsc, SortDesc, Group, Ungroup, Eye, EyeOff, ChevronsDown, ChevronsUp, MessageCircle, RefreshCw } from "lucide-react";
+import { Settings2, SortAsc, SortDesc, Group, Ungroup, Eye, EyeOff, ChevronsDown, ChevronsUp, MessageCircle, RefreshCw, Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../store/useAppStore";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
+import { Input } from "./ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,8 +85,10 @@ export const ProjectListControls = () => {
   };
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-      <div className="flex items-center space-x-2">
+    <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+      {/* Toolbar row */}
+      <div className="flex items-center justify-between px-4 py-2">
+        <div className="flex items-center space-x-2">
         {/* Refresh All Sessions */}
         <Button
           variant="ghost"
@@ -233,12 +236,21 @@ export const ProjectListControls = () => {
           >
             {t("projectListControls.hideEmptySessions")}
           </DropdownMenuCheckboxItem>
+          <DropdownMenuCheckboxItem
+            checked={projectListPreferences.hideAgentSessions}
+            onCheckedChange={(checked) => {
+              setProjectListPreferences({ hideAgentSessions: checked });
+            }}
+          >
+            {t("projectListControls.hideAgentSessions")}
+          </DropdownMenuCheckboxItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() =>
               setProjectListPreferences({
                 hideEmptyProjects: false,
                 hideEmptySessions: false,
+                hideAgentSessions: false,
               })
             }
           >
@@ -246,6 +258,32 @@ export const ProjectListControls = () => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
+
+      {/* Search row */}
+      <div className="px-4 pb-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            type="text"
+            placeholder={t("projectListControls.searchPlaceholder", "Search sessions...")}
+            value={projectListPreferences.sessionSearchQuery}
+            onChange={(e) => setProjectListPreferences({ sessionSearchQuery: e.target.value })}
+            className="pl-9 pr-9 h-8 text-sm bg-white dark:bg-gray-900"
+          />
+          {projectListPreferences.sessionSearchQuery && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setProjectListPreferences({ sessionSearchQuery: '' })}
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+              aria-label={t("projectListControls.clearSearch", "Clear search")}
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

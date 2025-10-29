@@ -334,6 +334,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     sortOrder: 'desc',
     hideEmptyProjects: true,
     hideEmptySessions: true,
+    hideAgentSessions: true, // Hide agent sessions by default
+    sessionSearchQuery: '',
   },
 
   // Message view preferences

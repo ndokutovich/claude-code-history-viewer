@@ -1,5 +1,5 @@
 // src/components/ProjectTree.tsx
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Folder,
   Wrench,
@@ -56,6 +56,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     return new Set();
   });
   const [loadingProjects, setLoadingProjects] = useState<Set<string>>(new Set());
+  const [isLoadingAllSessions, setIsLoadingAllSessions] = useState(false);
   const { t, i18n } = useTranslation('components');
   const { projectListPreferences, loadProjectSessions } = useAppStore();
 
@@ -68,6 +69,88 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     }
   }, [expandedProjects]);
 
+  // Load all sessions when search query is entered
+  useEffect(() => {
+    const loadAllSessions = async () => {
+      if (projectListPreferences.sessionSearchQuery.trim() && !isLoadingAllSessions) {
+        setIsLoadingAllSessions(true);
+
+        // Load sessions for all projects that don't have them loaded yet
+        const projectsToLoad = projects.filter(
+          (project) => !sessionsByProject[project.path] || sessionsByProject[project.path].length === 0
+        );
+
+        // Expand all projects to show search results
+        const allProjectPaths = new Set(projects.map(p => p.path));
+        setExpandedProjects(allProjectPaths);
+
+        // Load sessions in parallel for all projects
+        await Promise.all(
+          projectsToLoad.map(async (project) => {
+            try {
+              await loadProjectSessions(project.path);
+            } catch (error) {
+              console.error(`Failed to load sessions for project ${project.name}:`, error);
+            }
+          })
+        );
+
+        setIsLoadingAllSessions(false);
+      }
+    };
+
+    loadAllSessions();
+  }, [projectListPreferences.sessionSearchQuery, projects, sessionsByProject, loadProjectSessions]);
+
+  // Helper to check if a project has any visible sessions after filtering
+  const hasVisibleSessions = useCallback((project: UIProject): boolean => {
+    const projectSessions = sessionsByProject[project.path] || [];
+
+    // If sessions haven't been loaded yet for this project, show it (we don't know yet)
+    // Only hide if we've loaded sessions and they're all filtered out
+    if (projectSessions.length === 0 && selectedProject?.path !== project.path) {
+      // Sessions not loaded yet - assume project should be visible
+      return true;
+    }
+
+    // Use sessions array if this is the selected project
+    let visibleSessions = selectedProject?.path === project.path ? sessions : projectSessions;
+
+    // If no sessions at all after loading, hide only if hideEmptyProjects is enabled
+    if (visibleSessions.length === 0) {
+      return false;
+    }
+
+    // Apply same filters as getSessionsForProject
+    if (projectListPreferences.hideEmptySessions) {
+      visibleSessions = visibleSessions.filter((s) => s.message_count > 0);
+    }
+
+    if (projectListPreferences.hideAgentSessions) {
+      visibleSessions = visibleSessions.filter((s) => {
+        const actualId = s.actual_session_id || s.session_id;
+        // Extract filename from path (handle both / and \ separators)
+        const filename = actualId.split(/[/\\]/).pop() || '';
+        // Remove .jsonl extension
+        const sessionName = filename.replace(/\.jsonl$/i, '');
+        const isAgent = sessionName.startsWith('agent-');
+        return !isAgent;
+      });
+    }
+
+    if (projectListPreferences.sessionSearchQuery.trim()) {
+      const query = projectListPreferences.sessionSearchQuery.toLowerCase();
+      visibleSessions = visibleSessions.filter((session) => {
+        const title = getSessionTitle(session).toLowerCase();
+        const sessionId = session.session_id.toLowerCase();
+        const actualSessionId = session.actual_session_id?.toLowerCase() || '';
+        return title.includes(query) || sessionId.includes(query) || actualSessionId.includes(query);
+      });
+    }
+
+    return visibleSessions.length > 0;
+  }, [sessionsByProject, selectedProject, sessions, projectListPreferences]);
+
   // Apply filtering and sorting to projects
   const filteredAndSortedProjects = useMemo(() => {
     let result = [...projects];
@@ -76,6 +159,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     if (projectListPreferences.hideEmptyProjects) {
       result = result.filter((p) => p.session_count > 0);
     }
+
+    // Filter: Hide projects where all sessions are filtered out
+    result = result.filter((p) => hasVisibleSessions(p));
 
     // Sort
     result.sort((a, b) => {
@@ -94,38 +180,97 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     });
 
     return result;
-  }, [projects, projectListPreferences]);
+  }, [projects, projectListPreferences, sessionsByProject, sessions]);
 
   // Apply filtering to sessions (global filter only - per-project filtering happens in render)
   const filteredSessions = useMemo(() => {
-    if (!projectListPreferences.hideEmptySessions) {
-      return sessions;
+    let result = sessions;
+
+    // Filter: Hide empty sessions
+    if (projectListPreferences.hideEmptySessions) {
+      result = result.filter((s) => s.message_count > 0);
     }
 
-    return sessions.filter((s) => s.message_count > 0);
-  }, [sessions, projectListPreferences.hideEmptySessions]);
+    // Filter: Hide agent sessions (sessions starting with "agent-")
+    if (projectListPreferences.hideAgentSessions) {
+      result = result.filter((s) => {
+        const actualId = s.actual_session_id || s.session_id;
+        // Extract filename from path (handle both / and \ separators)
+        const filename = actualId.split(/[/\\]/).pop() || '';
+        // Remove .jsonl extension
+        const sessionName = filename.replace(/\.jsonl$/i, '');
+        const isAgent = sessionName.startsWith('agent-');
+        return !isAgent;
+      });
+    }
+
+    // Filter: Search query
+    if (projectListPreferences.sessionSearchQuery.trim()) {
+      const query = projectListPreferences.sessionSearchQuery.toLowerCase();
+      result = result.filter((session) => {
+        const title = getSessionTitle(session).toLowerCase();
+        const sessionId = session.session_id.toLowerCase();
+        const actualSessionId = session.actual_session_id?.toLowerCase() || '';
+        return title.includes(query) || sessionId.includes(query) || actualSessionId.includes(query);
+      });
+    }
+
+    return result;
+  }, [sessions, projectListPreferences.hideEmptySessions, projectListPreferences.hideAgentSessions, projectListPreferences.sessionSearchQuery]);
 
   // Helper function to get sessions for a specific project
   const getSessionsForProject = (projectPath: string): UISession[] => {
     // Try cache first (new multi-project architecture)
     const cachedSessions = sessionsByProject[projectPath];
 
+    let sessionsToFilter: UISession[] = [];
+
     if (cachedSessions && cachedSessions.length > 0) {
-      // Apply hide empty sessions filter
-      if (projectListPreferences.hideEmptySessions) {
-        return cachedSessions.filter((s) => s.message_count > 0);
-      }
-      return cachedSessions;
+      sessionsToFilter = cachedSessions;
+    } else if (selectedProject?.path === projectPath) {
+      // Fallback to selected project behavior for backward compatibility
+      sessionsToFilter = sessions;
+    } else {
+      // No sessions loaded for this project yet
+      return [];
     }
 
-    // Fallback to selected project behavior for backward compatibility
-    // If this is the selected project, return filteredSessions
-    if (selectedProject?.path === projectPath) {
-      return filteredSessions;
+    // Apply filters
+    let result = sessionsToFilter;
+
+    // Filter: Hide empty sessions
+    if (projectListPreferences.hideEmptySessions) {
+      result = result.filter((s) => s.message_count > 0);
     }
 
-    // No sessions loaded for this project yet
-    return [];
+    // Filter: Hide agent sessions (sessions starting with "agent-")
+    if (projectListPreferences.hideAgentSessions) {
+      result = result.filter((s) => {
+        const actualId = s.actual_session_id || s.session_id;
+        // Extract filename from path (handle both / and \ separators)
+        const filename = actualId.split(/[/\\]/).pop() || '';
+        // Remove .jsonl extension
+        const sessionName = filename.replace(/\.jsonl$/i, '');
+        const isAgent = sessionName.startsWith('agent-');
+        if (isAgent) {
+          console.log('Filtering out agent session:', sessionName);
+        }
+        return !isAgent;
+      });
+    }
+
+    // Filter: Search query
+    if (projectListPreferences.sessionSearchQuery.trim()) {
+      const query = projectListPreferences.sessionSearchQuery.toLowerCase();
+      result = result.filter((session) => {
+        const title = getSessionTitle(session).toLowerCase();
+        const sessionId = session.session_id.toLowerCase();
+        const actualSessionId = session.actual_session_id?.toLowerCase() || '';
+        return title.includes(query) || sessionId.includes(query) || actualSessionId.includes(query);
+      });
+    }
+
+    return result;
   };
 
   // Group projects by source if needed

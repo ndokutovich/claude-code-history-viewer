@@ -532,7 +532,11 @@
     },
     "hideEmptyProjects": "Hide Empty Projects",
     "hideEmptySessions": "Hide Empty Sessions",
-    "showAll": "Show All"
+    "hideAgentSessions": "Hide Agent Sessions",
+    "showAll": "Show All",
+    "searchPlaceholder": "Search sessions...",
+    "clearSearch": "Clear search",
+    "filterSettings": "Filter Settings"
   },
   "feedback": {
     "title": "Send Feedback",

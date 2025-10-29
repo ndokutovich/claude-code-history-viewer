@@ -607,7 +607,10 @@
     "currentVersionLatest": "Текущая версия {{version}} является последней"
   },
   "projectListControls": {
-    "refreshAll": "Refresh All Sessions",
+    "refreshAll": "Обновить все сеансы",
+    "refreshing": "Обновление...",
+    "refreshed": "Обновление завершено",
+    "refreshFailed": "Обновление не удалось",
     "groupBySource": "Группировать по источнику",
     "ungroup": "Разгруппировать",
     "groupBy": {
@@ -627,7 +630,11 @@
     },
     "hideEmptyProjects": "Скрыть пустые проекты",
     "hideEmptySessions": "Скрыть пустые сеансы",
-    "showAll": "Показать все"
+    "hideAgentSessions": "Скрыть сеансы агентов",
+    "showAll": "Показать все",
+    "searchPlaceholder": "Поиск сеансов...",
+    "clearSearch": "Очистить поиск",
+    "filterSettings": "Настройки фильтра"
   },
   "selection": {
     "clear": "Очистить выбор (ESC)"

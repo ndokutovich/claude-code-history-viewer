@@ -607,7 +607,10 @@
     "currentVersionLatest": "現在のバージョン {{version}} が最新です"
   },
   "projectListControls": {
-    "refreshAll": "Refresh All Sessions",
+    "refreshAll": "すべてのセッションを更新",
+    "refreshing": "更新中...",
+    "refreshed": "更新完了",
+    "refreshFailed": "更新失敗",
     "groupBySource": "ソース別にグループ化",
     "ungroup": "グループ解除",
     "groupBy": {
@@ -627,7 +630,11 @@
     },
     "hideEmptyProjects": "空のプロジェクトを非表示",
     "hideEmptySessions": "空のセッションを非表示",
-    "showAll": "すべて表示"
+    "hideAgentSessions": "エージェントセッションを非表示",
+    "showAll": "すべて表示",
+    "searchPlaceholder": "セッションを検索...",
+    "clearSearch": "検索をクリア",
+    "filterSettings": "フィルター設定"
   },
   "selection": {
     "clear": "選択をクリア (ESC)"
