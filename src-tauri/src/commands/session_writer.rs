@@ -334,20 +334,30 @@ pub async fn extract_message_range(
 
     for msg in extracted_messages {
         // Extract the nested "message" object
-        let message_obj = msg
-            .get("message")
-            .ok_or_else(|| "Message object not found".to_string())?;
+        let message_obj = match msg.get("message") {
+            Some(obj) => obj,
+            None => {
+                // Skip messages without a message object (malformed or special types)
+                eprintln!("Warning: Skipping message without 'message' object: {}", msg.get("uuid").and_then(|v| v.as_str()).unwrap_or("unknown"));
+                continue;
+            }
+        };
 
-        let role = message_obj
-            .get("role")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| "Role not found".to_string())?
-            .to_string();
+        let role = match message_obj.get("role").and_then(|v| v.as_str()) {
+            Some(r) => r.to_string(),
+            None => {
+                eprintln!("Warning: Skipping message without 'role': {}", msg.get("uuid").and_then(|v| v.as_str()).unwrap_or("unknown"));
+                continue;
+            }
+        };
 
-        let content = message_obj
-            .get("content")
-            .ok_or_else(|| "Content not found".to_string())?
-            .clone();
+        let content = match message_obj.get("content") {
+            Some(c) => c.clone(),
+            None => {
+                eprintln!("Warning: Skipping message without 'content': {}", msg.get("uuid").and_then(|v| v.as_str()).unwrap_or("unknown"));
+                continue;
+            }
+        };
 
         let model = message_obj.get("model").and_then(|v| v.as_str()).map(|s| s.to_string());
 
@@ -393,6 +403,11 @@ pub async fn extract_message_range(
     }
 
     let message_count = converted_messages.len();
+
+    // Ensure we got at least one valid message
+    if message_count == 0 {
+        return Err("No valid messages found in the specified range".to_string());
+    }
 
     Ok(ExtractMessageRangeResponse {
         messages: converted_messages,
