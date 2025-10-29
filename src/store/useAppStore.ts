@@ -428,6 +428,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
         set({ claudePath: defaultSource.path });
       }
 
+      // Clear session cache to force refresh from filesystem
+      console.log('🔄 Clearing session cache for fresh filesystem scan');
+      set({ sessionsByProject: {} });
+
       // Scan projects from all available sources
       await get().scanProjects();
     } catch (error) {
@@ -559,6 +563,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       isLoadingSessionComparison: false,
     });
     try {
+      // Always use cached sessions when selecting a project
+      // (Cache is cleared on refresh, so this is safe)
       const sessions = await get().loadProjectSessions(project.path);
       console.log(`✅ selectProject: Loaded ${sessions.length} sessions for ${project.name}`);
 
@@ -578,16 +584,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
-  loadProjectSessions: async (projectPath: string, excludeSidechain?: boolean) => {
+  loadProjectSessions: async (projectPath: string, excludeSidechain?: boolean, forceRefresh = false) => {
     try {
-      // Check cache first
+      // Check cache first (unless force refresh is requested)
       const cached = get().sessionsByProject[projectPath];
-      if (cached) {
+      if (cached && !forceRefresh) {
         console.log(`💾 Using cached sessions for ${projectPath} (${cached.length} sessions)`);
         return cached;
       }
 
-      console.log(`📥 Loading sessions from backend for ${projectPath}`);
+      if (forceRefresh) {
+        console.log(`🔄 Force refreshing sessions from filesystem for ${projectPath}`);
+      } else {
+        console.log(`📥 Loading sessions from backend for ${projectPath}`);
+      }
 
       // ========================================
       // PHASE 8.3: Use adapters for session loading (v2.0.0)
