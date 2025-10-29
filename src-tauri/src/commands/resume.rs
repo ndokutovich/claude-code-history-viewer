@@ -230,10 +230,15 @@ fn open_terminal_with_command(cwd: &str, command: &str) -> Result<(), String> {
     #[cfg(target_os = "linux")]
     {
         // Linux: Try common terminals in order
+        // Create command strings first to avoid lifetime issues
+        let gnome_cmd = format!("cd '{}' && {}; exec bash", cwd, command);
+        let konsole_cmd = format!("{}; exec bash", command);
+        let xterm_cmd = format!("cd '{}' && {}; exec bash", cwd, command);
+
         let terminals = vec![
-            ("gnome-terminal", vec!["--", "bash", "-c", &format!("cd '{}' && {}; exec bash", cwd, command)]),
-            ("konsole", vec!["--workdir", cwd, "-e", "bash", "-c", &format!("{}; exec bash", command)]),
-            ("xterm", vec!["-e", "bash", "-c", &format!("cd '{}' && {}; exec bash", cwd, command)]),
+            ("gnome-terminal", vec!["--", "bash", "-c", gnome_cmd.as_str()]),
+            ("konsole", vec!["--workdir", cwd, "-e", "bash", "-c", konsole_cmd.as_str()]),
+            ("xterm", vec!["-e", "bash", "-c", xterm_cmd.as_str()]),
         ];
 
         let mut launched = false;
