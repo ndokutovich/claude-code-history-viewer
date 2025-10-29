@@ -76,7 +76,7 @@ function App() {
   const { language, loadLanguage } = useLanguageStore();
 
   // Sidebar width state for resizable splitter
-  const [sidebarWidth, setSidebarWidth] = useState(336);
+  const [sidebarWidth, setSidebarWidth] = useState(351);
 
   // Source store for multi-source management
   const {
