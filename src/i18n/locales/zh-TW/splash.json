@@ -1,5 +1,5 @@
 {
-  "appTitle": "Claude Code & Cursor IDE 歷史檢視器",
+  "appTitle": "Claude Code, Cursor IDE, Gemini CLI 和 Codex CLI 歷史檢視器",
   "loadingMessage": "載入對話歷史中",
   "status": {
     "initializing": "正在初始化應用",

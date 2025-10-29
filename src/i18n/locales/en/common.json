@@ -1,6 +1,6 @@
 {
-  "appName": "Claude Code & Cursor IDE History Viewer",
-  "appDescription": "Explore and analyze your Claude Code and Cursor IDE conversation history",
+  "appName": "Claude Code, Cursor IDE, Gemini CLI & Codex CLI History Viewer",
+  "appDescription": "Explore and analyze your Claude Code, Cursor IDE, Gemini CLI, and Codex CLI conversation history",
   "errorOccurred": "An error occurred",
   "loading": "Loading...",
   "back": "Back",
@@ -120,6 +120,9 @@
     "foundResults": "Found {{count}} messages in {{sessions}} conversations",
     "matches": "matches"
   },
+  "session": {
+    "fix": "Fix Session (Restore Resumability)"
+  },
   "fileActions": {
     "openFile": "Open File",
     "openFolder": "Open Folder",
@@ -176,8 +179,26 @@
       "noMessages": "No messages yet. Click \"Add Message\" to start.",
       "compose": "Compose",
       "fromExisting": "From Existing",
+      "fromRange": "From Range",
       "preview": "Preview (",
       "previewSuffix": ")"
+    },
+    "range": {
+      "instructions": "Extract messages from an existing session using message paths",
+      "instructionStart": "If only start specified: from that message to end",
+      "instructionEnd": "If only end specified: from beginning to that message",
+      "instructionBoth": "If both specified: from start to end (inclusive)",
+      "instructionNeither": "If neither specified: entire session",
+      "startPath": "Start Message Path (optional)",
+      "startPlaceholder": "C:\\path\\to\\session.jsonl#start-message-uuid",
+      "endPath": "End Message Path (optional)",
+      "endPlaceholder": "C:\\path\\to\\session.jsonl#end-message-uuid",
+      "loadMessages": "Load Messages",
+      "loading": "Loading...",
+      "invalidStartPath": "Invalid start message path format",
+      "invalidEndPath": "Invalid end message path format",
+      "differentSessions": "Start and end paths must be from the same session",
+      "loadFailed": "Failed to load message range"
     },
     "validation": {
       "errorHeader": "Please fix the following errors:",

@@ -26,7 +26,10 @@ pub async fn send_feedback(feedback: FeedbackData) -> Result<(), String> {
         email_body.push_str("\n\n---\n");
         email_body.push_str("System Information:\n");
         email_body.push_str(&format!("App Version: {}\n", system_info.app_version));
-        email_body.push_str(&format!("OS: {} {}\n", system_info.os_type, system_info.os_version));
+        email_body.push_str(&format!(
+            "OS: {} {}\n",
+            system_info.os_type, system_info.os_version
+        ));
         email_body.push_str(&format!("Architecture: {}\n", system_info.arch));
     }
 
@@ -47,10 +50,8 @@ pub async fn send_feedback(feedback: FeedbackData) -> Result<(), String> {
     let feedback_email = std::env::var("FEEDBACK_EMAIL")
         .unwrap_or_else(|_| "feedback@claude-history-viewer.app".to_string());
     let mailto_url = format!(
-         "mailto:{}?subject={}&body={}",
-         feedback_email,
-         encoded_subject,
-         encoded_body
+        "mailto:{}?subject={}&body={}",
+        feedback_email, encoded_subject, encoded_body
     );
 
     // Open system default email app

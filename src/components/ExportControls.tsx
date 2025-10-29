@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { FileText, FileCode, Globe, Copy, Check } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { FileText, FileCode, Globe, Copy, Check, Wrench, Play } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/utils/cn";
@@ -21,15 +21,40 @@ interface ExportControlsProps {
 
 export function ExportControls({ messages, session }: ExportControlsProps) {
   const { t } = useTranslation("components");
+  const { t: tCommon } = useTranslation("common");
   const [includeAttachments, setIncludeAttachments] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [copiedPath, setCopiedPath] = useState(false);
+  const [isFixingSession, setIsFixingSession] = useState(false);
+  const [isResuming, setIsResuming] = useState(false);
+  const [supportsResume, setSupportsResume] = useState(false);
 
   // Get current view mode, theme, and pagination state from app settings
-  const { messageViewMode, messageFilters, pagination, loadAllMessages } = useAppStore();
+  const { messageViewMode, messageFilters, pagination, loadAllMessages, refreshCurrentSession } = useAppStore();
   const { isDarkMode } = useTheme();
 
   const sessionTitle = getSessionTitle(session, messages);
+
+  // Check if provider supports resume functionality
+  useEffect(() => {
+    const checkResumeSupport = async () => {
+      if (!session.providerId) {
+        setSupportsResume(false);
+        return;
+      }
+      try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        const supported = await invoke<boolean>("provider_supports_resume", {
+          providerId: session.providerId,
+        });
+        setSupportsResume(supported);
+      } catch (error) {
+        console.error("Failed to check resume support:", error);
+        setSupportsResume(false);
+      }
+    };
+    checkResumeSupport();
+  }, [session.providerId]);
 
   // Filter messages based on current filter settings (reuse utility function)
   const filteredMessages = useMemo(() => {
@@ -91,121 +116,235 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
     }
   };
 
+  const handleFixSession = async () => {
+    if (!session.is_problematic) return;
+
+    try {
+      setIsFixingSession(true);
+      const { invoke } = await import("@tauri-apps/api/core");
+      const result = await invoke<string>("fix_session", {
+        sessionFilePath: session.file_path,
+      });
+
+      toast.success(result);
+      await refreshCurrentSession();
+    } catch (error) {
+      console.error("Failed to fix session:", error);
+      toast.error(`Failed to fix session: ${error}`);
+    } finally {
+      setIsFixingSession(false);
+    }
+  };
+
+  const handleResumeSession = async (event: React.MouseEvent) => {
+    try {
+      setIsResuming(true);
+      const { invoke } = await import("@tauri-apps/api/core");
+
+      // Get actual working directory from session file
+      // For Cursor: use file_path (composite ID: db_path#session=...#timestamp=...)
+      // For others: use session_id (file path)
+      const sessionIdentifier = session.providerId === "cursor"
+        ? session.file_path
+        : session.session_id;
+
+      const cwd = await invoke<string>("get_session_cwd", {
+        sessionFilePath: sessionIdentifier,
+        providerId: session.providerId || "claude-code",
+      });
+
+      // If Shift key is held, copy command instead of executing
+      if (event.shiftKey) {
+        const resumeCommand = await invoke<string>("get_resume_command", {
+          sessionId: sessionIdentifier,
+          cwd,
+          providerId: session.providerId || "claude-code",
+        });
+        await writeText(resumeCommand);
+        toast.success(t("export.resumeCommandCopied"));
+      } else {
+        // Execute resume in terminal
+        await invoke("resume_session", {
+          sessionId: sessionIdentifier,
+          cwd,
+          providerId: session.providerId || "claude-code",
+        });
+        toast.success(t("export.sessionResumed"));
+      }
+    } catch (error) {
+      console.error("Failed to resume session:", error);
+      const errorMsg = String(error);
+
+      // Check if this is the "No conversation found" error for artificial sessions
+      if (errorMsg.includes("No conversation found") || errorMsg.includes("session ID")) {
+        toast.error(
+          "Session not recognized by Claude Code. Try: (1) Restart Claude Code CLI, or (2) Use 'claude --continue' in the working directory",
+          { duration: 8000 }
+        );
+      } else {
+        toast.error(`Failed to resume: ${error}`);
+      }
+    } finally {
+      setIsResuming(false);
+    }
+  };
+
   return (
-    <div className="flex items-center gap-3">
-      {/* With Attachments Toggle */}
-      <label className="flex items-center gap-2 text-sm cursor-pointer">
-        <input
-          type="checkbox"
-          checked={includeAttachments}
-          onChange={(e) => setIncludeAttachments(e.target.checked)}
-          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-        />
-        <span className={cn(COLORS.ui.text.secondary)}>
-          {t("export.withAttachments")}
-        </span>
-      </label>
+    <div className="flex flex-col gap-2">
+      {/* First Row: Export Buttons & Attachments Toggle */}
+      <div className="flex items-center gap-3">
+        {/* Export Buttons */}
+        <div className="flex items-center gap-2">
+          <span className={cn("text-sm", COLORS.ui.text.secondary)}>
+            {t("export.exportTo")}:
+          </span>
 
-      {/* Separator */}
-      <div className={cn("h-6 w-px", COLORS.ui.border.light)} />
+          <button
+            onClick={() => handleExport("markdown", exportToMarkdown)}
+            disabled={isExporting}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+              "hover:bg-blue-50 dark:hover:bg-blue-900/20",
+              COLORS.ui.text.secondary,
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+            title={t("export.markdownTooltip")}
+          >
+            <FileText className="w-4 h-4" />
+            <span>MD</span>
+          </button>
 
-      {/* Export Buttons */}
-      <div className="flex items-center gap-2">
-        <span className={cn("text-sm", COLORS.ui.text.secondary)}>
-          {t("export.exportTo")}:
-        </span>
+          <button
+            onClick={() => handleExport("html", exportToHTML)}
+            disabled={isExporting}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+              "hover:bg-green-50 dark:hover:bg-green-900/20",
+              COLORS.ui.text.secondary,
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+            title={t("export.htmlTooltip")}
+          >
+            <Globe className="w-4 h-4" />
+            <span>HTML</span>
+          </button>
 
-        <button
-          onClick={() => handleExport("markdown", exportToMarkdown)}
-          disabled={isExporting}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-            "hover:bg-blue-50 dark:hover:bg-blue-900/20",
-            COLORS.ui.text.secondary,
-            "disabled:opacity-50 disabled:cursor-not-allowed"
-          )}
-          title={t("export.markdownTooltip")}
-        >
-          <FileText className="w-4 h-4" />
-          <span>MD</span>
-        </button>
+          <button
+            onClick={() => handleExport("docx", exportToDocx)}
+            disabled={isExporting}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+              "hover:bg-purple-50 dark:hover:bg-purple-900/20",
+              COLORS.ui.text.secondary,
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+            title={t("export.docxTooltip")}
+          >
+            <FileCode className="w-4 h-4" />
+            <span>DOCX</span>
+          </button>
+        </div>
 
-        <button
-          onClick={() => handleExport("html", exportToHTML)}
-          disabled={isExporting}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-            "hover:bg-green-50 dark:hover:bg-green-900/20",
-            COLORS.ui.text.secondary,
-            "disabled:opacity-50 disabled:cursor-not-allowed"
-          )}
-          title={t("export.htmlTooltip")}
-        >
-          <Globe className="w-4 h-4" />
-          <span>HTML</span>
-        </button>
+        {/* Separator */}
+        <div className={cn("h-6 w-px", COLORS.ui.border.light)} />
 
-        <button
-          onClick={() => handleExport("docx", exportToDocx)}
-          disabled={isExporting}
-          className={cn(
-            "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-            "hover:bg-purple-50 dark:hover:bg-purple-900/20",
-            COLORS.ui.text.secondary,
-            "disabled:opacity-50 disabled:cursor-not-allowed"
-          )}
-          title={t("export.docxTooltip")}
-        >
-          <FileCode className="w-4 h-4" />
-          <span>DOCX</span>
-        </button>
+        {/* With Attachments Toggle */}
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={includeAttachments}
+            onChange={(e) => setIncludeAttachments(e.target.checked)}
+            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+          />
+          <span className={cn(COLORS.ui.text.secondary)}>
+            {t("export.withAttachments")}
+          </span>
+        </label>
       </div>
 
-      {/* Separator */}
-      <div className={cn("h-6 w-px", COLORS.ui.border.light)} />
+      {/* Second Row: Session Action Buttons */}
+      <div className="flex items-center gap-3">
+        {/* Load All Messages Button */}
+        {pagination.hasMore && (
+          <button
+            onClick={handleLoadAll}
+            disabled={pagination.isLoadingMore}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+              "bg-blue-500 hover:bg-blue-600 text-white",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+            title={t("export.loadAllTooltip")}
+          >
+            {pagination.isLoadingMore ? (
+              <span>{t("export.loading")}</span>
+            ) : (
+              <span>{t("export.loadAll")}</span>
+            )}
+          </button>
+        )}
 
-      {/* Load All Messages Button */}
-      {pagination.hasMore && (
+        {/* Copy Path Button */}
         <button
-          onClick={handleLoadAll}
-          disabled={pagination.isLoadingMore}
+          onClick={handleCopyPath}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-            "bg-blue-500 hover:bg-blue-600 text-white",
-            "disabled:opacity-50 disabled:cursor-not-allowed"
+            "hover:bg-gray-100 dark:hover:bg-gray-800",
+            COLORS.ui.text.secondary
           )}
-          title={t("export.loadAllTooltip")}
+          title={t("export.copyPathTooltip")}
         >
-          {pagination.isLoadingMore ? (
-            <span>{t("export.loading")}</span>
+          {copiedPath ? (
+            <>
+              <Check className="w-4 h-4 text-green-500" />
+              <span>{t("export.copied")}</span>
+            </>
           ) : (
-            <span>{t("export.loadAll")}</span>
+            <>
+              <Copy className="w-4 h-4" />
+              <span>{t("export.copyPath")}</span>
+            </>
           )}
         </button>
-      )}
 
-      {/* Copy Path Button */}
-      <button
-        onClick={handleCopyPath}
-        className={cn(
-          "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-          "hover:bg-gray-100 dark:hover:bg-gray-800",
-          COLORS.ui.text.secondary
+        {/* Resume Session Button - Show for providers that support resume */}
+        {supportsResume && (
+          <button
+            onClick={handleResumeSession}
+            disabled={isResuming}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors border",
+              "bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700",
+              "hover:bg-green-100 dark:hover:bg-green-900/30",
+              "text-green-700 dark:text-green-400",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+            title={t("export.resumeTooltip")}
+          >
+            <Play className={cn("w-4 h-4", isResuming && "animate-pulse")} />
+            <span>{isResuming ? t("status.resuming") : t("export.resume")}</span>
+          </button>
         )}
-        title={t("export.copyPathTooltip")}
-      >
-        {copiedPath ? (
-          <>
-            <Check className="w-4 h-4 text-green-500" />
-            <span>{t("export.copied")}</span>
-          </>
-        ) : (
-          <>
-            <Copy className="w-4 h-4" />
-            <span>{t("export.copyPath")}</span>
-          </>
+
+        {/* Fix Session Button - Only show if session is problematic */}
+        {session.is_problematic && (
+          <button
+            onClick={handleFixSession}
+            disabled={isFixingSession}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors border-2",
+              "bg-orange-50 dark:bg-orange-900/20 border-orange-400 dark:border-orange-600",
+              "hover:bg-orange-100 dark:hover:bg-orange-900/30",
+              "text-orange-700 dark:text-orange-400",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+            title={tCommon("session.fix")}
+          >
+            <Wrench className={cn("w-4 h-4", isFixingSession && "animate-pulse")} />
+            <span>{isFixingSession ? t("status.fixing") : t("export.fixSession")}</span>
+          </button>
         )}
-      </button>
+      </div>
     </div>
   );
 }

@@ -142,10 +142,14 @@ export interface UISession {
   last_modified: string; // Last modification time of the file
   has_tool_use: boolean;
   has_errors: boolean;
+  is_problematic: boolean; // Session ends in unclean state (not resumable in Claude Code)
   summary?: string;
   // Provider information
   providerId?: string;
   providerName?: string;
+  // Git information
+  git_branch?: string; // Git branch name
+  git_commit?: string; // Git commit hash (short, 8 chars)
 }
 
 export interface SearchFilters {
@@ -221,6 +225,8 @@ export interface ProjectListPreferences {
   sortOrder: 'asc' | 'desc';
   hideEmptyProjects: boolean;
   hideEmptySessions: boolean;
+  hideAgentSessions: boolean; // Filter sessions that start with "agent-"
+  sessionSearchQuery: string; // Filter sessions by name/summary
 }
 
 /**

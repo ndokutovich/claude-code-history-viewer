@@ -1,6 +1,6 @@
 {
-  "appName": "Claude Code & Cursor IDE 歷史檢視器",
-  "appDescription": "探索和分析您的 Claude Code 和 Cursor IDE 對話歷史",
+  "appName": "Claude Code, Cursor IDE, Gemini CLI 和 Codex CLI 歷史檢視器",
+  "appDescription": "探索和分析您的 Claude Code, Cursor IDE, Gemini CLI 和 Codex CLI 對話歷史",
   "errorOccurred": "發生錯誤",
   "loading": "載入中...",
   "back": "返回",
@@ -59,16 +59,66 @@
     "copyError": "複製錯誤資訊"
   },
   "update": {
-    "available": "版本 {{version}} 更新",
+    "available": "版本 {{version}} 更新可用",
     "current": "目前版本：{{current}} → {{latest}}",
-    "deadline": "更新截止日期：剩餘{{days}}天",
-    "deadline_plural": "更新截止日期：剩餘{{days}}天",
+    "deadline": "更新期限：剩餘 {{days}} 天",
+    "deadline_plural": "更新期限：剩餘 {{days}} 天",
     "changes": "主要變更：",
-    "skip": "略過此版本",
+    "skip": "跳過此版本",
     "later": "稍後（7天）",
     "now": "立即更新",
     "download": "下載更新",
-    "upToDate": "已是最新版本"
+    "upToDate": "您已使用最新版本",
+    "newUpdateAvailable": "有新更新可用",
+    "important": "重要",
+    "currentVersion": "目前版本",
+    "newVersion": "新版本",
+    "downloading": "下載中...",
+    "downloadingProgress": "下載中... {{progress}}%",
+    "installing": "安裝中...",
+    "installingWaitRestart": "安裝中... 應用程式即將重新啟動。",
+    "errorOccurred": "發生錯誤：{{error}}",
+    "showDetails": "顯示詳情",
+    "hideDetails": "隱藏詳情",
+    "releaseName": "發布名稱：",
+    "changelog": "變更日誌：",
+    "viewOnGitHub": "在GitHub上查看",
+    "downloadAndInstall": "下載並安裝",
+    "postpone24h": "24小時後提醒",
+    "skipVersion": "跳過此版本",
+    "intro": {
+      "title": "更新系統指南",
+      "description": "Claude Code History Viewer 會自動檢查更新以提供更好的體驗。",
+      "howItWorks": "運作方式：",
+      "features": {
+        "backgroundCheck": "在應用程式啟動時在背景檢查更新",
+        "notification": "發現新更新時顯示通知視窗",
+        "userControl": "下載/安裝由使用者主動執行",
+        "caching": "具有30分鐘結果快取的高效運作"
+      },
+      "benefits": "好處：",
+      "benefitsList": {
+        "security": "取得最新的安全性修正",
+        "newFeatures": "存取新功能和改進",
+        "offlineDisable": "注意：可以在設定中停用",
+        "changeable": "您隨時可以變更偏好設定"
+      },
+      "tip": "提示：",
+      "disableAutoCheck": "可以在設定 > 更新偏好設定中停用自動檢查",
+      "understood": "了解"
+    },
+    "priority": {
+      "critical": "關鍵",
+      "recommended": "建議",
+      "optional": "選擇性"
+    },
+    "checking": "檢查更新中...",
+    "checkFailed": "檢查更新失敗",
+    "noConnection": "無網路連線",
+    "tryAgain": "再試一次",
+    "items": "個",
+    "itemCount": "{{count}}個",
+    "itemCount_plural": "{{count}}個"
   },
   "search": {
     "title": "搜尋",
@@ -135,8 +185,26 @@
       "noMessages": "還沒有訊息。點擊「新增訊息」開始。",
       "compose": "撰寫",
       "fromExisting": "從現有匯入",
+      "fromRange": "從範圍匯入",
       "preview": "預覽 (",
       "previewSuffix": ")"
+    },
+    "range": {
+      "instructions": "使用訊息路徑從現有對話中提取訊息",
+      "instructionStart": "僅指定開始：從該訊息到結束",
+      "instructionEnd": "僅指定結束：從開始到該訊息",
+      "instructionBoth": "兩者都指定：從開始到結束（包含）",
+      "instructionNeither": "都不指定：整個對話",
+      "startPath": "開始訊息路徑（選填）",
+      "startPlaceholder": "C:\\路徑\\到\\對話.jsonl#開始訊息-uuid",
+      "endPath": "結束訊息路徑（選填）",
+      "endPlaceholder": "C:\\路徑\\到\\對話.jsonl#結束訊息-uuid",
+      "loadMessages": "載入訊息",
+      "loading": "載入中...",
+      "invalidStartPath": "開始訊息路徑格式無效",
+      "invalidEndPath": "結束訊息路徑格式無效",
+      "differentSessions": "開始和結束路徑必須來自同一對話",
+      "loadFailed": "載入訊息範圍失敗"
     },
     "validation": {
       "errorHeader": "請修正以下錯誤：",
@@ -231,5 +299,8 @@
       },
       "helpText": "💡 提示：拖曳訊息以重新排序，或使用上下箭頭。點擊垃圾桶刪除。"
     }
+  },
+  "session": {
+    "fix": "修復對話（恢復可繼續性）"
   }
 }

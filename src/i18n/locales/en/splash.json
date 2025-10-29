@@ -1,5 +1,5 @@
 {
-  "appTitle": "Claude Code & Cursor IDE History Viewer",
+  "appTitle": "Claude Code, Cursor IDE, Gemini CLI & Codex CLI History Viewer",
   "loadingMessage": "Loading conversation history",
   "status": {
     "initializing": "Initializing application",

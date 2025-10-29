@@ -1,6 +1,6 @@
 {
-  "appName": "Claude Code & Cursor IDE 历史查看器",
-  "appDescription": "探索和分析您的 Claude Code 和 Cursor IDE 对话历史",
+  "appName": "Claude Code, Cursor IDE, Gemini CLI 和 Codex CLI 历史查看器",
+  "appDescription": "探索和分析您的 Claude Code, Cursor IDE, Gemini CLI 和 Codex CLI 对话历史",
   "errorOccurred": "发生错误",
   "loading": "加载中...",
   "back": "返回",
@@ -176,8 +176,26 @@
       "noMessages": "还没有消息。点击「添加消息」开始。",
       "compose": "编写",
       "fromExisting": "从现有导入",
+      "fromRange": "从范围导入",
       "preview": "预览 (",
       "previewSuffix": ")"
+    },
+    "range": {
+      "instructions": "使用消息路径从现有会话中提取消息",
+      "instructionStart": "仅指定开始：从该消息到结束",
+      "instructionEnd": "仅指定结束：从开始到该消息",
+      "instructionBoth": "两者都指定：从开始到结束（包含）",
+      "instructionNeither": "都不指定：整个会话",
+      "startPath": "开始消息路径（可选）",
+      "startPlaceholder": "C:\\路径\\到\\会话.jsonl#开始消息-uuid",
+      "endPath": "结束消息路径（可选）",
+      "endPlaceholder": "C:\\路径\\到\\会话.jsonl#结束消息-uuid",
+      "loadMessages": "加载消息",
+      "loading": "加载中...",
+      "invalidStartPath": "开始消息路径格式无效",
+      "invalidEndPath": "结束消息路径格式无效",
+      "differentSessions": "开始和结束路径必须来自同一会话",
+      "loadFailed": "加载消息范围失败"
     },
     "validation": {
       "errorHeader": "请修复以下错误：",
@@ -272,5 +290,8 @@
       },
       "helpText": "💡 提示：拖动消息以重新排序，或使用上下箭头。点击垃圾桶删除。"
     }
+  },
+  "session": {
+    "fix": "修复会话（恢复可继续性）"
   }
 }

@@ -259,7 +259,10 @@ pub struct TokenUsage {
     #[serde(rename = "totalTokens")]
     pub total_tokens: i32,
 
-    #[serde(skip_serializing_if = "Option::is_none", rename = "cacheCreationTokens")]
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        rename = "cacheCreationTokens"
+    )]
     pub cache_creation_tokens: Option<i32>,
 
     #[serde(skip_serializing_if = "Option::is_none", rename = "cacheReadTokens")]

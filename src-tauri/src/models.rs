@@ -35,7 +35,13 @@ pub struct RawLogEntry {
     pub timestamp: Option<String>,
     #[serde(rename = "type")]
     pub message_type: String,
-    
+
+    // Git information (top-level fields in Claude Code format)
+    #[serde(rename = "gitBranch")]
+    pub git_branch: Option<String>,
+    #[serde(rename = "gitCommit")]
+    pub git_commit: Option<String>,
+
     // Fields for summary
     pub summary: Option<String>,
     #[serde(rename = "leafUuid")]
@@ -98,8 +104,8 @@ pub struct ClaudeProject {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClaudeSession {
-    pub session_id: String,  // Unique ID based on file path
-    pub actual_session_id: String,  // Actual session ID from the messages
+    pub session_id: String,        // Unique ID based on file path
+    pub actual_session_id: String, // Actual session ID from the messages
     pub file_path: String,
     pub project_name: String,
     pub message_count: usize,
@@ -108,7 +114,10 @@ pub struct ClaudeSession {
     pub last_modified: String,
     pub has_tool_use: bool,
     pub has_errors: bool,
+    pub is_problematic: bool,      // Session ends in unclean state (not resumable in Claude Code)
     pub summary: Option<String>,
+    pub git_branch: Option<String>, // Git branch name
+    pub git_commit: Option<String>, // Git commit hash (short, 8 chars)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -118,7 +127,6 @@ pub struct MessagePage {
     pub has_more: bool,
     pub next_offset: usize,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionTokenStats {

@@ -15,6 +15,7 @@
     "selectDescription": "좌측에서 프로젝트와 세션을 선택하면 대화 내용을 볼 수 있습니다",
     "refresh": "세션 새로고침",
     "scanning": "프로젝트 스캔 중...",
+    "fix": "세션 수정 (재개 가능성 복원)",
     "loading": "세션 로딩 중...",
     "loadingContent": "콘텐츠 로딩 중...",
     "count": "세션: {{count}}개",
@@ -45,7 +46,8 @@
     "conversation": "대화 내용",
     "loadMore": "이전 메시지 {{count}}개 더 보기",
     "loadMore_plural": "이전 메시지 {{count}}개 더 보기",
-    "scrollToBottom": "맨 아래로 이동"
+    "scrollToBottom": "맨 아래로 이동",
+    "filtered": "필터링됨"
   },
   "messageView": {
     "formatted": "서식 있음",
@@ -225,7 +227,8 @@
     "toolUsageName": "도구 사용 이름",
     "tokens": "토큰",
     "units": "단위",
-    "tokenUsageGeneral": "토큰 사용량"
+    "tokenUsageGeneral": "토큰 사용량",
+    "tokenDistributionByType": "유형별 토큰 분포"
   },
   "time": {
     "start": "시작:",
@@ -236,8 +239,8 @@
     "hour": "시간",
     "hours": "시간",
     "minute": "분",
-    "minutes": "분"
-    ,"justNow": "방금 전",
+    "minutes": "분",
+    "justNow": "방금 전",
     "minutesAgo": "{{count}}분 전",
     "minutesAgo_plural": "{{count}}분 전",
     "hoursAgo": "{{count}}시간 전",
@@ -278,7 +281,8 @@
     "fileEdit": "파일 수정",
     "removedCode": "제거된 코드",
     "addedCode": "추가된 코드",
-    "inputParameters": "도구 입력 매개변수"
+    "inputParameters": "도구 입력 매개변수",
+    "sessionProblematic": "세션을 재개할 수 없음 (수정 가능)"
   },
   "status": {
     "initializing": "앱 초기화 중...",
@@ -286,7 +290,9 @@
     "loadingSessions": "세션 로딩 중...",
     "loadingMessages": "메시지 로딩 중...",
     "loadingStats": "토큰 통계 로딩 중...",
-    "checking": "확인 중..."
+    "checking": "확인 중...",
+    "resuming": "재개 중...",
+    "fixing": "수정 중..."
   },
   "error": {
     "unexpectedError": "예기치 않은 오류가 발생했습니다",
@@ -380,7 +386,8 @@
     "content": "내용:",
     "typeUnknown": "타입: unknown",
     "type": "타입:",
-    "seconds": "초"
+    "seconds": "초",
+    "tokenUsage": "토큰 사용량:"
   },
   "advancedTextDiff": {
     "textChanges": "텍스트 변경 사항",
@@ -433,7 +440,7 @@
       "offset": "오프셋: {{offset}}",
       "hasMore": "더 있음: {{hasMore}}",
       "loading": "로딩중: {{loading}}",
-    "loadingContent": "콘텐츠 로딩 중...",
+      "loadingContent": "콘텐츠 로딩 중...",
       "session": "세션: {{sessionId}}",
       "file": "파일: {{fileName}}",
       "firstMessage": "첫번째 메시지: {{timestamp}}",
@@ -624,6 +631,10 @@
     "currentVersionLatest": "현재 버전 {{version}}이 최신입니다"
   },
   "projectListControls": {
+    "refreshAll": "모든 세션 새로고침",
+    "refreshing": "새로고침 중...",
+    "refreshed": "새로고침 완료",
+    "refreshFailed": "새로고침 실패",
     "groupBySource": "소스별 그룹화",
     "ungroup": "그룹 해제",
     "groupBy": {
@@ -643,7 +654,12 @@
     },
     "hideEmptyProjects": "빈 프로젝트 숨기기",
     "hideEmptySessions": "빈 세션 숨기기",
-    "showAll": "모두 표시"
+    "hideAgentSessions": "에이전트 세션 숨기기",
+    "showAll": "모두 표시",
+    "searchPlaceholder": "세션 검색...",
+    "clearSearch": "검색 지우기",
+    "filterSettings": "필터 설정",
+    "searchLoadFailed": "일부 프로젝트 로드 실패"
   },
   "projectTree": {
     "sources": {
@@ -728,6 +744,29 @@
     "copied": "복사됨",
     "markdownTooltip": "대화를 Markdown 형식으로 내보내기",
     "htmlTooltip": "대화를 HTML 형식으로 내보내기",
-    "docxTooltip": "대화를 Word 문서로 내보내기"
+    "docxTooltip": "대화를 Word 문서로 내보내기",
+    "resume": "재개",
+    "resumeTooltip": "터미널에서 세션 재개 (Shift+클릭하면 명령어 복사)",
+    "resumeCommandCopied": "재개 명령어가 클립보드에 복사되었습니다",
+    "sessionResumed": "터미널에서 세션을 여는 중...",
+    "fixSession": "세션 수정",
+    "loadAll": "전체 로드",
+    "loadAllTooltip": "모든 메시지 로드",
+    "loading": "로딩 중...",
+    "allMessagesLoaded": "{{count}}개의 메시지가 모두 로드되었습니다",
+    "failedToLoadAll": "모든 메시지 로드 실패"
+  },
+  "providerMetadata": {
+    "relevantFiles": "관련 파일 ({{count}}개)",
+    "codeChunks": "코드 청크 ({{count}}개)",
+    "fileMetadata": "파일 메타데이터 ({{count}}개)",
+    "suggestedDiffs": "제안된 차이점 ({{count}}개)",
+    "consoleLogs": "콘솔 로그 ({{count}}개)"
+  },
+  "messageReference": {
+    "copyReference": "참조 복사",
+    "referenceTooltip": "Claude용 파일 경로 및 메시지 UUID 복사",
+    "referenceCopied": "메시지 참조가 복사되었습니다",
+    "referenceCopyFailed": "참조 복사 실패"
   }
 }

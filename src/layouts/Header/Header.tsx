@@ -91,21 +91,6 @@ export const Header = () => {
         </div>
 
         <div className="flex items-center space-x-4">
-          {selectedProject && (
-            <div className={cn("text-sm", COLORS.ui.text.tertiary)}>
-              <span className="font-medium">{selectedProject.name}</span>
-              {selectedSession && (
-                <>
-                  <span className="mx-2">›</span>
-                  <span>
-                    {tComponents("session.title")}{" "}
-                    {selectedSession.session_id.slice(-8)}
-                  </span>
-                </>
-              )}
-            </div>
-          )}
-
           <div className="flex items-center space-x-2">
             {/* Sources Button */}
             <TooltipButton

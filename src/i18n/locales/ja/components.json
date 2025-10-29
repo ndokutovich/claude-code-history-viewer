@@ -19,7 +19,8 @@
     "loadingContent": "コンテンツを読み込み中...",
     "count": "セッション：{{count}}件",
     "selected": "選択されたセッション",
-    "noSessions": "セッションが見つかりません"
+    "noSessions": "セッションが見つかりません",
+    "fix": "セッションを修正（再開可能性を復元）"
   },
   "message": {
     "user": "ユーザー",
@@ -42,7 +43,8 @@
     "conversation": "会話内容",
     "loadMore": "さらに{{count}}件のメッセージを読み込む",
     "loadMore_plural": "さらに{{count}}件のメッセージを読み込む",
-    "scrollToBottom": "最下部へ移動"
+    "scrollToBottom": "最下部へ移動",
+    "filtered": "フィルタリング済み"
   },
   "messageView": {
     "formatted": "フォーマット済み",
@@ -259,7 +261,8 @@
     "fileEdit": "ファイル編集",
     "removedCode": "削除されたコード",
     "addedCode": "追加されたコード",
-    "inputParameters": "ツール入力パラメータ"
+    "inputParameters": "ツール入力パラメータ",
+    "sessionProblematic": "セッションが再開できません（修正可能）"
   },
   "status": {
     "initializing": "アプリを初期化中...",
@@ -267,7 +270,9 @@
     "loadingSessions": "セッションを読み込み中...",
     "loadingMessages": "メッセージを読み込み中...",
     "loadingStats": "トークン統計を読み込み中...",
-    "checking": "確認中..."
+    "checking": "確認中...",
+    "resuming": "再開中...",
+    "fixing": "修正中..."
   },
   "error": {
     "unexpectedError": "予期しないエラーが発生しました",
@@ -414,7 +419,7 @@
       "offset": "オフセット: {{offset}}",
       "hasMore": "もっとある: {{hasMore}}",
       "loading": "読み込み中: {{loading}}",
-    "loadingContent": "コンテンツを読み込み中...",
+      "loadingContent": "コンテンツを読み込み中...",
       "session": "セッション: {{sessionId}}",
       "file": "ファイル: {{fileName}}",
       "firstMessage": "最初のメッセージ: {{timestamp}}",
@@ -605,6 +610,10 @@
     "currentVersionLatest": "現在のバージョン {{version}} が最新です"
   },
   "projectListControls": {
+    "refreshAll": "すべてのセッションを更新",
+    "refreshing": "更新中...",
+    "refreshed": "更新完了",
+    "refreshFailed": "更新失敗",
     "groupBySource": "ソース別にグループ化",
     "ungroup": "グループ解除",
     "groupBy": {
@@ -624,7 +633,12 @@
     },
     "hideEmptyProjects": "空のプロジェクトを非表示",
     "hideEmptySessions": "空のセッションを非表示",
-    "showAll": "すべて表示"
+    "hideAgentSessions": "エージェントセッションを非表示",
+    "showAll": "すべて表示",
+    "searchPlaceholder": "セッションを検索...",
+    "clearSearch": "検索をクリア",
+    "filterSettings": "フィルター設定",
+    "searchLoadFailed": "一部のプロジェクトの読み込みに失敗しました"
   },
   "selection": {
     "clear": "選択をクリア (ESC)"
@@ -712,6 +726,29 @@
     "copied": "コピー済み",
     "markdownTooltip": "会話をMarkdown形式でエクスポート",
     "htmlTooltip": "会話をHTML形式でエクスポート",
-    "docxTooltip": "会話をWord文書でエクスポート"
+    "docxTooltip": "会話をWord文書でエクスポート",
+    "resume": "再開",
+    "resumeTooltip": "ターミナルでセッションを再開（Shift+クリックでコマンドをコピー）",
+    "resumeCommandCopied": "再開コマンドをクリップボードにコピーしました",
+    "sessionResumed": "ターミナルでセッションを開いています...",
+    "fixSession": "セッションを修正",
+    "loadAll": "すべて読み込み",
+    "loadAllTooltip": "すべてのメッセージを読み込む",
+    "loading": "読み込み中...",
+    "allMessagesLoaded": "{{count}}件のメッセージをすべて読み込みました",
+    "failedToLoadAll": "すべてのメッセージの読み込みに失敗しました"
+  },
+  "providerMetadata": {
+    "relevantFiles": "関連ファイル（{{count}}個）",
+    "codeChunks": "コードチャンク（{{count}}個）",
+    "fileMetadata": "ファイルメタデータ（{{count}}個）",
+    "suggestedDiffs": "提案された差分（{{count}}個）",
+    "consoleLogs": "コンソールログ（{{count}}個）"
+  },
+  "messageReference": {
+    "copyReference": "参照をコピー",
+    "referenceTooltip": "Claude用のファイルパスとメッセージUUIDをコピー",
+    "referenceCopied": "メッセージ参照をコピーしました",
+    "referenceCopyFailed": "参照のコピーに失敗しました"
   }
 }

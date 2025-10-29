@@ -19,7 +19,8 @@
     "loadingContent": "正在加载内容...",
     "count": "会话：{{count}}个",
     "selected": "已选会话",
-    "noSessions": "未找到会话"
+    "noSessions": "未找到会话",
+    "fix": "修复会话（恢复可继续性）"
   },
   "message": {
     "user": "用户",
@@ -42,7 +43,8 @@
     "conversation": "对话内容",
     "loadMore": "加载更多{{count}}条消息",
     "loadMore_plural": "加载更多{{count}}条消息",
-    "scrollToBottom": "滚动到底部"
+    "scrollToBottom": "滚动到底部",
+    "filtered": "已过滤"
   },
   "messageView": {
     "formatted": "格式化",
@@ -221,7 +223,8 @@
     "totalTokenUsageLabel": "总令牌使用量",
     "tooltipTokens": "令牌:",
     "tooltipMessages": "消息:",
-    "tooltipSessions": "会话:"
+    "tooltipSessions": "会话:",
+    "tokenDistributionByType": "按类型划分的令牌分布"
   },
   "time": {
     "start": "开始：",
@@ -274,7 +277,8 @@
     "fileEdit": "文件编辑",
     "removedCode": "删除的代码",
     "addedCode": "添加的代码",
-    "inputParameters": "工具输入参数"
+    "inputParameters": "工具输入参数",
+    "sessionProblematic": "会话无法继续（可修复）"
   },
   "status": {
     "initializing": "正在初始化应用...",
@@ -282,7 +286,9 @@
     "loadingSessions": "正在加载会话...",
     "loadingMessages": "正在加载消息...",
     "loadingStats": "正在加载令牌统计...",
-    "checking": "正在检查..."
+    "checking": "正在检查...",
+    "resuming": "正在恢复...",
+    "fixing": "正在修复..."
   },
   "error": {
     "unexpectedError": "发生了意外错误",
@@ -429,7 +435,7 @@
       "offset": "偏移量: {{offset}}",
       "hasMore": "还有更多: {{hasMore}}",
       "loading": "加载中: {{loading}}",
-    "loadingContent": "正在加载内容...",
+      "loadingContent": "正在加载内容...",
       "session": "会话: {{sessionId}}",
       "file": "文件: {{fileName}}",
       "firstMessage": "第一条消息: {{timestamp}}",
@@ -620,6 +626,10 @@
     "currentVersionLatest": "当前版本 {{version}} 为最新版本"
   },
   "projectListControls": {
+    "refreshAll": "刷新所有会话",
+    "refreshing": "刷新中...",
+    "refreshed": "刷新成功",
+    "refreshFailed": "刷新失败",
     "groupBySource": "按来源分组",
     "ungroup": "取消分组",
     "groupBy": {
@@ -639,7 +649,12 @@
     },
     "hideEmptyProjects": "隐藏空项目",
     "hideEmptySessions": "隐藏空会话",
-    "showAll": "显示全部"
+    "hideAgentSessions": "隐藏代理会话",
+    "showAll": "显示全部",
+    "searchPlaceholder": "搜索会话...",
+    "clearSearch": "清除搜索",
+    "filterSettings": "过滤器设置",
+    "searchLoadFailed": "部分项目加载失败"
   },
   "selection": {
     "clear": "清除选择 (ESC)"
@@ -727,6 +742,29 @@
     "copied": "已复制",
     "markdownTooltip": "将对话导出为 Markdown 格式",
     "htmlTooltip": "将对话导出为 HTML 格式",
-    "docxTooltip": "将对话导出为 Word 文档"
+    "docxTooltip": "将对话导出为 Word 文档",
+    "resume": "恢复",
+    "resumeTooltip": "在终端中恢复会话（按住 Shift 点击复制命令）",
+    "resumeCommandCopied": "恢复命令已复制到剪贴板",
+    "sessionResumed": "正在终端中打开会话...",
+    "fixSession": "修复会话",
+    "loadAll": "加载全部",
+    "loadAllTooltip": "加载所有消息",
+    "loading": "加载中...",
+    "allMessagesLoaded": "已加载全部 {{count}} 条消息",
+    "failedToLoadAll": "加载所有消息失败"
+  },
+  "providerMetadata": {
+    "relevantFiles": "相关文件（{{count}}个）",
+    "codeChunks": "代码块（{{count}}个）",
+    "fileMetadata": "文件元数据（{{count}}个）",
+    "suggestedDiffs": "建议的差异（{{count}}个）",
+    "consoleLogs": "控制台日志（{{count}}个）"
+  },
+  "messageReference": {
+    "copyReference": "复制引用",
+    "referenceTooltip": "复制文件路径和消息UUID供Claude使用",
+    "referenceCopied": "消息引用已复制",
+    "referenceCopyFailed": "复制引用失败"
   }
 }

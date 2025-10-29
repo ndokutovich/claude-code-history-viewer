@@ -44,6 +44,7 @@ export interface CreateSessionRequest {
   project_path: string;
   messages: MessageInput[];
   summary?: string;
+  cwd?: string; // Optional working directory (defaults to project_path if not provided)
 }
 
 /**
@@ -63,6 +64,27 @@ export interface CreateSessionResponse {
   session_path: string;
   session_id: string;
   message_count: number;
+}
+
+/**
+ * Request to extract a range of messages from an existing session
+ * Matches Rust ExtractMessageRangeRequest struct
+ */
+export interface ExtractMessageRangeRequest {
+  session_path: string;
+  start_message_id?: string; // UUID - if undefined, start from beginning
+  end_message_id?: string; // UUID - if undefined, go to end
+}
+
+/**
+ * Response containing extracted messages
+ * Matches Rust ExtractMessageRangeResponse struct
+ */
+export interface ExtractMessageRangeResponse {
+  messages: MessageInput[];
+  summary?: string;
+  message_count: number;
+  cwd?: string; // Extracted working directory from source session
 }
 
 // ============================================================================

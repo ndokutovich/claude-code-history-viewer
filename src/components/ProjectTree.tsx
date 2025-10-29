@@ -1,9 +1,10 @@
 // src/components/ProjectTree.tsx
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Folder,
   Wrench,
   AlertTriangle,
+  AlertCircle,
   ChevronDown,
   ChevronRight,
   MessageCircle,
@@ -42,10 +43,130 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   onClearSelection,
   isLoading,
 }) => {
-  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
+  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(() => {
+    // Load expanded projects from localStorage on mount
+    try {
+      const stored = localStorage.getItem('expandedProjects');
+      if (stored) {
+        return new Set(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error('Failed to load expanded projects:', e);
+    }
+    return new Set();
+  });
   const [loadingProjects, setLoadingProjects] = useState<Set<string>>(new Set());
+  const [isLoadingAllSessions, setIsLoadingAllSessions] = useState(false);
   const { t, i18n } = useTranslation('components');
   const { projectListPreferences, loadProjectSessions } = useAppStore();
+
+  // Save expanded projects to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('expandedProjects', JSON.stringify(Array.from(expandedProjects)));
+    } catch (e) {
+      console.error('Failed to save expanded projects:', e);
+    }
+  }, [expandedProjects]);
+
+  // Load all sessions when search query is entered (with debouncing)
+  useEffect(() => {
+    // Debounce: wait 300ms after user stops typing
+    const debounceTimer = setTimeout(async () => {
+      if (projectListPreferences.sessionSearchQuery.trim() && !isLoadingAllSessions) {
+        setIsLoadingAllSessions(true);
+
+        // Load sessions for all projects that don't have them loaded yet
+        const projectsToLoad = projects.filter(
+          (project) => !sessionsByProject[project.path] || sessionsByProject[project.path]?.length === 0
+        );
+
+        // Expand all projects to show search results
+        const allProjectPaths = new Set(projects.map(p => p.path));
+        setExpandedProjects(allProjectPaths);
+
+        // Load sessions with concurrent limit (5 at a time)
+        const CONCURRENT_LIMIT = 5;
+        const errors: string[] = [];
+
+        for (let i = 0; i < projectsToLoad.length; i += CONCURRENT_LIMIT) {
+          const batch = projectsToLoad.slice(i, i + CONCURRENT_LIMIT);
+          await Promise.all(
+            batch.map(async (project) => {
+              try {
+                await loadProjectSessions(project.path);
+              } catch (error) {
+                const errorMsg = `${project.name}: ${error}`;
+                console.error(`Failed to load sessions for project ${project.name}:`, error);
+                errors.push(errorMsg);
+              }
+            })
+          );
+        }
+
+        // Show error toast if any loads failed
+        if (errors.length > 0) {
+          const { toast } = await import('sonner');
+          toast.error(t('projectListControls.searchLoadFailed', 'Failed to load some projects'), {
+            description: `${errors.length} project(s) failed to load`,
+          });
+        }
+
+        setIsLoadingAllSessions(false);
+      }
+    }, 300); // 300ms debounce delay
+
+    return () => clearTimeout(debounceTimer);
+  }, [projectListPreferences.sessionSearchQuery, projects, sessionsByProject, loadProjectSessions, t]);
+
+  // Helper to check if a project has any visible sessions after filtering
+  const hasVisibleSessions = useCallback((project: UIProject): boolean => {
+    const projectSessions = sessionsByProject[project.path] || [];
+
+    // If sessions haven't been loaded yet for this project, show it (we don't know yet)
+    // Only hide if we've loaded sessions and they're all filtered out
+    if (projectSessions.length === 0 && selectedProject?.path !== project.path) {
+      // Sessions not loaded yet - assume project should be visible
+      return true;
+    }
+
+    // Use sessions array if this is the selected project
+    let visibleSessions = selectedProject?.path === project.path ? sessions : projectSessions;
+
+    // If no sessions at all after loading, hide only if hideEmptyProjects is enabled
+    if (visibleSessions.length === 0) {
+      return false;
+    }
+
+    // Apply same filters as getSessionsForProject
+    if (projectListPreferences.hideEmptySessions) {
+      visibleSessions = visibleSessions.filter((s) => s.message_count > 0);
+    }
+
+    if (projectListPreferences.hideAgentSessions) {
+      visibleSessions = visibleSessions.filter((s) => {
+        const actualId = s.actual_session_id || s.session_id;
+        // Extract filename from path (handle both / and \ separators)
+        const filename = actualId.split(/[/\\]/).pop() || '';
+        // Remove .jsonl extension
+        const sessionName = filename.replace(/\.jsonl$/i, '');
+        const isAgent = sessionName.startsWith('agent-');
+        return !isAgent;
+      });
+    }
+
+    if (projectListPreferences.sessionSearchQuery.trim()) {
+      const query = projectListPreferences.sessionSearchQuery.toLowerCase();
+      visibleSessions = visibleSessions.filter((session) => {
+        const title = getSessionTitle(session).toLowerCase();
+        const sessionId = session.session_id.toLowerCase();
+        const actualSessionId = session.actual_session_id?.toLowerCase() || '';
+        return title.includes(query) || sessionId.includes(query) || actualSessionId.includes(query);
+      });
+    }
+
+    return visibleSessions.length > 0;
+  }, [sessionsByProject, selectedProject, sessions, projectListPreferences]);
 
   // Apply filtering and sorting to projects
   const filteredAndSortedProjects = useMemo(() => {
@@ -55,6 +176,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     if (projectListPreferences.hideEmptyProjects) {
       result = result.filter((p) => p.session_count > 0);
     }
+
+    // Filter: Hide projects where all sessions are filtered out
+    result = result.filter((p) => hasVisibleSessions(p));
 
     // Sort
     result.sort((a, b) => {
@@ -73,38 +197,61 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     });
 
     return result;
-  }, [projects, projectListPreferences]);
-
-  // Apply filtering to sessions (global filter only - per-project filtering happens in render)
-  const filteredSessions = useMemo(() => {
-    if (!projectListPreferences.hideEmptySessions) {
-      return sessions;
-    }
-
-    return sessions.filter((s) => s.message_count > 0);
-  }, [sessions, projectListPreferences.hideEmptySessions]);
+  }, [projects, projectListPreferences, sessionsByProject, sessions, hasVisibleSessions]);
 
   // Helper function to get sessions for a specific project
   const getSessionsForProject = (projectPath: string): UISession[] => {
     // Try cache first (new multi-project architecture)
     const cachedSessions = sessionsByProject[projectPath];
 
+    let sessionsToFilter: UISession[] = [];
+
     if (cachedSessions && cachedSessions.length > 0) {
-      // Apply hide empty sessions filter
-      if (projectListPreferences.hideEmptySessions) {
-        return cachedSessions.filter((s) => s.message_count > 0);
-      }
-      return cachedSessions;
+      sessionsToFilter = cachedSessions;
+    } else if (selectedProject?.path === projectPath) {
+      // Fallback to selected project behavior for backward compatibility
+      sessionsToFilter = sessions;
+    } else {
+      // No sessions loaded for this project yet
+      return [];
     }
 
-    // Fallback to selected project behavior for backward compatibility
-    // If this is the selected project, return filteredSessions
-    if (selectedProject?.path === projectPath) {
-      return filteredSessions;
+    // Apply filters
+    let result = sessionsToFilter;
+
+    // Filter: Hide empty sessions
+    if (projectListPreferences.hideEmptySessions) {
+      result = result.filter((s) => s.message_count > 0);
     }
 
-    // No sessions loaded for this project yet
-    return [];
+    // Filter: Hide agent sessions (sessions starting with "agent-")
+    if (projectListPreferences.hideAgentSessions) {
+      result = result.filter((s) => {
+        const actualId = s.actual_session_id || s.session_id;
+        // Extract filename from path (handle both / and \ separators)
+        const filename = actualId.split(/[/\\]/).pop() || '';
+        // Remove .jsonl extension
+        const sessionName = filename.replace(/\.jsonl$/i, '');
+        const isAgent = sessionName.startsWith('agent-');
+        if (isAgent) {
+          console.log('Filtering out agent session:', sessionName);
+        }
+        return !isAgent;
+      });
+    }
+
+    // Filter: Search query
+    if (projectListPreferences.sessionSearchQuery.trim()) {
+      const query = projectListPreferences.sessionSearchQuery.toLowerCase();
+      result = result.filter((session) => {
+        const title = getSessionTitle(session).toLowerCase();
+        const sessionId = session.session_id.toLowerCase();
+        const actualSessionId = session.actual_session_id?.toLowerCase() || '';
+        return title.includes(query) || sessionId.includes(query) || actualSessionId.includes(query);
+      });
+    }
+
+    return result;
   };
 
   // Group projects by source if needed
@@ -285,19 +432,35 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       setExpandedProjects(new Set());
     };
 
+    const handleExpandProject = async (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { path } = customEvent.detail;
+
+      setExpandedProjects(prev => {
+        const newSet = new Set(prev);
+        newSet.add(path);
+        return newSet;
+      });
+
+      // Load sessions for this project
+      await loadSessionsForProjects([path]);
+    };
+
     window.addEventListener('expandAllProjects', handleExpandAll);
     window.addEventListener('collapseAllProjects', handleCollapseAll);
+    window.addEventListener('expandProject', handleExpandProject as EventListener);
 
     return () => {
       window.removeEventListener('expandAllProjects', handleExpandAll);
       window.removeEventListener('collapseAllProjects', handleCollapseAll);
+      window.removeEventListener('expandProject', handleExpandProject as EventListener);
     };
   }, [filteredAndSortedProjects]);
 
   return (
     <div className="w-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col h-full">
       {/* Project List Controls */}
-      <ProjectListControls />
+      <ProjectListControls isLoadingSearch={isLoadingAllSessions} />
 
       {/* Selection Header with Clear Button */}
       {(selectedProject || selectedSession) && (
@@ -389,19 +552,18 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                       </p>
 
                       {/* Metadata row */}
-                      <div className="flex items-center space-x-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        <span>{t("message.count", { count: session.message_count })}</span>
+                      <div className="flex items-center space-x-2 mt-1 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+                        <span className="whitespace-nowrap">{t("message.count", { count: session.message_count })}</span>
                         <span>•</span>
-                        <span>{formatTimeAgo(session.last_modified)}</span>
+                        <span className="whitespace-nowrap">{formatTimeAgo(session.last_modified)}</span>
                         {session.has_tool_use && (
-                          <>
-                            <Wrench className="w-3 h-3" />
-                          </>
+                          <Wrench className="w-3 h-3 flex-shrink-0" />
                         )}
                         {session.has_errors && (
-                          <>
-                            <AlertTriangle className="w-3 h-3 text-yellow-600 dark:text-yellow-500" />
-                          </>
+                          <AlertTriangle className="w-3 h-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                        )}
+                        {session.is_problematic && (
+                          <AlertCircle className="w-3 h-3 text-red-600 dark:text-red-500 flex-shrink-0" />
                         )}
                       </div>
                     </div>
@@ -479,7 +641,10 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                             className={cn("w-4 h-4", getProviderColorClass(project.providerId))}
                           />
                           <div className="min-w-0 flex-1 flex items-center">
-                            <p className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm max-w-56">
+                            <p
+                              className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm"
+                              title={project.name}
+                            >
                               {project.name}
                             </p>
                           </div>
@@ -519,14 +684,14 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                             <div className="flex items-start space-x-3">
                               <MessageCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
                               <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between gap-2">
                                   <h3
-                                    className="font-medium text-gray-800 dark:text-gray-200 text-xs truncate"
+                                    className="font-medium text-gray-800 dark:text-gray-200 text-xs truncate flex-1 min-w-0"
                                     title={getSessionTitle(session)}
                                   >
                                     {getSessionTitle(session)}
                                   </h3>
-                                  <div className="flex items-center space-x-1">
+                                  <div className="flex items-center space-x-1 flex-shrink-0">
                                     {session.has_tool_use && (
                                       <span
                                         title={t(
@@ -534,7 +699,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                           "Tool used"
                                         )}
                                       >
-                                        <Wrench className="w-3 h-3 text-blue-400" />
+                                        <Wrench className="w-3 h-3 text-blue-400 flex-shrink-0" />
                                       </span>
                                     )}
                                     {session.has_errors && (
@@ -544,13 +709,23 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                           "Error occurred"
                                         )}
                                       >
-                                        <AlertTriangle className="w-3 h-3 text-red-400" />
+                                        <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />
+                                      </span>
+                                    )}
+                                    {session.is_problematic && (
+                                      <span
+                                        title={t(
+                                          "components:tools.sessionProblematic",
+                                          "Session not resumable (fix available)"
+                                        )}
+                                      >
+                                        <AlertCircle className="w-3 h-3 text-red-500 flex-shrink-0" />
                                       </span>
                                     )}
                                   </div>
                                 </div>
 
-                                <div className="flex items-center space-x-1 text-xs text-gray-400 mt-1">
+                                <div className="flex items-center space-x-1 text-xs text-gray-400 mt-1 overflow-hidden">
                                   <span className="whitespace-nowrap">
                                     {formatTimeAgo(session.last_modified)}
                                   </span>
@@ -572,8 +747,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                       "Actual ID"
                                     )}: ${session.actual_session_id}`}
                                   >
-                                    ID: {session.actual_session_id.slice(0, 8)}
-                                    ...
+                                    ID: {session.actual_session_id}
                                   </span>
                                 </div>
                               </div>

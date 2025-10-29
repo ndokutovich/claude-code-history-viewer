@@ -253,6 +253,14 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
         excludeSidechain: false, // Load all sessions, let UI filter
       });
 
+      // DEBUG: Log what we received from Rust
+      console.log('🔍 DEBUG: Received from Rust:', uiSessions.slice(0, 2).map(s => ({
+        id: s.session_id.slice(-8),
+        has_tool_use: s.has_tool_use,
+        has_errors: s.has_errors,
+        is_problematic: s.is_problematic,
+      })));
+
       // Convert UI format to universal format
       const universalSessions: UniversalSession[] = uiSessions.map((session) =>
         this.convertUISession(session, projectId, sourceId)
@@ -699,6 +707,9 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
         filePath: uiSession.file_path,
         actualSessionId: uiSession.actual_session_id,
         projectName: uiSession.project_name,
+        isProblematic: uiSession.is_problematic, // Preserve is_problematic flag
+        gitBranch: uiSession.git_branch, // Git branch from session metadata
+        gitCommit: uiSession.git_commit, // Git commit hash from session metadata
       },
       checksum: this.generateChecksum(uiSession.file_path + uiSession.last_modified),
     };

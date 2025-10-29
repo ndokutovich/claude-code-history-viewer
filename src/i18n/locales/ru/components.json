@@ -19,7 +19,8 @@
     "loadingContent": "Загрузка контента...",
     "count": "Сеансов: {{count}}",
     "selected": "Выбранная сессия",
-    "noSessions": "Сеансы не найдены"
+    "noSessions": "Сеансы не найдены",
+    "fix": "Исправить сессию (восстановить возможность продолжения)"
   },
   "message": {
     "user": "Пользователь",
@@ -42,7 +43,8 @@
     "conversation": "Диалог",
     "loadMore": "Загрузить ещё {{count}} сообщение",
     "loadMore_plural": "Загрузить ещё {{count}} сообщений",
-    "scrollToBottom": "Прокрутить вниз"
+    "scrollToBottom": "Прокрутить вниз",
+    "filtered": "отфильтровано"
   },
   "messageView": {
     "formatted": "Форматированный",
@@ -259,7 +261,8 @@
     "fileEdit": "Редактирование файла",
     "removedCode": "Удалённый код",
     "addedCode": "Добавленный код",
-    "inputParameters": "Входные параметры инструмента"
+    "inputParameters": "Входные параметры инструмента",
+    "sessionProblematic": "Сессия не может быть продолжена (доступно исправление)"
   },
   "status": {
     "initializing": "Инициализация приложения...",
@@ -267,7 +270,9 @@
     "loadingSessions": "Загрузка сеансов...",
     "loadingMessages": "Загрузка сообщений...",
     "loadingStats": "Загрузка статистики токенов...",
-    "checking": "Проверка..."
+    "checking": "Проверка...",
+    "resuming": "Возобновление...",
+    "fixing": "Исправление..."
   },
   "error": {
     "unexpectedError": "Произошла непредвиденная ошибка",
@@ -414,7 +419,7 @@
       "offset": "Смещение: {{offset}}",
       "hasMore": "Есть ещё: {{hasMore}}",
       "loading": "Загрузка: {{loading}}",
-    "loadingContent": "Загрузка контента...",
+      "loadingContent": "Загрузка контента...",
       "session": "Сеанс: {{sessionId}}",
       "file": "Файл: {{fileName}}",
       "firstMessage": "Первое сообщение: {{timestamp}}",
@@ -605,6 +610,10 @@
     "currentVersionLatest": "Текущая версия {{version}} является последней"
   },
   "projectListControls": {
+    "refreshAll": "Обновить все сеансы",
+    "refreshing": "Обновление...",
+    "refreshed": "Обновление завершено",
+    "refreshFailed": "Обновление не удалось",
     "groupBySource": "Группировать по источнику",
     "ungroup": "Разгруппировать",
     "groupBy": {
@@ -624,7 +633,12 @@
     },
     "hideEmptyProjects": "Скрыть пустые проекты",
     "hideEmptySessions": "Скрыть пустые сеансы",
-    "showAll": "Показать все"
+    "hideAgentSessions": "Скрыть сеансы агентов",
+    "showAll": "Показать все",
+    "searchPlaceholder": "Поиск сеансов...",
+    "clearSearch": "Очистить поиск",
+    "filterSettings": "Настройки фильтра",
+    "searchLoadFailed": "Не удалось загрузить некоторые проекты"
   },
   "selection": {
     "clear": "Очистить выбор (ESC)"
@@ -712,6 +726,29 @@
     "copied": "Скопировано",
     "markdownTooltip": "Экспортировать разговор в формат Markdown",
     "htmlTooltip": "Экспортировать разговор в формат HTML",
-    "docxTooltip": "Экспортировать разговор в документ Word"
+    "docxTooltip": "Экспортировать разговор в документ Word",
+    "resume": "Возобновить",
+    "resumeTooltip": "Возобновить сеанс в терминале (Shift+клик для копирования команды)",
+    "resumeCommandCopied": "Команда возобновления скопирована в буфер обмена",
+    "sessionResumed": "Открытие сеанса в терминале...",
+    "fixSession": "Исправить сеанс",
+    "loadAll": "Загрузить всё",
+    "loadAllTooltip": "Загрузить все сообщения",
+    "loading": "Загрузка...",
+    "allMessagesLoaded": "Все {{count}} сообщений загружены",
+    "failedToLoadAll": "Не удалось загрузить все сообщения"
+  },
+  "providerMetadata": {
+    "relevantFiles": "Связанные файлы ({{count}})",
+    "codeChunks": "Фрагменты кода ({{count}})",
+    "fileMetadata": "Метаданные файла ({{count}})",
+    "suggestedDiffs": "Предлагаемые различия ({{count}})",
+    "consoleLogs": "Логи консоли ({{count}})"
+  },
+  "messageReference": {
+    "copyReference": "Копировать ссылку",
+    "referenceTooltip": "Копировать путь к файлу и UUID сообщения для Claude",
+    "referenceCopied": "Ссылка на сообщение скопирована",
+    "referenceCopyFailed": "Не удалось скопировать ссылку"
   }
 }

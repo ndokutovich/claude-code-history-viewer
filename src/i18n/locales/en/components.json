@@ -19,7 +19,8 @@
     "loadingContent": "Loading content...",
     "count": "Sessions: {{count}}",
     "selected": "Selected session",
-    "noSessions": "No sessions found"
+    "noSessions": "No sessions found",
+    "fix": "Fix Session (Restore Resumability)"
   },
   "selection": {
     "clear": "Clear selection (ESC)"
@@ -252,6 +253,7 @@
     "toolUsed": "Tool Used",
     "generalConversation": "General Conversation",
     "errorOccurred": "Error Occurred",
+    "sessionProblematic": "Session not resumable (fix available)",
     "todoUpdate": "Todo List Update",
     "currentStatus": "Current Status:",
     "fileCreate": "File Creation",
@@ -269,7 +271,9 @@
     "loadingSessions": "Loading sessions...",
     "loadingMessages": "Loading messages...",
     "loadingStats": "Loading token statistics...",
-    "checking": "Checking..."
+    "checking": "Checking...",
+    "fixing": "Fixing...",
+    "resuming": "Resuming..."
   },
   "error": {
     "unexpectedError": "An unexpected error occurred",
@@ -505,6 +509,10 @@
     "title": "Thinking Process"
   },
   "projectListControls": {
+    "refreshAll": "Refresh All Sessions",
+    "refreshing": "Refreshing...",
+    "refreshed": "Refreshed successfully",
+    "refreshFailed": "Refresh failed",
     "groupBySource": "Group by Source",
     "ungroup": "Ungroup",
     "groupBy": {
@@ -524,7 +532,12 @@
     },
     "hideEmptyProjects": "Hide Empty Projects",
     "hideEmptySessions": "Hide Empty Sessions",
-    "showAll": "Show All"
+    "hideAgentSessions": "Hide Agent Sessions",
+    "showAll": "Show All",
+    "searchPlaceholder": "Search sessions...",
+    "clearSearch": "Clear search",
+    "filterSettings": "Filter Settings",
+    "searchLoadFailed": "Failed to load some projects"
   },
   "feedback": {
     "title": "Send Feedback",
@@ -722,7 +735,12 @@
     "failedToLoadAll": "Failed to load all messages",
     "markdownTooltip": "Export conversation to Markdown format",
     "htmlTooltip": "Export conversation to HTML format",
-    "docxTooltip": "Export conversation to Word document"
+    "docxTooltip": "Export conversation to Word document",
+    "fixSession": "Fix Session",
+    "resume": "Resume",
+    "resumeTooltip": "Resume session in terminal (Shift+Click to copy command)",
+    "resumeCommandCopied": "Resume command copied to clipboard",
+    "sessionResumed": "Opening session in terminal..."
   },
   "messageReference": {
     "copyReference": "Copy Reference",

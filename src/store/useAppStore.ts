@@ -137,6 +137,9 @@ function universalToUISession(session: UniversalSession): UISession {
   // Extract summary and file path from metadata if available
   const summary = session.metadata.summary as string | undefined;
   const filePath = session.metadata.filePath as string | undefined;
+  const isProblematic = session.metadata.isProblematic as boolean | undefined;
+  const gitBranch = session.metadata.gitBranch as string | undefined;
+  const gitCommit = session.metadata.gitCommit as string | undefined;
 
   // Get provider name from adapter registry
   const adapter = adapterRegistry.tryGet(session.providerId);
@@ -151,11 +154,14 @@ function universalToUISession(session: UniversalSession): UISession {
     first_message_time: session.firstMessageAt,
     last_message_time: session.lastMessageAt,
     last_modified: session.lastMessageAt,
-    has_tool_use: session.toolCallCount > 0,
-    has_errors: session.errorCount > 0,
+    has_tool_use: session.toolCallCount > 0 || session.toolCallCount === -1, // -1 means "has but count unknown"
+    has_errors: session.errorCount > 0 || session.errorCount === -1,
+    is_problematic: isProblematic ?? false, // Extract from metadata, default false for non-Claude sources
     summary,
     providerId: session.providerId,
     providerName,
+    git_branch: gitBranch, // Extract git branch from metadata
+    git_commit: gitCommit, // Extract git commit from metadata
   };
 }
 
@@ -328,6 +334,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
     sortOrder: 'desc',
     hideEmptyProjects: true,
     hideEmptySessions: true,
+    hideAgentSessions: true, // Hide agent sessions by default
+    sessionSearchQuery: '',
   },
 
   // Message view preferences
@@ -419,6 +427,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (defaultSource) {
         set({ claudePath: defaultSource.path });
       }
+
+      // Clear session cache to force refresh from filesystem
+      console.log('🔄 Clearing session cache for fresh filesystem scan');
+      set({ sessionsByProject: {} });
 
       // Scan projects from all available sources
       await get().scanProjects();
@@ -551,6 +563,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       isLoadingSessionComparison: false,
     });
     try {
+      // Always use cached sessions when selecting a project
+      // (Cache is cleared on refresh, so this is safe)
       const sessions = await get().loadProjectSessions(project.path);
       console.log(`✅ selectProject: Loaded ${sessions.length} sessions for ${project.name}`);
 
@@ -570,16 +584,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
-  loadProjectSessions: async (projectPath: string, excludeSidechain?: boolean) => {
+  loadProjectSessions: async (projectPath: string, excludeSidechain?: boolean, forceRefresh = false) => {
     try {
-      // Check cache first
+      // Check cache first (unless force refresh is requested)
       const cached = get().sessionsByProject[projectPath];
-      if (cached) {
+      if (cached && !forceRefresh) {
         console.log(`💾 Using cached sessions for ${projectPath} (${cached.length} sessions)`);
         return cached;
       }
 
-      console.log(`📥 Loading sessions from backend for ${projectPath}`);
+      if (forceRefresh) {
+        console.log(`🔄 Force refreshing sessions from filesystem for ${projectPath}`);
+      } else {
+        console.log(`📥 Loading sessions from backend for ${projectPath}`);
+      }
 
       // ========================================
       // PHASE 8.3: Use adapters for session loading (v2.0.0)
