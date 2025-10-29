@@ -178,8 +178,9 @@ pub async fn create_claude_session(
 
     // Write all messages
     let message_count = request.messages.len();
+    let cwd_path = request.project_path.as_str();
     for (idx, msg) in request.messages.iter().enumerate() {
-        let jsonl_msg = convert_to_jsonl_format(msg, &session_id, idx)?;
+        let jsonl_msg = convert_to_jsonl_format(msg, &session_id, idx, cwd_path)?;
         write_jsonl_line(&mut writer, &jsonl_msg)?;
     }
 
@@ -218,6 +219,12 @@ pub async fn append_to_claude_session(
         .ok_or_else(|| "Invalid session file name".to_string())?
         .to_string();
 
+    // Get parent directory as cwd
+    let cwd_path = session_file_path
+        .parent()
+        .and_then(|p| p.to_str())
+        .ok_or_else(|| "Invalid session file path".to_string())?;
+
     // Open file in append mode
     let file = OpenOptions::new()
         .append(true)
@@ -229,7 +236,7 @@ pub async fn append_to_claude_session(
     // Write all messages
     let message_count = messages.len();
     for (idx, msg) in messages.iter().enumerate() {
-        let jsonl_msg = convert_to_jsonl_format(msg, &session_id, idx)?;
+        let jsonl_msg = convert_to_jsonl_format(msg, &session_id, idx, cwd_path)?;
         write_jsonl_line(&mut writer, &jsonl_msg)?;
     }
 
@@ -425,6 +432,7 @@ fn convert_to_jsonl_format(
     msg: &MessageInput,
     session_id: &str,
     _idx: usize,
+    project_path: &str,
 ) -> Result<serde_json::Value, String> {
     // Generate UUID for this message
     let msg_uuid = Uuid::new_v4().to_string();
@@ -471,13 +479,17 @@ fn convert_to_jsonl_format(
         }
     }
 
-    // Build the full JSONL message
+    // Build the full JSONL message with all required Claude Code metadata
     let mut jsonl_msg = serde_json::json!({
         "uuid": msg_uuid,
         "sessionId": session_id,
         "timestamp": timestamp,
         "type": msg.role.to_lowercase(),
         "message": message_obj,
+        "isSidechain": false,
+        "cwd": project_path,  // Working directory - critical for resume functionality
+        "userType": "external",
+        "version": "1.0.0",  // Claude Code version (artificial sessions)
     });
 
     // Add optional parent_id
