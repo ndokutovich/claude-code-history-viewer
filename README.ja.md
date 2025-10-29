@@ -1,6 +1,6 @@
 # Claude Code & Cursor IDE History Viewer
 
-Claude Code および Cursor IDE の会話履歴（`~/.claude`と Cursor データフォルダ）を閲覧するためのクロスプラットフォームデスクトップアプリです。
+Claude Code、Cursor IDE、Codex CLI、Gemini AI Studio の会話履歴を閲覧するためのクロスプラットフォームデスクトップアプリです。
 
 ![Version](https://img.shields.io/github/v/release/ndokutovich/claude-code-history-viewer?label=Version&color=blue)
 ![Downloads](https://img.shields.io/github/downloads/ndokutovich/claude-code-history-viewer/total?label=Downloads&color=brightgreen)
@@ -13,7 +13,7 @@ Claude Code および Cursor IDE の会話履歴（`~/.claude`と Cursor デー�
 
 ## 開発理由
 
-Claude Code と Cursor IDE は会話履歴をそれぞれのデータフォルダ（Claude Code は`~/.claude/projects/`、Cursor は AppData フォルダ）に JSONL ファイルとして保存します。これらのファイルは読みにくく検索も困難なため、両方のツールの会話を確認し使用統計を見るための統合インターフェースを提供するアプリを作成しました。
+Claude Code、Cursor IDE、Codex CLI、Gemini AI Studio は会話履歴を様々な形式（JSONL ファイル、SQLite データベース）でデータフォルダに保存します。これらのファイルは読みにくく検索も困難なため、すべての AI コーディングアシスタントの会話を一箇所で確認し、使用統計を確認し、セッションを再開できる統合インターフェースを提供するアプリを作成しました。
 
 ## スクリーンショットとデモ
 
@@ -41,6 +41,42 @@ Claude Code と Cursor IDE は会話履歴をそれぞれのデータフォル�
 ### デモ
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## v1.7.0 の新機能
+
+**🤖 マルチプロバイダーサポート**:
+- **Codex CLI 統合**: `~/.codex/sessions/` の Codex 会話履歴を閲覧・検索
+- **Gemini AI Studio サポート**: `~/.gemini/conversations/` の Gemini 会話を表示
+- 4つの AI コーディングアシスタント用の統合インターフェース: Claude Code、Cursor IDE、Codex CLI、Gemini AI Studio
+- 識別しやすいプロバイダーアイコンとバッジ
+- インストールされているすべての AI ツールを自動検出
+
+**🔄 セッション再開**:
+- ネイティブツール（Claude Code、Cursor、Codex、Gemini）で直接会話を再開
+- 正しいコンテキストで正確なツールを起動するプロバイダー認識再開コマンド
+- 作業ディレクトリの自動検出と復元
+- Gemini の `/chat resume` ワークフロー用のインタラクティブコマンドサポート
+- すべてのプロジェクトから正しい CWD でセッションを起動
+
+**🔧 セッション管理ツール**:
+- **セッション修復ユーティリティ**: Claude Code で再開できない問題のあるセッションを修復
+- **メッセージ範囲抽出**: 特定のメッセージ範囲から新しいセッションを作成
+- 再開可能なセッションを示すセッション健全性インジケーター
+- セッション修復前のバックアップ作成
+
+**📊 強化されたセッション情報**:
+- セッションヘッダーに Git ブランチとコミットを表示（利用可能な場合）
+- Claude が作業していたブランチを示すリポジトリコンテキスト
+- セッションメタデータとツール出力から git 情報を抽出
+- ブランチ（📍）とコミット（🔖）アイコン付きの視覚的インジケーター
+
+**🔄 改善されたナビゲーション**:
+- アプリを再起動せずにセッションリストをリロードする更新ボタン
+- 更新時の状態保持（展開されたプロジェクト、選択されたセッション）
+- すべてのプロバイダーのセッションを一度に更新する「すべて更新」
+- ユーザーフィードバック用のローディングインジケーターとトースト通知
+
+---
 
 ## v1.6.0 の新機能
 

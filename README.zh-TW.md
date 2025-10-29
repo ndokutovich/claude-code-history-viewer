@@ -1,6 +1,6 @@
-# Claude Code & Cursor IDE History Viewer
+# Claude Code, Cursor IDE, Codex CLI & Gemini AI Studio History Viewer
 
-一款用於瀏覽 Claude Code 和 Cursor IDE 對話記錄（儲存在 `~/.claude` 和 Cursor 資料資料夾）的跨平台桌面應用程式。
+一款用於瀏覽 Claude Code、Cursor IDE、Codex CLI 和 Gemini AI Studio 對話記錄（儲存在 `~/.claude`、Cursor 資料資料夾、`~/.codex` 和 Gemini 工作區）的跨平台桌面應用程式。
 
 ![Version](https://img.shields.io/github/v/release/ndokutovich/claude-code-history-viewer?label=Version&color=blue)
 ![Downloads](https://img.shields.io/github/downloads/ndokutovich/claude-code-history-viewer/total?label=Downloads&color=brightgreen)
@@ -13,7 +13,7 @@
 
 ## 開發緣由
 
-Claude Code 和 Cursor IDE 分別將對話記錄儲存在各自的資料資料夾（Claude Code 使用 `~/.claude/projects/`，Cursor 使用 AppData 資料夾）中的 JSONL 檔案中。這些檔案難以閱讀和搜尋。此應用程式提供了統一的介面來瀏覽兩個工具的對話、檢視使用統計資訊並尋找舊討論。
+Claude Code、Cursor IDE、Codex CLI 和 Gemini AI Studio 等 AI 編碼助理將對話記錄儲存在各自的資料資料夾中。它們使用各種格式（Claude Code 和 Codex CLI 使用 JSONL 檔案，Cursor 和 Gemini 使用 SQLite 資料庫），這些檔案難以閱讀和搜尋。此應用程式提供了統一的介面來瀏覽所有四個工具的對話、檢視使用統計資訊並尋找舊討論。
 
 ## 截圖和示範
 
@@ -41,6 +41,38 @@ Claude Code 和 Cursor IDE 分別將對話記錄儲存在各自的資料資料�
 ### 演示
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## v1.7.0 新功能
+
+**🔌 多提供者支援**:
+- Codex CLI 整合 - 完全支援來自 `~/.codex` 的 JSONL 工作階段
+- Gemini AI Studio 支援 - 讀取 Gemini 工作區資料庫
+- 四個 AI 助理的統一介面（Claude Code、Cursor、Codex、Gemini）
+- 提供者圖示和自動偵測，便於識別
+
+**▶️ 恢復工作階段**:
+- 在原生工具中恢復對話（Claude Code、Cursor、Codex CLI、Gemini）
+- 提供者感知的恢復命令，具有正確的上下文
+- 自動工作目錄偵測，實現無縫繼續
+- 對 Gemini 的互動式命令支援（開啟瀏覽器）
+
+**🛠️ 工作階段管理工具**:
+- 修復工作階段實用程式，用於有問題的工作階段
+- 訊息範圍提取（從索引 X 到 Y）
+- 工作階段健康指標（缺失父級、斷鏈偵測）
+- 修復前自動備份建立
+
+**📊 增強的工作階段資訊**:
+- 標題中的 Git 分支和提交顯示
+- 儲存庫上下文，顯示哪個分支
+- 從工作階段中繼資料中提取 git 資訊
+- 帶圖示的視覺指示器
+
+**🔄 改進的導覽**:
+- 重新整理按鈕以重新載入工作階段清單
+- 重新整理時保留狀態（選定的工作階段/篩選器）
+- 所有提供者的「全部重新整理」
+- 載入指示器和通知
 
 ## v1.6.0 新功能
 

@@ -1,4 +1,4 @@
-A cross-platform desktop app to browse and search your Claude Code and Cursor IDE conversation history stored in `~/.claude` and Cursor's data folders.
+A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, Codex CLI, and Gemini AI Studio conversation history stored in their respective data folders.
 
 ![Version](https://img.shields.io/github/v/release/ndokutovich/claude-code-history-viewer?label=Version&color=blue)
 ![Downloads](https://img.shields.io/github/downloads/ndokutovich/claude-code-history-viewer/total?label=Downloads&color=brightgreen)
@@ -12,7 +12,7 @@ A cross-platform desktop app to browse and search your Claude Code and Cursor ID
 
 ## Why this exists
 
-Claude Code and Cursor IDE store conversation history in JSONL files scattered across their data folders (`~/.claude/projects/` for Claude Code, and Cursor's AppData folder). These are hard to read and search through. This app gives you a proper interface to browse your conversations from both tools, see usage stats, and find old discussions.
+Claude Code, Cursor IDE, Codex CLI, and Gemini AI Studio store conversation history in various formats (JSONL files, SQLite databases) scattered across their data folders. These are hard to read and search through. This app gives you a unified interface to browse conversations from all these AI coding assistants, see usage stats, resume sessions, and find old discussions.
 
 ## Screenshots & Demo
 
@@ -40,6 +40,42 @@ Per-project token usage breakdown and session-level analysis
 ### Demo
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## What's New in v1.7.0
+
+**🤖 Multi-Provider Support**:
+- **Codex CLI Integration**: Browse and search your Codex conversation history from `~/.codex/sessions/`
+- **Gemini AI Studio Support**: View Gemini conversations from `~/.gemini/conversations/`
+- Unified interface for 4 AI coding assistants: Claude Code, Cursor IDE, Codex CLI, and Gemini AI Studio
+- Provider icons and badges for easy identification
+- Auto-detection of all installed AI tools
+
+**🔄 Resume Sessions**:
+- Resume conversations directly in their native tools (Claude Code, Cursor, Codex, Gemini)
+- Provider-aware resume commands that open the correct tool with proper context
+- Automatic working directory detection and restoration
+- Interactive command support for Gemini's `/chat resume` workflow
+- Launch sessions with correct CWD from any project
+
+**🔧 Session Management Tools**:
+- **Fix Session Utility**: Repair problematic sessions that can't be resumed in Claude Code
+- **Message Range Extraction**: Create new sessions from a specific range of messages
+- Session health indicators showing which sessions can be resumed
+- Backup creation before session repairs
+
+**📊 Enhanced Session Information**:
+- Git branch and commit display in session headers (when available)
+- Repository context showing which branch Claude was working on
+- Extract git info from session metadata and tool outputs
+- Visual indicators with branch (📍) and commit (🔖) icons
+
+**🔄 Improved Navigation**:
+- Refresh button to reload session lists without restarting the app
+- State preservation when refreshing (expanded projects, selected session)
+- "Refresh All Sessions" for all providers at once
+- Loading indicators and toast notifications for user feedback
+
+---
 
 ## What's New in v1.6.0
 
@@ -106,6 +142,10 @@ Per-project token usage breakdown and session-level analysis
 - Multi-platform build scripts
 
 ## What it does
+
+**Multi-provider support**: Unified interface for 4 AI coding assistants - Claude Code, Cursor IDE, Codex CLI, and Gemini AI Studio. Auto-detects all installed tools and aggregates conversations in one place.
+
+**Resume sessions**: Continue conversations directly in their native tools with a single click. Provider-aware resume commands launch the correct AI assistant with proper working directory context.
 
 **Browse conversations**: Navigate through projects and sessions with a tree view on the left, conversation view on the right. Clean, intuitive interface with support for light/dark themes.
 
@@ -201,14 +241,32 @@ pnpm tauri:build:linux    # Linux x86_64
 
 ### Basic Navigation
 1. Launch the app
-2. It automatically scans `~/.claude` and Cursor data folders for conversation data
-3. Browse projects in the left sidebar tree
+2. It automatically scans for all installed AI tools:
+   - Claude Code: `~/.claude/projects/`
+   - Cursor IDE: AppData/Cursor database
+   - Codex CLI: `~/.codex/sessions/`
+   - Gemini AI Studio: `~/.gemini/conversations/`
+3. Browse projects in the left sidebar tree (organized by provider)
 4. Click any session to view messages
 5. Use the tabs at the top to switch between:
    - **Messages**: Read full conversations
    - **Files**: Browse all files accessed by AI sessions
    - **Analytics**: View activity heatmaps and patterns
    - **Token Stats**: Analyze token usage
+
+### Resume Sessions
+- Click the **Resume** button (▶️ icon) on any session
+- The app launches the native tool (Claude Code, Cursor, Codex, or Gemini)
+- Working directory is automatically restored
+- Continue your conversation where you left off
+- **Fix Session** button available for problematic Claude Code sessions
+
+### Message Range Extraction
+- Select a session and click **Create from Range** in Session Builder
+- Enter message IDs or leave blank to extract from start/end
+- Creates a new artificial session with selected messages
+- Useful for sharing specific conversation segments
+- Preserves message structure and metadata
 
 ### File Activity Tracking
 - Switch to the **Files** tab to see all files touched by AI sessions
@@ -289,11 +347,15 @@ The app expects this structure:
 
 ## Troubleshooting
 
-**"No Claude data found"**:
-- Make sure you've used Claude Code at least once to create conversation history
-- Check that `~/.claude` directory exists in your home folder
-- **macOS/Linux**: `ls ~/.claude`
-- **Windows**: Check `C:\Users\<YourUsername>\.claude`
+**"No data found"**:
+- Make sure you've used at least one AI coding assistant to create conversation history
+- Check that the respective directories exist:
+  - Claude Code: `~/.claude/projects/`
+  - Codex CLI: `~/.codex/sessions/`
+  - Gemini AI Studio: `~/.gemini/conversations/`
+  - Cursor IDE: AppData/Cursor folder
+- **macOS/Linux**: `ls ~/.claude ~/.codex ~/.gemini`
+- **Windows**: Check `C:\Users\<YourUsername>\.claude`, `.codex`, `.gemini`
 
 **Performance issues**:
 - Large sessions (1,000+ messages) use virtual scrolling for smooth performance

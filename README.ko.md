@@ -1,6 +1,6 @@
 # Claude Code History Viewer
 
-Claude Code 및 Cursor IDE의 대화 기록(`~/.claude`와 Cursor 데이터 폴더)을 보기 편하게 탐색할 수 있는 크로스 플랫폼 데스크톱 앱입니다.
+Claude Code, Cursor IDE, Codex CLI, Gemini AI Studio의 대화 기록을 보기 편하게 탐색할 수 있는 크로스 플랫폼 데스크톱 앱입니다.
 
 ![Version](https://img.shields.io/github/v/release/ndokutovich/claude-code-history-viewer?label=Version&color=blue)
 ![Downloads](https://img.shields.io/github/downloads/ndokutovich/claude-code-history-viewer/total?label=Downloads&color=brightgreen)
@@ -13,7 +13,7 @@ Claude Code 및 Cursor IDE의 대화 기록(`~/.claude`와 Cursor 데이터 폴�
 
 ## 왜 만들었나
 
-Claude Code와 Cursor IDE는 대화 기록을 각각의 데이터 폴더(`~/.claude/projects/`와 Cursor의 AppData 폴더)에 JSONL 파일로 저장합니다. 이 파일들은 읽기 어렵고 검색도 불편해서, 두 도구의 대화를 모두 확인하고 사용량 통계도 볼 수 있는 통합 인터페이스를 만들었습니다.
+Claude Code, Cursor IDE, Codex CLI, Gemini AI Studio는 대화 기록을 다양한 형식(JSONL 파일, SQLite 데이터베이스)으로 저장합니다. 이 파일들은 읽기 어렵고 검색도 불편해서, 모든 AI 코딩 도우미의 대화를 한곳에서 확인하고, 사용량 통계를 보고, 세션을 재개할 수 있는 통합 인터페이스를 만들었습니다.
 
 ## 스크린샷 및 데모
 
@@ -41,6 +41,42 @@ Claude Code와 Cursor IDE는 대화 기록을 각각의 데이터 폴더(`~/.cla
 ### 데모
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## v1.7.0의 새로운 기능
+
+**🤖 다중 프로바이더 지원**:
+- **Codex CLI 통합**: `~/.codex/sessions/`의 Codex 대화 기록 탐색 및 검색
+- **Gemini AI Studio 지원**: `~/.gemini/conversations/`의 Gemini 대화 확인
+- 4개의 AI 코딩 도우미를 위한 통합 인터페이스: Claude Code, Cursor IDE, Codex CLI, Gemini AI Studio
+- 쉬운 식별을 위한 프로바이더 아이콘 및 배지
+- 설치된 모든 AI 도구 자동 감지
+
+**🔄 세션 재개**:
+- 네이티브 도구(Claude Code, Cursor, Codex, Gemini)에서 직접 대화 재개
+- 올바른 컨텍스트로 정확한 도구를 실행하는 프로바이더 인식 재개 명령
+- 자동 작업 디렉토리 감지 및 복원
+- Gemini의 `/chat resume` 워크플로우를 위한 대화형 명령 지원
+- 모든 프로젝트에서 올바른 CWD로 세션 시작
+
+**🔧 세션 관리 도구**:
+- **세션 복구 유틸리티**: Claude Code에서 재개할 수 없는 문제 있는 세션 복구
+- **메시지 범위 추출**: 특정 메시지 범위에서 새 세션 생성
+- 재개 가능한 세션을 표시하는 세션 상태 지표
+- 세션 복구 전 백업 생성
+
+**📊 향상된 세션 정보**:
+- 세션 헤더에 Git 브랜치 및 커밋 표시 (사용 가능한 경우)
+- Claude가 작업 중이던 브랜치를 보여주는 리포지토리 컨텍스트
+- 세션 메타데이터 및 도구 출력에서 git 정보 추출
+- 브랜치(📍) 및 커밋(🔖) 아이콘이 있는 시각적 지표
+
+**🔄 개선된 탐색**:
+- 앱을 재시작하지 않고 세션 목록을 다시 로드하는 새로고침 버튼
+- 새로고침 시 상태 보존 (확장된 프로젝트, 선택된 세션)
+- 모든 프로바이더의 세션을 한 번에 새로고침하는 "모두 새로고침"
+- 사용자 피드백을 위한 로딩 표시기 및 토스트 알림
+
+---
 
 ## v1.6.0의 새로운 기능
 

@@ -1,6 +1,6 @@
 [package]
 name = "claude-code-history-viewer"
-version = "1.6.0"
+version = "1.7.0"
 description = "Desktop application for browsing and analyzing Claude Code conversation history"
 authors = ["JaeHyeok Lee", "ndokutovich", "and others (see commits history)"]
 license = "MIT"
