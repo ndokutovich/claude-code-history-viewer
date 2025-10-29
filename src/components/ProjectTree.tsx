@@ -69,9 +69,10 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     }
   }, [expandedProjects]);
 
-  // Load all sessions when search query is entered
+  // Load all sessions when search query is entered (with debouncing)
   useEffect(() => {
-    const loadAllSessions = async () => {
+    // Debounce: wait 300ms after user stops typing
+    const debounceTimer = setTimeout(async () => {
       if (projectListPreferences.sessionSearchQuery.trim() && !isLoadingAllSessions) {
         setIsLoadingAllSessions(true);
 
@@ -84,23 +85,39 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
         const allProjectPaths = new Set(projects.map(p => p.path));
         setExpandedProjects(allProjectPaths);
 
-        // Load sessions in parallel for all projects
-        await Promise.all(
-          projectsToLoad.map(async (project) => {
-            try {
-              await loadProjectSessions(project.path);
-            } catch (error) {
-              console.error(`Failed to load sessions for project ${project.name}:`, error);
-            }
-          })
-        );
+        // Load sessions with concurrent limit (5 at a time)
+        const CONCURRENT_LIMIT = 5;
+        const errors: string[] = [];
+
+        for (let i = 0; i < projectsToLoad.length; i += CONCURRENT_LIMIT) {
+          const batch = projectsToLoad.slice(i, i + CONCURRENT_LIMIT);
+          await Promise.all(
+            batch.map(async (project) => {
+              try {
+                await loadProjectSessions(project.path);
+              } catch (error) {
+                const errorMsg = `${project.name}: ${error}`;
+                console.error(`Failed to load sessions for project ${project.name}:`, error);
+                errors.push(errorMsg);
+              }
+            })
+          );
+        }
+
+        // Show error toast if any loads failed
+        if (errors.length > 0) {
+          const { toast } = await import('sonner');
+          toast.error(t('projectListControls.searchLoadFailed', 'Failed to load some projects'), {
+            description: `${errors.length} project(s) failed to load`,
+          });
+        }
 
         setIsLoadingAllSessions(false);
       }
-    };
+    }, 300); // 300ms debounce delay
 
-    loadAllSessions();
-  }, [projectListPreferences.sessionSearchQuery, projects, sessionsByProject, loadProjectSessions]);
+    return () => clearTimeout(debounceTimer);
+  }, [projectListPreferences.sessionSearchQuery, projects, sessionsByProject, loadProjectSessions, t]);
 
   // Helper to check if a project has any visible sessions after filtering
   const hasVisibleSessions = useCallback((project: UIProject): boolean => {
@@ -180,7 +197,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     });
 
     return result;
-  }, [projects, projectListPreferences, sessionsByProject, sessions]);
+  }, [projects, projectListPreferences, sessionsByProject, sessions, hasVisibleSessions]);
 
   // Apply filtering to sessions (global filter only - per-project filtering happens in render)
   const filteredSessions = useMemo(() => {
@@ -479,7 +496,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   return (
     <div className="w-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col h-full">
       {/* Project List Controls */}
-      <ProjectListControls />
+      <ProjectListControls isLoadingSearch={isLoadingAllSessions} />
 
       {/* Selection Header with Clear Button */}
       {(selectedProject || selectedSession) && (

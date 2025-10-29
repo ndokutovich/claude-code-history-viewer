@@ -32,6 +32,9 @@ import { COLORS } from "./constants/colors";
 import { Header } from "@/layouts/Header/Header";
 import { ModalContainer } from "./layouts/Header/SettingDropdown/ModalContainer";
 
+// UI Constants
+const DEFAULT_SIDEBAR_WIDTH = 351; // pixels
+
 function App() {
   const {
     projects,
@@ -76,7 +79,7 @@ function App() {
   const { language, loadLanguage } = useLanguageStore();
 
   // Sidebar width state for resizable splitter
-  const [sidebarWidth, setSidebarWidth] = useState(351);
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
 
   // Source store for multi-source management
   const {

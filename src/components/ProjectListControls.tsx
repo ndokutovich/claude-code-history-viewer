@@ -1,4 +1,4 @@
-import { Settings2, SortAsc, SortDesc, Group, Ungroup, Eye, EyeOff, ChevronsDown, ChevronsUp, MessageCircle, RefreshCw, Search, X } from "lucide-react";
+import { Settings2, SortAsc, SortDesc, Group, Ungroup, Eye, EyeOff, ChevronsDown, ChevronsUp, MessageCircle, RefreshCw, Search, X, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../store/useAppStore";
 import { Button } from "./ui/button";
@@ -14,7 +14,11 @@ import {
   DropdownMenuCheckboxItem,
 } from "./ui/dropdown-menu";
 
-export const ProjectListControls = () => {
+interface ProjectListControlsProps {
+  isLoadingSearch?: boolean;
+}
+
+export const ProjectListControls: React.FC<ProjectListControlsProps> = ({ isLoadingSearch = false }) => {
   const { t } = useTranslation("components");
   const {
     projectListPreferences,
@@ -263,15 +267,20 @@ export const ProjectListControls = () => {
       {/* Search row */}
       <div className="px-4 pb-2">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          {isLoadingSearch ? (
+            <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+          ) : (
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          )}
           <Input
             type="text"
             placeholder={t("projectListControls.searchPlaceholder", "Search sessions...")}
             value={projectListPreferences.sessionSearchQuery}
             onChange={(e) => setProjectListPreferences({ sessionSearchQuery: e.target.value })}
             className="pl-9 pr-9 h-8 text-sm bg-white dark:bg-gray-900"
+            disabled={isLoadingSearch}
           />
-          {projectListPreferences.sessionSearchQuery && (
+          {projectListPreferences.sessionSearchQuery && !isLoadingSearch && (
             <Button
               variant="ghost"
               size="sm"

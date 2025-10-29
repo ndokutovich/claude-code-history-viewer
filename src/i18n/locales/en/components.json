@@ -536,7 +536,8 @@
     "showAll": "Show All",
     "searchPlaceholder": "Search sessions...",
     "clearSearch": "Clear search",
-    "filterSettings": "Filter Settings"
+    "filterSettings": "Filter Settings",
+    "searchLoadFailed": "Failed to load some projects"
   },
   "feedback": {
     "title": "Send Feedback",
