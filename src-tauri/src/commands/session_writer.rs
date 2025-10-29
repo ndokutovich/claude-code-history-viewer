@@ -10,7 +10,7 @@ use uuid::Uuid;
 // ============================================================================
 
 /// Simple message input for creating sessions
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageInput {
     pub role: String,               // "user" | "assistant" | "system"
     pub content: serde_json::Value, // Can be string or array of content items
@@ -26,7 +26,7 @@ pub struct MessageInput {
     pub usage: Option<TokenUsageInput>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TokenUsageInput {
     pub input_tokens: Option<i32>,
     pub output_tokens: Option<i32>,
@@ -49,6 +49,14 @@ pub struct CreateSessionRequest {
     pub summary: Option<String>,
 }
 
+/// Request to extract message range from existing session
+#[derive(Debug, Deserialize)]
+pub struct ExtractMessageRangeRequest {
+    pub session_path: String,
+    pub start_message_id: Option<String>, // UUID - if None, start from beginning
+    pub end_message_id: Option<String>,   // UUID - if None, go to end
+}
+
 /// Response containing created project info
 #[derive(Debug, Serialize)]
 pub struct CreateProjectResponse {
@@ -61,6 +69,14 @@ pub struct CreateProjectResponse {
 pub struct CreateSessionResponse {
     pub session_path: String,
     pub session_id: String,
+    pub message_count: usize,
+}
+
+/// Response containing extracted messages
+#[derive(Debug, Serialize)]
+pub struct ExtractMessageRangeResponse {
+    pub messages: Vec<MessageInput>,
+    pub summary: Option<String>,
     pub message_count: usize,
 }
 
@@ -223,6 +239,159 @@ pub async fn append_to_claude_session(
         .map_err(|e| format!("Failed to flush writer: {}", e))?;
 
     Ok(message_count)
+}
+
+/// Extract a range of messages from an existing session
+#[tauri::command]
+pub async fn extract_message_range(
+    request: ExtractMessageRangeRequest,
+) -> Result<ExtractMessageRangeResponse, String> {
+    use std::io::{BufRead, BufReader};
+
+    let session_file_path = PathBuf::from(&request.session_path);
+
+    // Validate session file exists
+    if !session_file_path.exists() {
+        return Err(format!(
+            "Session file does not exist: {}",
+            session_file_path.display()
+        ));
+    }
+
+    // Read the JSONL file
+    let file = File::open(&session_file_path)
+        .map_err(|e| format!("Failed to open session file: {}", e))?;
+
+    let reader = BufReader::new(file);
+
+    // Parse all messages
+    let mut all_messages: Vec<serde_json::Value> = Vec::new();
+    let mut summary: Option<String> = None;
+
+    for (line_num, line) in reader.lines().enumerate() {
+        let line = line.map_err(|e| format!("Failed to read line {}: {}", line_num + 1, e))?;
+
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        let msg: serde_json::Value = serde_json::from_str(&line)
+            .map_err(|e| format!("Failed to parse JSON at line {}: {}", line_num + 1, e))?;
+
+        // Extract summary if present
+        if msg.get("type").and_then(|t| t.as_str()) == Some("summary") {
+            summary = msg.get("summary").and_then(|s| s.as_str()).map(|s| s.to_string());
+            continue;
+        }
+
+        // Skip sidechain messages
+        if msg.get("isSidechain").and_then(|v| v.as_bool()).unwrap_or(false) {
+            continue;
+        }
+
+        all_messages.push(msg);
+    }
+
+    // Find start and end indices
+    let start_idx = if let Some(start_id) = &request.start_message_id {
+        all_messages
+            .iter()
+            .position(|msg| msg.get("uuid").and_then(|v| v.as_str()) == Some(start_id))
+            .ok_or_else(|| format!("Start message ID not found: {}", start_id))?
+    } else {
+        0 // Start from beginning
+    };
+
+    let end_idx = if let Some(end_id) = &request.end_message_id {
+        all_messages
+            .iter()
+            .position(|msg| msg.get("uuid").and_then(|v| v.as_str()) == Some(end_id))
+            .ok_or_else(|| format!("End message ID not found: {}", end_id))?
+    } else {
+        all_messages.len() - 1 // Go to end
+    };
+
+    // Validate range
+    if start_idx > end_idx {
+        return Err(format!(
+            "Invalid range: start index ({}) is after end index ({})",
+            start_idx, end_idx
+        ));
+    }
+
+    // Extract the range (inclusive)
+    let extracted_messages = &all_messages[start_idx..=end_idx];
+
+    // Convert to MessageInput format
+    let mut converted_messages: Vec<MessageInput> = Vec::new();
+
+    for msg in extracted_messages {
+        // Extract the nested "message" object
+        let message_obj = msg
+            .get("message")
+            .ok_or_else(|| "Message object not found".to_string())?;
+
+        let role = message_obj
+            .get("role")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| "Role not found".to_string())?
+            .to_string();
+
+        let content = message_obj
+            .get("content")
+            .ok_or_else(|| "Content not found".to_string())?
+            .clone();
+
+        let model = message_obj.get("model").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+        // Extract usage if present
+        let usage = if let Some(usage_obj) = message_obj.get("usage") {
+            Some(TokenUsageInput {
+                input_tokens: usage_obj.get("input_tokens").and_then(|v| v.as_i64()).map(|v| v as i32),
+                output_tokens: usage_obj.get("output_tokens").and_then(|v| v.as_i64()).map(|v| v as i32),
+                cache_creation_input_tokens: usage_obj
+                    .get("cache_creation_input_tokens")
+                    .and_then(|v| v.as_i64())
+                    .map(|v| v as i32),
+                cache_read_input_tokens: usage_obj
+                    .get("cache_read_input_tokens")
+                    .and_then(|v| v.as_i64())
+                    .map(|v| v as i32),
+            })
+        } else {
+            None
+        };
+
+        // Extract tool_use and tool_use_result from top level
+        let tool_use = msg.get("toolUse").cloned();
+        let tool_use_result = msg.get("toolUseResult").cloned();
+
+        // Build parent chain (we'll set parent_id to previous message for linear chain)
+        let parent_id = if converted_messages.is_empty() {
+            None
+        } else {
+            // Link to previous message (we'll generate UUIDs later)
+            Some("previous".to_string()) // Placeholder
+        };
+
+        converted_messages.push(MessageInput {
+            role,
+            content,
+            parent_id,
+            model,
+            tool_use,
+            tool_use_result,
+            usage,
+        });
+    }
+
+    let message_count = converted_messages.len();
+
+    Ok(ExtractMessageRangeResponse {
+        messages: converted_messages,
+        summary,
+        message_count,
+    })
 }
 
 // ============================================================================

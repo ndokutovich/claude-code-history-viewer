@@ -96,6 +96,13 @@ function App() {
     // Initialize sources and app after loading language settings
     const initialize = async () => {
       try {
+        // Clean up localStorage on startup
+        try {
+          localStorage.removeItem('expandedProjects');
+        } catch (e) {
+          console.warn('Failed to clear expandedProjects:', e);
+        }
+
         // Stage 1: Initializing (0-20%)
         setLoadingProgress({
           stage: 'initializing',

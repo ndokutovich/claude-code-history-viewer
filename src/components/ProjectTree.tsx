@@ -78,7 +78,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
         // Load sessions for all projects that don't have them loaded yet
         const projectsToLoad = projects.filter(
-          (project) => !sessionsByProject[project.path] || sessionsByProject[project.path].length === 0
+          (project) => !sessionsByProject[project.path] || sessionsByProject[project.path]?.length === 0
         );
 
         // Expand all projects to show search results
@@ -198,42 +198,6 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
     return result;
   }, [projects, projectListPreferences, sessionsByProject, sessions, hasVisibleSessions]);
-
-  // Apply filtering to sessions (global filter only - per-project filtering happens in render)
-  const filteredSessions = useMemo(() => {
-    let result = sessions;
-
-    // Filter: Hide empty sessions
-    if (projectListPreferences.hideEmptySessions) {
-      result = result.filter((s) => s.message_count > 0);
-    }
-
-    // Filter: Hide agent sessions (sessions starting with "agent-")
-    if (projectListPreferences.hideAgentSessions) {
-      result = result.filter((s) => {
-        const actualId = s.actual_session_id || s.session_id;
-        // Extract filename from path (handle both / and \ separators)
-        const filename = actualId.split(/[/\\]/).pop() || '';
-        // Remove .jsonl extension
-        const sessionName = filename.replace(/\.jsonl$/i, '');
-        const isAgent = sessionName.startsWith('agent-');
-        return !isAgent;
-      });
-    }
-
-    // Filter: Search query
-    if (projectListPreferences.sessionSearchQuery.trim()) {
-      const query = projectListPreferences.sessionSearchQuery.toLowerCase();
-      result = result.filter((session) => {
-        const title = getSessionTitle(session).toLowerCase();
-        const sessionId = session.session_id.toLowerCase();
-        const actualSessionId = session.actual_session_id?.toLowerCase() || '';
-        return title.includes(query) || sessionId.includes(query) || actualSessionId.includes(query);
-      });
-    }
-
-    return result;
-  }, [sessions, projectListPreferences.hideEmptySessions, projectListPreferences.hideAgentSessions, projectListPreferences.sessionSearchQuery]);
 
   // Helper function to get sessions for a specific project
   const getSessionsForProject = (projectPath: string): UISession[] => {

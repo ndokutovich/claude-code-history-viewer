@@ -86,7 +86,7 @@ const UIMessageNode = ({ message, depth, providerName, sessionFilePath }: Messag
         message.isSidechain && "bg-gray-100 dark:bg-gray-800"
       )}
     >
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-full mx-auto px-4">
         {/* Show depth (only in development mode) */}
         {import.meta.env.DEV && depth > 0 && (
           <div className="text-xs text-gray-400 dark:text-gray-600 mb-1">
@@ -437,7 +437,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     message: UIMessage,
     depth = 0,
     visitedIds = new Set<string>(),
-    keyPrefix = ""
+    keyPrefix = "",
+    sessionFilePath?: string
   ): React.ReactNode[] => {
     // Prevent circular references
     if (visitedIds.has(message.uuid)) {
@@ -471,7 +472,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
         child,
         depth + 1,
         new Set(visitedIds),
-        `${uniqueKey}-child-${index}`
+        `${uniqueKey}-child-${index}`,
+        sessionFilePath
       );
       result.push(...childNodes);
     });
@@ -532,7 +534,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
             )}
           </div>
         )}
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-full mx-auto px-4">
           {/* Load previous messages button (top) - chat style */}
           {pagination.hasMore && (
             <div className="flex items-center justify-center py-4">
@@ -589,7 +591,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
               if (rootMessages.length > 0) {
                 // Render tree structure
                 return rootMessages
-                  .map((message) => renderMessageTree(message, 0, new Set()))
+                  .map((message) => renderMessageTree(message, 0, new Set(), "", selectedSession?.file_path))
                   .flat();
               } else {
                 // Render flat structure
@@ -607,6 +609,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                       message={message}
                       depth={0}
                       providerName={providerName}
+                      sessionFilePath={selectedSession?.file_path}
                     />
                   );
                 });

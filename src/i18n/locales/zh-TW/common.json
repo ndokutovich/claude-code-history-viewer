@@ -135,8 +135,26 @@
       "noMessages": "還沒有訊息。點擊「新增訊息」開始。",
       "compose": "撰寫",
       "fromExisting": "從現有匯入",
+      "fromRange": "從範圍匯入",
       "preview": "預覽 (",
       "previewSuffix": ")"
+    },
+    "range": {
+      "instructions": "使用訊息路徑從現有對話中提取訊息",
+      "instructionStart": "僅指定開始：從該訊息到結束",
+      "instructionEnd": "僅指定結束：從開始到該訊息",
+      "instructionBoth": "兩者都指定：從開始到結束（包含）",
+      "instructionNeither": "都不指定：整個對話",
+      "startPath": "開始訊息路徑（選填）",
+      "startPlaceholder": "C:\\路徑\\到\\對話.jsonl#開始訊息-uuid",
+      "endPath": "結束訊息路徑（選填）",
+      "endPlaceholder": "C:\\路徑\\到\\對話.jsonl#結束訊息-uuid",
+      "loadMessages": "載入訊息",
+      "loading": "載入中...",
+      "invalidStartPath": "開始訊息路徑格式無效",
+      "invalidEndPath": "結束訊息路徑格式無效",
+      "differentSessions": "開始和結束路徑必須來自同一對話",
+      "loadFailed": "載入訊息範圍失敗"
     },
     "validation": {
       "errorHeader": "請修正以下錯誤：",

@@ -61,6 +61,7 @@ pub fn run() {
             create_claude_project,
             create_claude_session,
             append_to_claude_session,
+            extract_message_range,
             // Gemini CLI support (v1.7.0)
             get_gemini_path,
             validate_gemini_folder,

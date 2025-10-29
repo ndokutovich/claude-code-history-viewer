@@ -176,8 +176,26 @@
       "noMessages": "まだメッセージがありません。「メッセージを追加」をクリックして開始してください。",
       "compose": "作成",
       "fromExisting": "既存からインポート",
+      "fromRange": "範囲からインポート",
       "preview": "プレビュー (",
       "previewSuffix": ")"
+    },
+    "range": {
+      "instructions": "メッセージパスを使用して既存のセッションからメッセージを抽出",
+      "instructionStart": "開始のみ指定: そのメッセージから最後まで",
+      "instructionEnd": "終了のみ指定: 最初からそのメッセージまで",
+      "instructionBoth": "両方指定: 開始から終了まで（含む）",
+      "instructionNeither": "どちらも指定しない: セッション全体",
+      "startPath": "開始メッセージパス（オプション）",
+      "startPlaceholder": "C:\\パス\\セッション.jsonl#開始メッセージ-uuid",
+      "endPath": "終了メッセージパス（オプション）",
+      "endPlaceholder": "C:\\パス\\セッション.jsonl#終了メッセージ-uuid",
+      "loadMessages": "メッセージを読み込む",
+      "loading": "読み込み中...",
+      "invalidStartPath": "無効な開始メッセージパス形式",
+      "invalidEndPath": "無効な終了メッセージパス形式",
+      "differentSessions": "開始と終了のパスは同じセッションである必要があります",
+      "loadFailed": "メッセージ範囲の読み込みに失敗しました"
     },
     "validation": {
       "errorHeader": "以下のエラーを修正してください：",

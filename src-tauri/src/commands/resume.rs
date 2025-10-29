@@ -12,6 +12,7 @@ use std::process::Command;
 use serde_json::Value;
 
 #[cfg(target_os = "windows")]
+#[allow(unused_imports)]
 use std::os::windows::process::CommandExt;
 
 #[tauri::command]

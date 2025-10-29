@@ -8,6 +8,7 @@
 pub struct ProviderCapabilities {
     pub supports_resume: bool,
     pub resume_command_template: Option<String>, // e.g., "claude --resume {session_id}"
+    #[allow(dead_code)]
     pub cli_name: Option<String>,                // e.g., "claude", "codex"
     pub resume_type: ResumeType,                 // How this provider handles resume
 }
@@ -81,6 +82,7 @@ impl ProviderCapabilities {
     }
 
     /// Check if this provider uses interactive commands (Shift+Click behavior differs)
+    #[allow(dead_code)]
     pub fn is_interactive(&self) -> bool {
         matches!(self.resume_type, ResumeType::InteractiveCommand(_))
     }

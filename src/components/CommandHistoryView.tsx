@@ -46,7 +46,7 @@ export const CommandHistoryView: React.FC<CommandHistoryViewProps> = ({ messages
 
   return (
     <div className={cn("h-full overflow-auto p-6", COLORS.ui.background.primary)}>
-      <div className={cn("max-w-4xl mx-auto")}>
+      <div className={cn("max-w-full mx-auto px-4")}>
         {/* Header */}
         <div className="mb-6 flex items-center gap-3">
           <Terminal className={cn("w-6 h-6", COLORS.ui.text.secondary)} />

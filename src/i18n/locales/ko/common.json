@@ -176,8 +176,26 @@
       "noMessages": "아직 메시지가 없습니다. \"메시지 추가\"를 클릭하여 시작하세요.",
       "compose": "작성",
       "fromExisting": "기존에서 가져오기",
+      "fromRange": "범위에서 가져오기",
       "preview": "미리보기 (",
       "previewSuffix": ")"
+    },
+    "range": {
+      "instructions": "메시지 경로를 사용하여 기존 세션에서 메시지 추출",
+      "instructionStart": "시작만 지정된 경우: 해당 메시지부터 끝까지",
+      "instructionEnd": "끝만 지정된 경우: 처음부터 해당 메시지까지",
+      "instructionBoth": "둘 다 지정된 경우: 시작부터 끝까지 (포함)",
+      "instructionNeither": "둘 다 지정되지 않은 경우: 전체 세션",
+      "startPath": "시작 메시지 경로 (선택 사항)",
+      "startPlaceholder": "C:\\경로\\세션.jsonl#시작-메시지-uuid",
+      "endPath": "끝 메시지 경로 (선택 사항)",
+      "endPlaceholder": "C:\\경로\\세션.jsonl#끝-메시지-uuid",
+      "loadMessages": "메시지 로드",
+      "loading": "로딩 중...",
+      "invalidStartPath": "잘못된 시작 메시지 경로 형식",
+      "invalidEndPath": "잘못된 끝 메시지 경로 형식",
+      "differentSessions": "시작과 끝 경로는 동일한 세션이어야 합니다",
+      "loadFailed": "메시지 범위 로드 실패"
     },
     "validation": {
       "errorHeader": "다음 오류를 수정해 주세요:",

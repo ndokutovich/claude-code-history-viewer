@@ -179,8 +179,26 @@
       "noMessages": "No messages yet. Click \"Add Message\" to start.",
       "compose": "Compose",
       "fromExisting": "From Existing",
+      "fromRange": "From Range",
       "preview": "Preview (",
       "previewSuffix": ")"
+    },
+    "range": {
+      "instructions": "Extract messages from an existing session using message paths",
+      "instructionStart": "If only start specified: from that message to end",
+      "instructionEnd": "If only end specified: from beginning to that message",
+      "instructionBoth": "If both specified: from start to end (inclusive)",
+      "instructionNeither": "If neither specified: entire session",
+      "startPath": "Start Message Path (optional)",
+      "startPlaceholder": "C:\\path\\to\\session.jsonl#start-message-uuid",
+      "endPath": "End Message Path (optional)",
+      "endPlaceholder": "C:\\path\\to\\session.jsonl#end-message-uuid",
+      "loadMessages": "Load Messages",
+      "loading": "Loading...",
+      "invalidStartPath": "Invalid start message path format",
+      "invalidEndPath": "Invalid end message path format",
+      "differentSessions": "Start and end paths must be from the same session",
+      "loadFailed": "Failed to load message range"
     },
     "validation": {
       "errorHeader": "Please fix the following errors:",

@@ -22,10 +22,13 @@ import {
   type SourceWithCapability,
 } from '@/adapters/utils/capabilityHelpers';
 import { type MessageBuilder, type UIMessage } from '@/types';
+import { type ExtractMessageRangeRequest } from '@/types/sessionWriter';
 import { adapterRegistry } from '@/adapters/registry/AdapterRegistry';
 import { open } from '@tauri-apps/plugin-dialog';
 import { validateSessionBuilder } from '@/utils/sessionValidation';
 import { convertUIMessagesToBuilders } from '@/utils/messageTransform';
+import { parseMessagePath } from '@/utils/messagePathParser';
+import { invoke } from '@tauri-apps/api/core';
 import { MessageComposer } from './MessageComposer';
 import { ContextSelectorEnhanced } from './ContextSelectorEnhanced';
 import { SessionPreview } from './SessionPreview';
@@ -79,7 +82,27 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
       ? adapterForSource.getProjectsRoot(selectedSource.path)
       : selectedSource.path;
     const normalizedRoot = root.replace(/[\\/]+$/, "");
-    return projects.filter((p) => typeof p.path === "string" && p.path.startsWith(normalizedRoot));
+
+    const filtered = projects.filter((p) => {
+      if (typeof p.path !== "string") return false;
+
+      // Normalize both paths for comparison (handle both / and \)
+      const normalizedProjectPath = p.path.replace(/\\/g, '/').toLowerCase();
+      const normalizedRootPath = normalizedRoot.replace(/\\/g, '/').toLowerCase();
+
+      return normalizedProjectPath.startsWith(normalizedRootPath);
+    });
+
+    console.log('SessionBuilder - Projects filtering:', {
+      selectedSource: selectedSource.name,
+      root,
+      normalizedRoot,
+      totalProjects: projects.length,
+      filteredProjects: filtered.length,
+      samplePaths: projects.slice(0, 3).map(p => p.path)
+    });
+
+    return filtered;
   }, [projects, selectedSource, adapterForSource]);
 
   // Project selection state
@@ -95,7 +118,12 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
   // Session state
   const [sessionSummary, setSessionSummary] = useState<string>('');
   const [messages, setMessages] = useState<MessageBuilder[]>([]);
-  const [activeTab, setActiveTab] = useState<'compose' | 'context' | 'preview'>('compose');
+  const [activeTab, setActiveTab] = useState<'compose' | 'context' | 'range' | 'preview'>('compose');
+
+  // Message Range mode state
+  const [startMessagePath, setStartMessagePath] = useState<string>('');
+  const [endMessagePath, setEndMessagePath] = useState<string>('');
+  const [isLoadingRange, setIsLoadingRange] = useState(false);
 
   // UI state
   const [isSaving, setIsSaving] = useState(false);
@@ -179,6 +207,68 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
     setActiveTab('preview');
   }, []);
 
+  const handleLoadMessageRange = useCallback(async (): Promise<void> => {
+    setIsLoadingRange(true);
+    setValidationErrors([]);
+
+    try {
+      // Parse start path (required)
+      const startParsed = parseMessagePath(startMessagePath);
+      if (!startParsed) {
+        throw new Error(t('sessionBuilder.range.invalidStartPath'));
+      }
+
+      const sessionPath = startParsed.sessionPath;
+      let startMessageId = startParsed.messageId;
+      let endMessageId: string | undefined;
+
+      // Parse end path if provided
+      if (endMessagePath.trim()) {
+        const endParsed = parseMessagePath(endMessagePath);
+        if (!endParsed) {
+          throw new Error(t('sessionBuilder.range.invalidEndPath'));
+        }
+
+        // Validate same session
+        if (endParsed.sessionPath !== sessionPath) {
+          throw new Error(t('sessionBuilder.range.differentSessions'));
+        }
+
+        endMessageId = endParsed.messageId;
+      }
+
+      // Call backend to extract messages
+      const request: ExtractMessageRangeRequest = {
+        session_path: sessionPath,
+        start_message_id: startMessageId,
+        end_message_id: endMessageId,
+      };
+
+      const response = await invoke<{ messages: MessageBuilder[]; summary?: string; message_count: number }>(
+        'extract_message_range',
+        { request }
+      );
+
+      // Set extracted messages
+      setMessages(response.messages);
+
+      // Set summary if extracted
+      if (response.summary) {
+        setSessionSummary(response.summary);
+      }
+
+      // Switch to preview tab
+      setActiveTab('preview');
+    } catch (error) {
+      console.error('Failed to load message range:', error);
+      setValidationErrors([
+        error instanceof Error ? error.message : t('sessionBuilder.range.loadFailed'),
+      ]);
+    } finally {
+      setIsLoadingRange(false);
+    }
+  }, [startMessagePath, endMessagePath, t]);
+
   const validateInputs = useCallback((): boolean => {
     const result = validateSessionBuilder({
       selectedSource,
@@ -248,8 +338,15 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
         throw new Error(createResult.error?.message || 'Failed to create session');
       }
 
-      // Success! Refresh projects and close modal
-      await useAppStore.getState().scanProjects();
+      // Success! Refresh projects and sessions, then close modal
+      const store = useAppStore.getState();
+      await store.scanProjects();
+
+      // Reload sessions for the project where we just created a session
+      if (projectPath) {
+        await store.loadProjectSessions(projectPath);
+      }
+
       onClose();
       resetForm();
     } catch (error) {
@@ -463,7 +560,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
               </div>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   <Button
                     type="button"
                     variant={activeTab === 'compose' ? 'default' : 'outline'}
@@ -477,6 +574,13 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                     onClick={() => setActiveTab('context')}
                   >
                     {t('sessionBuilder.messages.fromExisting')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={activeTab === 'range' ? 'default' : 'outline'}
+                    onClick={() => setActiveTab('range')}
+                  >
+                    {t('sessionBuilder.messages.fromRange')}
                   </Button>
                   <Button
                     type="button"
@@ -511,6 +615,51 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                   <ContextSelectorEnhanced
                     onSelectMessages={handleImportMessages}
                   />
+                  </div>
+                )}
+
+                {activeTab === 'range' && (
+                  <div className="mt-4 space-y-4">
+                    <div className="p-4 bg-muted/30 rounded-md space-y-2">
+                      <p className="text-sm font-medium">{t('sessionBuilder.range.instructions')}</p>
+                      <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1">
+                        <li>{t('sessionBuilder.range.instructionStart')}</li>
+                        <li>{t('sessionBuilder.range.instructionEnd')}</li>
+                        <li>{t('sessionBuilder.range.instructionBoth')}</li>
+                        <li>{t('sessionBuilder.range.instructionNeither')}</li>
+                      </ul>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="start-path">{t('sessionBuilder.range.startPath')}</Label>
+                        <Input
+                          id="start-path"
+                          placeholder={t('sessionBuilder.range.startPlaceholder')}
+                          value={startMessagePath}
+                          onChange={(e) => setStartMessagePath(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="end-path">{t('sessionBuilder.range.endPath')}</Label>
+                        <Input
+                          id="end-path"
+                          placeholder={t('sessionBuilder.range.endPlaceholder')}
+                          value={endMessagePath}
+                          onChange={(e) => setEndMessagePath(e.target.value)}
+                        />
+                      </div>
+
+                      <Button
+                        type="button"
+                        onClick={handleLoadMessageRange}
+                        disabled={!startMessagePath.trim() || isLoadingRange}
+                        className="w-full"
+                      >
+                        {isLoadingRange ? t('sessionBuilder.range.loading') : t('sessionBuilder.range.loadMessages')}
+                      </Button>
+                    </div>
                   </div>
                 )}
 
