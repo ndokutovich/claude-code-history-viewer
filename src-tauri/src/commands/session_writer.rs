@@ -170,7 +170,23 @@ pub async fn create_claude_session(
 
     let mut writer = BufWriter::new(file);
 
-    // Write summary message first (if provided)
+    // Get the UUID of the first real message (will be used in file-history-snapshot)
+    let first_message_uuid = Uuid::new_v4().to_string();
+
+    // Write file-history-snapshot as first message (required by Claude Code)
+    let file_history_snapshot = serde_json::json!({
+        "type": "file-history-snapshot",
+        "messageId": first_message_uuid,
+        "snapshot": {
+            "messageId": first_message_uuid,
+            "trackedFileBackups": {},
+            "timestamp": Utc::now().to_rfc3339()
+        },
+        "isSnapshotUpdate": false
+    });
+    write_jsonl_line(&mut writer, &file_history_snapshot)?;
+
+    // Write summary message (if provided)
     if let Some(summary) = &request.summary {
         let summary_msg = create_summary_message(&summary, &session_id, &request.messages);
         write_jsonl_line(&mut writer, &summary_msg)?;
@@ -504,8 +520,33 @@ fn convert_to_jsonl_format(
         "isSidechain": false,
         "cwd": project_path,  // Working directory - critical for resume functionality
         "userType": "external",
-        "version": "1.0.0",  // Claude Code version (artificial sessions)
+        "version": "2.0.28",  // Claude Code version (match real sessions)
+        "gitBranch": "main",  // Default git branch (required by Claude Code)
     });
+
+    // Add requestId for assistant messages (required by Claude Code)
+    if msg.role.to_lowercase() == "assistant" {
+        if let Some(obj) = jsonl_msg.as_object_mut() {
+            obj.insert(
+                "requestId".to_string(),
+                serde_json::Value::String(format!("req_{}", Uuid::new_v4().to_string().replace("-", ""))),
+            );
+        }
+    }
+
+    // Add thinkingMetadata for user messages (required by Claude Code)
+    if msg.role.to_lowercase() == "user" {
+        if let Some(obj) = jsonl_msg.as_object_mut() {
+            obj.insert(
+                "thinkingMetadata".to_string(),
+                serde_json::json!({
+                    "level": "high",
+                    "disabled": false,
+                    "triggers": []
+                }),
+            );
+        }
+    }
 
     // Add optional parent_id
     if let Some(parent_id) = &msg.parent_id {
