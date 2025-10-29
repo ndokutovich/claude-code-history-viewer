@@ -173,7 +173,17 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
       }
     } catch (error) {
       console.error("Failed to resume session:", error);
-      toast.error(`Failed to resume: ${error}`);
+      const errorMsg = String(error);
+
+      // Check if this is the "No conversation found" error for artificial sessions
+      if (errorMsg.includes("No conversation found") || errorMsg.includes("session ID")) {
+        toast.error(
+          "Session not recognized by Claude Code. Try: (1) Restart Claude Code CLI, or (2) Use 'claude --continue' in the working directory",
+          { duration: 8000 }
+        );
+      } else {
+        toast.error(`Failed to resume: ${error}`);
+      }
     } finally {
       setIsResuming(false);
     }
