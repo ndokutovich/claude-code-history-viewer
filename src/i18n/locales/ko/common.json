@@ -120,6 +120,9 @@
     "foundResults": "{{sessions}}개 대화에서 {{count}}개 메시지 발견",
     "matches": "개 일치"
   },
+  "session": {
+    "fix": "세션 수정 (재개 가능성 복원)"
+  },
   "fileActions": {
     "openFile": "파일 열기",
     "openFolder": "폴더 열기",

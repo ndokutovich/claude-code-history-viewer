@@ -19,7 +19,8 @@
     "loadingContent": "正在載入內容...",
     "count": "會話：{{count}}個",
     "selected": "已選會話",
-    "noSessions": "未找到會話"
+    "noSessions": "未找到會話",
+    "fix": "修復對話（恢復可繼續性）"
   },
   "message": {
     "user": "使用者",
@@ -42,7 +43,8 @@
     "conversation": "對話內容",
     "loadMore": "載入更多{{count}}則訊息",
     "loadMore_plural": "載入更多{{count}}則訊息",
-    "scrollToBottom": "捲動到底部"
+    "scrollToBottom": "捲動到底部",
+    "filtered": "已過濾"
   },
   "messageView": {
     "formatted": "格式化",
@@ -221,7 +223,8 @@
     "totalTokenUsageLabel": "總權杖使用量",
     "tooltipTokens": "權杖:",
     "tooltipMessages": "訊息:",
-    "tooltipSessions": "對話:"
+    "tooltipSessions": "對話:",
+    "tokenDistributionByType": "按類型劃分的權杖分布"
   },
   "time": {
     "start": "開始：",
@@ -274,7 +277,8 @@
     "fileEdit": "檔案編輯",
     "removedCode": "刪除的程式碼",
     "addedCode": "新增的程式碼",
-    "inputParameters": "工具輸入參數"
+    "inputParameters": "工具輸入參數",
+    "sessionProblematic": "對話無法繼續（可修復）"
   },
   "status": {
     "initializing": "正在初始化應用程式...",
@@ -431,7 +435,7 @@
       "offset": "偏移量: {{offset}}",
       "hasMore": "還有更多: {{hasMore}}",
       "loading": "載入中: {{loading}}",
-    "loadingContent": "正在載入內容...",
+      "loadingContent": "正在載入內容...",
       "session": "會話: {{sessionId}}",
       "file": "檔案: {{fileName}}",
       "firstMessage": "第一則訊息: {{timestamp}}",
@@ -649,7 +653,8 @@
     "showAll": "顯示全部",
     "searchPlaceholder": "搜尋會話...",
     "clearSearch": "清除搜尋",
-    "filterSettings": "篩選設定"
+    "filterSettings": "篩選設定",
+    "searchLoadFailed": "部分專案載入失敗"
   },
   "selection": {
     "clear": "清除選擇 (ESC)"
@@ -748,5 +753,18 @@
     "loading": "載入中...",
     "allMessagesLoaded": "已載入全部 {{count}} 則訊息",
     "failedToLoadAll": "載入所有訊息失敗"
+  },
+  "providerMetadata": {
+    "relevantFiles": "相關檔案（{{count}}個）",
+    "codeChunks": "程式碼區塊（{{count}}個）",
+    "fileMetadata": "檔案元資料（{{count}}個）",
+    "suggestedDiffs": "建議的差異（{{count}}個）",
+    "consoleLogs": "主控台日誌（{{count}}個）"
+  },
+  "messageReference": {
+    "copyReference": "複製參照",
+    "referenceTooltip": "複製檔案路徑和訊息UUID供Claude使用",
+    "referenceCopied": "訊息參照已複製",
+    "referenceCopyFailed": "複製參照失敗"
   }
 }

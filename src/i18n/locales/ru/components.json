@@ -19,7 +19,8 @@
     "loadingContent": "Загрузка контента...",
     "count": "Сеансов: {{count}}",
     "selected": "Выбранная сессия",
-    "noSessions": "Сеансы не найдены"
+    "noSessions": "Сеансы не найдены",
+    "fix": "Исправить сессию (восстановить возможность продолжения)"
   },
   "message": {
     "user": "Пользователь",
@@ -42,7 +43,8 @@
     "conversation": "Диалог",
     "loadMore": "Загрузить ещё {{count}} сообщение",
     "loadMore_plural": "Загрузить ещё {{count}} сообщений",
-    "scrollToBottom": "Прокрутить вниз"
+    "scrollToBottom": "Прокрутить вниз",
+    "filtered": "отфильтровано"
   },
   "messageView": {
     "formatted": "Форматированный",
@@ -259,7 +261,8 @@
     "fileEdit": "Редактирование файла",
     "removedCode": "Удалённый код",
     "addedCode": "Добавленный код",
-    "inputParameters": "Входные параметры инструмента"
+    "inputParameters": "Входные параметры инструмента",
+    "sessionProblematic": "Сессия не может быть продолжена (доступно исправление)"
   },
   "status": {
     "initializing": "Инициализация приложения...",
@@ -416,7 +419,7 @@
       "offset": "Смещение: {{offset}}",
       "hasMore": "Есть ещё: {{hasMore}}",
       "loading": "Загрузка: {{loading}}",
-    "loadingContent": "Загрузка контента...",
+      "loadingContent": "Загрузка контента...",
       "session": "Сеанс: {{sessionId}}",
       "file": "Файл: {{fileName}}",
       "firstMessage": "Первое сообщение: {{timestamp}}",
@@ -634,7 +637,8 @@
     "showAll": "Показать все",
     "searchPlaceholder": "Поиск сеансов...",
     "clearSearch": "Очистить поиск",
-    "filterSettings": "Настройки фильтра"
+    "filterSettings": "Настройки фильтра",
+    "searchLoadFailed": "Не удалось загрузить некоторые проекты"
   },
   "selection": {
     "clear": "Очистить выбор (ESC)"
@@ -733,5 +737,18 @@
     "loading": "Загрузка...",
     "allMessagesLoaded": "Все {{count}} сообщений загружены",
     "failedToLoadAll": "Не удалось загрузить все сообщения"
+  },
+  "providerMetadata": {
+    "relevantFiles": "Связанные файлы ({{count}})",
+    "codeChunks": "Фрагменты кода ({{count}})",
+    "fileMetadata": "Метаданные файла ({{count}})",
+    "suggestedDiffs": "Предлагаемые различия ({{count}})",
+    "consoleLogs": "Логи консоли ({{count}})"
+  },
+  "messageReference": {
+    "copyReference": "Копировать ссылку",
+    "referenceTooltip": "Копировать путь к файлу и UUID сообщения для Claude",
+    "referenceCopied": "Ссылка на сообщение скопирована",
+    "referenceCopyFailed": "Не удалось скопировать ссылку"
   }
 }
