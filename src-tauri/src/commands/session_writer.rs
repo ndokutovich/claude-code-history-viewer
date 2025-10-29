@@ -47,6 +47,7 @@ pub struct CreateSessionRequest {
     pub project_path: String,
     pub messages: Vec<MessageInput>,
     pub summary: Option<String>,
+    pub cwd: Option<String>, // Optional working directory (defaults to project_path if not provided)
 }
 
 /// Request to extract message range from existing session
@@ -78,6 +79,7 @@ pub struct ExtractMessageRangeResponse {
     pub messages: Vec<MessageInput>,
     pub summary: Option<String>,
     pub message_count: usize,
+    pub cwd: Option<String>, // Extracted working directory from source session
 }
 
 // ============================================================================
@@ -194,9 +196,17 @@ pub async fn create_claude_session(
 
     // Write all messages
     let message_count = request.messages.len();
-    let cwd_path = request.project_path.as_str();
+    // Use provided cwd if available, otherwise fall back to project_path
+    let cwd_path = request.cwd.as_deref().unwrap_or(request.project_path.as_str());
+    let mut previous_uuid: Option<String> = None;
     for (idx, msg) in request.messages.iter().enumerate() {
-        let jsonl_msg = convert_to_jsonl_format(msg, &session_id, idx, cwd_path)?;
+        let jsonl_msg = convert_to_jsonl_format(msg, &session_id, idx, cwd_path, previous_uuid.as_deref())?;
+
+        // Extract the UUID we just generated for use as parent of next message
+        if let Some(uuid) = jsonl_msg.get("uuid").and_then(|v| v.as_str()) {
+            previous_uuid = Some(uuid.to_string());
+        }
+
         write_jsonl_line(&mut writer, &jsonl_msg)?;
     }
 
@@ -241,6 +251,9 @@ pub async fn append_to_claude_session(
         .and_then(|p| p.to_str())
         .ok_or_else(|| "Invalid session file path".to_string())?;
 
+    // Read the last message to get its UUID (for parent linking)
+    let last_uuid = get_last_message_uuid(&session_file_path)?;
+
     // Open file in append mode
     let file = OpenOptions::new()
         .append(true)
@@ -251,8 +264,15 @@ pub async fn append_to_claude_session(
 
     // Write all messages
     let message_count = messages.len();
+    let mut previous_uuid = last_uuid;
     for (idx, msg) in messages.iter().enumerate() {
-        let jsonl_msg = convert_to_jsonl_format(msg, &session_id, idx, cwd_path)?;
+        let jsonl_msg = convert_to_jsonl_format(msg, &session_id, idx, cwd_path, previous_uuid.as_deref())?;
+
+        // Extract the UUID we just generated for use as parent of next message
+        if let Some(uuid) = jsonl_msg.get("uuid").and_then(|v| v.as_str()) {
+            previous_uuid = Some(uuid.to_string());
+        }
+
         write_jsonl_line(&mut writer, &jsonl_msg)?;
     }
 
@@ -290,6 +310,7 @@ pub async fn extract_message_range(
     // Parse all messages
     let mut all_messages: Vec<serde_json::Value> = Vec::new();
     let mut summary: Option<String> = None;
+    let mut extracted_cwd: Option<String> = None;
 
     for (line_num, line) in reader.lines().enumerate() {
         let line = line.map_err(|e| format!("Failed to read line {}: {}", line_num + 1, e))?;
@@ -305,6 +326,16 @@ pub async fn extract_message_range(
         if msg.get("type").and_then(|t| t.as_str()) == Some("summary") {
             summary = msg.get("summary").and_then(|s| s.as_str()).map(|s| s.to_string());
             continue;
+        }
+
+        // Extract cwd from first message that has it (and it's not a .claude/projects path)
+        if extracted_cwd.is_none() {
+            if let Some(cwd) = msg.get("cwd").and_then(|v| v.as_str()) {
+                // Skip .claude/projects paths - we want the actual source directory
+                if !cwd.contains(".claude") && !cwd.contains("projects") {
+                    extracted_cwd = Some(cwd.to_string());
+                }
+            }
         }
 
         // Skip sidechain messages
@@ -429,6 +460,7 @@ pub async fn extract_message_range(
         messages: converted_messages,
         summary,
         message_count,
+        cwd: extracted_cwd,
     })
 }
 
@@ -464,6 +496,7 @@ fn convert_to_jsonl_format(
     session_id: &str,
     _idx: usize,
     project_path: &str,
+    previous_uuid: Option<&str>,
 ) -> Result<serde_json::Value, String> {
     // Generate UUID for this message
     let msg_uuid = Uuid::new_v4().to_string();
@@ -548,12 +581,12 @@ fn convert_to_jsonl_format(
         }
     }
 
-    // Add optional parent_id
-    if let Some(parent_id) = &msg.parent_id {
+    // Add parentUuid (link to previous message in chain)
+    if let Some(parent_uuid) = previous_uuid {
         if let Some(obj) = jsonl_msg.as_object_mut() {
             obj.insert(
                 "parentUuid".to_string(),
-                serde_json::Value::String(parent_id.clone()),
+                serde_json::Value::String(parent_uuid.to_string()),
             );
         }
     }
@@ -584,4 +617,32 @@ fn write_jsonl_line<W: Write>(writer: &mut W, value: &serde_json::Value) -> Resu
         .map_err(|e| format!("Failed to write JSONL line: {}", e))?;
 
     Ok(())
+}
+
+/// Helper: Get the UUID of the last message in a session file
+fn get_last_message_uuid(session_file_path: &PathBuf) -> Result<Option<String>, String> {
+    use std::io::{BufRead, BufReader};
+
+    let file = File::open(session_file_path)
+        .map_err(|e| format!("Failed to open session file: {}", e))?;
+
+    let reader = BufReader::new(file);
+    let mut last_uuid: Option<String> = None;
+
+    // Read all lines and extract UUID from the last non-empty line
+    for line in reader.lines() {
+        let line = line.map_err(|e| format!("Failed to read line: {}", e))?;
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        let msg: serde_json::Value = serde_json::from_str(&line)
+            .map_err(|e| format!("Failed to parse JSONL line: {}", e))?;
+
+        if let Some(uuid) = msg.get("uuid").and_then(|v| v.as_str()) {
+            last_uuid = Some(uuid.to_string());
+        }
+    }
+
+    Ok(last_uuid)
 }

@@ -124,6 +124,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
   const [startMessagePath, setStartMessagePath] = useState<string>('');
   const [endMessagePath, setEndMessagePath] = useState<string>('');
   const [isLoadingRange, setIsLoadingRange] = useState(false);
+  const [extractedCwd, setExtractedCwd] = useState<string | undefined>();
 
   // UI state
   const [isSaving, setIsSaving] = useState(false);
@@ -244,7 +245,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
         end_message_id: endMessageId,
       };
 
-      const response = await invoke<{ messages: MessageBuilder[]; summary?: string; message_count: number }>(
+      const response = await invoke<{ messages: MessageBuilder[]; summary?: string; message_count: number; cwd?: string }>(
         'extract_message_range',
         { request }
       );
@@ -255,6 +256,11 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
       // Set summary if extracted
       if (response.summary) {
         setSessionSummary(response.summary);
+      }
+
+      // Store extracted cwd for later use
+      if (response.cwd) {
+        setExtractedCwd(response.cwd);
       }
 
       // Switch to preview tab
@@ -332,6 +338,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
           usage: msg.usage,
         })),
         summary: sessionSummary || undefined,
+        cwd: extractedCwd, // Pass extracted cwd from source session (for Range mode)
       });
 
       if (!createResult.success) {
@@ -366,6 +373,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
     customParentPath,
     messages,
     sessionSummary,
+    extractedCwd,
     onClose,
     resetForm,
   ]);

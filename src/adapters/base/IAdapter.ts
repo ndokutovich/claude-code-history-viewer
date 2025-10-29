@@ -297,6 +297,7 @@ export interface TokenUsageInput {
 export interface CreateSessionRequest {
   messages: MessageInput[];
   summary?: string;
+  cwd?: string; // Working directory (defaults to project path if not provided)
   metadata?: Record<string, unknown>; // Provider-specific metadata
 }
 

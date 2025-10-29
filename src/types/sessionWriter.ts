@@ -44,6 +44,7 @@ export interface CreateSessionRequest {
   project_path: string;
   messages: MessageInput[];
   summary?: string;
+  cwd?: string; // Optional working directory (defaults to project_path if not provided)
 }
 
 /**
@@ -83,6 +84,7 @@ export interface ExtractMessageRangeResponse {
   messages: MessageInput[];
   summary?: string;
   message_count: number;
+  cwd?: string; // Extracted working directory from source session
 }
 
 // ============================================================================
