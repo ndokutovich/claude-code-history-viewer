@@ -255,7 +255,7 @@ interface AppStore extends AppState {
   scanProjects: () => Promise<void>;
   selectProject: (project: UIProject | null) => Promise<void>;
   loadProjectSessions: (projectPath: string, excludeSidechain?: boolean) => Promise<UISession[]>;
-  selectSession: (session: UISession | null, pageSize?: number) => Promise<void>;
+  selectSession: (session: UISession | null, pageSize?: number, excludeSidechain?: boolean) => Promise<void>;
   clearSelection: () => void;
   loadMoreMessages: () => Promise<void>;
   loadAllMessages: () => Promise<void>;
@@ -660,7 +660,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   selectSession: async (
     session: UISession | null,
-    pageSize = DEFAULT_PAGE_SIZE
+    pageSize = DEFAULT_PAGE_SIZE,
+    excludeSidechain?: boolean
   ) => {
     // ============================================================================
     // VIEW PRESERVATION BEHAVIOR
@@ -741,6 +742,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
         throw new Error(`No adapter found for provider: ${source.providerId}`);
       }
 
+      // Determine whether to exclude sidechains:
+      // - Use provided parameter if explicitly set
+      // - Otherwise fall back to global store setting
+      const shouldExcludeSidechain = excludeSidechain !== undefined
+        ? excludeSidechain
+        : get().excludeSidechain;
+
       // Load messages using adapter
       const result = await adapter.loadMessages(
         sessionPath,
@@ -750,6 +758,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           limit: pageSize,
           sortOrder: 'desc', // Most recent first
           includeMetadata: true,
+          excludeSidechain: shouldExcludeSidechain,
         }
       );
 

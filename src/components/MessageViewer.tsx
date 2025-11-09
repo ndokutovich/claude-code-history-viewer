@@ -71,9 +71,9 @@ const UIMessageNode = ({ message, depth, providerName, sessionFilePath }: Messag
     }
   };
 
-  if (message.isSidechain) {
-    return null;
-  }
+  // Sidechain filtering is now handled at the data loading level (adapter.loadMessages)
+  // so we don't need to filter here anymore
+
   // Apply left margin based on depth
   const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, MAX_DEPTH_MARGIN)}` : "";
 

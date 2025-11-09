@@ -214,7 +214,9 @@ export const SearchView = () => {
 
       console.log("Loading session with full messages:", targetSession.session_id);
       // Load full conversation with large page size
-      await selectSession(targetSession, 10000);
+      // Pass excludeSidechain: false to ensure sidechain messages are loaded
+      // (search finds all messages including sidechains, so we need them to be rendered)
+      await selectSession(targetSession, 10000, false);
 
       console.log("Waiting for render...");
       // Scroll to message after a brief delay to allow rendering
