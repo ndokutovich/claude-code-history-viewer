@@ -34,3 +34,4 @@ export const SESSION_ID_PREVIEW_LENGTH = 8; // Session ID preview length in proj
 
 // Search View
 export const SAMPLE_PROJECTS_COUNT = 5; // Number of sample projects to show in search results
+export const SEARCH_NAVIGATION_PAGE_SIZE = 10000; // Large page size for search result navigation to ensure target message is loaded

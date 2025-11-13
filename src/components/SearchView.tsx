@@ -4,6 +4,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
+import { SEARCH_NAVIGATION_PAGE_SIZE } from "@/constants/layout";
 import { useTranslation } from "react-i18next";
 import type { UIMessage, UISession } from "@/types";
 import { getSessionTitle } from "@/utils/sessionUtils";
@@ -216,7 +217,7 @@ export const SearchView = () => {
       // Load full conversation with large page size
       // Pass excludeSidechain: false to ensure sidechain messages are loaded
       // (search finds all messages including sidechains, so we need them to be rendered)
-      await selectSession(targetSession, 10000, false);
+      await selectSession(targetSession, SEARCH_NAVIGATION_PAGE_SIZE, false);
 
       console.log("Waiting for render...");
       // Scroll to message after a brief delay to allow rendering

@@ -860,6 +860,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           limit: pagination.pageSize,
           sortOrder: 'desc',
           includeMetadata: true,
+          excludeSidechain: get().excludeSidechain, // Respect global setting for pagination
         }
       );
 
@@ -933,6 +934,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           limit: 100000, // Load all remaining
           sortOrder: 'desc',
           includeMetadata: true,
+          excludeSidechain: get().excludeSidechain, // Respect global setting for pagination
         }
       );
 
