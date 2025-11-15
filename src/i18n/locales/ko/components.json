@@ -767,6 +767,16 @@
     "copyReference": "참조 복사",
     "referenceTooltip": "Claude용 파일 경로 및 메시지 UUID 복사",
     "referenceCopied": "메시지 참조가 복사되었습니다",
-    "referenceCopyFailed": "참조 복사 실패"
+    "referenceCopyFailed": "참조 복사 실패",
+    "extractAboveTooltip": "위쪽 메시지 추출 (현재 메시지 포함)",
+    "extractBelowTooltip": "아래쪽 메시지 추출 (현재 메시지 포함)",
+    "extractAboveLabel": "위쪽 메시지",
+    "extractBelowLabel": "아래쪽 메시지",
+    "openInBuilder": "세션 빌더에서 열기",
+    "createDirectly": "세션 직접 생성",
+    "noMessagesToExtract": "추출할 메시지가 없습니다",
+    "noSessionPath": "세션 경로를 사용할 수 없습니다",
+    "sessionCreated": "{{count}}개의 메시지로 세션이 생성되었습니다",
+    "extractFailed": "메시지 추출 실패"
   }
 }

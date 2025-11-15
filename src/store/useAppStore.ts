@@ -255,7 +255,7 @@ interface AppStore extends AppState {
   initializeApp: () => Promise<void>;
   scanProjects: () => Promise<void>;
   selectProject: (project: UIProject | null) => Promise<void>;
-  loadProjectSessions: (projectPath: string, excludeSidechain?: boolean) => Promise<UISession[]>;
+  loadProjectSessions: (projectPath: string, excludeSidechain?: boolean, forceRefresh?: boolean) => Promise<UISession[]>;
   selectSession: (session: UISession | null, pageSize?: number, excludeSidechain?: boolean) => Promise<void>;
   clearSelection: () => void;
   loadMoreMessages: () => Promise<void>;

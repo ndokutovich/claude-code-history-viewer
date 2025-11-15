@@ -765,6 +765,16 @@
     "copyReference": "复制引用",
     "referenceTooltip": "复制文件路径和消息UUID供Claude使用",
     "referenceCopied": "消息引用已复制",
-    "referenceCopyFailed": "复制引用失败"
+    "referenceCopyFailed": "复制引用失败",
+    "extractAboveTooltip": "提取上方消息（包括当前消息）",
+    "extractBelowTooltip": "提取下方消息（包括当前消息）",
+    "extractAboveLabel": "上方消息",
+    "extractBelowLabel": "下方消息",
+    "openInBuilder": "在会话构建器中打开",
+    "createDirectly": "直接创建会话",
+    "noMessagesToExtract": "没有可提取的消息",
+    "noSessionPath": "会话路径不可用",
+    "sessionCreated": "已创建包含{{count}}条消息的会话",
+    "extractFailed": "提取消息失败"
   }
 }

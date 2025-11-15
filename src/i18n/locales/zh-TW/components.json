@@ -765,6 +765,16 @@
     "copyReference": "複製參照",
     "referenceTooltip": "複製檔案路徑和訊息UUID供Claude使用",
     "referenceCopied": "訊息參照已複製",
-    "referenceCopyFailed": "複製參照失敗"
+    "referenceCopyFailed": "複製參照失敗",
+    "extractAboveTooltip": "擷取上方訊息（包括當前訊息）",
+    "extractBelowTooltip": "擷取下方訊息（包括當前訊息）",
+    "extractAboveLabel": "上方訊息",
+    "extractBelowLabel": "下方訊息",
+    "openInBuilder": "在會話建構器中開啟",
+    "createDirectly": "直接建立會話",
+    "noMessagesToExtract": "沒有可擷取的訊息",
+    "noSessionPath": "會話路徑不可用",
+    "sessionCreated": "已建立包含{{count}}則訊息的會話",
+    "extractFailed": "擷取訊息失敗"
   }
 }

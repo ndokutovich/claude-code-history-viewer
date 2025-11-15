@@ -749,6 +749,16 @@
     "copyReference": "参照をコピー",
     "referenceTooltip": "Claude用のファイルパスとメッセージUUIDをコピー",
     "referenceCopied": "メッセージ参照をコピーしました",
-    "referenceCopyFailed": "参照のコピーに失敗しました"
+    "referenceCopyFailed": "参照のコピーに失敗しました",
+    "extractAboveTooltip": "上のメッセージを抽出（このメッセージを含む）",
+    "extractBelowTooltip": "下のメッセージを抽出（このメッセージを含む）",
+    "extractAboveLabel": "上のメッセージ",
+    "extractBelowLabel": "下のメッセージ",
+    "openInBuilder": "セッションビルダーで開く",
+    "createDirectly": "セッションを直接作成",
+    "noMessagesToExtract": "抽出するメッセージがありません",
+    "noSessionPath": "セッションパスが利用できません",
+    "sessionCreated": "{{count}}個のメッセージでセッションを作成しました",
+    "extractFailed": "メッセージの抽出に失敗しました"
   }
 }
