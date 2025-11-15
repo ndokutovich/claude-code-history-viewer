@@ -5,7 +5,7 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import { Loader2, MessageCircle, ChevronDown, Link2, Check } from "lucide-react";
+import { Loader2, MessageCircle, ChevronDown, Link2, Check, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { UIMessage, UISession, PaginationState } from "../types";
 import { ClaudeContentArrayRenderer } from "./contentRenderer";
@@ -20,6 +20,18 @@ import { extractUIMessageContent } from "../utils/messageUtils";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
 import { formatTime } from "../utils/time";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { SessionBuilderModal } from "./modals/SessionBuilderModal";
+import { invoke } from "@tauri-apps/api/core";
+import type { ExtractMessageRangeRequest, ExtractMessageRangeResponse } from "../types/sessionWriter";
+import type { MessageBuilder } from "../types";
+import { adapterRegistry } from "../adapters/registry/AdapterRegistry";
+import { useAppStore } from "../store/useAppStore";
 import {
   MAX_DEPTH_MARGIN,
   SCROLL_ADJUSTMENT_DELAY,
@@ -42,9 +54,11 @@ interface MessageNodeProps {
   depth: number;
   providerName: string;
   sessionFilePath?: string;
+  allMessages: UIMessage[];
+  onExtractRange: (startIndex: number, endIndex: number, openModal: boolean) => void;
 }
 
-const UIMessageNode = ({ message, depth, providerName, sessionFilePath }: MessageNodeProps) => {
+const UIMessageNode = ({ message, depth, providerName, sessionFilePath, allMessages, onExtractRange }: MessageNodeProps) => {
   const { t } = useTranslation("components");
   const [copiedReference, setCopiedReference] = React.useState(false);
 
@@ -68,6 +82,22 @@ const UIMessageNode = ({ message, depth, providerName, sessionFilePath }: Messag
       console.error("Failed to copy reference:", error);
       const { toast } = await import("sonner");
       toast.error(t("messageReference.referenceCopyFailed"));
+    }
+  };
+
+  const handleExtractAbove = (openModal: boolean) => {
+    const currentIndex = allMessages.findIndex(m => m.uuid === message.uuid);
+    if (currentIndex >= 0) {
+      // Extract from start to current (inclusive)
+      onExtractRange(0, currentIndex, openModal);
+    }
+  };
+
+  const handleExtractBelow = (openModal: boolean) => {
+    const currentIndex = allMessages.findIndex(m => m.uuid === message.uuid);
+    if (currentIndex >= 0) {
+      // Extract from current to end (inclusive)
+      onExtractRange(currentIndex, allMessages.length - 1, openModal);
     }
   };
 
@@ -140,6 +170,52 @@ const UIMessageNode = ({ message, depth, providerName, sessionFilePath }: Messag
               <Link2 className="w-3.5 h-3.5" />
             )}
           </button>
+
+          {/* Extract Messages Above Button */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
+                  "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                )}
+                title={t("messageReference.extractAboveTooltip")}
+              >
+                <ArrowUpCircle className="w-3.5 h-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExtractAbove(true)}>
+                {t("messageReference.openInBuilder")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExtractAbove(false)}>
+                {t("messageReference.createDirectly")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Extract Messages Below Button */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
+                  "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                )}
+                title={t("messageReference.extractBelowTooltip")}
+              >
+                <ArrowDownCircle className="w-3.5 h-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExtractBelow(true)}>
+                {t("messageReference.openInBuilder")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExtractBelow(false)}>
+                {t("messageReference.createDirectly")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {message.type === "assistant" && (
             <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
           )}
@@ -226,6 +302,128 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   // Ref to prevent infinite rendering
   const isProcessingLoadMore = useRef(false);
   const lastPaginationCall = useRef<number>(0);
+
+  // Session Builder Modal state for extract functionality
+  const [isSessionBuilderOpen, setIsSessionBuilderOpen] = useState(false);
+  const [extractedMessages, setExtractedMessages] = useState<MessageBuilder[]>([]);
+
+  // Handle extract message range
+  const handleExtractRange = useCallback(async (startIndex: number, endIndex: number, openModal: boolean) => {
+    try {
+      // Extract messages from the range (inclusive)
+      const messagesToExtract = messages.slice(startIndex, endIndex + 1);
+
+      if (messagesToExtract.length === 0) {
+        const { toast } = await import("sonner");
+        toast.error(t("messageReference.noMessagesToExtract"));
+        return;
+      }
+
+      if (!selectedSession?.file_path) {
+        const { toast } = await import("sonner");
+        toast.error(t("messageReference.noSessionPath"));
+        return;
+      }
+
+      // Get extracted messages using the backend command
+      const request: ExtractMessageRangeRequest = {
+        session_path: selectedSession.file_path,
+        start_message_id: messagesToExtract[0]?.uuid,
+        end_message_id: messagesToExtract[messagesToExtract.length - 1]?.uuid,
+      };
+
+      const response = await invoke<ExtractMessageRangeResponse>(
+        "extract_message_range",
+        { request }
+      );
+
+      if (openModal) {
+        // Open Session Builder Modal with pre-filled messages
+        // Convert MessageInput[] to MessageBuilder[] by adding IDs
+        const messagesWithIds: MessageBuilder[] = response.messages.map((msg, index) => ({
+          ...msg,
+          id: `msg-${Date.now()}-${index}`,
+        }));
+        setExtractedMessages(messagesWithIds);
+        setIsSessionBuilderOpen(true);
+      } else {
+        // Directly create session file using adapter
+        if (!selectedSession.providerId) {
+          const { toast } = await import("sonner");
+          toast.error("Provider information not available");
+          return;
+        }
+
+        const adapter = adapterRegistry.get(selectedSession.providerId);
+        if (!adapter || !adapter.createSession) {
+          const { toast } = await import("sonner");
+          toast.error("This provider does not support session creation");
+          return;
+        }
+
+        // Get project path by removing the session filename from file_path
+        const projectPath = selectedSession.file_path.split(/[/\\]/).slice(0, -1).join('/');
+        console.log('[MessageViewer] Creating session in project:', projectPath);
+
+        const createResult = await adapter.createSession(projectPath, {
+          messages: response.messages.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+            parent_id: msg.parent_id,
+            model: msg.model,
+            tool_use: msg.tool_use,
+            tool_use_result: msg.tool_use_result,
+            usage: msg.usage,
+          })),
+          summary: response.summary || undefined,
+          cwd: response.cwd,
+        });
+
+        if (!createResult.success) {
+          throw new Error(createResult.error?.message || 'Failed to create session');
+        }
+
+        // Small delay to ensure file system operations complete
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        // Refresh the session list directly using the Tauri command
+        console.log('[MessageViewer] Refreshing session list for project:', projectPath);
+        const store = useAppStore.getState();
+
+        if (store.selectedProject) {
+          try {
+            const sessions = await invoke<UISession[]>(
+              "load_project_sessions",
+              {
+                projectPath: store.selectedProject.path,
+                excludeSidechain: store.excludeSidechain,
+              }
+            );
+            console.log('[MessageViewer] Loaded', sessions.length, 'sessions from backend');
+
+            // Update BOTH sessions and sessionsByProject (ProjectTree reads from sessionsByProject!)
+            useAppStore.setState({
+              sessions,
+              sessionsByProject: {
+                ...store.sessionsByProject,
+                [store.selectedProject.path]: sessions,
+              }
+            });
+            console.log('[MessageViewer] Updated sessionsByProject cache for:', store.selectedProject.path);
+          } catch (error) {
+            console.error('[MessageViewer] Failed to refresh sessions:', error);
+          }
+        }
+
+        const { toast } = await import("sonner");
+        toast.success(t("messageReference.sessionCreated", { count: response.messages.length }));
+      }
+    } catch (error) {
+      console.error("Failed to extract message range:", error);
+      const { toast } = await import("sonner");
+      toast.error(t("messageReference.extractFailed"));
+    }
+  }, [messages, selectedSession, t]);
 
   // Detect message changes and adjust scroll position (optimized)
   useEffect(() => {
@@ -470,6 +668,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
         depth={depth}
         providerName={providerName}
         sessionFilePath={selectedSession?.file_path}
+        allMessages={messages}
+        onExtractRange={handleExtractRange}
       />,
     ];
 
@@ -617,6 +817,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                       depth={0}
                       providerName={providerName}
                       sessionFilePath={selectedSession?.file_path}
+                      allMessages={messages}
+                      onExtractRange={handleExtractRange}
                     />
                   );
                 });
@@ -677,6 +879,16 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           </button>
         )}
       </div>
+
+      {/* Session Builder Modal for extracted messages */}
+      <SessionBuilderModal
+        isOpen={isSessionBuilderOpen}
+        onClose={() => {
+          setIsSessionBuilderOpen(false);
+          setExtractedMessages([]);
+        }}
+        initialMessages={extractedMessages}
+      />
     </div>
   );
 };

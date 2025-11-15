@@ -749,6 +749,16 @@
     "copyReference": "Копировать ссылку",
     "referenceTooltip": "Копировать путь к файлу и UUID сообщения для Claude",
     "referenceCopied": "Ссылка на сообщение скопирована",
-    "referenceCopyFailed": "Не удалось скопировать ссылку"
+    "referenceCopyFailed": "Не удалось скопировать ссылку",
+    "extractAboveTooltip": "Извлечь сообщения выше (включая текущее)",
+    "extractBelowTooltip": "Извлечь сообщения ниже (включая текущее)",
+    "extractAboveLabel": "Сообщения выше",
+    "extractBelowLabel": "Сообщения ниже",
+    "openInBuilder": "Открыть в конструкторе сессий",
+    "createDirectly": "Создать сессию напрямую",
+    "noMessagesToExtract": "Нет сообщений для извлечения",
+    "noSessionPath": "Путь к сессии недоступен",
+    "sessionCreated": "Создана сессия с {{count}} сообщением(-ями)",
+    "extractFailed": "Не удалось извлечь сообщения"
   }
 }

@@ -746,6 +746,16 @@
     "copyReference": "Copy Reference",
     "referenceTooltip": "Copy file path and message UUID for Claude",
     "referenceCopied": "Message reference copied",
-    "referenceCopyFailed": "Failed to copy reference"
+    "referenceCopyFailed": "Failed to copy reference",
+    "extractAboveTooltip": "Extract messages above (including this one)",
+    "extractBelowTooltip": "Extract messages below (including this one)",
+    "extractAboveLabel": "Messages Above",
+    "extractBelowLabel": "Messages Below",
+    "openInBuilder": "Open in Session Builder",
+    "createDirectly": "Create Session Directly",
+    "noMessagesToExtract": "No messages to extract",
+    "noSessionPath": "Session path not available",
+    "sessionCreated": "Session created with {{count}} message(s)",
+    "extractFailed": "Failed to extract messages"
   }
 }

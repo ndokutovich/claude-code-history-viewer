@@ -37,12 +37,14 @@ interface SessionBuilderModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultProjectPath?: string;
+  initialMessages?: MessageBuilder[];
 }
 
 export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
   isOpen,
   onClose,
   defaultProjectPath,
+  initialMessages,
 }) => {
   const { t } = useTranslation("common");
 
@@ -117,8 +119,16 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
 
   // Session state
   const [sessionSummary, setSessionSummary] = useState<string>('');
-  const [messages, setMessages] = useState<MessageBuilder[]>([]);
+  const [messages, setMessages] = useState<MessageBuilder[]>(initialMessages || []);
   const [activeTab, setActiveTab] = useState<'compose' | 'context' | 'range' | 'preview'>('compose');
+
+  // Update messages when initialMessages prop changes
+  React.useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) {
+      setMessages(initialMessages);
+      setActiveTab('preview'); // Switch to preview tab to show the loaded messages
+    }
+  }, [initialMessages]);
 
   // Message Range mode state
   const [startMessagePath, setStartMessagePath] = useState<string>('');
@@ -386,7 +396,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
   }, [isSaving, onClose, resetForm]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{t('sessionBuilder.modal.title')}</DialogTitle>
