@@ -396,7 +396,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
   }, [isSaving, onClose, resetForm]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{t('sessionBuilder.modal.title')}</DialogTitle>
