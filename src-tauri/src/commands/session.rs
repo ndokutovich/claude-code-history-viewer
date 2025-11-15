@@ -7,15 +7,19 @@ use std::fs;
 use uuid::Uuid;
 use walkdir::WalkDir;
 
-/// Normalizes Windows extended-length paths by stripping the \?\ prefix
+/// Normalizes Windows extended-length paths by stripping the \\?\ prefix
 /// This ensures consistent path formatting across all commands
 ///
 /// Example:
-/// - Input:  \?\C:\Users\xxx\.claude\projects\my-project
-/// - Output: C:\Users\xxx\.claude\projects\my-project
+/// - Extended length: \\?\C:\Users\xxx\.claude\projects\my-project → C:\Users\xxx\.claude\projects\my-project
+/// - Extended UNC:    \\?\UNC\server\share\folder → \\server\share\folder
 #[cfg(target_os = "windows")]
 fn normalize_windows_path(path: &str) -> String {
-    if path.starts_with(r"\\?\") {
+    if path.starts_with(r"\\?\UNC\") {
+        // Extended UNC: \\?\UNC\server\share → \\server\share
+        format!(r"\\{}", &path[8..])
+    } else if path.starts_with(r"\\?\") {
+        // Extended length: \\?\C:\path → C:\path
         path[4..].to_string()
     } else {
         path.to_string()
@@ -1310,9 +1314,9 @@ mod tests {
     #[test]
     #[cfg(target_os = "windows")]
     fn test_normalize_windows_path_extended_unc() {
-        // Test extended UNC path (\\?\UNC\server\share)
+        // Test extended UNC path (\\?\UNC\server\share → \\server\share)
         let input = r"\\?\UNC\server\share\folder";
-        let expected = r"UNC\server\share\folder";
+        let expected = r"\\server\share\folder";
         assert_eq!(normalize_windows_path(input), expected);
     }
 

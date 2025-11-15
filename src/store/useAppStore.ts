@@ -242,6 +242,7 @@ interface ViewPreferences {
 interface AppStore extends AppState {
   // Filter state
   excludeSidechain: boolean;
+  sessionExcludeSidechain: boolean; // Per-session filter state (persists during pagination)
 
   // View preferences
   viewPreferences: ViewPreferences;
@@ -395,6 +396,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   // Filter state
   excludeSidechain: true,
+  sessionExcludeSidechain: true, // Initialize to match global default
 
   // Actions
   initializeApp: async () => {
@@ -771,6 +773,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       set({
         messages: uiMessages,
+        sessionExcludeSidechain: shouldExcludeSidechain, // Store for pagination consistency
         pagination: {
           currentOffset: result.pagination?.nextOffset || pageSize,
           pageSize,
@@ -860,7 +863,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           limit: pagination.pageSize,
           sortOrder: 'desc',
           includeMetadata: true,
-          excludeSidechain: get().excludeSidechain, // Respect global setting for pagination
+          excludeSidechain: get().sessionExcludeSidechain, // Use session-specific setting for consistency
         }
       );
 
@@ -934,7 +937,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           limit: 100000, // Load all remaining
           sortOrder: 'desc',
           includeMetadata: true,
-          excludeSidechain: get().excludeSidechain, // Respect global setting for pagination
+          excludeSidechain: get().sessionExcludeSidechain, // Use session-specific setting for consistency
         }
       );
 
