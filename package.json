@@ -1,7 +1,7 @@
 {
   "name": "claude-code-history-viewer",
   "private": true,
-  "version": "1.8.1",
+  "version": "1.8.2",
   "description": "Desktop application for browsing and analyzing Claude Code conversation history",
   "author": "JaeHyeok Lee, ndokutovich, and others (see commits history)",
   "license": "MIT",
