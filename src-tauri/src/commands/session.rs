@@ -7,6 +7,30 @@ use std::fs;
 use uuid::Uuid;
 use walkdir::WalkDir;
 
+/// Normalizes Windows extended-length paths by stripping the \\?\ prefix
+/// This ensures consistent path formatting across all commands
+///
+/// Example:
+/// - Extended length: \\?\C:\Users\xxx\.claude\projects\my-project → C:\Users\xxx\.claude\projects\my-project
+/// - Extended UNC:    \\?\UNC\server\share\folder → \\server\share\folder
+#[cfg(target_os = "windows")]
+fn normalize_windows_path(path: &str) -> String {
+    if path.starts_with(r"\\?\UNC\") {
+        // Extended UNC: \\?\UNC\server\share → \\server\share
+        format!(r"\\{}", &path[8..])
+    } else if path.starts_with(r"\\?\") {
+        // Extended length: \\?\C:\path → C:\path
+        path[4..].to_string()
+    } else {
+        path.to_string()
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn normalize_windows_path(path: &str) -> String {
+    path.to_string()
+}
+
 #[tauri::command]
 pub async fn load_project_sessions(
     project_path: String,
@@ -597,7 +621,7 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<Universal
         if !parts.is_empty() {
             // Reconstruct full path up to project directory
             let up_to_projects = &session_path[..projects_idx + "projects".len()];
-            format!("{}/{}", up_to_projects, parts[0])
+            normalize_windows_path(&format!("{}/{}", up_to_projects, parts[0]))
         } else {
             "unknown".to_string()
         }
@@ -724,7 +748,7 @@ pub async fn load_session_messages_paginated(
         if !parts.is_empty() {
             // Reconstruct full path up to project directory
             let up_to_projects = &session_path[..projects_idx + "projects".len()];
-            format!("{}/{}", up_to_projects, parts[0])
+            normalize_windows_path(&format!("{}/{}", up_to_projects, parts[0]))
         } else {
             "unknown".to_string()
         }
@@ -1006,7 +1030,7 @@ pub async fn search_messages(
         let project_path = entry
             .path()
             .parent() // Get parent directory (project folder)
-            .map(|p| p.to_string_lossy().to_string());
+            .map(|p| normalize_windows_path(&p.to_string_lossy().to_string()));
 
         // Filter by project if specified
         if let Some(ref project_filters) = filters.projects {
@@ -1254,4 +1278,73 @@ pub async fn fix_session(session_file_path: String) -> Result<String, String> {
         removed_count,
         backup_path
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[cfg(target_os = "windows")]
+    fn test_normalize_windows_path_with_extended_length_prefix() {
+        // Test stripping \\?\ prefix
+        let input = r"\\?\C:\Users\xxx\.claude\projects\my-project";
+        let expected = r"C:\Users\xxx\.claude\projects\my-project";
+        assert_eq!(normalize_windows_path(input), expected);
+    }
+
+    #[test]
+    #[cfg(target_os = "windows")]
+    fn test_normalize_windows_path_without_prefix() {
+        // Test path without prefix (should return as-is)
+        let input = r"C:\Users\xxx\.claude\projects\my-project";
+        let expected = r"C:\Users\xxx\.claude\projects\my-project";
+        assert_eq!(normalize_windows_path(input), expected);
+    }
+
+    #[test]
+    #[cfg(target_os = "windows")]
+    fn test_normalize_windows_path_unc_path() {
+        // Test UNC path (network path, should return as-is)
+        let input = r"\\server\share\folder";
+        let expected = r"\\server\share\folder";
+        assert_eq!(normalize_windows_path(input), expected);
+    }
+
+    #[test]
+    #[cfg(target_os = "windows")]
+    fn test_normalize_windows_path_extended_unc() {
+        // Test extended UNC path (\\?\UNC\server\share → \\server\share)
+        let input = r"\\?\UNC\server\share\folder";
+        let expected = r"\\server\share\folder";
+        assert_eq!(normalize_windows_path(input), expected);
+    }
+
+    #[test]
+    #[cfg(target_os = "windows")]
+    fn test_normalize_windows_path_empty() {
+        // Test empty string
+        let input = "";
+        let expected = "";
+        assert_eq!(normalize_windows_path(input), expected);
+    }
+
+    #[test]
+    #[cfg(not(target_os = "windows"))]
+    fn test_normalize_windows_path_unix_no_op() {
+        // On Unix systems, function should be a no-op
+        let input = "/home/user/.claude/projects/my-project";
+        let expected = "/home/user/.claude/projects/my-project";
+        assert_eq!(normalize_windows_path(input), expected);
+    }
+
+    #[test]
+    #[cfg(not(target_os = "windows"))]
+    fn test_normalize_windows_path_unix_preserves_weird_paths() {
+        // Even if Unix path has Windows-like prefix, it should be preserved
+        // (unlikely but theoretically possible as a valid Unix filename)
+        let input = r"/tmp/\\?\weird_filename";
+        let expected = r"/tmp/\\?\weird_filename";
+        assert_eq!(normalize_windows_path(input), expected);
+    }
 }
