@@ -4,7 +4,7 @@ mod utils;
 
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::{
-    codex::*, cursor::*, feedback::*, files::*, gemini::*, project::*, resume::*,
+    codex::*, cursor::*, cursor_writer::*, feedback::*, files::*, gemini::*, project::*, resume::*,
     secure_update::*, session::*, session_writer::*, stats::*, update::*,
 };
 use std::sync::Mutex;
@@ -50,6 +50,9 @@ pub fn run() {
             load_cursor_sessions,
             load_cursor_messages,
             search_cursor_messages,
+            // Cursor IDE session writing (v2.0.0)
+            create_cursor_session,
+            append_to_cursor_session,
             // Universal Analytics (v2.1.0 - works with both Claude Code and Cursor)
             get_universal_session_token_stats,
             get_universal_project_token_stats,

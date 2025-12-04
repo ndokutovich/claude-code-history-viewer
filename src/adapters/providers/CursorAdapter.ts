@@ -16,6 +16,10 @@ import type {
   HealthStatus,
   ErrorRecovery,
   ErrorContext,
+  WriteResult,
+  SessionInfo,
+  CreateSessionRequest,
+  MessageInput,
 } from '../base/IAdapter';
 import { classifyError } from '../base/IAdapter';
 import type {
@@ -80,10 +84,10 @@ export class CursorAdapter implements IConversationAdapter {
       supportsModelInfo: false,
       requiresAuth: false,
       requiresNetwork: false,
-      isReadOnly: true, // TODO v1.7.0: Implement write support (SQLite schema is complex)
-      supportsProjectCreation: false, // Cursor doesn't have "projects", only workspaces
-      supportsSessionCreation: false, // TODO v1.7.0: Implement composer creation
-      supportsMessageAppending: false, // TODO v1.7.0: Implement message appending
+      isReadOnly: false, // v2.0.0: Now supports writing
+      supportsProjectCreation: false, // Cursor uses workspaces, not projects
+      supportsSessionCreation: true, // v2.0.0: Composer creation supported
+      supportsMessageAppending: true, // v2.0.0: Message appending supported
       maxMessagesPerRequest: 10000,
       preferredBatchSize: 100,
       supportsPagination: false,
@@ -570,6 +574,160 @@ export class CursorAdapter implements IConversationAdapter {
           message: `Unexpected error: ${error.message}`,
           suggestion: 'Please report this issue if it persists.',
         };
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // PATH MANAGEMENT (OPTIONAL - v2.0.0)
+  // ------------------------------------------------------------------------
+
+  /**
+   * Get the workspaces root directory for Cursor
+   * @param sourcePath - Base Cursor folder (e.g., AppData/Roaming/Cursor)
+   * @returns Workspaces root directory (e.g., Cursor/User/workspaceStorage)
+   */
+  getProjectsRoot(sourcePath: string): string {
+    const { projectsPath } = this.providerDefinition.pathConfig;
+    return `${sourcePath}/${projectsPath}`;
+  }
+
+  /**
+   * Convert a workspace ID to absolute workspace path
+   * @param sourcePath - Base Cursor folder
+   * @param workspaceId - ID of the workspace
+   * @returns Absolute workspace path
+   */
+  convertToProjectPath(sourcePath: string, workspaceId: string): string {
+    const workspacesRoot = this.getProjectsRoot(sourcePath);
+    return `${workspacesRoot}/${workspaceId}`;
+  }
+
+  /**
+   * Extract workspace ID from a full path
+   * Example: ".../User/workspaceStorage/abc123/..." → "abc123"
+   * @param fullPath - Full absolute path
+   * @returns Workspace ID
+   */
+  sanitizePathToProjectName(fullPath: string): string {
+    // For Cursor, extract the workspace ID from the path
+    const normalizedPath = fullPath.replace(/\\/g, '/');
+    const parts = normalizedPath.split('/');
+
+    // Find workspaceStorage in path and get the next segment
+    const wsIndex = parts.findIndex(p => p.toLowerCase() === 'workspacestorage');
+    if (wsIndex !== -1 && parts.length > wsIndex + 1) {
+      return parts[wsIndex + 1];
+    }
+
+    // Fallback: return last segment
+    return parts[parts.length - 1] || 'unknown';
+  }
+
+  // ------------------------------------------------------------------------
+  // WRITE OPERATIONS (OPTIONAL - v2.0.0)
+  // ------------------------------------------------------------------------
+
+  /**
+   * Create a new Cursor session (composer) in the specified workspace
+   * Note: Cursor doesn't support creating new "projects" (workspaces are managed by the IDE)
+   */
+  async createSession(
+    projectPath: string,
+    request: CreateSessionRequest
+  ): Promise<WriteResult<SessionInfo>> {
+    this.ensureInitialized();
+
+    try {
+      // Extract workspace ID and Cursor base path from projectPath
+      const workspaceId = this.sanitizePathToProjectName(projectPath);
+      const cursorPath = this.extractCursorPathFromDbPath(projectPath);
+
+      const response = await invoke<{
+        session_id: string;
+        workspace_id: string;
+        message_count: number;
+        db_path: string;
+      }>('create_cursor_session', {
+        request: {
+          cursor_path: cursorPath,
+          workspace_id: workspaceId,
+          messages: request.messages,
+          summary: request.summary,
+        },
+      });
+
+      return {
+        success: true,
+        data: {
+          sessionPath: response.db_path,
+          sessionId: response.session_id,
+          messageCount: response.message_count,
+        },
+      };
+    } catch (error) {
+      const errorCode = classifyError(error as Error);
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: error instanceof Error ? error.message : String(error),
+          recoverable: errorCode !== ErrorCode.ACCESS_DENIED,
+          retry: {
+            shouldRetry: errorCode === ErrorCode.OPERATION_TIMEOUT,
+            maxAttempts: 3,
+            delayMs: 1000,
+          },
+        },
+      };
+    }
+  }
+
+  /**
+   * Append messages to an existing Cursor session
+   */
+  async appendMessages(
+    sessionPath: string,
+    messages: MessageInput[]
+  ): Promise<WriteResult<number>> {
+    this.ensureInitialized();
+
+    try {
+      // Extract session ID from encoded path
+      // Format: <db-path>#session=<session-id>#workspace=<workspace-id>#timestamp=<iso-timestamp>
+      const sessionIdMatch = sessionPath.match(/#session=([^#]+)/);
+      if (!sessionIdMatch) {
+        throw new Error('Cannot extract session ID from path');
+      }
+      const sessionId = sessionIdMatch[1];
+      const cursorPath = this.extractCursorPathFromDbPath(sessionPath);
+
+      const messageCount = await invoke<number>('append_to_cursor_session', {
+        request: {
+          cursor_path: cursorPath,
+          session_id: sessionId,
+          messages,
+        },
+      });
+
+      return {
+        success: true,
+        data: messageCount,
+      };
+    } catch (error) {
+      const errorCode = classifyError(error as Error);
+      return {
+        success: false,
+        error: {
+          code: errorCode,
+          message: error instanceof Error ? error.message : String(error),
+          recoverable: errorCode !== ErrorCode.ACCESS_DENIED,
+          retry: {
+            shouldRetry: errorCode === ErrorCode.OPERATION_TIMEOUT,
+            maxAttempts: 3,
+            delayMs: 1000,
+          },
+        },
+      };
     }
   }
 
