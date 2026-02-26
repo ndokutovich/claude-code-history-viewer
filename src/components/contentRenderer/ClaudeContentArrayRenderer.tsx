@@ -1,3 +1,6 @@
+import { memo, useMemo } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ThinkingRenderer } from "./ThinkingRenderer";
 import { ToolUseRenderer } from "./ToolUseRenderer";
 import { ImageRenderer } from "./ImageRenderer";
@@ -40,8 +43,10 @@ export const ClaudeContentArrayRenderer = ({ content }: Props) => {
                   key={index}
                   className="p-3 bg-gray-50 border border-gray-200 rounded-lg"
                 >
-                  <div className="whitespace-pre-wrap text-gray-800">
-                    {item.text}
+                  <div className="prose prose-sm max-w-none text-foreground">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {item.text}
+                    </ReactMarkdown>
                   </div>
                 </div>
               );
