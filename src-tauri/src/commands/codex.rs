@@ -5,8 +5,11 @@
 //
 // CLEAN CODE: Explicit types, standardized error prefixes, provider abstraction
 
-use crate::commands::adapters::codex::*;
-use crate::models::universal::*;
+use crate::commands::adapters::codex::{
+    codex_event_to_universal, extract_session_id, parse_codex_jsonl, parse_rollout_filename,
+    CodexEvent,
+};
+use crate::models::universal::{MessageRole, UniversalMessage, UniversalProject, UniversalSession};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -19,9 +22,10 @@ use std::path::{Path, PathBuf};
 /// Returns: ~/.codex/agent-sessions
 /// CLEAN CODE: Explicit return type, standardized error messages
 #[tauri::command]
+#[allow(clippy::unused_async)]
 pub async fn get_codex_path() -> Result<String, String> {
-    let home_dir: PathBuf = dirs::home_dir()
-        .ok_or("HOME_DIRECTORY_NOT_FOUND: Could not determine home directory")?;
+    let home_dir: PathBuf =
+        dirs::home_dir().ok_or("HOME_DIRECTORY_NOT_FOUND: Could not determine home directory")?;
 
     // Codex CLI stores sessions at ~/.codex/sessions (with YYYY/MM/DD subdirectories)
     let codex_path: PathBuf = home_dir.join(".codex").join("sessions");
@@ -47,6 +51,7 @@ pub async fn get_codex_path() -> Result<String, String> {
 /// Checks for rollout-*.jsonl files (recursively in YYYY/MM/DD subdirectories)
 /// CLEAN CODE: Explicit return type, clear validation logic
 #[tauri::command]
+#[allow(clippy::unused_async)]
 pub async fn validate_codex_folder(path: String) -> Result<bool, String> {
     let path_buf: PathBuf = PathBuf::from(&path);
 
@@ -67,7 +72,11 @@ pub async fn validate_codex_folder(path: String) -> Result<bool, String> {
                 }
             } else if path.is_file() {
                 if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-                    if filename.starts_with("rollout-") && filename.ends_with(".jsonl") {
+                    if filename.starts_with("rollout-")
+                        && std::path::Path::new(filename)
+                            .extension()
+                            .is_some_and(|ext| ext.eq_ignore_ascii_case("jsonl"))
+                    {
                         return Ok(true); // Found at least one valid rollout file
                     }
                 }
@@ -89,18 +98,18 @@ pub async fn validate_codex_folder(path: String) -> Result<bool, String> {
 /// Scan for Codex projects (rollout files grouped by session ID)
 /// CLEAN CODE: Explicit return type, proper error handling
 #[tauri::command]
+#[allow(clippy::unused_async)]
 pub async fn scan_codex_projects(
     codex_path: String,
     source_id: String,
 ) -> Result<Vec<UniversalProject>, String> {
-    println!("🔍 Scanning Codex projects at: {}", codex_path);
+    println!("🔍 Scanning Codex projects at: {codex_path}");
 
     let path: &Path = Path::new(&codex_path);
 
     if !path.exists() {
         return Err(format!(
-            "CODEX_PATH_ERROR: Path does not exist: {}",
-            codex_path
+            "CODEX_PATH_ERROR: Path does not exist: {codex_path}"
         ));
     }
 
@@ -118,12 +127,14 @@ pub async fn scan_codex_projects(
                     // Recurse into subdirectories
                     find_rollout_files(&path, files)?;
                 } else if path.is_file() {
-                    let filename = path.file_name()
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("");
+                    let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
                     // Check if it's a rollout file
-                    if filename.starts_with("rollout-") && filename.ends_with(".jsonl") {
+                    if filename.starts_with("rollout-")
+                        && std::path::Path::new(filename)
+                            .extension()
+                            .is_some_and(|ext| ext.eq_ignore_ascii_case("jsonl"))
+                    {
                         files.push(path);
                     }
                 }
@@ -134,7 +145,7 @@ pub async fn scan_codex_projects(
 
     let mut rollout_files: Vec<PathBuf> = Vec::new();
     find_rollout_files(path, &mut rollout_files)
-        .map_err(|e| format!("CODEX_READ_ERROR: Failed to scan directory: {}", e))?;
+        .map_err(|e| format!("CODEX_READ_ERROR: Failed to scan directory: {e}"))?;
 
     println!("📁 Found {} rollout file(s)", rollout_files.len());
 
@@ -161,7 +172,7 @@ pub async fn scan_codex_projects(
 
             session_groups
                 .entry(session_id)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(file_path);
         }
     }
@@ -204,13 +215,14 @@ pub async fn scan_codex_projects(
 /// For Codex, each rollout file is a session
 /// CLEAN CODE: Explicit return type, proper pagination
 #[tauri::command]
+#[allow(clippy::unused_async)]
 pub async fn load_codex_sessions(
     _codex_path: String,
     project_path: String,
     project_id: String,
     source_id: String,
 ) -> Result<Vec<UniversalSession>, String> {
-    println!("🔍 Loading Codex sessions for project: {}", project_id);
+    println!("🔍 Loading Codex sessions for project: {project_id}");
 
     // For Codex, the project_path points to a rollout file
     // We treat each rollout file as a session
@@ -218,8 +230,7 @@ pub async fn load_codex_sessions(
 
     if !file_path.exists() {
         return Err(format!(
-            "CODEX_FILE_ERROR: Session file not found: {}",
-            project_path
+            "CODEX_FILE_ERROR: Session file not found: {project_path}"
         ));
     }
 
@@ -276,10 +287,12 @@ pub async fn load_codex_sessions(
         });
 
     // Extract timestamps from events
-    let first_timestamp = events.first()
+    let first_timestamp = events
+        .first()
         .and_then(|e| e.timestamp.clone())
         .unwrap_or_else(|| timestamp_str.replace('-', ":"));
-    let last_timestamp = events.last()
+    let last_timestamp = events
+        .last()
         .and_then(|e| e.timestamp.clone())
         .unwrap_or_else(|| first_timestamp.clone());
 
@@ -287,7 +300,9 @@ pub async fn load_codex_sessions(
     let duration: i64 = 0;
 
     // Title for the session
-    let title = summary.clone().unwrap_or_else(|| format!("Codex Session {}", &session_id[..8]));
+    let title = summary
+        .clone()
+        .unwrap_or_else(|| format!("Codex Session {}", &session_id[..8]));
 
     let session: UniversalSession = UniversalSession {
         id: session_id.clone(),
@@ -313,15 +328,13 @@ pub async fn load_codex_sessions(
 /// Load messages for a Codex session (paginated)
 /// CLEAN CODE: Explicit types, proper pagination, camelCase metadata
 #[tauri::command]
+#[allow(clippy::unused_async)]
 pub async fn load_codex_messages(
     session_path: String,
     offset: usize,
     limit: usize,
 ) -> Result<Vec<UniversalMessage>, String> {
-    println!(
-        "📄 Loading Codex messages: offset={}, limit={}",
-        offset, limit
-    );
+    println!("📄 Loading Codex messages: offset={offset}, limit={limit}");
 
     let file_path: PathBuf = PathBuf::from(&session_path);
 
@@ -359,9 +372,9 @@ pub async fn load_codex_messages(
             let session_id: String = extract_session_id(event, &uuid);
             let mut msg: UniversalMessage = codex_event_to_universal(
                 event,
-                "codex".to_string(), // project_id
+                "codex".to_string(),  // project_id
                 session_path.clone(), // source_id
-                idx as i32,
+                i32::try_from(idx).unwrap_or(i32::MAX),
                 &session_path,
             );
             msg.session_id = session_id;
@@ -376,7 +389,13 @@ pub async fn load_codex_messages(
 
     messages = messages[start..end].to_vec();
 
-    println!("✓ Loaded {} messages ({}..{} of {})", messages.len(), start, end, total);
+    println!(
+        "✓ Loaded {} messages ({}..{} of {})",
+        messages.len(),
+        start,
+        end,
+        total
+    );
     Ok(messages)
 }
 
@@ -387,8 +406,7 @@ pub async fn load_codex_messages(
 fn determine_role(event: &CodexEvent) -> MessageRole {
     match event.event_type.as_str() {
         "user_message" | "user_input" | "user" => MessageRole::User,
-        "assistant_message" | "assistant_response" | "assistant" => MessageRole::Assistant,
         "system_message" | "system" => MessageRole::System,
-        _ => MessageRole::Assistant,
+        _ => MessageRole::Assistant, // Default (includes assistant_message, assistant_response, assistant)
     }
 }

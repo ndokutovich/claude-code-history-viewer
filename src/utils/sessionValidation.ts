@@ -10,7 +10,7 @@ import type { SourceWithCapability } from '@/adapters/utils/capabilityHelpers';
 /**
  * Translation function type for i18n support
  */
-export type TranslateFunction = (key: string, options?: any) => string;
+export type TranslateFunction = (key: string, options?: Record<string, unknown>) => string;
 
 /**
  * Validation context - all inputs needed for session builder validation

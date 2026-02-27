@@ -15,7 +15,6 @@ import type {
   SearchFilters as AdapterSearchFilters,
   HealthStatus,
   ErrorRecovery,
-  ErrorContext,
   WriteResult,
   ProjectInfo,
   SessionInfo,
@@ -190,7 +189,7 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
         matchedPatterns: ['.claude/projects directory structure'],
         missingPatterns: [],
       };
-    } catch (error) {
+    } catch {
       return {
         canHandle: false,
         confidence: 0,
@@ -310,7 +309,7 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
       // Messages are already in universal format from backend
       return {
         success: true,
-        data: messagePage.messages,
+        data: messagePage.messages as unknown as UniversalMessage[],
         pagination: {
           hasMore: messagePage.has_more,
           nextOffset: messagePage.next_offset,
@@ -412,7 +411,7 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
   // ERROR RECOVERY (REQUIRED)
   // ------------------------------------------------------------------------
 
-  handleError(error: Error, _context: ErrorContext): ErrorRecovery {
+  handleError(error: Error): ErrorRecovery {
     const errorCode = classifyError(error);
 
     switch (errorCode) {

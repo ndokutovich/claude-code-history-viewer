@@ -107,7 +107,7 @@ pub async fn create_claude_project(
         // Try to create it if it's the default path
         if is_default_path {
             fs::create_dir_all(&parent_path)
-                .map_err(|e| format!("Failed to create .claude/projects directory: {}", e))?;
+                .map_err(|e| format!("Failed to create .claude/projects directory: {e}"))?;
         } else {
             return Err(format!(
                 "Parent path does not exist: {}",
@@ -129,7 +129,7 @@ pub async fn create_claude_project(
 
     // Create the directory
     fs::create_dir_all(&project_path)
-        .map_err(|e| format!("Failed to create project directory: {}", e))?;
+        .map_err(|e| format!("Failed to create project directory: {e}"))?;
 
     Ok(CreateProjectResponse {
         project_path: project_path.to_string_lossy().to_string(),
@@ -156,7 +156,7 @@ pub async fn create_claude_session(
     let session_id = Uuid::new_v4().to_string();
 
     // Create session file path: {project_path}/{session_id}.jsonl
-    let session_file_path = project_path.join(format!("{}.jsonl", session_id));
+    let session_file_path = project_path.join(format!("{session_id}.jsonl"));
 
     // Check if session file already exists
     if session_file_path.exists() {
@@ -168,7 +168,7 @@ pub async fn create_claude_session(
 
     // Create the JSONL file
     let file = File::create(&session_file_path)
-        .map_err(|e| format!("Failed to create session file: {}", e))?;
+        .map_err(|e| format!("Failed to create session file: {e}"))?;
 
     let mut writer = BufWriter::new(file);
 
@@ -190,17 +190,21 @@ pub async fn create_claude_session(
 
     // Write summary message (if provided)
     if let Some(summary) = &request.summary {
-        let summary_msg = create_summary_message(&summary, &session_id, &request.messages);
+        let summary_msg = create_summary_message(summary, &session_id, &request.messages);
         write_jsonl_line(&mut writer, &summary_msg)?;
     }
 
     // Write all messages
     let message_count = request.messages.len();
     // Use provided cwd if available, otherwise fall back to project_path
-    let cwd_path = request.cwd.as_deref().unwrap_or(request.project_path.as_str());
+    let cwd_path = request
+        .cwd
+        .as_deref()
+        .unwrap_or(request.project_path.as_str());
     let mut previous_uuid: Option<String> = None;
     for (idx, msg) in request.messages.iter().enumerate() {
-        let jsonl_msg = convert_to_jsonl_format(msg, &session_id, idx, cwd_path, previous_uuid.as_deref())?;
+        let jsonl_msg =
+            convert_to_jsonl_format(msg, &session_id, idx, cwd_path, previous_uuid.as_deref());
 
         // Extract the UUID we just generated for use as parent of next message
         if let Some(uuid) = jsonl_msg.get("uuid").and_then(|v| v.as_str()) {
@@ -213,7 +217,7 @@ pub async fn create_claude_session(
     // Flush to ensure all data is written
     writer
         .flush()
-        .map_err(|e| format!("Failed to flush writer: {}", e))?;
+        .map_err(|e| format!("Failed to flush writer: {e}"))?;
 
     Ok(CreateSessionResponse {
         session_path: session_file_path.to_string_lossy().to_string(),
@@ -258,7 +262,7 @@ pub async fn append_to_claude_session(
     let file = OpenOptions::new()
         .append(true)
         .open(&session_file_path)
-        .map_err(|e| format!("Failed to open session file: {}", e))?;
+        .map_err(|e| format!("Failed to open session file: {e}"))?;
 
     let mut writer = BufWriter::new(file);
 
@@ -266,7 +270,8 @@ pub async fn append_to_claude_session(
     let message_count = messages.len();
     let mut previous_uuid = last_uuid;
     for (idx, msg) in messages.iter().enumerate() {
-        let jsonl_msg = convert_to_jsonl_format(msg, &session_id, idx, cwd_path, previous_uuid.as_deref())?;
+        let jsonl_msg =
+            convert_to_jsonl_format(msg, &session_id, idx, cwd_path, previous_uuid.as_deref());
 
         // Extract the UUID we just generated for use as parent of next message
         if let Some(uuid) = jsonl_msg.get("uuid").and_then(|v| v.as_str()) {
@@ -279,7 +284,7 @@ pub async fn append_to_claude_session(
     // Flush to ensure all data is written
     writer
         .flush()
-        .map_err(|e| format!("Failed to flush writer: {}", e))?;
+        .map_err(|e| format!("Failed to flush writer: {e}"))?;
 
     Ok(message_count)
 }
@@ -302,8 +307,8 @@ pub async fn extract_message_range(
     }
 
     // Read the JSONL file
-    let file = File::open(&session_file_path)
-        .map_err(|e| format!("Failed to open session file: {}", e))?;
+    let file =
+        File::open(&session_file_path).map_err(|e| format!("Failed to open session file: {e}"))?;
 
     let reader = BufReader::new(file);
 
@@ -324,7 +329,10 @@ pub async fn extract_message_range(
 
         // Extract summary if present
         if msg.get("type").and_then(|t| t.as_str()) == Some("summary") {
-            summary = msg.get("summary").and_then(|s| s.as_str()).map(|s| s.to_string());
+            summary = msg
+                .get("summary")
+                .and_then(|s| s.as_str())
+                .map(std::string::ToString::to_string);
             continue;
         }
 
@@ -339,7 +347,11 @@ pub async fn extract_message_range(
         }
 
         // Skip sidechain messages
-        if msg.get("isSidechain").and_then(|v| v.as_bool()).unwrap_or(false) {
+        if msg
+            .get("isSidechain")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false)
+        {
             continue;
         }
 
@@ -351,7 +363,7 @@ pub async fn extract_message_range(
         all_messages
             .iter()
             .position(|msg| msg.get("uuid").and_then(|v| v.as_str()) == Some(start_id))
-            .ok_or_else(|| format!("Start message ID not found: {}", start_id))?
+            .ok_or_else(|| format!("Start message ID not found: {start_id}"))?
     } else {
         0 // Start from beginning
     };
@@ -360,7 +372,7 @@ pub async fn extract_message_range(
         all_messages
             .iter()
             .position(|msg| msg.get("uuid").and_then(|v| v.as_str()) == Some(end_id))
-            .ok_or_else(|| format!("End message ID not found: {}", end_id))?
+            .ok_or_else(|| format!("End message ID not found: {end_id}"))?
     } else {
         all_messages.len() - 1 // Go to end
     };
@@ -368,8 +380,7 @@ pub async fn extract_message_range(
     // Validate range
     if start_idx > end_idx {
         return Err(format!(
-            "Invalid range: start index ({}) is after end index ({})",
-            start_idx, end_idx
+            "Invalid range: start index ({start_idx}) is after end index ({end_idx})"
         ));
     }
 
@@ -381,50 +392,67 @@ pub async fn extract_message_range(
 
     for msg in extracted_messages {
         // Extract the nested "message" object
-        let message_obj = match msg.get("message") {
-            Some(obj) => obj,
-            None => {
-                // Skip messages without a message object (malformed or special types)
-                eprintln!("Warning: Skipping message without 'message' object: {}", msg.get("uuid").and_then(|v| v.as_str()).unwrap_or("unknown"));
-                continue;
-            }
+        let message_obj = if let Some(obj) = msg.get("message") {
+            obj
+        } else {
+            // Skip messages without a message object (malformed or special types)
+            eprintln!(
+                "Warning: Skipping message without 'message' object: {}",
+                msg.get("uuid")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown")
+            );
+            continue;
         };
 
-        let role = match message_obj.get("role").and_then(|v| v.as_str()) {
-            Some(r) => r.to_string(),
-            None => {
-                eprintln!("Warning: Skipping message without 'role': {}", msg.get("uuid").and_then(|v| v.as_str()).unwrap_or("unknown"));
-                continue;
-            }
+        let role = if let Some(r) = message_obj.get("role").and_then(|v| v.as_str()) {
+            r.to_string()
+        } else {
+            eprintln!(
+                "Warning: Skipping message without 'role': {}",
+                msg.get("uuid")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown")
+            );
+            continue;
         };
 
-        let content = match message_obj.get("content") {
-            Some(c) => c.clone(),
-            None => {
-                eprintln!("Warning: Skipping message without 'content': {}", msg.get("uuid").and_then(|v| v.as_str()).unwrap_or("unknown"));
-                continue;
-            }
+        let content = if let Some(c) = message_obj.get("content") {
+            c.clone()
+        } else {
+            eprintln!(
+                "Warning: Skipping message without 'content': {}",
+                msg.get("uuid")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown")
+            );
+            continue;
         };
 
-        let model = message_obj.get("model").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let model = message_obj
+            .get("model")
+            .and_then(|v| v.as_str())
+            .map(std::string::ToString::to_string);
 
         // Extract usage if present
-        let usage = if let Some(usage_obj) = message_obj.get("usage") {
-            Some(TokenUsageInput {
-                input_tokens: usage_obj.get("input_tokens").and_then(|v| v.as_i64()).map(|v| v as i32),
-                output_tokens: usage_obj.get("output_tokens").and_then(|v| v.as_i64()).map(|v| v as i32),
-                cache_creation_input_tokens: usage_obj
-                    .get("cache_creation_input_tokens")
-                    .and_then(|v| v.as_i64())
-                    .map(|v| v as i32),
-                cache_read_input_tokens: usage_obj
-                    .get("cache_read_input_tokens")
-                    .and_then(|v| v.as_i64())
-                    .map(|v| v as i32),
-            })
-        } else {
-            None
-        };
+        let usage = message_obj.get("usage").map(|usage_obj| TokenUsageInput {
+            input_tokens: usage_obj
+                .get("input_tokens")
+                .and_then(serde_json::Value::as_i64)
+                .map(|v| v as i32),
+            output_tokens: usage_obj
+                .get("output_tokens")
+                .and_then(serde_json::Value::as_i64)
+                .map(|v| v as i32),
+            cache_creation_input_tokens: usage_obj
+                .get("cache_creation_input_tokens")
+                .and_then(serde_json::Value::as_i64)
+                .map(|v| v as i32),
+            cache_read_input_tokens: usage_obj
+                .get("cache_read_input_tokens")
+                .and_then(serde_json::Value::as_i64)
+                .map(|v| v as i32),
+        });
 
         // Extract tool_use and tool_use_result from top level
         let tool_use = msg.get("toolUse").cloned();
@@ -490,14 +518,14 @@ fn create_summary_message(
     })
 }
 
-/// Helper: Convert MessageInput to Claude Code JSONL format
+/// Helper: Convert `MessageInput` to Claude Code JSONL format
 fn convert_to_jsonl_format(
     msg: &MessageInput,
     session_id: &str,
     _idx: usize,
     project_path: &str,
     previous_uuid: Option<&str>,
-) -> Result<serde_json::Value, String> {
+) -> serde_json::Value {
     // Generate UUID for this message
     let msg_uuid = Uuid::new_v4().to_string();
     let timestamp = Utc::now().to_rfc3339();
@@ -562,7 +590,10 @@ fn convert_to_jsonl_format(
         if let Some(obj) = jsonl_msg.as_object_mut() {
             obj.insert(
                 "requestId".to_string(),
-                serde_json::Value::String(format!("req_{}", Uuid::new_v4().to_string().replace("-", ""))),
+                serde_json::Value::String(format!(
+                    "req_{}",
+                    Uuid::new_v4().to_string().replace('-', "")
+                )),
             );
         }
     }
@@ -605,16 +636,15 @@ fn convert_to_jsonl_format(
         }
     }
 
-    Ok(jsonl_msg)
+    jsonl_msg
 }
 
 /// Helper: Write a JSON object as a JSONL line
 fn write_jsonl_line<W: Write>(writer: &mut W, value: &serde_json::Value) -> Result<(), String> {
     let json_string =
-        serde_json::to_string(value).map_err(|e| format!("Failed to serialize JSON: {}", e))?;
+        serde_json::to_string(value).map_err(|e| format!("Failed to serialize JSON: {e}"))?;
 
-    writeln!(writer, "{}", json_string)
-        .map_err(|e| format!("Failed to write JSONL line: {}", e))?;
+    writeln!(writer, "{json_string}").map_err(|e| format!("Failed to write JSONL line: {e}"))?;
 
     Ok(())
 }
@@ -623,21 +653,21 @@ fn write_jsonl_line<W: Write>(writer: &mut W, value: &serde_json::Value) -> Resu
 fn get_last_message_uuid(session_file_path: &PathBuf) -> Result<Option<String>, String> {
     use std::io::{BufRead, BufReader};
 
-    let file = File::open(session_file_path)
-        .map_err(|e| format!("Failed to open session file: {}", e))?;
+    let file =
+        File::open(session_file_path).map_err(|e| format!("Failed to open session file: {e}"))?;
 
     let reader = BufReader::new(file);
     let mut last_uuid: Option<String> = None;
 
     // Read all lines and extract UUID from the last non-empty line
     for line in reader.lines() {
-        let line = line.map_err(|e| format!("Failed to read line: {}", e))?;
+        let line = line.map_err(|e| format!("Failed to read line: {e}"))?;
         if line.trim().is_empty() {
             continue;
         }
 
-        let msg: serde_json::Value = serde_json::from_str(&line)
-            .map_err(|e| format!("Failed to parse JSONL line: {}", e))?;
+        let msg: serde_json::Value =
+            serde_json::from_str(&line).map_err(|e| format!("Failed to parse JSONL line: {e}"))?;
 
         if let Some(uuid) = msg.get("uuid").and_then(|v| v.as_str()) {
             last_uuid = Some(uuid.to_string());

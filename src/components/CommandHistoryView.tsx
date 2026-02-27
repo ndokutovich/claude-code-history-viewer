@@ -5,16 +5,19 @@ import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
 import type { UIMessage } from "@/types";
 import { extractBashCommand } from "@/utils/messageFilters";
+import { useAppStore } from "@/store/useAppStore";
 
 interface CommandHistoryViewProps {
-  messages: UIMessage[];
+  messages?: UIMessage[];
 }
 
 /**
  * Command History View - Displays bash commands like `history` command output
  * Shows only the command text in a simple numbered list format
  */
-export const CommandHistoryView: React.FC<CommandHistoryViewProps> = ({ messages }) => {
+export const CommandHistoryView: React.FC<CommandHistoryViewProps> = ({ messages: messagesProp }) => {
+  const storeMessages = useAppStore((s) => s.messages) as UIMessage[];
+  const messages = messagesProp || storeMessages;
   const { t } = useTranslation("components");
 
   // Extract all bash commands from messages

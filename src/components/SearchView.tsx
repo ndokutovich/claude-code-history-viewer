@@ -7,6 +7,7 @@ import { COLORS } from "@/constants/colors";
 import { SEARCH_NAVIGATION_PAGE_SIZE } from "@/constants/layout";
 import { useTranslation } from "react-i18next";
 import type { UIMessage, UISession } from "@/types";
+import type { ExtendedAppStore, ExtendedUIMessage } from "@/types/storeExtensions";
 import { getSessionTitle } from "@/utils/sessionUtils";
 import { normalizeQuotes } from "@/utils/stringUtils";
 
@@ -21,6 +22,7 @@ interface GroupedSearchResult {
 export const SearchView = () => {
   const { t } = useTranslation("common");
   const { t: tSearch } = useTranslation("search");
+  const store = useAppStore();
   const {
     searchQuery,
     searchResults,
@@ -29,8 +31,9 @@ export const SearchView = () => {
     searchMessages,
     selectSession,
     selectProject,
-    loadProjectSessions,
-  } = useAppStore();
+  } = store;
+  const extStore = store as unknown as ExtendedAppStore;
+  const loadProjectSessions = extStore.loadProjectSessions;
 
   const { actions: analyticsActions } = useAnalytics();
 
@@ -53,7 +56,8 @@ export const SearchView = () => {
       // Group by project path to minimize backend calls
       const projectPaths = new Set<string>();
       searchResults.forEach(msg => {
-        if (msg.projectPath) projectPaths.add(msg.projectPath);
+        const projectPath = (msg as unknown as ExtendedUIMessage).projectPath;
+        if (projectPath) projectPaths.add(projectPath);
       });
 
       console.log("Loading session metadata for projects:", Array.from(projectPaths));
@@ -61,6 +65,7 @@ export const SearchView = () => {
       const sessionMap = new Map<string, UISession>();
 
       // Load sessions for each project (including sidechains for search)
+      if (!loadProjectSessions) return;
       for (const projectPath of projectPaths) {
         try {
           console.log("Loading sessions from:", projectPath);
@@ -88,17 +93,18 @@ export const SearchView = () => {
     const groups = new Map<string, GroupedSearchResult>();
 
     searchResults.forEach((message) => {
+      const msgProjectPath = (message as unknown as ExtendedUIMessage).projectPath;
       if (!groups.has(message.sessionId)) {
         // Find the session in the loaded search result sessions
         const session = searchResultSessions.get(message.sessionId) || null;
 
         if (!session) {
           console.log(`Session not found for sessionId: ${message.sessionId}`);
-          console.log(`Message project path: ${message.projectPath}`);
+          console.log(`Message project path: ${msgProjectPath}`);
           console.log(`Total available sessions: ${searchResultSessions.size}`);
           // Show first 5 session IDs from the same project
           const sameProjectSessions = Array.from(searchResultSessions.entries())
-            .filter(([_, s]) => s.file_path?.includes(message.projectPath || ''))
+            .filter(([_key, s]) => s.file_path?.includes(msgProjectPath || ''))
             .slice(0, 5);
           console.log(`Sample sessions from same project:`, sameProjectSessions.map(([id, s]) => ({
             id,
@@ -110,13 +116,13 @@ export const SearchView = () => {
 
         groups.set(message.sessionId, {
           sessionId: message.sessionId,
-          projectPath: message.projectPath || null,
+          projectPath: msgProjectPath || null,
           session,
           messages: [],
           isExpanded: expandedSessions.has(message.sessionId),
         });
       }
-      groups.get(message.sessionId)!.messages.push(message);
+      groups.get(message.sessionId)!.messages.push(message as UIMessage);
     });
 
     return Array.from(groups.values()).sort(
@@ -179,6 +185,10 @@ export const SearchView = () => {
       await selectProject(project);
 
       // Load all sessions from the project to find the one containing this message
+      if (!loadProjectSessions) {
+        alert("loadProjectSessions not available");
+        return;
+      }
       const projectSessions = await loadProjectSessions(group.projectPath, false);
 
       // The message might be in a file with a different actual_session_id
@@ -204,9 +214,8 @@ export const SearchView = () => {
           last_modified: new Date().toISOString(),
           has_tool_use: false,
           has_errors: false,
-          is_problematic: false,
           summary: group.messages[0]?.content?.toString().substring(0, 100)
-        };
+        } as unknown as UISession;
       }
 
       console.log("Closing search view");
@@ -217,7 +226,7 @@ export const SearchView = () => {
       // Load full conversation with large page size
       // Pass excludeSidechain: false to ensure sidechain messages are loaded
       // (search finds all messages including sidechains, so we need them to be rendered)
-      await selectSession(targetSession, SEARCH_NAVIGATION_PAGE_SIZE, false);
+      await (selectSession as unknown as (session: UISession, pageSize?: number, excludeSidechain?: boolean) => Promise<void>)(targetSession, SEARCH_NAVIGATION_PAGE_SIZE, false);
 
       console.log("Waiting for render...");
       // Scroll to message after a brief delay to allow rendering
@@ -256,13 +265,13 @@ export const SearchView = () => {
     } else if (Array.isArray(message.content)) {
       // Extract all text from array items
       const texts = message.content
-        .filter((c: any) => c.type === "text" && c.text)
-        .map((c: any) => c.text);
+        .filter((c) => c.type === "text" && "text" in c)
+        .map((c) => ("text" in c ? String(c.text) : ""));
       preview = texts.join(" ");
     } else if (message.content && typeof message.content === "object") {
       // Handle object content
-      const obj = message.content as any;
-      if (obj.text) {
+      const obj = message.content as unknown as Record<string, unknown>;
+      if (typeof obj.text === "string") {
         preview = obj.text;
       } else if (obj.content && typeof obj.content === "string") {
         preview = obj.content;

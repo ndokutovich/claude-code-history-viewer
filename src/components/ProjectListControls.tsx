@@ -13,22 +13,38 @@ import {
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
 } from "./ui/dropdown-menu";
+import type { ExtendedAppStore, ProjectListPrefs } from "../types/storeExtensions";
 
 interface ProjectListControlsProps {
   isLoadingSearch?: boolean;
 }
 
+const DEFAULT_PREFS: ProjectListPrefs = {
+  groupBy: "source",
+  sortBy: "date",
+  sortOrder: "desc",
+  hideEmptyProjects: false,
+  hideEmptySessions: false,
+  hideAgentSessions: false,
+  sessionSearchQuery: "",
+};
+
 export const ProjectListControls: React.FC<ProjectListControlsProps> = ({ isLoadingSearch = false }) => {
   const { t } = useTranslation("components");
+  const store = useAppStore();
   const {
-    projectListPreferences,
-    setProjectListPreferences,
     initializeApp,
     selectedProject,
     selectedSession,
     selectProject,
     selectSession,
-  } = useAppStore();
+  } = store;
+  const extStore = store as unknown as ExtendedAppStore;
+  const projectListPreferences: ProjectListPrefs = extStore.projectListPreferences || DEFAULT_PREFS;
+  const setProjectListPreferences = extStore.setProjectListPreferences;
+  const updatePrefs = (prefs: Partial<ProjectListPrefs>) => {
+    if (setProjectListPreferences) setProjectListPreferences(prefs);
+  };
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -116,7 +132,7 @@ export const ProjectListControls: React.FC<ProjectListControlsProps> = ({ isLoad
                 : projectListPreferences.groupBy === "none"
                 ? "sessions"
                 : "source";
-            setProjectListPreferences({ groupBy: next });
+            updatePrefs({ groupBy: next });
           }}
           className="text-xs"
           title={t(`projectListControls.groupBy.${projectListPreferences.groupBy}`)}
@@ -177,26 +193,26 @@ export const ProjectListControls: React.FC<ProjectListControlsProps> = ({ isLoad
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem
-              onClick={() => setProjectListPreferences({ sortBy: "name" })}
+              onClick={() => updatePrefs({ sortBy: "name" })}
             >
               {t("projectListControls.sortBy.name")}
               {projectListPreferences.sortBy === "name" && " ✓"}
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => setProjectListPreferences({ sortBy: "date" })}
+              onClick={() => updatePrefs({ sortBy: "date" })}
             >
               {t("projectListControls.sortBy.date")}
               {projectListPreferences.sortBy === "date" && " ✓"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => setProjectListPreferences({ sortOrder: "asc" })}
+              onClick={() => updatePrefs({ sortOrder: "asc" })}
             >
               {t("projectListControls.sortOrder.asc")}
               {projectListPreferences.sortOrder === "asc" && " ✓"}
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => setProjectListPreferences({ sortOrder: "desc" })}
+              onClick={() => updatePrefs({ sortOrder: "desc" })}
             >
               {t("projectListControls.sortOrder.desc")}
               {projectListPreferences.sortOrder === "desc" && " ✓"}
@@ -227,7 +243,7 @@ export const ProjectListControls: React.FC<ProjectListControlsProps> = ({ isLoad
           <DropdownMenuCheckboxItem
             checked={projectListPreferences.hideEmptyProjects}
             onCheckedChange={(checked) => {
-              setProjectListPreferences({ hideEmptyProjects: checked });
+              updatePrefs({ hideEmptyProjects: checked });
             }}
           >
             {t("projectListControls.hideEmptyProjects")}
@@ -235,7 +251,7 @@ export const ProjectListControls: React.FC<ProjectListControlsProps> = ({ isLoad
           <DropdownMenuCheckboxItem
             checked={projectListPreferences.hideEmptySessions}
             onCheckedChange={(checked) => {
-              setProjectListPreferences({ hideEmptySessions: checked });
+              updatePrefs({ hideEmptySessions: checked });
             }}
           >
             {t("projectListControls.hideEmptySessions")}
@@ -243,7 +259,7 @@ export const ProjectListControls: React.FC<ProjectListControlsProps> = ({ isLoad
           <DropdownMenuCheckboxItem
             checked={projectListPreferences.hideAgentSessions}
             onCheckedChange={(checked) => {
-              setProjectListPreferences({ hideAgentSessions: checked });
+              updatePrefs({ hideAgentSessions: checked });
             }}
           >
             {t("projectListControls.hideAgentSessions")}
@@ -251,7 +267,7 @@ export const ProjectListControls: React.FC<ProjectListControlsProps> = ({ isLoad
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() =>
-              setProjectListPreferences({
+              updatePrefs({
                 hideEmptyProjects: false,
                 hideEmptySessions: false,
                 hideAgentSessions: false,
@@ -276,7 +292,7 @@ export const ProjectListControls: React.FC<ProjectListControlsProps> = ({ isLoad
             type="text"
             placeholder={t("projectListControls.searchPlaceholder", "Search sessions...")}
             value={projectListPreferences.sessionSearchQuery}
-            onChange={(e) => setProjectListPreferences({ sessionSearchQuery: e.target.value })}
+            onChange={(e) => updatePrefs({ sessionSearchQuery: e.target.value })}
             className="pl-9 pr-9 h-8 text-sm bg-white dark:bg-gray-900"
             disabled={isLoadingSearch}
           />
@@ -284,7 +300,7 @@ export const ProjectListControls: React.FC<ProjectListControlsProps> = ({ isLoad
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setProjectListPreferences({ sessionSearchQuery: '' })}
+              onClick={() => updatePrefs({ sessionSearchQuery: '' })}
               className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
               aria-label={t("projectListControls.clearSearch", "Clear search")}
             >

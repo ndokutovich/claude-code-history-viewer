@@ -5,6 +5,7 @@
 // Reference: .claude/CLEAN_CODE_PATTERNS.md - Violation Category 4
 
 import type { UIMessage, MessageBuilder } from '@/types';
+import type { ExtendedUIMessage } from '@/types/storeExtensions';
 
 /**
  * Converts a single UIMessage to MessageBuilder format
@@ -14,15 +15,16 @@ import type { UIMessage, MessageBuilder } from '@/types';
  * @returns MessageBuilder ready for session creation
  */
 export function convertUIMessageToBuilder(msg: UIMessage): MessageBuilder {
+  const ext = msg as unknown as ExtendedUIMessage;
   return {
     id: `imported-${msg.uuid}`,
-    role: msg.type, // UIMessage uses 'type' for role
+    role: msg.type as MessageBuilder['role'], // UIMessage uses 'type' for role
     content: typeof msg.content === 'string'
       ? msg.content
       : JSON.stringify(msg.content),
     parent_id: msg.parentUuid,
-    model: msg.model,
-    usage: msg.usage,
+    model: ext.model,
+    usage: ext.usage as MessageBuilder['usage'],
     isExpanded: false,
   };
 }

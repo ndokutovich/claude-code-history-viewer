@@ -20,10 +20,17 @@ export default tseslint.config([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      }],
+    },
   },
   {
     // Allow exporting CVA variants alongside components (shadcn/ui pattern)
-    files: ['src/components/ui/**/*.{ts,tsx}', 'src/components/CollapsibleToolResult.tsx'],
+    files: ['src/components/ui/**/*.{ts,tsx}', 'src/components/CollapsibleToolResult.tsx', 'src/components/icons/ProviderIcons.tsx'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

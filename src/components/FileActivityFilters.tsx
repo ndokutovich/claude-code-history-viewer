@@ -4,10 +4,15 @@ import { useTranslation } from "react-i18next";
 import { Search, X, Filter } from "lucide-react";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
+import type { ExtendedAppStore } from "../types/storeExtensions";
 
 export const FileActivityFilters = () => {
   const { t } = useTranslation("components");
-  const { fileActivityFilters, setFileActivityFilters, selectedProject, loadFileActivities } = useAppStore();
+  const store = useAppStore();
+  const { fileActivityFilters, setFileActivityFilters, selectedProject } = store;
+  // Fork expects loadFileActivities(projectPath, filters) but upstream has (sessionId, projectPath)
+  const extStore = store as unknown as ExtendedAppStore;
+  const loadFileActivities = extStore.loadFileActivities!;
 
   const [searchQuery, setSearchQuery] = useState(fileActivityFilters.searchQuery || "");
   const [selectedOperations, setSelectedOperations] = useState<string[]>(

@@ -51,3 +51,19 @@ export function formatPathWithTilde(path: string, allPaths?: string[]): string {
   const homeDir = allPaths ? detectHomeDir(allPaths) : detectHomeDir([path]);
   return formatDisplayPath(path, homeDir);
 }
+
+/**
+ * Extract the file name from a file path (cross-platform: handles both / and \)
+ */
+export function getFileName(filePath: string): string {
+  const parts = filePath.split(/[\\/]/);
+  return parts[parts.length - 1] || filePath;
+}
+
+/**
+ * Extract directory parts from a file path (everything except the file name)
+ */
+export function getDirectoryParts(filePath: string): string[] {
+  const parts = filePath.split(/[\\/]/);
+  return parts.slice(0, -1);
+}

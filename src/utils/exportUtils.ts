@@ -170,8 +170,8 @@ export async function exportToMarkdown(
   messages: UIMessage[],
   sessionTitle: string,
   includeAttachments: boolean = false,
-  _mode: ExportMode = "formatted", // Unused but kept for API consistency
-  _theme: ExportTheme = "light", // Unused but kept for API consistency
+  _mode?: ExportMode, // Unused but kept for API consistency
+  _theme?: ExportTheme, // Unused but kept for API consistency
   filters?: MessageFilters
 ): Promise<string> {
   const isCommandOnly = filters?.showCommandOnly ?? false;
@@ -554,8 +554,8 @@ export async function exportToDocx(
   messages: UIMessage[],
   sessionTitle: string,
   includeAttachments: boolean = false,
-  _mode: ExportMode = "formatted", // Unused but kept for API consistency
-  _theme: ExportTheme = "light", // Unused but kept for API consistency
+  _mode?: ExportMode, // Unused but kept for API consistency
+  _theme?: ExportTheme, // Unused but kept for API consistency
   filters?: MessageFilters
 ): Promise<string> {
   const isCommandOnly = filters?.showCommandOnly ?? false;

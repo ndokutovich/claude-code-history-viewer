@@ -6,7 +6,10 @@
 // CRITICAL: This adapter preserves ALL original Claude Code fields to ensure
 // zero data loss during the migration to universal types.
 
-use crate::models::universal::*;
+use crate::models::universal::{
+    ContentType, ErrorInfo, MessageRole, MessageType, ThinkingBlock, TokenUsage, ToolCall,
+    ToolCallStatus, UniversalContent, UniversalMessage,
+};
 use crate::models::ClaudeMessage;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -14,7 +17,7 @@ use std::collections::HashMap;
 /// Convert Claude Code message to Universal format
 ///
 /// This function carefully maps all Claude Code fields to the universal format,
-/// preserving all original data in provider_metadata to ensure zero data loss.
+/// preserving all original data in `provider_metadata` to ensure zero data loss.
 pub fn claude_message_to_universal(
     msg: &ClaudeMessage,
     project_id: String,
@@ -37,13 +40,18 @@ pub fn claude_message_to_universal(
     let thinking = extract_thinking(msg);
 
     // Convert usage/tokens
-    let tokens = msg.usage.as_ref().map(|u| TokenUsage {
-        input_tokens: u.input_tokens.unwrap_or(0) as i32,
-        output_tokens: u.output_tokens.unwrap_or(0) as i32,
-        total_tokens: (u.input_tokens.unwrap_or(0) + u.output_tokens.unwrap_or(0)) as i32,
-        cache_creation_tokens: u.cache_creation_input_tokens.map(|t| t as i32),
-        cache_read_tokens: u.cache_read_input_tokens.map(|t| t as i32),
-        service_tier: u.service_tier.clone(),
+    #[allow(clippy::cast_possible_wrap)]
+    let tokens = msg.usage.as_ref().map(|u| {
+        let input = u.input_tokens.unwrap_or(0);
+        let output = u.output_tokens.unwrap_or(0);
+        TokenUsage {
+            input_tokens: input as i32,
+            output_tokens: output as i32,
+            total_tokens: (input + output) as i32,
+            cache_creation_tokens: u.cache_creation_input_tokens.map(|t| t as i32),
+            cache_read_tokens: u.cache_read_input_tokens.map(|t| t as i32),
+            service_tier: u.service_tier.clone(),
+        }
     });
 
     // Extract error information from tool results
@@ -136,7 +144,7 @@ pub fn claude_message_to_universal(
     }
 }
 
-/// Determine MessageRole from Claude Code message
+/// Determine `MessageRole` from Claude Code message
 fn determine_role(msg: &ClaudeMessage) -> MessageRole {
     if let Some(ref role_str) = msg.role {
         match role_str.as_str() {
@@ -148,7 +156,6 @@ fn determine_role(msg: &ClaudeMessage) -> MessageRole {
                 // Infer from message_type if role is unknown
                 match msg.message_type.as_str() {
                     "user" => MessageRole::User,
-                    "assistant" => MessageRole::Assistant,
                     _ => MessageRole::Assistant, // Default
                 }
             }
@@ -157,14 +164,13 @@ fn determine_role(msg: &ClaudeMessage) -> MessageRole {
         // Infer from message_type
         match msg.message_type.as_str() {
             "user" => MessageRole::User,
-            "assistant" => MessageRole::Assistant,
             "system" => MessageRole::System,
             _ => MessageRole::Assistant, // Default
         }
     }
 }
 
-/// Determine MessageType from Claude Code message
+/// Determine `MessageType` from Claude Code message
 fn determine_message_type(msg: &ClaudeMessage) -> MessageType {
     // Check if it's a sidechain message
     if msg.is_sidechain == Some(true) {
@@ -174,10 +180,9 @@ fn determine_message_type(msg: &ClaudeMessage) -> MessageType {
     // Map based on message_type field
     match msg.message_type.as_str() {
         "summary" => MessageType::Summary,
-        "user" | "assistant" => MessageType::Message,
         "branch" => MessageType::Branch,
         "error" => MessageType::Error,
-        _ => MessageType::Message, // Default
+        _ => MessageType::Message, // Default (includes "user", "assistant")
     }
 }
 
@@ -318,10 +323,10 @@ fn convert_content_item(item: &Value) -> Option<UniversalContent> {
     }
 }
 
-/// Convert tool_use field to ToolCall structures
+/// Convert `tool_use` field to `ToolCall` structures
 /// Extracts tool calls from both:
-/// 1. The legacy tool_use field (if present)
-/// 2. The content array items with type: "tool_use" (modern Claude Code format)
+/// 1. The legacy `tool_use` field (if present)
+/// 2. The content array items with type: "`tool_use`" (modern Claude Code format)
 fn convert_tool_use(msg: &ClaudeMessage) -> Option<Vec<ToolCall>> {
     let mut tool_calls = Vec::new();
 
@@ -348,15 +353,13 @@ fn convert_tool_use(msg: &ClaudeMessage) -> Option<Vec<ToolCall>> {
 
     // Extract from content array (modern Claude Code format)
     // Tool calls are stored as content items with type: "tool_use"
-    if let Some(ref content_value) = msg.content {
-        if let Value::Array(items) = content_value {
-            for item in items {
-                if let Some(item_type) = item.get("type").and_then(|t| t.as_str()) {
-                    if item_type == "tool_use" {
-                        if let Value::Object(obj) = item {
-                            if let Some(tool_call) = parse_tool_use_object(obj) {
-                                tool_calls.push(tool_call);
-                            }
+    if let Some(Value::Array(items)) = msg.content.as_ref() {
+        for item in items {
+            if let Some(item_type) = item.get("type").and_then(|t| t.as_str()) {
+                if item_type == "tool_use" {
+                    if let Value::Object(obj) = item {
+                        if let Some(tool_call) = parse_tool_use_object(obj) {
+                            tool_calls.push(tool_call);
                         }
                     }
                 }
@@ -376,7 +379,7 @@ fn convert_tool_use(msg: &ClaudeMessage) -> Option<Vec<ToolCall>> {
     }
 }
 
-/// Parse a tool use object into ToolCall
+/// Parse a tool use object into `ToolCall`
 fn parse_tool_use_object(obj: &serde_json::Map<String, Value>) -> Option<ToolCall> {
     let id = obj.get("id")?.as_str()?.to_string();
     let name = obj.get("name")?.as_str()?.to_string();
@@ -400,21 +403,19 @@ fn parse_tool_use_object(obj: &serde_json::Map<String, Value>) -> Option<ToolCal
 
 /// Extract thinking blocks from content
 fn extract_thinking(msg: &ClaudeMessage) -> Option<ThinkingBlock> {
-    if let Some(ref content_value) = msg.content {
-        if let Value::Array(items) = content_value {
-            for item in items {
-                if let Some(item_type) = item.get("type").and_then(|t| t.as_str()) {
-                    if item_type == "thinking" {
-                        if let Some(thinking_text) = item.get("thinking").and_then(|t| t.as_str()) {
-                            return Some(ThinkingBlock {
-                                content: thinking_text.to_string(),
-                                signature: item
-                                    .get("signature")
-                                    .and_then(|s| s.as_str())
-                                    .map(String::from),
-                                model: msg.model.clone(),
-                            });
-                        }
+    if let Some(Value::Array(items)) = msg.content.as_ref() {
+        for item in items {
+            if let Some(item_type) = item.get("type").and_then(|t| t.as_str()) {
+                if item_type == "thinking" {
+                    if let Some(thinking_text) = item.get("thinking").and_then(|t| t.as_str()) {
+                        return Some(ThinkingBlock {
+                            content: thinking_text.to_string(),
+                            signature: item
+                                .get("signature")
+                                .and_then(|s| s.as_str())
+                                .map(String::from),
+                            model: msg.model.clone(),
+                        });
                     }
                 }
             }
@@ -461,24 +462,22 @@ fn extract_errors(msg: &ClaudeMessage) -> Option<Vec<ErrorInfo>> {
     }
 
     // Check content array for tool_result errors
-    if let Some(ref content_value) = msg.content {
-        if let Value::Array(items) = content_value {
-            for item in items {
-                if let Some("tool_result") = item.get("type").and_then(|t| t.as_str()) {
-                    if let Some(Value::Bool(true)) = item.get("is_error") {
-                        let error_msg = item
-                            .get("content")
-                            .and_then(|c| c.as_str())
-                            .unwrap_or("Unknown error")
-                            .to_string();
+    if let Some(Value::Array(items)) = msg.content.as_ref() {
+        for item in items {
+            if let Some("tool_result") = item.get("type").and_then(|t| t.as_str()) {
+                if let Some(Value::Bool(true)) = item.get("is_error") {
+                    let error_msg = item
+                        .get("content")
+                        .and_then(|c| c.as_str())
+                        .unwrap_or("Unknown error")
+                        .to_string();
 
-                        errors.push(ErrorInfo {
-                            code: "tool_result_error".to_string(),
-                            message: error_msg,
-                            details: Some(item.clone()),
-                            timestamp: msg.timestamp.clone(),
-                        });
-                    }
+                    errors.push(ErrorInfo {
+                        code: "tool_result_error".to_string(),
+                        message: error_msg,
+                        details: Some(item.clone()),
+                        timestamp: msg.timestamp.clone(),
+                    });
                 }
             }
         }
@@ -492,7 +491,7 @@ fn extract_errors(msg: &ClaudeMessage) -> Option<Vec<ErrorInfo>> {
 }
 
 /// Extract project ID from project path or file path
-/// Uses std::path for cross-platform compatibility (Windows, macOS, Linux)
+/// Uses `std::path` for cross-platform compatibility (Windows, macOS, Linux)
 pub fn extract_project_id(project_path: &Option<String>, file_path: &str) -> String {
     // Prefer explicit project_path
     if let Some(ref path) = project_path {

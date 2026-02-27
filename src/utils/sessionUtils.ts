@@ -25,13 +25,13 @@ export function getSessionTitle(
       text = firstMsg.content;
     } else if (Array.isArray(firstMsg.content)) {
       text = firstMsg.content
-        .filter((c: any) => c.type === "text" && c.text)
-        .map((c: any) => c.text)
+        .filter((c) => c.type === "text" && "text" in c)
+        .map((c) => ("text" in c ? String(c.text) : ""))
         .join(" ");
     } else if (typeof firstMsg.content === "object") {
       // Handle object content (e.g., { text: "..." } or { content: "..." })
-      const obj = firstMsg.content as any;
-      if (obj.text) {
+      const obj = firstMsg.content as unknown as Record<string, unknown>;
+      if (typeof obj.text === "string") {
         text = obj.text;
       } else if (obj.content && typeof obj.content === "string") {
         text = obj.content;

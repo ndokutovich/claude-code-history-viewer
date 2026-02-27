@@ -5,6 +5,7 @@
 // Clean code approach: DRY, centralized, testable
 
 import type { UniversalSource } from '../../types/universal';
+import type { IConversationAdapter } from '../base/IAdapter';
 import { adapterRegistry } from '../registry/AdapterRegistry';
 
 // ============================================================================
@@ -14,7 +15,7 @@ import { adapterRegistry } from '../registry/AdapterRegistry';
 export interface CapabilityCheck {
   isSupported: boolean;
   reason?: string; // Human-readable reason if not supported
-  adapter?: any; // Reference to adapter if found
+  adapter?: IConversationAdapter; // Reference to adapter if found
 }
 
 export interface SourceWithCapability extends UniversalSource {

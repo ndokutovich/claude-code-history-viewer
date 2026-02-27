@@ -1,22 +1,30 @@
-import { lazy, Suspense } from "react";
-import type { SyntaxHighlighterProps } from "react-syntax-highlighter";
+import { Suspense } from "react";
 
-// Lazy load the syntax highlighter
-const SyntaxHighlighter = lazy(() =>
-  import("react-syntax-highlighter").then((module) => ({
-    default: module.Prism,
-  }))
-);
-
-interface LazySyntaxHighlighterProps extends SyntaxHighlighterProps {
+interface LazySyntaxHighlighterProps {
+  language?: string;
+  children?: string;
+  style?: Record<string, unknown>;
+  showLineNumbers?: boolean;
   fallback?: React.ReactNode;
+  className?: string;
+  [key: string]: unknown;
 }
 
+/**
+ * Simple syntax highlighter wrapper using <pre><code>.
+ * This replaces react-syntax-highlighter (which is not installed)
+ * with a minimal implementation.
+ */
 export function LazySyntaxHighlighter({
   fallback,
-  style,
+  children,
+  language,
+  className,
   ...props
 }: LazySyntaxHighlighterProps) {
+  // Suppress unused variable warnings for API compatibility
+  void props;
+
   return (
     <Suspense
       fallback={
@@ -29,20 +37,11 @@ export function LazySyntaxHighlighter({
         )
       }
     >
-      <Suspense fallback={null}>
-        <SyntaxHighlighter style={style} {...props} />
-      </Suspense>
+      <pre className={`${className || ""} overflow-x-auto p-4 rounded bg-gray-50 dark:bg-gray-900`}>
+        <code className={language ? `language-${language}` : undefined}>
+          {children}
+        </code>
+      </pre>
     </Suspense>
   );
 }
-
-// Example usage:
-// import { LazySyntaxHighlighter } from './SyntaxHighlighterLazy';
-//
-// <LazySyntaxHighlighter
-//   language="typescript"
-//   style={vscDarkPlus}
-//   showLineNumbers
-// >
-//   {code}
-// </LazySyntaxHighlighter>

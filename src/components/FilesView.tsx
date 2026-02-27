@@ -9,18 +9,22 @@ import type { FileActivity } from "../types";
 import { cn } from "../utils/cn";
 import { COLORS } from "../constants/colors";
 import { EmptyState } from "./ui/EmptyState";
+import type { ExtendedAppStore } from "../types/storeExtensions";
 
 export const FilesView = () => {
   const { t } = useTranslation("components");
+  const store = useAppStore();
   const {
     selectedProject,
     selectedSession,
     fileActivities,
     isLoadingFileActivities,
     error,
-    loadFileActivities,
     fileActivityFilters,
-  } = useAppStore();
+  } = store;
+  // Fork expects loadFileActivities(projectPath, filters) but upstream has (sessionId, projectPath)
+  const extStore = store as unknown as ExtendedAppStore;
+  const loadFileActivities = extStore.loadFileActivities!;
 
   const [selectedFile, setSelectedFile] = useState<FileActivity | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
@@ -109,7 +113,7 @@ export const FilesView = () => {
   }
 
   // Error state
-  if (error && error.type === "LOAD_FILE_ACTIVITIES") {
+  if (error && (error.type as string) === "LOAD_FILE_ACTIVITIES") {
     return (
       <div className="flex-1">
         <EmptyState

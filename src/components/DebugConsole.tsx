@@ -20,21 +20,21 @@ export const DebugConsole = () => {
     const originalError = console.error;
     const originalWarn = console.warn;
 
-    console.log = (...args: any[]) => {
+    console.log = (...args: unknown[]) => {
       originalLog(...args);
       addLog("log", args.map(arg =>
         typeof arg === "object" ? JSON.stringify(arg, null, 2) : String(arg)
       ).join(" "));
     };
 
-    console.error = (...args: any[]) => {
+    console.error = (...args: unknown[]) => {
       originalError(...args);
       addLog("error", args.map(arg =>
         typeof arg === "object" ? JSON.stringify(arg, null, 2) : String(arg)
       ).join(" "));
     };
 
-    console.warn = (...args: any[]) => {
+    console.warn = (...args: unknown[]) => {
       originalWarn(...args);
       addLog("warn", args.map(arg =>
         typeof arg === "object" ? JSON.stringify(arg, null, 2) : String(arg)

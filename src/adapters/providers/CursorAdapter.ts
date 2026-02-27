@@ -15,7 +15,6 @@ import type {
   SearchFilters as AdapterSearchFilters,
   HealthStatus,
   ErrorRecovery,
-  ErrorContext,
 } from '../base/IAdapter';
 import { classifyError } from '../base/IAdapter';
 import type {
@@ -209,7 +208,7 @@ export class CursorAdapter implements IConversationAdapter {
         matchedPatterns: ['Cursor/User/workspaceStorage directory structure'],
         missingPatterns: [],
       };
-    } catch (error) {
+    } catch {
       return {
         canHandle: false,
         confidence: 0,
@@ -496,7 +495,7 @@ export class CursorAdapter implements IConversationAdapter {
   // ERROR RECOVERY (REQUIRED)
   // ------------------------------------------------------------------------
 
-  handleError(error: Error, _context: ErrorContext): ErrorRecovery {
+  handleError(error: Error): ErrorRecovery {
     const errorCode = classifyError(error);
 
     switch (errorCode) {

@@ -4,7 +4,10 @@
 // Tauri commands for reading Cursor IDE conversation history from SQLite databases
 
 use crate::models::universal::TokenUsage;
-use crate::models::universal::*;
+use crate::models::universal::{
+    ContentType, MessageRole, MessageType, ToolCall, ToolCallStatus, UniversalContent,
+    UniversalMessage,
+};
 use chrono::Utc;
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
@@ -192,7 +195,7 @@ pub async fn scan_cursor_workspaces(cursor_path: String) -> Result<Vec<CursorWor
         .min_depth(1)
         .max_depth(1)
         .into_iter()
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
         .filter(|e| e.file_type().is_dir())
     {
         let workspace_id = entry.file_name().to_string_lossy().to_string();
@@ -235,14 +238,14 @@ pub async fn scan_cursor_workspaces(cursor_path: String) -> Result<Vec<CursorWor
 }
 
 /// Count the number of composers (sessions) in a workspace that actually have messages
-/// Returns (count, most_recent_timestamp)
+/// Returns (count, `most_recent_timestamp`)
 fn count_workspace_composers_with_messages(
     cursor_base: &PathBuf,
     state_db: &PathBuf,
 ) -> Result<(usize, Option<String>), String> {
     // Open workspace database
     let conn = Connection::open(state_db)
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open workspace DB: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open workspace DB: {e}"))?;
 
     // Try to read composer.composerData
     let composer_data_json: Result<String, _> = conn.query_row(
@@ -255,7 +258,7 @@ fn count_workspace_composers_with_messages(
         Ok(json_str) => {
             // Parse composers
             let workspace_composer_data: WorkspaceComposerData = serde_json::from_str(&json_str)
-                .map_err(|e| format!("CURSOR_PARSE_ERROR: Failed to parse composer data: {}", e))?;
+                .map_err(|e| format!("CURSOR_PARSE_ERROR: Failed to parse composer data: {e}"))?;
 
             workspace_composer_data.all_composers
         }
@@ -278,7 +281,7 @@ fn count_workspace_composers_with_messages(
     // Open global database and check which composers have messages
     let global_db = &session_dbs[0];
     let global_conn = Connection::open(global_db)
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open global DB: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open global DB: {e}"))?;
 
     // Build a query to check which session IDs have messages and track most recent
     let mut count = 0;
@@ -327,8 +330,8 @@ pub async fn load_cursor_sessions(
     workspace_id: Option<String>,
 ) -> Result<Vec<CursorSession>, String> {
     println!("🔍 [Rust] load_cursor_sessions called:");
-    println!("  cursor_path: {}", cursor_path);
-    println!("  workspace_id: {:?}", workspace_id);
+    println!("  cursor_path: {cursor_path}");
+    println!("  workspace_id: {workspace_id:?}");
 
     let cursor_base = PathBuf::from(&cursor_path);
 
@@ -355,7 +358,7 @@ pub async fn load_cursor_sessions(
 
     // Open workspace database to get session list
     let workspace_conn = Connection::open(&workspace_storage_path)
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open workspace database: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open workspace database: {e}"))?;
 
     // Try to read composer.composerData from ItemTable (optional)
     let composer_data_json: Option<String> = workspace_conn
@@ -371,10 +374,7 @@ pub async fn load_cursor_sessions(
 
         let workspace_composer_data: WorkspaceComposerData = serde_json::from_str(&json_str)
             .map_err(|e| {
-                format!(
-                    "CURSOR_PARSE_ERROR: Failed to parse composer.composerData JSON: {}",
-                    e
-                )
+                format!("CURSOR_PARSE_ERROR: Failed to parse composer.composerData JSON: {e}")
             })?;
 
         println!(
@@ -401,7 +401,7 @@ pub async fn load_cursor_sessions(
         println!("  📂 Opening global database: {}", global_db.display());
 
         let conn = Connection::open(&global_db)
-            .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open global database: {}", e))?;
+            .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open global database: {e}"))?;
 
         // Create a map of session_id -> message_count from global database
         let mut session_message_counts: HashMap<String, usize> = HashMap::new();
@@ -415,7 +415,7 @@ pub async fn load_cursor_sessions(
              WHERE key LIKE 'bubbleId:%' \
              GROUP BY session_id",
             )
-            .map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare session query: {}", e))?;
+            .map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare session query: {e}"))?;
 
         let session_rows = stmt
             .query_map(params![], |row| {
@@ -424,11 +424,11 @@ pub async fn load_cursor_sessions(
                     row.get::<_, i64>(1)?,    // message count
                 ))
             })
-            .map_err(|e| format!("CURSOR_DB_ERROR: Failed to query sessions: {}", e))?;
+            .map_err(|e| format!("CURSOR_DB_ERROR: Failed to query sessions: {e}"))?;
 
         for row_result in session_rows {
             let (session_id, message_count) = row_result
-                .map_err(|e| format!("CURSOR_DB_ERROR: Failed to read session row: {}", e))?;
+                .map_err(|e| format!("CURSOR_DB_ERROR: Failed to read session row: {e}"))?;
             session_message_counts.insert(session_id, message_count as usize);
         }
 
@@ -437,7 +437,7 @@ pub async fn load_cursor_sessions(
             session_message_counts.len()
         );
         for (sid, count) in session_message_counts.iter().take(5) {
-            println!("      - {}: {} messages", sid, count);
+            println!("      - {sid}: {count} messages");
         }
         if session_message_counts.len() > 5 {
             println!("      ... and {} more", session_message_counts.len() - 5);
@@ -445,72 +445,7 @@ pub async fn load_cursor_sessions(
 
         // If we have workspace metadata, process only those sessions
         // Otherwise, process ALL sessions found in global DB
-        if !workspace_composers.is_empty() {
-            println!(
-                "  📋 Processing {} workspace composers:",
-                workspace_composers.len()
-            );
-
-            for composer in &workspace_composers {
-                let session_id = &composer.composer_id;
-                let message_count = session_message_counts.get(session_id).copied().unwrap_or(0);
-
-                if message_count == 0 {
-                    println!(
-                        "    ✗ Session {} has no messages in global DB, skipping",
-                        session_id
-                    );
-                    continue;
-                }
-
-                // Use real timestamps from workspace metadata
-                let last_modified_timestamp =
-                    if let Some(last_updated_ms) = composer.last_updated_at {
-                        // Convert milliseconds to seconds
-                        let dt = chrono::DateTime::from_timestamp(
-                            last_updated_ms / 1000,
-                            ((last_updated_ms % 1000) * 1_000_000) as u32,
-                        )
-                        .unwrap_or_else(|| Utc::now());
-                        dt.to_rfc3339()
-                    } else if let Some(created_ms) = composer.created_at {
-                        let dt = chrono::DateTime::from_timestamp(
-                            created_ms / 1000,
-                            ((created_ms % 1000) * 1_000_000) as u32,
-                        )
-                        .unwrap_or_else(|| Utc::now());
-                        dt.to_rfc3339()
-                    } else {
-                        Utc::now().to_rfc3339()
-                    };
-
-                println!(
-                    "    ✓ Session: {} ({} messages, timestamp={})",
-                    session_id, message_count, last_modified_timestamp
-                );
-
-                // Encode session ID, workspace ID, and timestamp in db_path
-                // Format: <db-path>#session=<session-id>#workspace=<workspace-id>#timestamp=<iso-timestamp>
-                let db_path_with_session = format!(
-                    "{}#session={}#workspace={}#timestamp={}",
-                    global_db.to_string_lossy(),
-                    session_id,
-                    workspace_id.clone().unwrap_or_else(|| "unknown".to_string()),
-                    last_modified_timestamp
-                );
-
-                sessions.push(CursorSession {
-                    id: session_id.clone(),
-                    workspace_id: workspace_id
-                        .clone()
-                        .unwrap_or_else(|| "unknown".to_string()),
-                    project_name: "Cursor Chat".to_string(),
-                    db_path: db_path_with_session,
-                    message_count,
-                    last_modified: last_modified_timestamp,
-                });
-            }
-        } else {
+        if workspace_composers.is_empty() {
             // No workspace metadata - we can't determine which sessions belong to this workspace
             // Return empty list instead of returning ALL sessions (which belong to other workspaces)
             println!(
@@ -556,6 +491,69 @@ pub async fn load_cursor_sessions(
                 });
             }
             */
+        } else {
+            println!(
+                "  📋 Processing {} workspace composers:",
+                workspace_composers.len()
+            );
+
+            for composer in &workspace_composers {
+                let session_id = &composer.composer_id;
+                let message_count = session_message_counts.get(session_id).copied().unwrap_or(0);
+
+                if message_count == 0 {
+                    println!("    ✗ Session {session_id} has no messages in global DB, skipping");
+                    continue;
+                }
+
+                // Use real timestamps from workspace metadata
+                let last_modified_timestamp =
+                    if let Some(last_updated_ms) = composer.last_updated_at {
+                        // Convert milliseconds to seconds
+                        let dt = chrono::DateTime::from_timestamp(
+                            last_updated_ms / 1000,
+                            ((last_updated_ms % 1000) * 1_000_000) as u32,
+                        )
+                        .unwrap_or_else(Utc::now);
+                        dt.to_rfc3339()
+                    } else if let Some(created_ms) = composer.created_at {
+                        let dt = chrono::DateTime::from_timestamp(
+                            created_ms / 1000,
+                            ((created_ms % 1000) * 1_000_000) as u32,
+                        )
+                        .unwrap_or_else(Utc::now);
+                        dt.to_rfc3339()
+                    } else {
+                        Utc::now().to_rfc3339()
+                    };
+
+                println!(
+                    "    ✓ Session: {session_id} ({message_count} messages, timestamp={last_modified_timestamp})"
+                );
+
+                // Encode session ID, workspace ID, and timestamp in db_path
+                // Format: <db-path>#session=<session-id>#workspace=<workspace-id>#timestamp=<iso-timestamp>
+                let db_path_with_session = format!(
+                    "{}#session={}#workspace={}#timestamp={}",
+                    global_db.to_string_lossy(),
+                    session_id,
+                    workspace_id
+                        .clone()
+                        .unwrap_or_else(|| "unknown".to_string()),
+                    last_modified_timestamp
+                );
+
+                sessions.push(CursorSession {
+                    id: session_id.clone(),
+                    workspace_id: workspace_id
+                        .clone()
+                        .unwrap_or_else(|| "unknown".to_string()),
+                    project_name: "Cursor Chat".to_string(),
+                    db_path: db_path_with_session,
+                    message_count,
+                    last_modified: last_modified_timestamp,
+                });
+            }
         }
     }
 
@@ -578,8 +576,8 @@ pub async fn load_cursor_messages(
     session_db_path: String,
 ) -> Result<Vec<UniversalMessage>, String> {
     println!("🔍 [Rust] load_cursor_messages called:");
-    println!("  cursor_path: {}", cursor_path);
-    println!("  session_db_path: {}", session_db_path);
+    println!("  cursor_path: {cursor_path}");
+    println!("  session_db_path: {session_db_path}");
 
     // Parse session ID, workspace ID, and timestamp from db_path
     // Format: <db-path>#session=<session-id>#workspace=<workspace-id>#timestamp=<iso-timestamp>
@@ -629,8 +627,8 @@ pub async fn load_cursor_messages(
         return Err("CURSOR_INVALID_ARGUMENT: Session ID not found in db_path. Expected format: <path>#session=<id>#workspace=<ws-id>#timestamp=<timestamp>".to_string());
     };
 
-    println!("  📂 Database: {}", db_path_str);
-    println!("  🆔 Session ID: {}", session_id);
+    println!("  📂 Database: {db_path_str}");
+    println!("  🆔 Session ID: {session_id}");
     println!(
         "  ⏰ Session timestamp: {}",
         session_timestamp.format("%Y-%m-%d %H:%M:%S")
@@ -646,13 +644,10 @@ pub async fn load_cursor_messages(
 
     let canon_db = db_path
         .canonicalize()
-        .map_err(|e| format!("CURSOR_PATH_ERROR: Failed to canonicalize DB path: {}", e))?;
-    let canon_allow = allowed_db.canonicalize().map_err(|e| {
-        format!(
-            "CURSOR_PATH_ERROR: Failed to resolve allowed DB path: {}",
-            e
-        )
-    })?;
+        .map_err(|e| format!("CURSOR_PATH_ERROR: Failed to canonicalize DB path: {e}"))?;
+    let canon_allow = allowed_db
+        .canonicalize()
+        .map_err(|e| format!("CURSOR_PATH_ERROR: Failed to resolve allowed DB path: {e}"))?;
 
     if canon_db != canon_allow {
         return Err(format!(
@@ -663,21 +658,20 @@ pub async fn load_cursor_messages(
 
     if !db_path.exists() {
         return Err(format!(
-            "CURSOR_DB_NOT_FOUND: Session database not found at {}",
-            db_path_str
+            "CURSOR_DB_NOT_FOUND: Session database not found at {db_path_str}"
         ));
     }
 
     let conn = Connection::open(&db_path)
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open database: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open database: {e}"))?;
 
     // Filter messages by session ID: bubbleId:<session-id>:<message-id>
-    let query_pattern = format!("bubbleId:{}:%", session_id);
-    println!("  🔎 Query pattern: {}", query_pattern);
+    let query_pattern = format!("bubbleId:{session_id}:%");
+    println!("  🔎 Query pattern: {query_pattern}");
 
     let mut stmt = conn
         .prepare("SELECT rowid, key, value FROM cursorDiskKV WHERE key LIKE ?1 ORDER BY rowid")
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare query: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare query: {e}"))?;
 
     let mut messages = Vec::new();
     let rows = stmt
@@ -688,13 +682,13 @@ pub async fn load_cursor_messages(
                 row.get::<_, String>(2)?, // value
             ))
         })
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to query messages: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to query messages: {e}"))?;
 
     // Collect rows first to get min/max rowid for timestamp calculation
-    let row_vec: Vec<(i64, String, String)> = rows.filter_map(|r| r.ok()).collect();
+    let row_vec: Vec<(i64, String, String)> = rows.filter_map(std::result::Result::ok).collect();
 
     if row_vec.is_empty() {
-        println!("  ✗ No messages found for session {}", session_id);
+        println!("  ✗ No messages found for session {session_id}");
         return Ok(messages);
     }
 
@@ -712,26 +706,25 @@ pub async fn load_cursor_messages(
     // Calculate message timestamps: spread them backwards from session timestamp
     // Assume messages span a conversation (estimate based on length)
     // For each 10 messages, assume ~5 minutes average
-    let estimated_duration_minutes = (row_vec.len() as i64) * 5 / 10;
+    let estimated_duration_minutes = i64::try_from(row_vec.len()).unwrap_or(i64::MAX) * 5 / 10;
     let base_time = session_timestamp; // Use session's actual timestamp as end time
 
     for (sequence_number, (rowid, key, value_str)) in row_vec.iter().enumerate() {
         // Parse bubble JSON
-        let bubble: CursorBubble = match serde_json::from_str::<CursorBubble>(&value_str) {
+        let bubble: CursorBubble = match serde_json::from_str::<CursorBubble>(value_str) {
             Ok(b) => b,
             Err(e) => {
-                println!("    ⚠️  Skipping entry with key {}: {}", key, e);
+                println!("    ⚠️  Skipping entry with key {key}: {e}");
                 continue;
             }
         };
 
         // Skip entries without a bubble_type (likely metadata, not messages)
-        let bubble_type = match bubble.bubble_type {
-            Some(t) => t,
-            None => {
-                println!("    ⚠️  Skipping entry without type field: {}", key);
-                continue;
-            }
+        let bubble_type = if let Some(t) = bubble.bubble_type {
+            t
+        } else {
+            println!("    ⚠️  Skipping entry without type field: {key}");
+            continue;
         };
 
         // Skip entries with empty text UNLESS they have toolFormerData
@@ -798,7 +791,7 @@ pub async fn load_cursor_messages(
         let tool_calls = convert_cursor_tool_calls(&bubble);
 
         // Count extracted tool calls for logging
-        let extracted_tool_count = tool_calls.as_ref().map(|t| t.len()).unwrap_or(0);
+        let extracted_tool_count = tool_calls.as_ref().map(std::vec::Vec::len).unwrap_or(0);
         let has_tool_former = bubble.tool_former_data.is_some();
 
         println!(
@@ -816,13 +809,13 @@ pub async fn load_cursor_messages(
             // CORE IDENTITY
             id: key.clone(),
             session_id: session_id.clone(),
-            project_id: "".to_string(),
-            source_id: "".to_string(),
+            project_id: String::new(),
+            source_id: String::new(),
             provider_id: "cursor".to_string(),
 
             // TEMPORAL
             timestamp: message_timestamp.to_rfc3339(),
-            sequence_number: sequence_number as i32,
+            sequence_number: i32::try_from(sequence_number).unwrap_or(i32::MAX),
 
             // ROLE & TYPE
             role,
@@ -984,7 +977,7 @@ pub async fn search_cursor_messages(
     }
 
     let conn = Connection::open(&global_db)
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open global database: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open global database: {e}"))?;
 
     // Search pattern: case-insensitive search in bubble text
     let _search_pattern = format!("%{}%", query.to_lowercase());
@@ -992,7 +985,7 @@ pub async fn search_cursor_messages(
     // Query all bubbles and filter by text content
     let mut stmt = conn.prepare(
         "SELECT rowid, key, value FROM cursorDiskKV WHERE key LIKE 'bubbleId:%' ORDER BY rowid DESC"
-    ).map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare search query: {}", e))?;
+    ).map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare search query: {e}"))?;
 
     let rows = stmt
         .query_map(params![], |row| {
@@ -1002,14 +995,14 @@ pub async fn search_cursor_messages(
                 row.get::<_, String>(2)?,
             ))
         })
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to execute search: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to execute search: {e}"))?;
 
     let mut matching_messages = Vec::new();
     let mut sequence = 0;
 
     for row_result in rows {
         let (rowid, key, value_str) =
-            row_result.map_err(|e| format!("CURSOR_DB_ERROR: Row error: {}", e))?;
+            row_result.map_err(|e| format!("CURSOR_DB_ERROR: Row error: {e}"))?;
 
         // Parse bubble
         let bubble: Result<CursorBubble, _> = serde_json::from_str(&value_str);
@@ -1083,7 +1076,7 @@ pub async fn search_cursor_messages(
                 || bubble.tool_results.iter().any(|result| {
                     result
                         .get("is_error")
-                        .and_then(|v| v.as_bool())
+                        .and_then(serde_json::Value::as_bool)
                         .unwrap_or(false)
                 });
 
@@ -1093,7 +1086,7 @@ pub async fn search_cursor_messages(
         }
 
         // Estimate timestamp (we don't have exact timestamps, use rowid as proxy)
-        let estimated_time = Utc::now() - chrono::Duration::days((rowid / 100) as i64);
+        let estimated_time = Utc::now() - chrono::Duration::days(rowid / 100);
 
         // Apply date range filter
         if let Some(ref date_range) = filters.date_range {
@@ -1189,10 +1182,10 @@ pub async fn search_cursor_messages(
 // TOOL CALL CONVERSION
 // ============================================================================
 
-/// Convert Cursor tool data from toolFormerData into ToolCall structures
+/// Convert Cursor tool data from toolFormerData into `ToolCall` structures
 /// Modern Cursor stores file operations in toolFormerData with this structure:
 /// {
-///   "name": "read_file" | "write_file" | "edit_file" | "list_dir",
+///   "name": "`read_file`" | "`write_file`" | "`edit_file`" | "`list_dir`",
 ///   "params": "{\"targetFile\":\"...\",...}",
 ///   "result": "{\"contents\":\"...\"}"
 /// }
@@ -1381,7 +1374,7 @@ fn find_cursor_session_dbs(cursor_base: &PathBuf) -> Vec<PathBuf> {
                     .and_then(|mut stmt| stmt.query_row(params![], |row| row.get::<_, i64>(0)))
                     .unwrap_or(0);
 
-                println!("      📊 Total bubble messages: {}", bubble_count);
+                println!("      📊 Total bubble messages: {bubble_count}");
 
                 if bubble_count > 0 {
                     println!("      ✓ Has chat messages!");
@@ -1403,20 +1396,20 @@ fn find_cursor_session_dbs(cursor_base: &PathBuf) -> Vec<PathBuf> {
 
 fn extract_project_info(state_db: &PathBuf) -> Result<ProjectInfo, String> {
     let conn = Connection::open(state_db)
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open workspace DB: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open workspace DB: {e}"))?;
 
     // Query ItemTable for history.entries
     let mut stmt = conn
         .prepare("SELECT value FROM ItemTable WHERE key = 'history.entries'")
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare query: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare query: {e}"))?;
 
     let value_str: String = stmt
         .query_row(params![], |row| row.get(0))
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to get history.entries: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to get history.entries: {e}"))?;
 
     // Parse JSON
     let entries: Vec<HistoryEntry> = serde_json::from_str(&value_str)
-        .map_err(|e| format!("CURSOR_PARSE_ERROR: Failed to parse history entries: {}", e))?;
+        .map_err(|e| format!("CURSOR_PARSE_ERROR: Failed to parse history entries: {e}"))?;
 
     // Extract file paths
     let mut file_paths = Vec::new();
@@ -1441,7 +1434,11 @@ fn extract_project_info(state_db: &PathBuf) -> Result<ProjectInfo, String> {
     // Find common prefix
     let common_prefix = find_common_prefix(&file_paths);
     let root_path = common_prefix.trim_end_matches('/').to_string();
-    let project_name = root_path.split('/').last().unwrap_or("Unknown").to_string();
+    let project_name = root_path
+        .split('/')
+        .next_back()
+        .unwrap_or("Unknown")
+        .to_string();
 
     Ok(ProjectInfo {
         name: project_name,
@@ -1490,15 +1487,15 @@ fn find_common_prefix(paths: &[String]) -> String {
 #[allow(dead_code)]
 fn count_cursor_messages(session_db: &PathBuf) -> Result<usize, String> {
     let conn = Connection::open(session_db)
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open database: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open database: {e}"))?;
 
     let mut stmt = conn
         .prepare("SELECT COUNT(*) FROM cursorDiskKV WHERE key LIKE 'bubbleId:%'")
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare count query: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to prepare count query: {e}"))?;
 
     let count: i64 = stmt
         .query_row(params![], |row| row.get(0))
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to count messages: {}", e))?;
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to count messages: {e}"))?;
 
     Ok(count as usize)
 }

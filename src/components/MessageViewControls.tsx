@@ -3,6 +3,15 @@ import { MessageSquare, FileCode, Filter } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
 import { useAppStore } from "@/store/useAppStore";
+import type { MessageFilters } from "@/types";
+import type { ExtendedAppStore } from "@/types/storeExtensions";
+
+const DEFAULT_FILTERS: MessageFilters = {
+  showBashOnly: false,
+  showToolUseOnly: false,
+  showMessagesOnly: false,
+  showCommandOnly: false,
+};
 
 /**
  * Message view controls component
@@ -12,16 +21,29 @@ import { useAppStore } from "@/store/useAppStore";
  */
 export function MessageViewControls() {
   const { t } = useTranslation("components");
-  const { messageViewMode, messageFilters, setMessageViewMode, setMessageFilters } = useAppStore();
+  const store = useAppStore();
+  const extStore = store as unknown as ExtendedAppStore;
+  const messageViewMode: string = extStore.messageViewMode || "formatted";
+  const messageFilters: MessageFilters = extStore.messageFilters || DEFAULT_FILTERS;
+  const setMessageViewMode = extStore.setMessageViewMode;
+  const setMessageFilters = extStore.setMessageFilters;
 
   const hasActiveFilters = Object.values(messageFilters).some(v => v);
+
+  const updateFilters = (partial: Partial<MessageFilters>) => {
+    if (setMessageFilters) setMessageFilters(partial);
+  };
+
+  const updateViewMode = (mode: string) => {
+    if (setMessageViewMode) setMessageViewMode(mode);
+  };
 
   return (
     <div className="flex items-center gap-4">
       {/* View Mode Toggle */}
       <div className={cn("flex items-center gap-1 rounded-lg p-1 bg-gray-100 dark:bg-gray-800")}>
         <button
-          onClick={() => setMessageViewMode("formatted")}
+          onClick={() => updateViewMode("formatted")}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
             messageViewMode === "formatted"
@@ -37,7 +59,7 @@ export function MessageViewControls() {
         </button>
 
         <button
-          onClick={() => setMessageViewMode("raw")}
+          onClick={() => updateViewMode("raw")}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
             messageViewMode === "raw"
@@ -69,7 +91,7 @@ export function MessageViewControls() {
           <input
             type="checkbox"
             checked={messageFilters.showBashOnly}
-            onChange={(e) => setMessageFilters({
+            onChange={(e) => updateFilters({
               showBashOnly: e.target.checked,
               // Disable other filters when enabling this one
               showToolUseOnly: e.target.checked ? false : messageFilters.showToolUseOnly,
@@ -90,7 +112,7 @@ export function MessageViewControls() {
             <input
               type="checkbox"
               checked={messageFilters.showCommandOnly}
-              onChange={(e) => setMessageFilters({
+              onChange={(e) => updateFilters({
                 showCommandOnly: e.target.checked,
               })}
               className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
@@ -105,7 +127,7 @@ export function MessageViewControls() {
           <input
             type="checkbox"
             checked={messageFilters.showToolUseOnly}
-            onChange={(e) => setMessageFilters({
+            onChange={(e) => updateFilters({
               showToolUseOnly: e.target.checked,
               // Disable other filters when enabling this one
               showBashOnly: e.target.checked ? false : messageFilters.showBashOnly,
@@ -123,7 +145,7 @@ export function MessageViewControls() {
           <input
             type="checkbox"
             checked={messageFilters.showMessagesOnly}
-            onChange={(e) => setMessageFilters({
+            onChange={(e) => updateFilters({
               showMessagesOnly: e.target.checked,
               // Disable other filters when enabling this one
               showBashOnly: e.target.checked ? false : messageFilters.showBashOnly,
@@ -140,7 +162,7 @@ export function MessageViewControls() {
         {/* Clear filters button */}
         {hasActiveFilters && (
           <button
-            onClick={() => setMessageFilters({
+            onClick={() => updateFilters({
               showBashOnly: false,
               showToolUseOnly: false,
               showMessagesOnly: false,

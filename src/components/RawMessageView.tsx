@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
 import type { UIMessage } from "@/types";
+import type { ExtendedUIMessage } from "@/types/storeExtensions";
 import { formatTime } from "@/utils/time";
 
 interface RawMessageViewProps {
@@ -19,6 +19,7 @@ export function RawMessageView({ messages }: RawMessageViewProps) {
   const handleCopyMessage = async (message: UIMessage, index: number) => {
     try {
       // Create a clean JSON representation
+      const msgExt = message as unknown as ExtendedUIMessage;
       const cleanMessage = {
         uuid: message.uuid,
         parentUuid: message.parentUuid,
@@ -26,14 +27,14 @@ export function RawMessageView({ messages }: RawMessageViewProps) {
         timestamp: message.timestamp,
         type: message.type,
         content: message.content,
-        toolUse: message.toolUse,
-        toolUseResult: message.toolUseResult,
-        model: message.model,
-        usage: message.usage,
+        toolUse: msgExt.toolUse,
+        toolUseResult: msgExt.toolUseResult,
+        model: msgExt.model,
+        usage: msgExt.usage,
       };
 
       const jsonString = JSON.stringify(cleanMessage, null, 2);
-      await writeText(jsonString);
+      await navigator.clipboard.writeText(jsonString);
       setCopiedIndex(index);
       toast.success(t("messageView.rawCopied"));
       setTimeout(() => setCopiedIndex(null), 2000);
@@ -95,22 +96,25 @@ export function RawMessageView({ messages }: RawMessageViewProps) {
               "text-xs overflow-x-auto p-3 rounded",
               "bg-gray-50 dark:bg-gray-900 font-mono whitespace-pre-wrap break-words"
             )}>
-              {JSON.stringify(
-                {
-                  uuid: message.uuid,
-                  parentUuid: message.parentUuid,
-                  sessionId: message.sessionId,
-                  timestamp: message.timestamp,
-                  type: message.type,
-                  content: message.content,
-                  toolUse: message.toolUse,
-                  toolUseResult: message.toolUseResult,
-                  ...(message.model && { model: message.model }),
-                  ...(message.usage && { usage: message.usage }),
-                },
-                null,
-                2
-              )}
+              {(() => {
+                const ext = message as unknown as ExtendedUIMessage;
+                return JSON.stringify(
+                  {
+                    uuid: message.uuid,
+                    parentUuid: message.parentUuid,
+                    sessionId: message.sessionId,
+                    timestamp: message.timestamp,
+                    type: message.type,
+                    content: message.content,
+                    toolUse: ext.toolUse,
+                    toolUseResult: ext.toolUseResult,
+                    ...(ext.model && { model: ext.model }),
+                    ...(ext.usage && { usage: ext.usage }),
+                  },
+                  null,
+                  2
+                );
+              })()}
             </pre>
           </div>
         ))}

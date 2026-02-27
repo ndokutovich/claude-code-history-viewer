@@ -187,6 +187,11 @@ export interface AppStoreState {
   fileActivityFilters: import("../../types").FileActivityFilters;
   isLoadingFileActivities: boolean;
   fileActivityError: string | null;
+
+  // Fork-specific state (optional, used by extended components)
+  messageViewMode?: string;
+  messageFilters?: Record<string, unknown>;
+  projectListPreferences?: Record<string, unknown>;
 }
 
 export interface AppStoreActions {
@@ -332,6 +337,13 @@ export interface AppStoreActions {
   loadFileActivities: (sessionId: string, projectPath: string) => Promise<void>;
   setFileActivityFilters: (filters: Partial<import("../../types").FileActivityFilters>) => void;
   clearFileActivities: () => void;
+
+  // Fork-specific actions (optional, used by extended components)
+  setMessageViewMode?: (mode: string) => void;
+  setMessageFilters?: (filters: Record<string, unknown>) => void;
+  loadAllMessages?: () => Promise<void>;
+  loadProjectSessions?: (projectPath: string) => Promise<unknown[]>;
+  setProjectListPreferences?: (prefs: Record<string, unknown>) => void;
 }
 
 export type FullAppStore = AppStoreState & AppStoreActions;

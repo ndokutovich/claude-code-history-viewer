@@ -12,8 +12,6 @@ import type {
   LoadResult,
   SearchResult,
   LoadOptions,
-  SearchFilters as AdapterSearchFilters,
-  ErrorContext,
   ErrorRecovery,
 } from '../base/IAdapter';
 import { classifyError } from '../base/IAdapter';
@@ -123,7 +121,7 @@ export class CodexAdapter implements IConversationAdapter {
         matchedPatterns: ['rollout-*.jsonl files'],
         missingPatterns: [],
       };
-    } catch (error) {
+    } catch {
       return { canHandle: false, confidence: 0, matchedPatterns: [], missingPatterns: [] };
     }
   }
@@ -185,7 +183,7 @@ export class CodexAdapter implements IConversationAdapter {
     }
   }
 
-  async searchMessages(_sourcePaths: string[], _query: string, _filters: AdapterSearchFilters): Promise<SearchResult<UniversalMessage>> {
+  async searchMessages(): Promise<SearchResult<UniversalMessage>> {
     return {
       success: false,
       error: { code: ErrorCode.PROVIDER_UNAVAILABLE, message: 'Search not implemented for Codex CLI', recoverable: false },
@@ -208,7 +206,7 @@ export class CodexAdapter implements IConversationAdapter {
     }
   }
 
-  handleError(error: Error, _context: ErrorContext): ErrorRecovery {
+  handleError(error: Error): ErrorRecovery {
     const errorCode: ErrorCode = classifyError(error);
     switch (errorCode) {
       case ErrorCode.PATH_NOT_FOUND:

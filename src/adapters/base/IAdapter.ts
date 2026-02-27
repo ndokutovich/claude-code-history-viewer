@@ -276,7 +276,7 @@ export interface ProjectStats {
  */
 export interface MessageInput {
   role: string; // "user" | "assistant" | "system"
-  content: string | any[]; // Text or content array
+  content: string | Record<string, unknown>[]; // Text or content array
   parent_id?: string;
   model?: string;
   tool_use?: Record<string, unknown>;

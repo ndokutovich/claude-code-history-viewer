@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Download } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import type { UIMessage, UISession, UIProject } from '@/types';
+import type { ExtendedAppStore, ExtendedUIMessage } from '@/types/storeExtensions';
 
 interface ContextSelectorProps {
   onSelectMessages: (messages: UIMessage[]) => void;
@@ -13,7 +14,7 @@ interface ContextSelectorProps {
 
 export const ContextSelector: React.FC<ContextSelectorProps> = ({ onSelectMessages }) => {
   const projects = useAppStore((state) => state.projects);
-  const loadProjectSessions = useAppStore((state) => state.loadProjectSessions);
+  const loadProjectSessions = useAppStore((state) => (state as unknown as ExtendedAppStore).loadProjectSessions);
   const selectSession = useAppStore((state) => state.selectSession);
   const messages = useAppStore((state) => state.messages);
 
@@ -25,12 +26,12 @@ export const ContextSelector: React.FC<ContextSelectorProps> = ({ onSelectMessag
 
   // Load sessions when project is selected
   useEffect(() => {
-    if (selectedProject) {
+    if (selectedProject && loadProjectSessions) {
       loadProjectSessions(selectedProject.path)
-        .then((loadedSessions) => {
+        .then((loadedSessions: UISession[]) => {
           setSessions(loadedSessions);
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           console.error('Failed to load sessions:', error);
           setSessions([]);
         });
@@ -198,8 +199,8 @@ export const ContextSelector: React.FC<ContextSelectorProps> = ({ onSelectMessag
                         <Badge variant={msg.type === 'user' ? 'default' : 'secondary'}>
                           {msg.type}
                         </Badge>
-                        {msg.model && (
-                          <span className="text-xs text-muted-foreground">{msg.model}</span>
+                        {(msg as unknown as ExtendedUIMessage).model && (
+                          <span className="text-xs text-muted-foreground">{(msg as unknown as ExtendedUIMessage).model}</span>
                         )}
                       </div>
                       <p className="text-sm line-clamp-2">

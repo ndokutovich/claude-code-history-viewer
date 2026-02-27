@@ -12,10 +12,8 @@ import type {
   LoadResult,
   SearchResult,
   LoadOptions,
-  SearchFilters as AdapterSearchFilters,
   HealthStatus,
   ErrorRecovery,
-  ErrorContext,
 } from '../base/IAdapter';
 import { classifyError } from '../base/IAdapter';
 import type {
@@ -182,7 +180,7 @@ export class GeminiAdapter implements IConversationAdapter {
         matchedPatterns: ['.gemini/tmp directory structure'],
         missingPatterns: [],
       };
-    } catch (error) {
+    } catch {
       return {
         canHandle: false,
         confidence: 0,
@@ -311,11 +309,7 @@ export class GeminiAdapter implements IConversationAdapter {
   // SEARCH (REQUIRED)
   // ------------------------------------------------------------------------
 
-  async searchMessages(
-    _sourcePaths: string[],
-    _query: string,
-    _filters: AdapterSearchFilters
-  ): Promise<SearchResult<UniversalMessage>> {
+  async searchMessages(): Promise<SearchResult<UniversalMessage>> {
     // Search not yet implemented for Gemini CLI
     return {
       success: false,
@@ -356,7 +350,7 @@ export class GeminiAdapter implements IConversationAdapter {
   // ERROR RECOVERY (REQUIRED)
   // ------------------------------------------------------------------------
 
-  handleError(error: Error, _context: ErrorContext): ErrorRecovery {
+  handleError(error: Error): ErrorRecovery {
     const errorCode = classifyError(error);
 
     switch (errorCode) {

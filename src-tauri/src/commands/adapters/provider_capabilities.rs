@@ -9,7 +9,7 @@ pub struct ProviderCapabilities {
     pub supports_resume: bool,
     pub resume_command_template: Option<String>, // e.g., "claude --resume {session_id}"
     #[allow(dead_code)]
-    pub cli_name: Option<String>,                // e.g., "claude", "codex"
+    pub cli_name: Option<String>, // e.g., "claude", "codex"
     pub resume_type: ResumeType,                 // How this provider handles resume
 }
 
@@ -44,7 +44,9 @@ impl ProviderCapabilities {
                 // Shift+Click copies: /chat resume <session-id>
                 resume_command_template: Some("gemini".to_string()), // Just open gemini CLI
                 cli_name: Some("gemini".to_string()),
-                resume_type: ResumeType::InteractiveCommand("/chat resume {session_id}".to_string()),
+                resume_type: ResumeType::InteractiveCommand(
+                    "/chat resume {session_id}".to_string(),
+                ),
             },
             "cursor" => Self {
                 supports_resume: true, // Cursor CLI supports session resumption
@@ -65,9 +67,9 @@ impl ProviderCapabilities {
 
     /// Build resume command for this provider
     pub fn build_resume_command(&self, session_id: &str) -> Option<String> {
-        self.resume_command_template.as_ref().map(|template| {
-            template.replace("{session_id}", session_id)
-        })
+        self.resume_command_template
+            .as_ref()
+            .map(|template| template.replace("{session_id}", session_id))
     }
 
     /// Get the interactive command to copy (for Shift+Click)

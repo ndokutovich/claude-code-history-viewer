@@ -1,4 +1,5 @@
 use super::ProviderInfo;
+#[cfg(target_os = "windows")]
 use std::path::PathBuf;
 
 /// Detect Cursor IDE installation

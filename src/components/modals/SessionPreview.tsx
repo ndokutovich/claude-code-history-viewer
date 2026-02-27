@@ -177,7 +177,7 @@ export const SessionPreview: React.FC<SessionPreviewProps> = ({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => onRemove(msg.id)}
+                onClick={() => onRemove(msg.id ?? '')}
                 className="h-6 w-6 p-0 text-destructive hover:text-destructive"
                 title={t('sessionBuilder.preview.actions.remove')}
               >

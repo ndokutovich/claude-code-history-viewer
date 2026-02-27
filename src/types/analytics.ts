@@ -144,6 +144,9 @@ export interface UseAnalyticsReturn {
     isRecentEditsView: boolean;
     isSettingsView: boolean;
     isBoardView: boolean;
+    isFilesView: boolean;
+    isCommandHistoryView: boolean;
+    isRawMessageView: boolean;
     hasAnyError: boolean;
     isLoadingAnalytics: boolean;
     isLoadingTokenStats: boolean;

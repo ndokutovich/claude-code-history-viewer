@@ -28,7 +28,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
           <select
             className="w-full px-3 py-2 border rounded-md bg-background text-sm"
             value={message.role}
-            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onUpdate({ role: e.target.value })}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onUpdate({ role: e.target.value as MessageBuilder['role'] })}
           >
             <option value="user">{t('sessionBuilder.messageComposer.roles.user')}</option>
             <option value="assistant">{t('sessionBuilder.messageComposer.roles.assistant')}</option>

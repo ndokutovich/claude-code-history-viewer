@@ -8,7 +8,7 @@ use crate::commands::adapters::claude_code::{claude_message_to_universal, extrac
 use crate::commands::cursor::{load_cursor_messages, load_cursor_sessions};
 use crate::commands::project::scan_projects;
 use crate::commands::session::load_project_sessions;
-use crate::models::universal::*;
+use crate::models::universal::{ToolCall, UniversalMessage};
 use crate::models::{
     ClaudeMessage, FileActivity, FileActivityFilters, FileChange, FileOperation, RawLogEntry,
 };
@@ -17,7 +17,7 @@ use std::path::Path;
 use uuid::Uuid;
 
 /// Extract file activities from a single project or all projects
-/// If project_path is empty or "*", loads from all available projects
+/// If `project_path` is empty or "*", loads from all available projects
 #[tauri::command]
 pub async fn get_file_activities(
     project_path: String,
@@ -60,7 +60,7 @@ pub async fn get_file_activities(
                     if let Some(tool_calls) = &msg.tool_calls {
                         for tool_call in tool_calls {
                             if let Some(activity) = extract_file_activity_from_tool(
-                                &tool_call,
+                                tool_call,
                                 &msg,
                                 &session.project_name,
                             ) {
@@ -100,7 +100,7 @@ pub async fn get_file_activities(
                     "FILES_CURSOR_INVALID_WORKSPACE_PATH: Invalid Cursor workspace path".to_string()
                 })?;
 
-            println!("📂 Loading Cursor files from workspace: {}", project_path);
+            println!("📂 Loading Cursor files from workspace: {project_path}");
 
             // Load Cursor sessions for this workspace
             let sessions = load_cursor_sessions(
@@ -134,7 +134,7 @@ pub async fn get_file_activities(
                     if let Some(tool_calls) = &msg.tool_calls {
                         for tool_call in tool_calls {
                             if let Some(activity) = extract_file_activity_from_tool(
-                                &tool_call,
+                                tool_call,
                                 &msg,
                                 &session.project_name,
                             ) {
@@ -147,7 +147,7 @@ pub async fn get_file_activities(
                     }
                 }
 
-                println!("    Extracted {} file activities", session_files);
+                println!("    Extracted {session_files} file activities");
             }
         } else {
             // Claude Code project
@@ -160,7 +160,7 @@ pub async fn get_file_activities(
                     if let Some(tool_calls) = &msg.tool_calls {
                         for tool_call in tool_calls {
                             if let Some(activity) = extract_file_activity_from_tool(
-                                &tool_call,
+                                tool_call,
                                 &msg,
                                 &session.project_name,
                             ) {
@@ -192,104 +192,105 @@ async fn load_session_messages_for_files(
     let session_path = session_path.to_string();
 
     // Wrap blocking I/O in spawn_blocking to avoid blocking the async runtime
-    let messages = tokio::task::spawn_blocking(move || -> Result<Vec<UniversalMessage>, String> {
-        let file = File::open(&session_path)
-            .map_err(|e| format!("FILE_READ_ERROR: Failed to open session file: {}", e))?;
-        let reader = BufReader::new(file);
+    let messages =
+        tauri::async_runtime::spawn_blocking(move || -> Result<Vec<UniversalMessage>, String> {
+            let file = File::open(&session_path)
+                .map_err(|e| format!("FILE_READ_ERROR: Failed to open session file: {e}"))?;
+            let reader = BufReader::new(file);
 
-        let mut messages = Vec::new();
+            let mut messages = Vec::new();
 
-        for (line_num, line_result) in reader.lines().enumerate() {
-            let line =
-                line_result.map_err(|e| format!("FILE_READ_ERROR: Failed to read line: {}", e))?;
+            for (line_num, line_result) in reader.lines().enumerate() {
+                let line = line_result
+                    .map_err(|e| format!("FILE_READ_ERROR: Failed to read line: {e}"))?;
 
-            if line.trim().is_empty() {
-                continue;
-            }
+                if line.trim().is_empty() {
+                    continue;
+                }
 
-            match serde_json::from_str::<RawLogEntry>(&line) {
-                Ok(log_entry) => {
-                    if log_entry.message_type == "summary" {
-                        continue;
-                    }
+                match serde_json::from_str::<RawLogEntry>(&line) {
+                    Ok(log_entry) => {
+                        if log_entry.message_type == "summary" {
+                            continue;
+                        }
 
-                    let (role, message_id, model, stop_reason, usage) =
-                        if let Some(ref msg) = log_entry.message {
-                            (
-                                Some(msg.role.clone()),
-                                msg.id.clone(),
-                                msg.model.clone(),
-                                msg.stop_reason.clone(),
-                                msg.usage.clone(),
-                            )
-                        } else {
-                            (None, None, None, None, None)
+                        let (role, message_id, model, stop_reason, usage) =
+                            if let Some(ref msg) = log_entry.message {
+                                (
+                                    Some(msg.role.clone()),
+                                    msg.id.clone(),
+                                    msg.model.clone(),
+                                    msg.stop_reason.clone(),
+                                    msg.usage.clone(),
+                                )
+                            } else {
+                                (None, None, None, None, None)
+                            };
+
+                        let claude_message = ClaudeMessage {
+                            uuid: log_entry.uuid.unwrap_or_else(|| {
+                                format!("{}-line-{}", Uuid::new_v4(), line_num + 1)
+                            }),
+                            parent_uuid: log_entry.parent_uuid,
+                            session_id: log_entry
+                                .session_id
+                                .unwrap_or_else(|| "unknown-session".to_string()),
+                            timestamp: log_entry
+                                .timestamp
+                                .unwrap_or_else(|| Utc::now().to_rfc3339()),
+                            message_type: log_entry.message_type.clone(),
+                            content: log_entry.message.map(|m| m.content),
+                            project_name: None,
+                            tool_use: log_entry.tool_use,
+                            tool_use_result: log_entry.tool_use_result,
+                            is_sidechain: log_entry.is_sidechain,
+                            usage,
+                            role,
+                            model,
+                            stop_reason,
+                            cost_usd: None,
+                            duration_ms: None,
+                            message_id,
+                            snapshot: None,
+                            is_snapshot_update: None,
+                            data: None,
+                            tool_use_id: None,
+                            parent_tool_use_id: None,
+                            operation: None,
+                            subtype: None,
+                            level: None,
+                            hook_count: None,
+                            hook_infos: None,
+                            stop_reason_system: None,
+                            prevented_continuation: None,
+                            compact_metadata: None,
+                            microcompact_metadata: None,
+                            provider: None,
                         };
 
-                    let claude_message = ClaudeMessage {
-                        uuid: log_entry
-                            .uuid
-                            .unwrap_or_else(|| format!("{}-line-{}", Uuid::new_v4(), line_num + 1)),
-                        parent_uuid: log_entry.parent_uuid,
-                        session_id: log_entry
-                            .session_id
-                            .unwrap_or_else(|| "unknown-session".to_string()),
-                        timestamp: log_entry
-                            .timestamp
-                            .unwrap_or_else(|| Utc::now().to_rfc3339()),
-                        message_type: log_entry.message_type.clone(),
-                        content: log_entry.message.map(|m| m.content),
-                        project_name: None,
-                        tool_use: log_entry.tool_use,
-                        tool_use_result: log_entry.tool_use_result,
-                        is_sidechain: log_entry.is_sidechain,
-                        usage,
-                        role,
-                        model,
-                        stop_reason,
-                        cost_usd: None,
-                        duration_ms: None,
-                        message_id,
-                        snapshot: None,
-                        is_snapshot_update: None,
-                        data: None,
-                        tool_use_id: None,
-                        parent_tool_use_id: None,
-                        operation: None,
-                        subtype: None,
-                        level: None,
-                        hook_count: None,
-                        hook_infos: None,
-                        stop_reason_system: None,
-                        prevented_continuation: None,
-                        compact_metadata: None,
-                        microcompact_metadata: None,
-                        provider: None,
-                    };
+                        let project_id = extract_project_id(&None, &session_path);
+                        let source_id = session_path.clone();
 
-                    let project_id = extract_project_id(&None, &session_path);
-                    let source_id = session_path.clone();
+                        let universal_msg =
+                            claude_message_to_universal(&claude_message, project_id, source_id, 0);
 
-                    let universal_msg =
-                        claude_message_to_universal(&claude_message, project_id, source_id, 0);
-
-                    messages.push(universal_msg);
-                }
-                Err(e) => {
-                    eprintln!(
-                        "Failed to parse line {} in {}: {}",
-                        line_num + 1,
-                        session_path,
-                        e
-                    );
+                        messages.push(universal_msg);
+                    }
+                    Err(e) => {
+                        eprintln!(
+                            "Failed to parse line {} in {}: {}",
+                            line_num + 1,
+                            session_path,
+                            e
+                        );
+                    }
                 }
             }
-        }
 
-        Ok(messages)
-    })
-    .await
-    .map_err(|e| format!("FILE_TASK_ERROR: Task join error: {}", e))??;
+            Ok(messages)
+        })
+        .await
+        .map_err(|e| format!("FILE_TASK_ERROR: Task join error: {e}"))??;
 
     Ok(messages)
 }
@@ -331,7 +332,7 @@ fn extract_read_activity(
         None
     };
 
-    let size = content.as_ref().map(|c| c.len());
+    let size = content.as_ref().map(std::string::String::len);
 
     Some(FileActivity {
         file_path,
@@ -360,7 +361,7 @@ fn extract_write_activity(
     let file_path = tool_call.input.get("file_path")?.as_str()?.to_string();
     let content = tool_call.input.get("content")?.as_str().map(String::from);
 
-    let size = content.as_ref().map(|c| c.len());
+    let size = content.as_ref().map(std::string::String::len);
 
     Some(FileActivity {
         file_path,
@@ -403,12 +404,10 @@ fn extract_edit_activity(
     // Calculate line changes
     let old_lines = old_string.lines().count();
     let new_lines = new_string.lines().count();
-    let (lines_added, lines_removed) = if new_lines > old_lines {
-        (Some(new_lines - old_lines), None)
-    } else if old_lines > new_lines {
-        (None, Some(old_lines - new_lines))
-    } else {
-        (None, None)
+    let (lines_added, lines_removed) = match new_lines.cmp(&old_lines) {
+        std::cmp::Ordering::Greater => (Some(new_lines - old_lines), None),
+        std::cmp::Ordering::Less => (None, Some(old_lines - new_lines)),
+        std::cmp::Ordering::Equal => (None, None),
     };
 
     let changes = vec![FileChange {
@@ -450,7 +449,7 @@ fn extract_glob_activity(
         output
             .get("filenames")
             .and_then(|f| f.as_array())
-            .map(|arr| arr.len())
+            .map(std::vec::Vec::len)
             .unwrap_or(0)
     } else {
         0
@@ -465,7 +464,7 @@ fn extract_glob_activity(
         message_id: message.id.clone(),
         tool_name: "Glob".to_string(),
         content_before: None,
-        content_after: Some(format!("Found {} files", file_count)),
+        content_after: Some(format!("Found {file_count} files")),
         size_before: None,
         size_after: Some(file_count),
         changes: None,
@@ -474,7 +473,7 @@ fn extract_glob_activity(
     })
 }
 
-/// Extract MultiEdit tool activity
+/// Extract `MultiEdit` tool activity
 fn extract_multiedit_activity(
     tool_call: &ToolCall,
     message: &UniversalMessage,
@@ -567,7 +566,7 @@ fn should_include_activity(activity: &FileActivity, filters: &FileActivityFilter
         let file_ext = activity
             .file_path
             .split('.')
-            .last()
+            .next_back()
             .unwrap_or("")
             .to_lowercase();
         if !extensions.iter().any(|e| e.to_lowercase() == file_ext) {

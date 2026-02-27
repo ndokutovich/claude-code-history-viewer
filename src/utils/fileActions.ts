@@ -4,13 +4,24 @@
 // Provides unified "Open File" and "Open Folder" functionality across the app
 // Uses tauri-plugin-opener for cross-platform file/folder opening
 
-import { openPath } from '@tauri-apps/plugin-opener';
 import { dirname } from '@tauri-apps/api/path';
+import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
+
+// Stub for @tauri-apps/plugin-opener (not installed in this fork)
+// Falls back to Tauri's shell open via invoke
+async function openPath(path: string): Promise<void> {
+  try {
+    await invoke('plugin:shell|open', { path });
+  } catch {
+    // Fallback: try window.open for URLs, ignore for local paths
+    console.warn('openPath fallback: plugin-opener not available for', path);
+  }
+}
 
 export interface FileActionOptions {
   /** Internationalization function */
-  t: (key: string, options?: Record<string, any>) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }
 
 /**

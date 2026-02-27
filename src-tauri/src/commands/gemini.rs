@@ -1,5 +1,8 @@
-use crate::commands::adapters::gemini::*;
-use crate::models::universal::*;
+use crate::commands::adapters::gemini::{
+    gemini_file_to_session, gemini_message_to_universal, gemini_sessions_to_projects,
+    GeminiHashResolver, GeminiSession,
+};
+use crate::models::universal::{UniversalMessage, UniversalProject, UniversalSession};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use tauri::State;
@@ -68,7 +71,7 @@ pub async fn scan_gemini_projects(
     gemini_path: String,
     source_id: String,
 ) -> Result<Vec<UniversalProject>, String> {
-    println!("🔍 Scanning Gemini projects at: {}", gemini_path);
+    println!("🔍 Scanning Gemini projects at: {gemini_path}");
     let path = Path::new(&gemini_path).join("tmp");
     gemini_sessions_to_projects(&path, source_id)
 }
@@ -84,7 +87,7 @@ pub async fn load_gemini_sessions(
     let resolver_guard = resolver
         .0
         .lock()
-        .map_err(|e| format!("Failed to lock resolver: {}", e))?;
+        .map_err(|e| format!("Failed to lock resolver: {e}"))?;
 
     // Find all session files in project directory
     let project_dir = Path::new(&project_path);
@@ -102,7 +105,11 @@ pub async fn load_gemini_sessions(
                     visit_dirs(&path, sessions)?;
                 } else if let Some(name) = path.file_name() {
                     if let Some(name_str) = name.to_str() {
-                        if name_str.starts_with("session-") && name_str.ends_with(".json") {
+                        if name_str.starts_with("session-")
+                            && std::path::Path::new(name_str)
+                                .extension()
+                                .is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
+                        {
                             sessions.push(path);
                         }
                     }
@@ -114,7 +121,7 @@ pub async fn load_gemini_sessions(
 
     let mut session_files = Vec::new();
     visit_dirs(project_dir, &mut session_files)
-        .map_err(|e| format!("Failed to scan sessions: {}", e))?;
+        .map_err(|e| format!("Failed to scan sessions: {e}"))?;
 
     for file in session_files {
         match gemini_file_to_session(
@@ -144,17 +151,14 @@ pub async fn load_gemini_messages(
     let path = Path::new(&session_path);
 
     // Read JSON file
-    let content = std::fs::read_to_string(path)
-        .map_err(|e| format!("Failed to read Gemini session: {}", e))?;
+    let content =
+        std::fs::read_to_string(path).map_err(|e| format!("Failed to read Gemini session: {e}"))?;
 
     let session: GeminiSession = serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse Gemini session: {}", e))?;
+        .map_err(|e| format!("Failed to parse Gemini session: {e}"))?;
 
     // Extract messages
-    let messages = session
-        .messages
-        .or(session.history)
-        .unwrap_or_else(Vec::new);
+    let messages = session.messages.or(session.history).unwrap_or_default();
 
     // Convert to UniversalMessage
     let mut universal_messages = Vec::new();
@@ -164,11 +168,11 @@ pub async fn load_gemini_messages(
             session_id.clone(),
             project_id.clone(),
             source_id.clone(),
-            i as i32,
+            i32::try_from(i).unwrap_or(i32::MAX),
         ) {
             Ok(msg) => universal_messages.push(msg),
             Err(e) => {
-                eprintln!("Failed to parse Gemini message {}: {}", i, e);
+                eprintln!("Failed to parse Gemini message {i}: {e}");
                 // Continue with other messages
             }
         }
@@ -185,7 +189,7 @@ pub async fn seed_gemini_resolver(
     let mut resolver_guard = resolver
         .0
         .lock()
-        .map_err(|e| format!("Failed to lock resolver: {}", e))?;
+        .map_err(|e| format!("Failed to lock resolver: {e}"))?;
 
     resolver_guard.seed_from_sessions(&sessions);
 

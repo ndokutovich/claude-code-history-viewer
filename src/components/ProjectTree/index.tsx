@@ -81,6 +81,8 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       claude: 0,
       codex: 0,
       opencode: 0,
+      cursor: 0,
+      gemini: 0,
     };
 
     for (const project of projects) {

@@ -19,7 +19,7 @@ export interface TokenUsageInput {
  */
 export interface MessageInput {
   role: string; // "user" | "assistant" | "system"
-  content: string | any[]; // Can be string or array of content items
+  content: string | Record<string, unknown>[]; // Can be string or array of content items
   parent_id?: string;
   model?: string;
   tool_use?: Record<string, unknown>;

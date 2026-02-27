@@ -230,7 +230,7 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
       }
 
       const sessionPath = startParsed.sessionPath;
-      let startMessageId = startParsed.messageId;
+      const startMessageId = startParsed.messageId;
       let endMessageId: string | undefined;
 
       // Parse end path if provided
@@ -343,8 +343,8 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
           content: msg.content,
           parent_id: msg.parent_id,
           model: msg.model,
-          tool_use: msg.tool_use,
-          tool_use_result: msg.tool_use_result,
+          tool_use: msg.tool_use as Record<string, unknown> | undefined,
+          tool_use_result: msg.tool_use_result as Record<string, unknown> | undefined,
           usage: msg.usage,
         })),
         summary: sessionSummary || undefined,
@@ -360,8 +360,9 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
       await store.scanProjects();
 
       // Reload sessions for the project where we just created a session
-      if (projectPath) {
-        await store.loadProjectSessions(projectPath);
+      const extStoreState = store as unknown as import('@/types/storeExtensions').ExtendedAppStore;
+      if (projectPath && extStoreState.loadProjectSessions) {
+        await extStoreState.loadProjectSessions(projectPath);
       }
 
       onClose();
@@ -620,8 +621,8 @@ export const SessionBuilderModal: React.FC<SessionBuilderModalProps> = ({
                       <MessageComposer
                         key={message.id}
                         message={message}
-                        onUpdate={(updates) => handleUpdateMessage(message.id, updates)}
-                        onRemove={() => handleRemoveMessage(message.id)}
+                        onUpdate={(updates) => handleUpdateMessage(message.id ?? '', updates)}
+                        onRemove={() => handleRemoveMessage(message.id ?? '')}
                       />
                     ))
                   )}

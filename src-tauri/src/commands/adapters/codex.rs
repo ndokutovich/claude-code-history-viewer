@@ -6,7 +6,9 @@
 // PATTERN REFERENCE: Claude Code's JSONL streaming (session.rs:38-70)
 // CLEAN CODE: Explicit types, standardized errors, DRY principles
 
-use crate::models::universal::*;
+use crate::models::universal::{
+    ContentType, MessageRole, MessageType, UniversalContent, UniversalMessage,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -40,9 +42,9 @@ pub struct CodexEvent {
 /// Returns: (timestamp, uuid)
 pub fn parse_rollout_filename(filename: &str) -> Option<(String, String)> {
     // Pattern: rollout-YYYY-MM-DDThh-mm-ss-UUID.jsonl
-    let re = regex::Regex::new(
-        r"^rollout-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})-([a-f0-9-]+)\.jsonl$"
-    ).ok()?;
+    let re =
+        regex::Regex::new(r"^rollout-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})-([a-f0-9-]+)\.jsonl$")
+            .ok()?;
 
     let caps = re.captures(filename)?;
     let timestamp = caps.get(1)?.as_str().to_string();
@@ -73,12 +75,12 @@ pub fn extract_session_id(event: &CodexEvent, filename_uuid: &str) -> String {
 // JSONL STREAMING PARSER (Claude Code pattern from session.rs:38-70)
 // ============================================================================
 
-/// Parse Codex JSONL file with BufReader streaming
+/// Parse Codex JSONL file with `BufReader` streaming
 /// PATTERN: Copied from Claude Code's proven approach for memory efficiency
 /// ERROR HANDLING: Continues on bad lines (graceful degradation)
 pub fn parse_codex_jsonl(file_path: &Path) -> Result<Vec<CodexEvent>, String> {
-    let file = File::open(file_path)
-        .map_err(|e| format!("CODEX_FILE_ERROR: Failed to open file: {}", e))?;
+    let file =
+        File::open(file_path).map_err(|e| format!("CODEX_FILE_ERROR: Failed to open file: {e}"))?;
 
     // BufReader for memory-efficient streaming (handles 10-50MB files)
     let reader = BufReader::new(file);
@@ -99,7 +101,7 @@ pub fn parse_codex_jsonl(file_path: &Path) -> Result<Vec<CodexEvent>, String> {
             Ok(event) => events.push(event),
             Err(e) => {
                 eprintln!("⚠️ CODEX_PARSE_ERROR: Line {}: {}", line_num + 1, e);
-                continue; // Don't fail entire file for one bad line
+                // Don't fail entire file for one bad line
             }
         }
     }
@@ -111,7 +113,7 @@ pub fn parse_codex_jsonl(file_path: &Path) -> Result<Vec<CodexEvent>, String> {
 // CONVERSION TO UNIVERSAL FORMAT
 // ============================================================================
 
-/// Convert Codex event to UniversalMessage
+/// Convert Codex event to `UniversalMessage`
 /// PATTERN: Similar to claude_code.rs:18-136
 /// CRITICAL: Uses camelCase metadata (Gemini lesson learned!)
 pub fn codex_event_to_universal(
@@ -144,8 +146,8 @@ pub fn codex_event_to_universal(
     // ⭐ CRITICAL: Use camelCase for metadata (Gemini lesson learned!)
     // CLEAN CODE: Standardized metadata keys across all providers
     let mut metadata: HashMap<String, Value> = HashMap::new();
-    metadata.insert("filePath".to_string(), json!(file_path));          // camelCase!
-    metadata.insert("eventType".to_string(), json!(event.event_type));  // camelCase!
+    metadata.insert("filePath".to_string(), json!(file_path)); // camelCase!
+    metadata.insert("eventType".to_string(), json!(event.event_type)); // camelCase!
 
     if let Some(ref cwd_path) = cwd {
         metadata.insert("cwd".to_string(), json!(cwd_path));
@@ -153,16 +155,20 @@ pub fn codex_event_to_universal(
 
     // File size with camelCase key
     if let Ok(file_metadata) = fs::metadata(file_path) {
-        metadata.insert("fileSizeBytes".to_string(), json!(file_metadata.len())); // camelCase!
+        metadata.insert("fileSizeBytes".to_string(), json!(file_metadata.len()));
+        // camelCase!
     }
 
     // Store original event for debugging/recovery
-    metadata.insert("originalEvent".to_string(), json!(event));  // camelCase!
+    metadata.insert("originalEvent".to_string(), json!(event)); // camelCase!
 
     UniversalMessage {
         // CORE IDENTITY
-        id: event.id.clone().unwrap_or_else(|| format!("codex-{}", sequence_number)),
-        session_id: "".to_string(), // Will be set by caller
+        id: event
+            .id
+            .clone()
+            .unwrap_or_else(|| format!("codex-{sequence_number}")),
+        session_id: String::new(), // Will be set by caller
         project_id,
         source_id,
         provider_id: "codex".to_string(),
@@ -188,11 +194,11 @@ pub fn codex_event_to_universal(
 
         // METADATA
         model,
-        tokens: None,       // Codex doesn't expose token counts
-        tool_calls: None,   // TODO: Extract from payload
-        thinking: None,     // TODO: Check if Codex has thinking blocks
+        tokens: None,     // Codex doesn't expose token counts
+        tool_calls: None, // TODO: Extract from payload
+        thinking: None,   // TODO: Check if Codex has thinking blocks
         attachments: None,
-        errors: None,       // TODO: Extract from execution_context
+        errors: None, // TODO: Extract from execution_context
 
         // RAW PRESERVATION
         original_format: "codex_jsonl".to_string(),
@@ -204,7 +210,7 @@ pub fn codex_event_to_universal(
 // HELPER FUNCTIONS
 // ============================================================================
 
-/// Determine MessageRole from event type and payload.role
+/// Determine `MessageRole` from event type and payload.role
 /// CLEAN CODE: Explicit return type annotation
 fn determine_role(event: &CodexEvent) -> MessageRole {
     // Priority 1: Check payload.role (for response_item events)
@@ -212,7 +218,6 @@ fn determine_role(event: &CodexEvent) -> MessageRole {
         if let Some(role_str) = payload.get("role").and_then(|r| r.as_str()) {
             return match role_str {
                 "user" => MessageRole::User,
-                "assistant" => MessageRole::Assistant,
                 "system" => MessageRole::System,
                 _ => MessageRole::Assistant,
             };
@@ -222,13 +227,12 @@ fn determine_role(event: &CodexEvent) -> MessageRole {
     // Priority 2: Check event_type (for event_msg events)
     match event.event_type.as_str() {
         "user_message" | "user_input" | "user" => MessageRole::User,
-        "assistant_message" | "assistant_response" | "assistant" => MessageRole::Assistant,
         "system_message" | "system" => MessageRole::System,
-        _ => MessageRole::Assistant, // Default to assistant
+        _ => MessageRole::Assistant, // Default to assistant (includes assistant_message, assistant_response, assistant)
     }
 }
 
-/// Convert payload to UniversalContent items
+/// Convert payload to `UniversalContent` items
 /// CLEAN CODE: Explicit return type annotation
 fn convert_content(event: &CodexEvent) -> Vec<UniversalContent> {
     let mut content_items: Vec<UniversalContent> = Vec::new();
@@ -274,7 +278,7 @@ fn convert_content(event: &CodexEvent) -> Vec<UniversalContent> {
 }
 
 /// Extract CWD (current working directory) with priority logic
-/// Priority: environment_context.cwd > execution_context.working_directory
+/// Priority: `environment_context.cwd` > `execution_context.working_directory`
 /// CLEAN CODE: Explicit return type annotation, single source of truth
 fn extract_cwd(event: &CodexEvent) -> Option<String> {
     // Priority 1: environment_context.cwd

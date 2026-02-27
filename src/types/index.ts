@@ -263,13 +263,30 @@ export type UIMessage = import("./core/message").ClaudeMessage & {
   sessionId?: string;
   provider_metadata?: Record<string, unknown>;
   projectPath?: string;
+  toolUse?: unknown;
+  toolUseResult?: unknown;
+  model?: string;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_creation_input_tokens?: number;
+    cache_read_input_tokens?: number;
+  };
+  providerId?: string;
 };
 
-// UISession: alias for ClaudeSession (same structure)
-export type UISession = import("./core/session").ClaudeSession;
+// UISession: alias for ClaudeSession with fork-specific extensions
+export type UISession = import("./core/session").ClaudeSession & {
+  providerId?: string;
+  is_problematic?: boolean;
+  git_branch?: string;
+  git_commit?: string;
+};
 
-// UIProject: alias for ClaudeProject (same structure)
-export type UIProject = import("./core/session").ClaudeProject;
+// UIProject: alias for ClaudeProject with fork-specific extensions
+export type UIProject = import("./core/session").ClaudeProject & {
+  lastModified?: string;
+};
 
 // File Activity Types (unique to our fork)
 export type FileOperation =
@@ -320,4 +337,35 @@ export interface MessageFilters {
   showToolUseOnly: boolean;
   showMessagesOnly: boolean;
   showCommandOnly: boolean;
+}
+
+// Message Builder (unique to our fork)
+export interface MessageBuilder {
+  id?: string;
+  parent_id?: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  model?: string;
+  toolUse?: unknown;
+  tool_use?: unknown;
+  toolUseResult?: unknown;
+  tool_use_result?: unknown;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_creation_input_tokens?: number;
+    cache_read_input_tokens?: number;
+  };
+  isExpanded?: boolean;
+}
+
+// Loading Progress (unique to our fork)
+export interface LoadingProgress {
+  loaded: number;
+  total: number;
+  percentage: number;
+  progress: number;
+  message?: string;
+  details?: string;
+  stage: string;
 }

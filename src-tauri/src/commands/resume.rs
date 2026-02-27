@@ -5,11 +5,11 @@
 // Supports different providers (Claude Code, Codex, etc.)
 
 use crate::commands::adapters::provider_capabilities::ProviderCapabilities;
+use serde_json::Value;
 use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::process::Command;
-use serde_json::Value;
 
 #[cfg(target_os = "windows")]
 #[allow(unused_imports)]
@@ -23,12 +23,15 @@ pub async fn resume_session(
 ) -> Result<(), String> {
     let working_directory = cwd.ok_or("No working directory found for this session")?;
 
-    println!("DEBUG: Resume session {} in directory: {}", session_id, working_directory);
-    println!("DEBUG: Provider: {}", provider_id);
+    println!("DEBUG: Resume session {session_id} in directory: {working_directory}");
+    println!("DEBUG: Provider: {provider_id}");
 
     // Extract UUID from filename if session_id is a full path
     // e.g., "C:\...\22d84a97-2a19-47b8-a4d0-d83643076649.jsonl" -> "22d84a97-2a19-47b8-a4d0-d83643076649"
-    let session_uuid = if session_id.ends_with(".jsonl") {
+    let session_uuid = if std::path::Path::new(&session_id)
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("jsonl"))
+    {
         Path::new(&session_id)
             .file_stem()
             .and_then(|s| s.to_str())
@@ -38,7 +41,7 @@ pub async fn resume_session(
         session_id.clone()
     };
 
-    println!("DEBUG: Extracted session UUID: {}", session_uuid);
+    println!("DEBUG: Extracted session UUID: {session_uuid}");
 
     // Get provider capabilities
     let capabilities = ProviderCapabilities::for_provider(&provider_id);
@@ -46,17 +49,16 @@ pub async fn resume_session(
     // Check if provider supports resume
     if !capabilities.supports_resume {
         return Err(format!(
-            "Resume not supported for provider: {} (Provider does not have CLI resume capability)",
-            provider_id
+            "Resume not supported for provider: {provider_id} (Provider does not have CLI resume capability)"
         ));
     }
 
     // Build resume command from provider capabilities
     let resume_command = capabilities
         .build_resume_command(&session_uuid)
-        .ok_or_else(|| format!("Failed to build resume command for provider: {}", provider_id))?;
+        .ok_or_else(|| format!("Failed to build resume command for provider: {provider_id}"))?;
 
-    println!("DEBUG: Executing command: {}", resume_command);
+    println!("DEBUG: Executing command: {resume_command}");
     open_terminal_with_command(&working_directory, &resume_command)?;
     println!("DEBUG: Terminal launched successfully");
 
@@ -72,7 +74,10 @@ pub async fn get_resume_command(
     let working_directory = cwd.unwrap_or_else(|| ".".to_string());
 
     // Extract UUID from filename if session_id is a full path
-    let session_uuid = if session_id.ends_with(".jsonl") {
+    let session_uuid = if std::path::Path::new(&session_id)
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("jsonl"))
+    {
         Path::new(&session_id)
             .file_stem()
             .and_then(|s| s.to_str())
@@ -87,10 +92,7 @@ pub async fn get_resume_command(
 
     // Check if provider supports resume
     if !capabilities.supports_resume {
-        return Err(format!(
-            "Resume not supported for provider: {}",
-            provider_id
-        ));
+        return Err(format!("Resume not supported for provider: {provider_id}"));
     }
 
     // For interactive providers (like Gemini), return the interactive command
@@ -102,12 +104,9 @@ pub async fn get_resume_command(
     // For direct flag providers, build full command with cd
     let resume_command = capabilities
         .build_resume_command(&session_uuid)
-        .ok_or_else(|| format!("Failed to build resume command for provider: {}", provider_id))?;
+        .ok_or_else(|| format!("Failed to build resume command for provider: {provider_id}"))?;
 
-    Ok(format!(
-        "cd {} && {}",
-        working_directory, resume_command
-    ))
+    Ok(format!("cd {working_directory} && {resume_command}"))
 }
 
 /// Check if a provider supports resume functionality
@@ -124,7 +123,11 @@ pub async fn get_session_cwd(
     session_file_path: String,
     provider_id: String,
 ) -> Result<String, String> {
-    println!("DEBUG: get_session_cwd called - provider_id: {}, session_file_path: {}", provider_id, &session_file_path[..session_file_path.len().min(100)]);
+    println!(
+        "DEBUG: get_session_cwd called - provider_id: {}, session_file_path: {}",
+        provider_id,
+        &session_file_path[..session_file_path.len().min(100)]
+    );
 
     // Handle Cursor separately - it uses SQLite DB, not JSONL files
     if provider_id == "cursor" {
@@ -134,13 +137,13 @@ pub async fn get_session_cwd(
 
     // For JSONL-based providers (Claude Code, Codex, Gemini)
     let file = fs::File::open(&session_file_path)
-        .map_err(|e| format!("Failed to open session file: {}", e))?;
+        .map_err(|e| format!("Failed to open session file: {e}"))?;
 
     let reader = BufReader::new(file);
 
     // Read lines and look for CWD in first few messages
     for line in reader.lines().take(20) {
-        let line = line.map_err(|e| format!("Failed to read line: {}", e))?;
+        let line = line.map_err(|e| format!("Failed to read line: {e}"))?;
 
         if line.trim().is_empty() {
             continue;
@@ -231,26 +234,35 @@ fn open_terminal_with_command(cwd: &str, command: &str) -> Result<(), String> {
     {
         // Linux: Try common terminals in order
         // Create command strings first to avoid lifetime issues
-        let gnome_cmd = format!("cd '{}' && {}; exec bash", cwd, command);
-        let konsole_cmd = format!("{}; exec bash", command);
-        let xterm_cmd = format!("cd '{}' && {}; exec bash", cwd, command);
+        let gnome_cmd = format!("cd '{cwd}' && {command}; exec bash");
+        let konsole_cmd = format!("{command}; exec bash");
+        let xterm_cmd = format!("cd '{cwd}' && {command}; exec bash");
 
         let terminals = vec![
-            ("gnome-terminal", vec!["--", "bash", "-c", gnome_cmd.as_str()]),
-            ("konsole", vec!["--workdir", cwd, "-e", "bash", "-c", konsole_cmd.as_str()]),
+            (
+                "gnome-terminal",
+                vec!["--", "bash", "-c", gnome_cmd.as_str()],
+            ),
+            (
+                "konsole",
+                vec!["--workdir", cwd, "-e", "bash", "-c", konsole_cmd.as_str()],
+            ),
             ("xterm", vec!["-e", "bash", "-c", xterm_cmd.as_str()]),
         ];
 
         let mut launched = false;
         for (terminal, args) in terminals {
-            if let Ok(_) = Command::new(terminal).args(&args).spawn() {
+            if Command::new(terminal).args(&args).spawn().is_ok() {
                 launched = true;
                 break;
             }
         }
 
         if !launched {
-            return Err("No supported terminal found. Please install gnome-terminal, konsole, or xterm.".to_string());
+            return Err(
+                "No supported terminal found. Please install gnome-terminal, konsole, or xterm."
+                    .to_string(),
+            );
         }
     }
 
@@ -264,7 +276,7 @@ fn get_cursor_session_cwd(composite_session_id: &str) -> Result<String, String> 
     use rusqlite::{params, Connection};
     use std::path::PathBuf;
 
-    println!("DEBUG: get_cursor_session_cwd called with: {}", composite_session_id);
+    println!("DEBUG: get_cursor_session_cwd called with: {composite_session_id}");
 
     // Parse the composite session ID
     // Format: C:\...\state.vscdb#session=<session-id>#workspace=<workspace-id>#timestamp=<iso-timestamp>
@@ -288,9 +300,9 @@ fn get_cursor_session_cwd(composite_session_id: &str) -> Result<String, String> 
         .ok_or("Invalid Cursor session format: missing #timestamp=")?;
     let workspace_id = &after_workspace[..timestamp_pos];
 
-    println!("DEBUG: Cursor session ID: {}", session_id);
-    println!("DEBUG: Cursor workspace ID: {}", workspace_id);
-    println!("DEBUG: Cursor DB path: {}", db_path_str);
+    println!("DEBUG: Cursor session ID: {session_id}");
+    println!("DEBUG: Cursor workspace ID: {workspace_id}");
+    println!("DEBUG: Cursor DB path: {db_path_str}");
 
     // The workspace ID corresponds to a workspace storage folder
     // We need to find the Cursor base path and look up the workspace
@@ -323,8 +335,8 @@ fn get_cursor_session_cwd(composite_session_id: &str) -> Result<String, String> 
     println!("DEBUG: Workspace DB exists, opening...");
 
     // Open workspace database and extract project root
-    let conn = Connection::open(&workspace_db)
-        .map_err(|e| format!("Failed to open workspace DB: {}", e))?;
+    let conn =
+        Connection::open(&workspace_db).map_err(|e| format!("Failed to open workspace DB: {e}"))?;
 
     // Use the same approach as extract_project_info in cursor.rs
     // Query ItemTable for history.entries to find recently opened files
@@ -336,10 +348,13 @@ fn get_cursor_session_cwd(composite_session_id: &str) -> Result<String, String> 
 
     match history_result {
         Ok(ref history_json) => {
-            println!("DEBUG: Found history.entries, parsing {} chars...", history_json.len());
+            println!(
+                "DEBUG: Found history.entries, parsing {} chars...",
+                history_json.len()
+            );
         }
         Err(ref e) => {
-            println!("DEBUG: Failed to read history.entries: {}", e);
+            println!("DEBUG: Failed to read history.entries: {e}");
         }
     }
 
@@ -365,20 +380,19 @@ fn get_cursor_session_cwd(composite_session_id: &str) -> Result<String, String> 
                 let common_prefix = find_common_file_prefix(&file_paths);
                 let root_path = common_prefix.trim_end_matches('/');
 
-                println!("DEBUG: Common prefix before conversion: {}", root_path);
+                println!("DEBUG: Common prefix before conversion: {root_path}");
 
                 // Convert URI path to Windows path
                 // URI format examples:
                 //   /c:/Users/xxx/... -> C:\Users\xxx\...
                 //   /c%3A/Users/xxx/... -> C:\Users\xxx\... (URL-encoded colon)
-                let decoded_path = urlencoding::decode(root_path)
-                    .unwrap_or(std::borrow::Cow::Borrowed(root_path));
+                let decoded_path =
+                    urlencoding::decode(root_path).unwrap_or(std::borrow::Cow::Borrowed(root_path));
 
-                let windows_path = if decoded_path.starts_with("/") {
-                    let without_slash = &decoded_path[1..];
+                let windows_path = if let Some(without_slash) = decoded_path.strip_prefix('/') {
                     if without_slash.len() > 2 && &without_slash[1..2] == ":" {
                         // /c:/foo -> C:\foo
-                        without_slash.replace("/", "\\")
+                        without_slash.replace('/', "\\")
                     } else {
                         decoded_path.to_string()
                     }
@@ -386,11 +400,10 @@ fn get_cursor_session_cwd(composite_session_id: &str) -> Result<String, String> 
                     decoded_path.to_string()
                 };
 
-                println!("DEBUG: Extracted project root: {}", windows_path);
+                println!("DEBUG: Extracted project root: {windows_path}");
                 return Ok(windows_path);
-            } else {
-                println!("DEBUG: File paths list is empty after parsing");
             }
+            println!("DEBUG: File paths list is empty after parsing");
         } else {
             println!("DEBUG: Failed to parse history.entries JSON");
         }
@@ -405,15 +418,17 @@ fn get_cursor_session_cwd(composite_session_id: &str) -> Result<String, String> 
     );
 
     if let Ok(folder_uri_json) = folder_uri_result {
-        println!("DEBUG: Found workspace.folderUri: {}", &folder_uri_json[..folder_uri_json.len().min(200)]);
+        println!(
+            "DEBUG: Found workspace.folderUri: {}",
+            &folder_uri_json[..folder_uri_json.len().min(200)]
+        );
 
         if let Ok(uri_obj) = serde_json::from_str::<serde_json::Value>(&folder_uri_json) {
             if let Some(path) = uri_obj.get("path").and_then(|v| v.as_str()) {
                 // Convert URI path to Windows path
-                let windows_path = if path.starts_with("/") {
-                    let without_slash = &path[1..];
+                let windows_path = if let Some(without_slash) = path.strip_prefix('/') {
                     if without_slash.len() > 2 && &without_slash[1..2] == ":" {
-                        without_slash.replace("/", "\\")
+                        without_slash.replace('/', "\\")
                     } else {
                         path.to_string()
                     }
@@ -421,7 +436,7 @@ fn get_cursor_session_cwd(composite_session_id: &str) -> Result<String, String> 
                     path.to_string()
                 };
 
-                println!("DEBUG: Extracted project root from workspace.folderUri: {}", windows_path);
+                println!("DEBUG: Extracted project root from workspace.folderUri: {windows_path}");
                 return Ok(windows_path);
             }
         }
@@ -435,7 +450,7 @@ fn get_cursor_session_cwd(composite_session_id: &str) -> Result<String, String> 
         if let Ok(rows) = stmt.query_map(params![], |row| row.get::<_, String>(0)) {
             for (i, key_result) in rows.enumerate() {
                 if let Ok(key) = key_result {
-                    println!("  [{}] {}", i, key);
+                    println!("  [{i}] {key}");
                 }
             }
         }

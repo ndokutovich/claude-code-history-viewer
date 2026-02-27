@@ -16,7 +16,10 @@
 //   "messages": [...]
 // }
 
-use crate::models::universal::*;
+use crate::models::universal::{
+    ContentType, MessageRole, MessageType, ToolCall, ToolCallStatus, UniversalContent,
+    UniversalMessage, UniversalProject, UniversalSession,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -88,6 +91,12 @@ pub struct GeminiHashResolver {
     map: HashMap<String, String>, // hash → cwd
 }
 
+impl Default for GeminiHashResolver {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GeminiHashResolver {
     pub fn new() -> Self {
         Self {
@@ -121,7 +130,7 @@ impl GeminiHashResolver {
 
 fn normalize_path(path: &str) -> String {
     // Normalize path for consistent hashing
-    path.replace("\\", "/").to_lowercase()
+    path.replace('\\', "/").to_lowercase()
 }
 
 fn compute_sha256(input: &str) -> String {
@@ -134,7 +143,7 @@ fn compute_sha256(input: &str) -> String {
 // CONVERSION FUNCTIONS
 // ============================================================================
 
-/// Convert Gemini session file to UniversalProject
+/// Convert Gemini session file to `UniversalProject`
 ///
 /// Groups Gemini sessions by parent directory (project hash)
 pub fn gemini_sessions_to_projects(
@@ -150,10 +159,7 @@ pub fn gemini_sessions_to_projects(
     for file in session_files {
         if let Some(parent) = file.parent() {
             let parent_str = parent.to_string_lossy().to_string();
-            projects
-                .entry(parent_str.clone())
-                .or_insert_with(Vec::new)
-                .push(file);
+            projects.entry(parent_str.clone()).or_default().push(file);
         }
     }
 
@@ -172,7 +178,7 @@ pub fn gemini_sessions_to_projects(
         if let Some(first_file) = files.first() {
             if let Ok(content) = fs::read_to_string(first_file) {
                 if let Ok(session) = serde_json::from_str::<GeminiSession>(&content) {
-                    project_hash = session.project_hash.clone();
+                    project_hash.clone_from(&session.project_hash);
                 }
             }
         }
@@ -202,7 +208,7 @@ pub fn gemini_sessions_to_projects(
     Ok(result)
 }
 
-/// Convert Gemini session file to UniversalSession
+/// Convert Gemini session file to `UniversalSession`
 pub fn gemini_file_to_session(
     file_path: &Path,
     project_id: String,
@@ -210,17 +216,14 @@ pub fn gemini_file_to_session(
     resolver: &GeminiHashResolver,
 ) -> Result<UniversalSession, String> {
     // Read JSON file
-    let content = fs::read_to_string(file_path)
-        .map_err(|e| format!("Failed to read Gemini session: {}", e))?;
+    let content =
+        fs::read_to_string(file_path).map_err(|e| format!("Failed to read Gemini session: {e}"))?;
 
     let session: GeminiSession = serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse Gemini session: {}", e))?;
+        .map_err(|e| format!("Failed to parse Gemini session: {e}"))?;
 
     // Extract messages array (with fallbacks)
-    let messages = session
-        .messages
-        .or(session.history)
-        .unwrap_or_else(Vec::new);
+    let messages = session.messages.or(session.history).unwrap_or_default();
 
     let message_count = messages.len();
 
@@ -248,9 +251,7 @@ pub fn gemini_file_to_session(
     }
 
     // File size
-    let file_size = fs::metadata(file_path)
-        .ok()
-        .and_then(|m| Some(m.len() as i32));
+    let file_size = fs::metadata(file_path).ok().map(|m| m.len() as i32);
 
     if let Some(size) = file_size {
         metadata.insert("fileSizeBytes".to_string(), json!(size)); // camelCase!
@@ -283,7 +284,7 @@ pub fn gemini_file_to_session(
     })
 }
 
-/// Convert Gemini message to UniversalMessage
+/// Convert Gemini message to `UniversalMessage`
 pub fn gemini_message_to_universal(
     msg_value: &Value,
     session_id: String,
@@ -292,7 +293,7 @@ pub fn gemini_message_to_universal(
     sequence_number: i32,
 ) -> Result<UniversalMessage, String> {
     let msg: GeminiMessage = serde_json::from_value(msg_value.clone())
-        .map_err(|e| format!("Failed to parse Gemini message: {}", e))?;
+        .map_err(|e| format!("Failed to parse Gemini message: {e}"))?;
 
     // Determine role
     let role = determine_gemini_role(&msg);
@@ -315,7 +316,7 @@ pub fn gemini_message_to_universal(
         id: msg
             .id
             .or(msg.uuid)
-            .unwrap_or_else(|| format!("gemini-{}", sequence_number)),
+            .unwrap_or_else(|| format!("gemini-{sequence_number}")),
         session_id,
         project_id,
         source_id,
@@ -357,7 +358,11 @@ fn find_gemini_sessions(root: &Path) -> Result<Vec<PathBuf>, String> {
                     visit_dirs(&path, sessions)?;
                 } else if let Some(name) = path.file_name() {
                     if let Some(name_str) = name.to_str() {
-                        if name_str.starts_with("session-") && name_str.ends_with(".json") {
+                        if name_str.starts_with("session-")
+                            && std::path::Path::new(name_str)
+                                .extension()
+                                .is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
+                        {
                             sessions.push(path);
                         }
                     }
@@ -367,8 +372,7 @@ fn find_gemini_sessions(root: &Path) -> Result<Vec<PathBuf>, String> {
         Ok(())
     }
 
-    visit_dirs(root, &mut sessions)
-        .map_err(|e| format!("Failed to scan Gemini sessions: {}", e))?;
+    visit_dirs(root, &mut sessions).map_err(|e| format!("Failed to scan Gemini sessions: {e}"))?;
 
     Ok(sessions)
 }
@@ -391,7 +395,7 @@ fn extract_text_from_content(content: &Value) -> Option<String> {
         Value::Object(obj) => obj
             .get("text")
             .and_then(|v| v.as_str())
-            .map(|s| s.to_string()),
+            .map(std::string::ToString::to_string),
         Value::Array(arr) => {
             // Try to extract text from array items
             for item in arr {
@@ -414,10 +418,9 @@ fn determine_gemini_role(msg: &GeminiMessage) -> MessageRole {
 
     match role_str {
         "user" | "human" => MessageRole::User,
-        "gemini" | "model" | "assistant" => MessageRole::Assistant,
         "system" => MessageRole::System,
         "tool" | "tool_result" => MessageRole::Function,
-        _ => MessageRole::Assistant,
+        _ => MessageRole::Assistant, // Default (includes "gemini", "model", "assistant")
     }
 }
 

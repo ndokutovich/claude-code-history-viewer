@@ -9,14 +9,14 @@ export const ProviderMetadataDisplay = ({ metadata }: Props) => {
   const { t } = useTranslation("components");
 
   // Extract file-related data
-  const relevantFiles = (metadata.relevant_files as any[]) || [];
-  const attachedCodeChunks = (metadata.attached_code_chunks as any[]) || [];
-  const attachedFileMetadata = (metadata.attached_file_metadata as any[]) || [];
-  const suggestedDiffs = (metadata.suggested_diffs as any[]) || [];
-  const gitDiffs = (metadata.git_diffs as any[]) || [];
-  const interpreterResults = (metadata.interpreter_results as any[]) || [];
-  const consoleLogs = (metadata.console_logs as any[]) || [];
-  const thinkingBlocks = (metadata.thinking_blocks as any[]) || [];
+  const relevantFiles = (metadata.relevant_files as unknown as Record<string, unknown>[]) || [];
+  const attachedCodeChunks = (metadata.attached_code_chunks as unknown as Record<string, unknown>[]) || [];
+  const attachedFileMetadata = (metadata.attached_file_metadata as unknown as Record<string, unknown>[]) || [];
+  const suggestedDiffs = (metadata.suggested_diffs as unknown as Record<string, unknown>[]) || [];
+  const gitDiffs = (metadata.git_diffs as unknown as Record<string, unknown>[]) || [];
+  const interpreterResults = (metadata.interpreter_results as unknown as Record<string, unknown>[]) || [];
+  const consoleLogs = (metadata.console_logs as unknown as Record<string, unknown>[]) || [];
+  const thinkingBlocks = (metadata.thinking_blocks as unknown as Record<string, unknown>[]) || [];
 
   const hasAnyData =
     relevantFiles.length > 0 ||

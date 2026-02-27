@@ -7,12 +7,13 @@ import { COLORS } from "@/constants/colors";
 import { exportToMarkdown, exportToHTML, exportToDocx } from "@/utils/exportUtils";
 import type { UIMessage, UISession } from "@/types";
 import { getSessionTitle } from "@/utils/sessionUtils";
-import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useAppStore } from "@/store/useAppStore";
 import { useTheme } from "@/contexts/theme";
 import { filterMessages } from "@/utils/messageFilters";
 import { downloadDir, join } from "@tauri-apps/api/path";
 import { createFileActions } from "@/utils/fileActions";
+import type { MessageFilters } from "@/types";
+import type { ExtendedAppStore, ExtendedUISession } from "@/types/storeExtensions";
 
 interface ExportControlsProps {
   messages: UIMessage[];
@@ -30,22 +31,31 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
   const [supportsResume, setSupportsResume] = useState(false);
 
   // Get current view mode, theme, and pagination state from app settings
-  const { messageViewMode, messageFilters, pagination, loadAllMessages, refreshCurrentSession } = useAppStore();
+  const store = useAppStore();
+  const extStore = store as unknown as ExtendedAppStore;
+  const messageViewMode = extStore.messageViewMode || "formatted";
+  const messageFilters: MessageFilters = extStore.messageFilters || { showBashOnly: false, showToolUseOnly: false, showMessagesOnly: false, showCommandOnly: false };
+  const pagination = store.pagination;
+  const loadAllMessages = extStore.loadAllMessages;
+  const refreshCurrentSession = store.refreshCurrentSession;
   const { isDarkMode } = useTheme();
 
   const sessionTitle = getSessionTitle(session, messages);
 
+  const extSession = session as unknown as ExtendedUISession;
+  const sessionProviderId = extSession.providerId || session.provider;
+
   // Check if provider supports resume functionality
   useEffect(() => {
     const checkResumeSupport = async () => {
-      if (!session.providerId) {
+      if (!sessionProviderId) {
         setSupportsResume(false);
         return;
       }
       try {
         const { invoke } = await import("@tauri-apps/api/core");
         const supported = await invoke<boolean>("provider_supports_resume", {
-          providerId: session.providerId,
+          providerId: sessionProviderId,
         });
         setSupportsResume(supported);
       } catch (error) {
@@ -54,7 +64,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
       }
     };
     checkResumeSupport();
-  }, [session.providerId]);
+  }, [sessionProviderId]);
 
   // Filter messages based on current filter settings (reuse utility function)
   const filteredMessages = useMemo(() => {
@@ -96,7 +106,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
 
   const handleCopyPath = async () => {
     try {
-      await writeText(session.file_path);
+      await navigator.clipboard.writeText(session.file_path);
       setCopiedPath(true);
       toast.success(t("export.pathCopied"));
       setTimeout(() => setCopiedPath(false), 2000);
@@ -107,6 +117,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
   };
 
   const handleLoadAll = async () => {
+    if (!loadAllMessages) return;
     try {
       await loadAllMessages();
       toast.success(t("export.allMessagesLoaded", { count: pagination.totalCount }));
@@ -117,7 +128,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
   };
 
   const handleFixSession = async () => {
-    if (!session.is_problematic) return;
+    if (!extSession.is_problematic) return;
 
     try {
       setIsFixingSession(true);
@@ -144,13 +155,13 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
       // Get actual working directory from session file
       // For Cursor: use file_path (composite ID: db_path#session=...#timestamp=...)
       // For others: use session_id (file path)
-      const sessionIdentifier = session.providerId === "cursor"
+      const sessionIdentifier = sessionProviderId === "cursor"
         ? session.file_path
         : session.session_id;
 
       const cwd = await invoke<string>("get_session_cwd", {
         sessionFilePath: sessionIdentifier,
-        providerId: session.providerId || "claude-code",
+        providerId: sessionProviderId || "claude-code",
       });
 
       // If Shift key is held, copy command instead of executing
@@ -158,16 +169,16 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
         const resumeCommand = await invoke<string>("get_resume_command", {
           sessionId: sessionIdentifier,
           cwd,
-          providerId: session.providerId || "claude-code",
+          providerId: sessionProviderId || "claude-code",
         });
-        await writeText(resumeCommand);
+        await navigator.clipboard.writeText(resumeCommand);
         toast.success(t("export.resumeCommandCopied"));
       } else {
         // Execute resume in terminal
         await invoke("resume_session", {
           sessionId: sessionIdentifier,
           cwd,
-          providerId: session.providerId || "claude-code",
+          providerId: sessionProviderId || "claude-code",
         });
         toast.success(t("export.sessionResumed"));
       }
@@ -327,7 +338,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
         )}
 
         {/* Fix Session Button - Only show if session is problematic */}
-        {session.is_problematic && (
+        {extSession.is_problematic && (
           <button
             onClick={handleFixSession}
             disabled={isFixingSession}

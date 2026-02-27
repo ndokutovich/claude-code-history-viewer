@@ -7,6 +7,7 @@ import { Search, Download, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@/store/useAppStore';
 import type { UIMessage, UISession, UIProject } from '@/types';
+import type { ExtendedAppStore, ExtendedUIMessage } from '@/types/storeExtensions';
 
 interface ContextSelectorProps {
   onSelectMessages: (messages: UIMessage[]) => void;
@@ -24,7 +25,7 @@ interface SessionContext {
 export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSelectMessages }) => {
   const { t } = useTranslation("common");
   const projects = useAppStore((state) => state.projects);
-  const loadProjectSessions = useAppStore((state) => state.loadProjectSessions);
+  const loadProjectSessions = useAppStore((state) => (state as unknown as ExtendedAppStore).loadProjectSessions);
   const selectSession = useAppStore((state) => state.selectSession);
   const messages = useAppStore((state) => state.messages);
 
@@ -45,12 +46,12 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
 
   // Load sessions when project is selected
   useEffect(() => {
-    if (selectedProject) {
+    if (selectedProject && loadProjectSessions) {
       loadProjectSessions(selectedProject.path)
-        .then((loadedSessions) => {
+        .then((loadedSessions: UISession[]) => {
           setSessions(loadedSessions);
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           console.error('Failed to load sessions:', error);
           setSessions([]);
         });
@@ -365,8 +366,8 @@ export const ContextSelectorEnhanced: React.FC<ContextSelectorProps> = ({ onSele
                         <Badge variant={msg.type === 'user' ? 'default' : 'secondary'}>
                           {msg.type}
                         </Badge>
-                        {msg.model && (
-                          <span className="text-xs text-muted-foreground">{msg.model}</span>
+                        {(msg as unknown as ExtendedUIMessage).model && (
+                          <span className="text-xs text-muted-foreground">{(msg as unknown as ExtendedUIMessage).model}</span>
                         )}
                       </div>
                       <p className="text-sm line-clamp-2">

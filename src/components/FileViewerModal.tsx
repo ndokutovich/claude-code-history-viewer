@@ -27,7 +27,10 @@ export const FileViewerModal = ({
   onClose,
 }: FileViewerModalProps) => {
   const { t } = useTranslation("components");
-  const { projects, selectProject, loadProjectSessions, selectSession } = useAppStore();
+  const store = useAppStore();
+  const { projects, selectProject, selectSession } = store;
+  const extStore = store as unknown as import("../types/storeExtensions").ExtendedAppStore;
+  const loadProjectSessions = extStore.loadProjectSessions;
   const { actions: analyticsActions } = useAnalytics();
 
   const handleDownload = async () => {
@@ -124,6 +127,10 @@ export const FileViewerModal = ({
 
       // Load all sessions from the project to find the one containing this message
       console.log("Loading sessions from project:", project.path);
+      if (!loadProjectSessions) {
+        toast.error("loadProjectSessions not available");
+        return;
+      }
       const projectSessions = await loadProjectSessions(project.path, false);
       console.log("Loaded sessions:", projectSessions.length);
 
@@ -161,7 +168,7 @@ export const FileViewerModal = ({
 
       // Load session with large page size to ensure message is loaded
       console.log("Loading session with full messages:", targetSession.session_id);
-      await selectSession(targetSession, 10000);
+      await (selectSession as unknown as (session: unknown, pageSize?: number) => Promise<void>)(targetSession, 10000);
 
       // Wait for message to render using polling with max attempts
       const messageId = `message-${file.message_id}`;
