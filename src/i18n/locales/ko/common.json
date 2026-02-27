@@ -94,6 +94,8 @@
   "common.provider.codex": "Codex CLI",
   "common.provider.detectError": "프로바이더 감지에 실패했습니다. Claude만 사용합니다.",
   "common.provider.opencode": "OpenCode",
+  "common.provider.cursor": "Cursor IDE",
+  "common.provider.gemini": "Gemini CLI",
   "common.view": "보기",
   "common.watcher.autoRefresh": "자동 새로고침",
   "common.watcher.disabled": "자동 새로고침 비활성화됨",

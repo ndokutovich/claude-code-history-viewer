@@ -94,6 +94,8 @@
   "common.provider.codex": "Codex CLI",
   "common.provider.detectError": "プロバイダーの検出に失敗しました。Claude のみ使用します。",
   "common.provider.opencode": "OpenCode",
+  "common.provider.cursor": "Cursor IDE",
+  "common.provider.gemini": "Gemini CLI",
   "common.view": "表示",
   "common.watcher.autoRefresh": "自動更新",
   "common.watcher.disabled": "自動更新が無効です",

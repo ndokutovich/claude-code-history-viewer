@@ -94,6 +94,8 @@
   "common.provider.codex": "Codex CLI",
   "common.provider.detectError": "Failed to detect providers. Using Claude only.",
   "common.provider.opencode": "OpenCode",
+  "common.provider.cursor": "Cursor IDE",
+  "common.provider.gemini": "Gemini CLI",
   "common.view": "View",
   "common.watcher.autoRefresh": "Auto-refresh",
   "common.watcher.disabled": "Auto-refresh disabled",
