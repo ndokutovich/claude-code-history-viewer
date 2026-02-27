@@ -3,16 +3,19 @@
 //! This module contains all the data structures used throughout the application.
 
 mod edit;
+mod files;
 mod message;
 mod metadata;
 mod session;
 mod stats;
+pub mod universal;
 
 #[cfg(test)]
 mod snapshot_tests;
 
 // Re-export all types for backward compatibility
 pub use edit::*;
+pub use files::*;
 pub use message::*;
 pub use metadata::*;
 pub use session::*;

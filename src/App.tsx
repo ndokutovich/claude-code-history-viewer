@@ -9,6 +9,12 @@ import { RecentEditsViewer } from "./components/RecentEditsViewer";
 import { SimpleUpdateManager } from "./components/SimpleUpdateManager";
 import { SettingsManager } from "./components/SettingsManager";
 import { SessionBoard } from "./components/SessionBoard/SessionBoard";
+// Our fork's unique views
+import { FilesView } from "./components/FilesView";
+import { CommandHistoryView } from "./components/CommandHistoryView";
+import { RawMessageView } from "./components/RawMessageView";
+import { ExportControls } from "./components/ExportControls";
+import { DebugConsole } from "./components/DebugConsole";
 import { useAppStore } from "./store/useAppStore";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { useUpdater } from "./hooks/useUpdater";
@@ -464,6 +470,12 @@ function App() {
                 </div>
               ) : computed.isBoardView ? (
                 <SessionBoard />
+              ) : computed.isFilesView ? (
+                <FilesView />
+              ) : computed.isCommandHistoryView ? (
+                <CommandHistoryView />
+              ) : computed.isRawMessageView ? (
+                <RawMessageView messages={messages} />
               ) : computed.isRecentEditsView ? (
                 <OverlayScrollbarsComponent
                   className="h-full"
@@ -595,6 +607,17 @@ function App() {
         {/* Update Manager */}
         <SimpleUpdateManager updater={updater} />
       </div>
+
+      {/* Export Controls (overlay, shown in messages view) */}
+      {selectedSession && computed.isMessagesView && (
+        <ExportControls
+          messages={messages}
+          session={selectedSession}
+        />
+      )}
+
+      {/* Debug Console (development tool) */}
+      {import.meta.env.DEV && <DebugConsole />}
 
       {/* Modals */}
       <ModalContainer />

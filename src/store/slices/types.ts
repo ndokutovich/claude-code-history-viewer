@@ -176,6 +176,17 @@ export interface AppStoreState {
   providers: ProviderInfo[];
   activeProviders: ProviderId[];
   isDetectingProviders: boolean;
+
+  // Export state
+  isExporting: boolean;
+  exportError: string | null;
+  lastExportFormat: "markdown" | "html" | "docx" | null;
+
+  // File activity state
+  fileActivities: import("../../types").FileActivity[];
+  fileActivityFilters: import("../../types").FileActivityFilters;
+  isLoadingFileActivities: boolean;
+  fileActivityError: string | null;
 }
 
 export interface AppStoreActions {
@@ -310,6 +321,17 @@ export interface AppStoreActions {
   detectProviders: () => Promise<void>;
   toggleProvider: (id: ProviderId) => void;
   setActiveProviders: (ids: ProviderId[]) => void;
+
+  // Export actions
+  setIsExporting: (value: boolean) => void;
+  setExportError: (error: string | null) => void;
+  setLastExportFormat: (format: "markdown" | "html" | "docx") => void;
+  clearExportState: () => void;
+
+  // File activity actions
+  loadFileActivities: (sessionId: string, projectPath: string) => Promise<void>;
+  setFileActivityFilters: (filters: Partial<import("../../types").FileActivityFilters>) => void;
+  clearFileActivities: () => void;
 }
 
 export type FullAppStore = AppStoreState & AppStoreActions;

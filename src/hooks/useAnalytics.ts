@@ -494,6 +494,9 @@ export const useAnalytics = (): UseAnalyticsReturn => {
       isRecentEditsView: analytics.currentView === "recentEdits",
       isSettingsView: analytics.currentView === "settings",
       isBoardView: analytics.currentView === "board",
+      isFilesView: analytics.currentView === "files",
+      isCommandHistoryView: analytics.currentView === "commandHistory",
+      isRawMessageView: analytics.currentView === "rawMessage",
       hasAnyError: !!(
         analytics.projectSummaryError ||
         analytics.sessionComparisonError ||

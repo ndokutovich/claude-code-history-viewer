@@ -8,7 +8,7 @@ export const FolderSelectorContainer: React.FC = () => {
   const { isOpen, closeModal, folderSelectorMode, openModal } = useModal();
   const { setClaudePath, scanProjects, error } = useAppStore();
 
-  // 에러 발생 시 자동으로 폴더 선택 모달 열기
+  // Automatically open folder selection modal when error occurs
   useEffect(() => {
     if (error?.type === AppErrorType.CLAUDE_FOLDER_NOT_FOUND) {
       openModal("folderSelector", { mode: "notFound" });
@@ -16,19 +16,19 @@ export const FolderSelectorContainer: React.FC = () => {
   }, [error, openModal]);
 
   const handleFolderSelected = async (path: string) => {
-    // .claude 폴더 경로 처리
+    // Handle .claude folder path
     let claudeFolderPath = path;
     if (!path.endsWith(".claude")) {
       claudeFolderPath = `${path}/.claude`;
     }
 
-    // 경로 설정 및 프로젝트 스캔
+    // Set path and scan projects
     setClaudePath(claudeFolderPath);
     try {
       await scanProjects();
     } catch (error) {
       console.error("Failed to scan projects:", error);
-      // 에러 처리 로직 추가 (예: 사용자에게 알림)
+      // Add error handling logic (e.g., notify user)
     }
   };
 

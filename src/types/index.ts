@@ -250,3 +250,74 @@ export type {
   UpdateSettings,
 } from "./updateSettings";
 export { DEFAULT_UPDATE_SETTINGS } from "./updateSettings";
+
+// ============================================================================
+// Legacy / Fork-Specific Types - preserved for our unique components
+// ============================================================================
+
+// UIMessage: Legacy display format (maps to ClaudeMessage from upstream)
+export type UIMessage = import("./core/message").ClaudeMessage & {
+  // Additional fork-specific fields
+  uuid?: string;
+  parentUuid?: string;
+  sessionId?: string;
+  provider_metadata?: Record<string, unknown>;
+  projectPath?: string;
+};
+
+// UISession: alias for ClaudeSession (same structure)
+export type UISession = import("./core/session").ClaudeSession;
+
+// UIProject: alias for ClaudeProject (same structure)
+export type UIProject = import("./core/session").ClaudeProject;
+
+// File Activity Types (unique to our fork)
+export type FileOperation =
+  | "read"
+  | "write"
+  | "edit"
+  | "delete"
+  | "create"
+  | "glob"
+  | "multiedit";
+
+export interface FileChange {
+  old_string: string;
+  new_string: string;
+  line_start?: number;
+  line_end?: number;
+}
+
+export interface FileActivity {
+  file_path: string;
+  operation: FileOperation;
+  timestamp: string;
+  session_id: string;
+  project_id: string;
+  message_id: string;
+  tool_name: string;
+  content_before?: string;
+  content_after?: string;
+  size_before?: number;
+  size_after?: number;
+  changes?: FileChange[];
+  lines_added?: number;
+  lines_removed?: number;
+}
+
+export interface FileActivityFilters {
+  dateRange?: [string, string];
+  projects?: string[];
+  sessionId?: string;
+  operations?: FileOperation[];
+  fileExtensions?: string[];
+  searchQuery?: string;
+}
+
+// Message Filters (unique to our fork)
+export interface MessageFilters {
+  showBashOnly: boolean;
+  showToolUseOnly: boolean;
+  showMessagesOnly: boolean;
+  showCommandOnly: boolean;
+}

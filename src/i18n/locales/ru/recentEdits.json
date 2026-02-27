@@ -1,0 +1,22 @@
+{
+  "recentEdits.cancel": "Отмена",
+  "recentEdits.confirmRestore": "Восстановить",
+  "recentEdits.confirmRestoreMessage": "Это перезапишет файл по пути:\n{{path}}\n\nВы уверены, что хотите продолжить?",
+  "recentEdits.confirmRestoreTitle": "Восстановить файл?",
+  "recentEdits.copyContent": "Скопировать содержимое",
+  "recentEdits.created": "Создано",
+  "recentEdits.description": "Восстанавливайте случайно удалённые файлы, просматривая последнее содержимое после изменений",
+  "recentEdits.edited": "Изменено",
+  "recentEdits.footerInfo": "Отображается последнее содержимое каждого файла. Нажмите «Восстановить», чтобы записать файл обратно на диск.",
+  "recentEdits.lines": "строк",
+  "recentEdits.loading": "Загрузка последних изменений...",
+  "recentEdits.noEdits": "Нет последних изменений",
+  "recentEdits.noEditsDescription": "В этом проекте не найдено изменений или созданий файлов",
+  "recentEdits.noSearchResults": "Файлы, соответствующие вашему поиску, не найдены",
+  "recentEdits.restoreError": "Не удалось восстановить файл",
+  "recentEdits.restoreFile": "Восстановить файл",
+  "recentEdits.searchPlaceholder": "Поиск по пути к файлу или содержимому...",
+  "recentEdits.showMore": "Показать ещё {{count}}",
+  "recentEdits.stats": "{{files}} файлов, {{edits}} изменений всего",
+  "recentEdits.title": "Последние изменения"
+}

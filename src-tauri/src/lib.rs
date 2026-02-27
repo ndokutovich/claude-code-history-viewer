@@ -11,7 +11,16 @@ use crate::commands::{
         get_all_mcp_servers, get_all_settings, get_claude_json_config, get_mcp_servers,
         get_settings_by_scope, read_text_file, save_mcp_servers, save_settings, write_text_file,
     },
+    cursor::{
+        get_cursor_path, load_cursor_messages, load_cursor_sessions, scan_cursor_workspaces,
+        search_cursor_messages, validate_cursor_folder,
+    },
     feedback::{get_system_info, open_github_issues, send_feedback},
+    files::get_file_activities,
+    gemini::{
+        get_gemini_path, load_gemini_messages, load_gemini_sessions, scan_gemini_projects,
+        seed_gemini_resolver, validate_gemini_folder, GeminiResolverState,
+    },
     mcp_presets::{delete_mcp_preset, get_mcp_preset, load_mcp_presets, save_mcp_preset},
     metadata::{
         get_metadata_folder_path, get_session_display_name, is_project_hidden, load_user_metadata,
@@ -23,10 +32,15 @@ use crate::commands::{
         search_all_providers,
     },
     project::{get_claude_folder_path, get_git_log, scan_projects, validate_claude_folder},
+    resume::{get_resume_command, get_session_cwd, provider_supports_resume, resume_session},
     session::{
         get_recent_edits, get_session_message_count, load_project_sessions, load_session_messages,
         load_session_messages_paginated, rename_opencode_session_title, rename_session_native,
         reset_session_native_name, restore_file, search_messages,
+    },
+    session_writer::{
+        append_to_claude_session, create_claude_project, create_claude_session,
+        extract_message_range,
     },
     settings::{delete_preset, get_preset, load_presets, save_preset},
     stats::{
@@ -60,6 +74,9 @@ pub fn run() {
             as Arc<
                 Mutex<Option<notify_debouncer_mini::Debouncer<notify::RecommendedWatcher>>>,
             >)
+        .manage(GeminiResolverState(Mutex::new(
+            crate::commands::adapters::gemini::GeminiHashResolver::new(),
+        )))
         .invoke_handler(tauri::generate_handler![
             get_claude_folder_path,
             validate_claude_folder,
@@ -127,7 +144,33 @@ pub fn run() {
             scan_all_projects,
             load_provider_sessions,
             load_provider_messages,
-            search_all_providers
+            search_all_providers,
+            // Cursor IDE commands
+            get_cursor_path,
+            validate_cursor_folder,
+            scan_cursor_workspaces,
+            load_cursor_sessions,
+            load_cursor_messages,
+            search_cursor_messages,
+            // Gemini CLI commands
+            get_gemini_path,
+            validate_gemini_folder,
+            scan_gemini_projects,
+            load_gemini_sessions,
+            load_gemini_messages,
+            seed_gemini_resolver,
+            // Resume session commands
+            resume_session,
+            get_resume_command,
+            provider_supports_resume,
+            get_session_cwd,
+            // Session writer commands
+            create_claude_project,
+            create_claude_session,
+            append_to_claude_session,
+            extract_message_range,
+            // File activity commands
+            get_file_activities
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
