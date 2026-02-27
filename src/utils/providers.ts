@@ -1,6 +1,6 @@
 import type { ProviderId } from "../types";
 
-export const PROVIDER_IDS: ProviderId[] = ["claude", "codex", "opencode"];
+export const PROVIDER_IDS: ProviderId[] = ["claude", "codex", "opencode", "cursor", "gemini"];
 export const DEFAULT_PROVIDER_ID: ProviderId = "claude";
 
 const PROVIDER_TRANSLATIONS: Record<
@@ -10,6 +10,8 @@ const PROVIDER_TRANSLATIONS: Record<
   claude: { key: "common.provider.claude", fallback: "Claude Code" },
   codex: { key: "common.provider.codex", fallback: "Codex CLI" },
   opencode: { key: "common.provider.opencode", fallback: "OpenCode" },
+  cursor: { key: "common.provider.cursor", fallback: "Cursor IDE" },
+  gemini: { key: "common.provider.gemini", fallback: "Gemini CLI" },
 };
 
 type TranslateFn = (key: string, defaultValue: string) => string;
@@ -25,6 +27,8 @@ const PROVIDER_ANALYTICS_CAPABILITIES: Record<
   claude: { supportsConversationBreakdown: true },
   codex: { supportsConversationBreakdown: false },
   opencode: { supportsConversationBreakdown: false },
+  cursor: { supportsConversationBreakdown: false },
+  gemini: { supportsConversationBreakdown: false },
 };
 
 export interface ProviderTokenStatsLike {
@@ -44,6 +48,8 @@ export function getProviderId(provider?: ProviderId | string): ProviderId {
     case "codex":
     case "opencode":
     case "claude":
+    case "cursor":
+    case "gemini":
       return provider;
     default:
       return DEFAULT_PROVIDER_ID;

@@ -70,12 +70,26 @@ import zhTWUpdate from './locales/zh-TW/update.json';
 import zhTWFeedback from './locales/zh-TW/feedback.json';
 import zhTWRecentEdits from './locales/zh-TW/recentEdits.json';
 
+// Russian
+import ruCommon from './locales/ru/common.json';
+import ruAnalytics from './locales/ru/analytics.json';
+import ruSession from './locales/ru/session.json';
+import ruSettings from './locales/ru/settings.json';
+import ruTools from './locales/ru/tools.json';
+import ruError from './locales/ru/error.json';
+import ruMessage from './locales/ru/message.json';
+import ruRenderers from './locales/ru/renderers.json';
+import ruUpdate from './locales/ru/update.json';
+import ruFeedback from './locales/ru/feedback.json';
+import ruRecentEdits from './locales/ru/recentEdits.json';
+
 export const supportedLanguages = {
   en: 'English',
   ko: '한국어',
   ja: '日本語',
   'zh-CN': '简体中文',
   'zh-TW': '繁體中文',
+  ru: 'Русский',
 } as const;
 
 export type SupportedLanguage = keyof typeof supportedLanguages;
@@ -88,6 +102,7 @@ export const languageLocaleMap: Record<string, string> = {
   'zh-TW': 'zh-TW',
   'zh-HK': 'zh-HK',
   'zh-MO': 'zh-MO',
+  ru: 'ru-RU',
 };
 
 /**
@@ -198,6 +213,21 @@ const resources = {
       zhTWUpdate,
       zhTWFeedback,
       zhTWRecentEdits
+    ),
+  },
+  ru: {
+    translation: mergeNamespaces(
+      ruCommon,
+      ruAnalytics,
+      ruSession,
+      ruSettings,
+      ruTools,
+      ruError,
+      ruMessage,
+      ruRenderers,
+      ruUpdate,
+      ruFeedback,
+      ruRecentEdits
     ),
   },
 };
