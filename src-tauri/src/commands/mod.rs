@@ -1,5 +1,6 @@
 pub mod adapters;
 pub mod claude_settings;
+pub mod codex;
 pub mod cursor;
 pub mod feedback;
 pub mod files;

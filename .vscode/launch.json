@@ -1,0 +1,117 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Tauri App (LLDB)",
+      "type": "lldb-dap",
+      "request": "launch",
+      "program": "${workspaceFolder}/src-tauri/target/debug/claude-code-history-viewer.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_BACKTRACE": "1",
+        "RUST_LOG": "debug"
+      },
+      "preLaunchTask": "rust:build-debug",
+      "sourceLanguages": ["rust"]
+    },
+    {
+      "name": "Debug Rust Backend (LLDB)",
+      "type": "lldb-dap",
+      "request": "launch",
+      "program": "${workspaceFolder}/src-tauri/target/debug/claude-code-history-viewer.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "RUST_BACKTRACE": "1",
+        "RUST_LOG": "debug"
+      },
+      "preLaunchTask": "rust:build-debug"
+    },
+    {
+      "name": "Debug Tauri App (Windows C++)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/src-tauri/target/debug/claude-code-history-viewer.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [
+        {
+          "name": "RUST_BACKTRACE",
+          "value": "1"
+        },
+        {
+          "name": "RUST_LOG",
+          "value": "debug"
+        }
+      ],
+      "externalConsole": false,
+      "preLaunchTask": "rust:build-debug"
+    },
+    {
+      "name": "Attach to Process (LLDB)",
+      "type": "lldb-dap",
+      "request": "attach",
+      "program": "${workspaceFolder}/src-tauri/target/debug/claude-code-history-viewer.exe",
+      "pid": "${command:pickProcess}"
+    },
+    {
+      "name": "Attach to Process (Windows)",
+      "type": "cppvsdbg",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
+    },
+    {
+      "name": "Run Tauri Dev (No Debugger)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "tauri:dev"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug Frontend (Edge)",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/src",
+      "preLaunchTask": "ui:dev",
+      "runtimeArgs": [
+        "--remote-debugging-port=9222",
+        "--user-data-dir=${workspaceFolder}/.vscode/edge-debug"
+      ]
+    },
+    {
+      "name": "Debug Frontend (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/src",
+      "preLaunchTask": "ui:dev",
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Full Stack (LLDB + Tauri WebView)",
+      "configurations": ["Run Tauri Dev (No Debugger)"],
+      "stopAll": true,
+      "presentation": {
+        "order": 1
+      }
+    },
+    {
+      "name": "Debug Full Stack (LLDB + Edge)",
+      "configurations": ["Debug Rust Backend (LLDB)", "Debug Frontend (Edge)"],
+      "stopAll": true
+    },
+    {
+      "name": "Debug Full Stack (Windows + Edge)",
+      "configurations": ["Debug Tauri App (Windows C++)", "Debug Frontend (Edge)"],
+      "stopAll": true
+    }
+  ]
+}
