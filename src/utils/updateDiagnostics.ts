@@ -5,7 +5,7 @@
  * Used when surfacing update errors to users or sending bug reports.
  */
 
-import type { UpdateState } from "@/hooks/useNativeUpdater";
+import type { UpdateState } from "@/hooks/useUpdater";
 
 interface BuildUpdateDiagnosticsInput {
   error: string;
@@ -27,6 +27,8 @@ export function buildUpdateDiagnostics({
     hasUpdate: state.hasUpdate,
     isDownloading: state.isDownloading,
     isInstalling: state.isInstalling,
+    isRestarting: state.isRestarting,
+    requiresManualRestart: state.requiresManualRestart,
     downloadProgress: state.downloadProgress,
     userAgent:
       typeof navigator !== "undefined" && navigator.userAgent
@@ -41,6 +43,8 @@ export function buildUpdateDiagnostics({
     `hasUpdate=${info.hasUpdate}`,
     `isDownloading=${info.isDownloading}`,
     `isInstalling=${info.isInstalling}`,
+    `isRestarting=${info.isRestarting}`,
+    `requiresManualRestart=${info.requiresManualRestart}`,
     `downloadProgress=${info.downloadProgress}`,
     `userAgent=${info.userAgent}`,
   ].join("\n");
