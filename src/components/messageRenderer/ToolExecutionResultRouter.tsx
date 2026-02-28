@@ -23,6 +23,7 @@ import { formatClaudeErrorOutput } from "../../utils/messageUtils";
 import { Renderer } from "../../shared/RendererHeader";
 import { COLORS } from "../../constants/colors";
 import { cn } from "../../utils/cn";
+import { AnsiText } from "../common/AnsiText";
 
 interface ToolExecutionResultRouterProps {
   toolResult: Record<string, unknown> | string;
@@ -337,7 +338,7 @@ export const ToolExecutionResultRouter: React.FC<
                 COLORS.semantic.error.border
               )}
             >
-              {formatClaudeErrorOutput(stderr)}
+              <AnsiText text={formatClaudeErrorOutput(stderr)} />
             </pre>
           </div>
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Folder, Check, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
@@ -8,12 +8,14 @@ import remarkGfm from "remark-gfm";
 import { Renderer } from "../../shared/RendererHeader";
 import { cn } from "../../utils/cn";
 import { COLORS } from "../../constants/colors";
+import { AnsiText } from "../common/AnsiText";
+import { hasAnsiCodes } from "@/utils/ansiToHtml";
 
 type Props = {
   result: string;
 };
 
-export const StringRenderer = ({ result }: Props) => {
+export const StringRenderer = memo(function StringRenderer({ result }: Props) {
   const { t } = useTranslation("components");
   // Check if it's a file tree or directory structure
   const isFileTree =
@@ -69,8 +71,10 @@ export const StringRenderer = ({ result }: Props) => {
         <div
           className={cn(COLORS.ui.background.primary, COLORS.ui.border.medium)}
         >
-          {isFileTree ? (
-            <div className={cn(COLORS.ui.text.primary)}>{displayResult}</div>
+          {isFileTree || hasAnsiCodes(displayResult) ? (
+            <div className={cn("whitespace-pre-wrap overflow-x-auto", COLORS.ui.text.primary)}>
+              <AnsiText text={displayResult} />
+            </div>
           ) : (
             <div className="p-3 prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-code:text-red-600 prose-code:bg-gray-100 prose-pre:bg-gray-900 prose-pre:text-gray-100">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -102,4 +106,4 @@ export const StringRenderer = ({ result }: Props) => {
       </Renderer.Content>
     </Renderer>
   );
-};
+});
