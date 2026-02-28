@@ -1,9 +1,37 @@
 /// <reference types="vitest" />
+import fs from "fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { visualizer } from "rollup-plugin-visualizer";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+
+// Fix for Windows subst drives: Vite calls fs.realpathSync which resolves
+// W:/ to C:/_init/w/, causing absolute fileName errors in Rollup's build-html.
+// Patch realpathSync to return the subst path for project paths.
+const cwd = process.cwd();
+const realCwd = fs.realpathSync.native(cwd);
+if (cwd !== realCwd) {
+  const origRealpathSync = fs.realpathSync;
+  const origNative = fs.realpathSync.native;
+  fs.realpathSync = Object.assign(
+    function patchedRealpathSync(p: fs.PathLike, options?: { encoding?: BufferEncoding | null }) {
+      const result = origRealpathSync.call(fs, p, options) as string;
+      if (typeof result === "string" && result.startsWith(realCwd)) {
+        return result.replace(realCwd, cwd);
+      }
+      return result;
+    },
+    { native: origNative }
+  ) as typeof fs.realpathSync;
+  fs.realpathSync.native = function patchedNative(p: fs.PathLike, options?: { encoding?: BufferEncoding | null }) {
+    const result = origNative.call(fs, p, options) as string;
+    if (typeof result === "string" && result.startsWith(realCwd)) {
+      return result.replace(realCwd, cwd);
+    }
+    return result;
+  } as typeof fs.realpathSync.native;
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -109,13 +137,18 @@ export default defineConfig(({ mode }) => ({
     },
   },
 
+  server: {
+    fs: {
+      strict: false,
+      allow: ['..'],
+    },
+  },
+
   // Optimize dependencies pre-bundling
   optimizeDeps: {
     include: [
       "react",
       "react-dom",
-      "react-markdown",
-      "react-syntax-highlighter",
       "lucide-react",
     ],
     exclude: [

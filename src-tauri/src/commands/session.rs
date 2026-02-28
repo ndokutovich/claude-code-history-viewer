@@ -1,8 +1,11 @@
 use crate::commands::adapters::claude_code::claude_message_to_universal;
 use crate::models::universal::UniversalMessage;
 use crate::models::*;
-use crate::utils::{extract_git_info, extract_project_name, filter_preamble_from_title};
+use crate::utils::{
+    extract_git_info, extract_project_name, filter_preamble_from_title, find_line_ranges,
+};
 use chrono::{DateTime, Utc};
+use memmap2::Mmap;
 use std::fs;
 use uuid::Uuid;
 use walkdir::WalkDir;
@@ -489,12 +492,32 @@ pub async fn load_project_sessions(
 
 #[tauri::command]
 pub async fn load_session_messages(session_path: String) -> Result<Vec<UniversalMessage>, String> {
-    let content = fs::read_to_string(&session_path)
-        .map_err(|e| format!("SESSION_READ_ERROR: Failed to read session file: {}", e))?;
+    // Use memory-mapped I/O for zero-copy file access (faster than read_to_string for large files)
+    let file = fs::File::open(&session_path)
+        .map_err(|e| format!("SESSION_READ_ERROR: Failed to open session file: {}", e))?;
 
+    let metadata = file
+        .metadata()
+        .map_err(|e| format!("SESSION_READ_ERROR: Failed to read file metadata: {}", e))?;
+
+    // For empty files, return empty vec immediately
+    if metadata.len() == 0 {
+        return Ok(Vec::new());
+    }
+
+    // SAFETY: The file is opened read-only. We hold the File handle for the duration
+    // of processing. The file content is treated as immutable bytes.
+    let mmap = unsafe {
+        Mmap::map(&file)
+            .map_err(|e| format!("SESSION_READ_ERROR: Failed to memory-map session file: {}", e))?
+    };
+
+    // Use SIMD-accelerated line splitting
+    let line_ranges = find_line_ranges(&mmap);
     let mut messages = Vec::new();
 
-    for (line_num, line) in content.lines().enumerate() {
+    for (line_num, &(start, end)) in line_ranges.iter().enumerate() {
+        let line = std::str::from_utf8(&mmap[start..end]).unwrap_or_default();
         if line.trim().is_empty() {
             continue;
         }
@@ -655,25 +678,43 @@ pub async fn load_session_messages_paginated(
     exclude_sidechain: Option<bool>,
 ) -> Result<MessagePage, String> {
     let start_time = std::time::Instant::now();
-    use std::fs::File;
-    use std::io::{BufRead, BufReader};
 
-    let file = File::open(&session_path)
+    let file = fs::File::open(&session_path)
         .map_err(|e| format!("SESSION_FILE_ERROR: Failed to open session file: {}", e))?;
-    let reader = BufReader::new(file);
+
+    let metadata = file
+        .metadata()
+        .map_err(|e| format!("SESSION_READ_ERROR: Failed to read file metadata: {}", e))?;
+
+    // For empty files, return empty page immediately
+    if metadata.len() == 0 {
+        return Ok(MessagePage {
+            messages: Vec::new(),
+            total_count: 0,
+            next_offset: offset,
+            has_more: false,
+        });
+    }
+
+    // Use memory-mapped I/O for zero-copy access
+    let mmap = unsafe {
+        Mmap::map(&file)
+            .map_err(|e| format!("SESSION_READ_ERROR: Failed to memory-map session file: {}", e))?
+    };
+
+    // Use SIMD-accelerated line splitting
+    let line_ranges = find_line_ranges(&mmap);
 
     // First pass: collect all messages to get total count and support reverse ordering
     let mut all_messages: Vec<ClaudeMessage> = Vec::new();
 
-    for (line_num, line_result) in reader.lines().enumerate() {
-        let line =
-            line_result.map_err(|e| format!("SESSION_READ_ERROR: Failed to read line: {}", e))?;
-
+    for (line_num, &(start, end)) in line_ranges.iter().enumerate() {
+        let line = std::str::from_utf8(&mmap[start..end]).unwrap_or_default();
         if line.trim().is_empty() {
             continue;
         }
 
-        match serde_json::from_str::<RawLogEntry>(&line) {
+        match serde_json::from_str::<RawLogEntry>(line) {
             Ok(log_entry) => {
                 if log_entry.message_type != "summary" {
                     if log_entry.session_id.is_none() && log_entry.timestamp.is_none() {

@@ -6,6 +6,9 @@ import { CommandHistoryView } from "./components/CommandHistoryView";
 import { MessageViewControls } from "./components/MessageViewControls";
 import { TokenStatsViewer } from "./components/TokenStatsViewer";
 import { AnalyticsDashboard } from "./components/AnalyticsDashboard";
+import { SessionBoard } from "./components/SessionBoard";
+import { RecentEditsViewer } from "./components/RecentEditsViewer";
+import { UnifiedSettingsManager } from "./components/SettingsManager";
 import { FilesView } from "./components/FilesView";
 import { SimpleUpdateManager } from "./components/SimpleUpdateManager";
 import { SearchView } from "./components/SearchView";
@@ -16,11 +19,14 @@ import { ExportControls } from "./components/ExportControls";
 import { useAppStore } from "./store/useAppStore";
 import { useSourceStore } from "./store/useSourceStore";
 import { useAnalytics } from "./hooks/useAnalytics";
+import { useFileWatcher } from "./hooks/useFileWatcher";
+import { useSessionBoard } from "./hooks/useSessionBoard";
+import { fetchRecentEdits } from "./services/analyticsApi";
 import { getSessionTitle } from "./utils/sessionUtils";
 import { filterMessages } from "./utils/messageFilters";
 
 import { useTranslation } from "react-i18next";
-import { AppErrorType, type UISession, type UIProject } from "./types";
+import { AppErrorType, type UISession, type UIProject, type PaginatedRecentEdits } from "./types";
 import { AlertTriangle, Loader2, MessageSquare } from "lucide-react";
 import { useLanguageStore } from "./store/useLanguageStore";
 import { type SupportedLanguage } from "./i18n.config";
@@ -60,6 +66,7 @@ function App() {
     selectSession,
     clearSelection,
     loadMoreMessages,
+    refreshCurrentSession,
     setLoadingProgress,
   } = useAppStore();
 
@@ -81,10 +88,34 @@ function App() {
   // Sidebar width state for resizable splitter
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
 
+  // Session Board store
+  const { loadBoardSessions, isLoadingBoard } = useSessionBoard();
+
+  // Recent Edits state
+  const [recentEdits, setRecentEdits] = useState<PaginatedRecentEdits | null>(null);
+  const [recentEditsLoading, setRecentEditsLoading] = useState(false);
+  const [recentEditsError, setRecentEditsError] = useState<string | null>(null);
+
   // Source store for multi-source management
   const {
     initializeSources,
   } = useSourceStore();
+
+  // Watch for file system changes to auto-refresh session data
+  useFileWatcher({
+    onSessionChanged: (event) => {
+      if (selectedSession?.file_path === event.sessionPath) {
+        refreshCurrentSession();
+      }
+    },
+    onSessionCreated: () => {
+      console.log('New session file detected');
+    },
+    onSessionDeleted: () => {
+      console.log('Session file deleted');
+    },
+    enabled: !isLoading && !loadingProgress,
+  });
 
   // Maintain current view when session is selected
   const handleSessionSelect = async (session: UISession | null) => {
@@ -96,6 +127,7 @@ function App() {
     // Initialize sources and app after loading language settings
     const initialize = async () => {
       try {
+        const t0 = performance.now();
         // Clean up localStorage on startup
         try {
           localStorage.removeItem('expandedProjects');
@@ -111,6 +143,7 @@ function App() {
         });
 
         await loadLanguage();
+        console.log(`⏱️ loadLanguage: ${(performance.now() - t0).toFixed(0)}ms`);
 
         setLoadingProgress({
           stage: 'initializing',
@@ -125,7 +158,9 @@ function App() {
           progress: 25,
         });
 
+        const t1 = performance.now();
         await initializeSources();
+        console.log(`⏱️ initializeSources: ${(performance.now() - t1).toFixed(0)}ms`);
 
         setLoadingProgress({
           stage: 'loading-adapters',
@@ -140,7 +175,10 @@ function App() {
           progress: 65,
         });
 
+        const t2 = performance.now();
         await initializeApp();
+        console.log(`⏱️ initializeApp: ${(performance.now() - t2).toFixed(0)}ms`);
+        console.log(`⏱️ TOTAL startup: ${(performance.now() - t0).toFixed(0)}ms`);
 
         setLoadingProgress({
           stage: 'scanning-projects',
@@ -239,6 +277,38 @@ function App() {
     // Only depend on session_id changing, NOT on the view or analyticsActions
     // This prevents infinite loops and only triggers when user selects a different session
   }, [selectedSession?.session_id, computed.isTokenStatsView]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load Session Board data when board view is activated
+  useEffect(() => {
+    if (!computed.isBoardView || !selectedProject) return;
+    const projectSessions = sessionsByProject[selectedProject.path];
+    if (!projectSessions || projectSessions.length === 0) return;
+    // Only load if board is not already loading/loaded for this project
+    if (isLoadingBoard) return;
+    loadBoardSessions(
+      projectSessions,
+      selectedProject.actual_path ?? selectedProject.path
+    );
+  }, [computed.isBoardView, selectedProject?.path]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Load Recent Edits data when recent edits view is activated
+  useEffect(() => {
+    if (!computed.isRecentEditsView || !selectedProject) return;
+    const projectPath = selectedProject.path;
+    setRecentEditsLoading(true);
+    setRecentEditsError(null);
+    fetchRecentEdits(projectPath)
+      .then((result) => {
+        setRecentEdits(result);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch recent edits:", err);
+        setRecentEditsError(String(err));
+      })
+      .finally(() => {
+        setRecentEditsLoading(false);
+      });
+  }, [computed.isRecentEditsView, selectedProject?.path]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Project selection handler (includes analytics state reset)
   const handleProjectSelect = async (project: UIProject | null) => {
@@ -469,7 +539,44 @@ function App() {
                     </div>
                   )}
 
-                  {computed.isAnalyticsView ? (
+                  {computed.isBoardView ? (
+                    <div className="h-full overflow-hidden">
+                      <SessionBoard />
+                    </div>
+                  ) : computed.isSettingsView ? (
+                    <div className="h-full overflow-y-auto">
+                      <UnifiedSettingsManager
+                        projectPath={selectedProject?.actual_path ?? selectedProject?.path ?? ""}
+                      />
+                    </div>
+                  ) : computed.isRecentEditsView ? (
+                    <div className="h-full overflow-y-auto">
+                      <RecentEditsViewer
+                        recentEdits={recentEdits}
+                        pagination={recentEdits ? {
+                          hasMore: recentEdits.has_more,
+                          isLoadingMore: false,
+                          uniqueFilesCount: recentEdits.unique_files_count,
+                          totalEditsCount: recentEdits.total_edits_count,
+                          limit: recentEdits.limit,
+                        } : undefined}
+                        onLoadMore={() => {
+                          if (!selectedProject || !recentEdits?.has_more) return;
+                          const nextOffset = recentEdits.offset + recentEdits.limit;
+                          fetchRecentEdits(selectedProject.path, { offset: nextOffset })
+                            .then((more) => {
+                              setRecentEdits((prev) => prev ? {
+                                ...more,
+                                files: [...prev.files, ...more.files],
+                              } : more);
+                            })
+                            .catch((err) => console.error("Failed to load more edits:", err));
+                        }}
+                        isLoading={recentEditsLoading}
+                        error={recentEditsError}
+                      />
+                    </div>
+                  ) : computed.isAnalyticsView ? (
                     <div className="h-full overflow-y-auto">
                       <AnalyticsDashboard />
                     </div>

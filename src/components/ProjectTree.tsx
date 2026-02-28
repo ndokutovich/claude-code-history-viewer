@@ -1,5 +1,5 @@
 // src/components/ProjectTree.tsx
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Folder,
   Wrench,
@@ -10,6 +10,7 @@ import {
   MessageCircle,
   X,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { UIProject, UISession } from "../types";
@@ -17,6 +18,8 @@ import { cn } from "../utils/cn";
 import { getLocale } from "../utils/time";
 import { getSessionTitle } from "../utils/sessionUtils";
 import { ProjectListControls } from "./ProjectListControls";
+import { ProjectContextMenu } from "./ProjectContextMenu";
+import { NativeRenameDialog } from "./NativeRenameDialog";
 import { useAppStore } from "../store/useAppStore";
 import { ProviderIcon, getProviderColorClass } from "./icons/ProviderIcons";
 
@@ -57,6 +60,19 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   });
   const [loadingProjects, setLoadingProjects] = useState<Set<string>>(new Set());
   const [isLoadingAllSessions, setIsLoadingAllSessions] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    project: UIProject;
+    position: { x: number; y: number };
+  } | null>(null);
+  const [sessionContextMenu, setSessionContextMenu] = useState<{
+    session: UISession;
+    position: { x: number; y: number };
+  } | null>(null);
+  const [renameTarget, setRenameTarget] = useState<{
+    filePath: string;
+    currentName: string;
+  } | null>(null);
+  const sessionContextMenuRef = useRef<HTMLDivElement>(null);
   const { t, i18n } = useTranslation('components');
   const { projectListPreferences, loadProjectSessions } = useAppStore();
 
@@ -385,6 +401,70 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     });
   };
 
+  // Close session context menu on outside click or Escape
+  useEffect(() => {
+    if (!sessionContextMenu) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        sessionContextMenuRef.current &&
+        !sessionContextMenuRef.current.contains(e.target as Node)
+      ) {
+        setSessionContextMenu(null);
+      }
+    };
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSessionContextMenu(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [sessionContextMenu]);
+
+  const handleProjectContextMenu = useCallback(
+    (e: React.MouseEvent, project: UIProject) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setSessionContextMenu(null);
+      setContextMenu({
+        project,
+        position: { x: e.clientX, y: e.clientY },
+      });
+    },
+    []
+  );
+
+  const handleSessionContextMenu = useCallback(
+    (e: React.MouseEvent, session: UISession) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setContextMenu(null);
+      setSessionContextMenu({
+        session,
+        position: { x: e.clientX, y: e.clientY },
+      });
+    },
+    []
+  );
+
+  const handleRenameSession = useCallback(
+    (session: UISession) => {
+      setSessionContextMenu(null);
+      setRenameTarget({
+        filePath: session.file_path,
+        currentName: getSessionTitle(session),
+      });
+    },
+    []
+  );
+
   // Load sessions for multiple projects in parallel (without selecting them)
   const loadSessionsForProjects = async (projectPaths: string[]) => {
     console.log(`📥 Loading sessions for ${projectPaths.length} projects in parallel...`);
@@ -523,6 +603,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                       }
                       onSessionSelect(session);
                     }}
+                    onContextMenu={(e) => handleSessionContextMenu(e, session)}
                     className={cn(
                       "text-left w-full p-2 rounded transition-colors flex items-start space-x-2",
                       isSelected
@@ -594,7 +675,10 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                   return (
                     <div key={project.path}>
                       {/* Project Header */}
-                      <div className="flex items-center w-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                      <div
+                        className="flex items-center w-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        onContextMenu={(e) => handleProjectContextMenu(e, project)}
+                      >
                         {/* Expand/Collapse Chevron - Separate clickable area */}
                         <button
                           onClick={async (e) => {
@@ -674,6 +758,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                                 onSessionSelect(session);
                               }
                             }}
+                            onContextMenu={(e) => handleSessionContextMenu(e, session)}
                             className={cn(
                               "w-full text-left p-3 rounded-lg transition-colors",
                               isSessionSelected
@@ -766,6 +851,79 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
           </div>
         )}
       </div>
+
+      {/* Project Context Menu */}
+      {contextMenu && (
+        <ProjectContextMenu
+          project={contextMenu.project}
+          position={contextMenu.position}
+          onClose={() => setContextMenu(null)}
+          onHide={(path) => {
+            console.log("Hide project:", path);
+            setContextMenu(null);
+          }}
+          onUnhide={(path) => {
+            console.log("Unhide project:", path);
+            setContextMenu(null);
+          }}
+          isHidden={false}
+        />
+      )}
+
+      {/* Session Context Menu */}
+      {sessionContextMenu && (
+        <div
+          ref={sessionContextMenuRef}
+          className={cn(
+            "fixed z-50 min-w-[160px] rounded-lg border shadow-lg",
+            "bg-popover border-border",
+            "animate-in fade-in-0 zoom-in-95 duration-100"
+          )}
+          style={{
+            left: sessionContextMenu.position.x,
+            top: sessionContextMenu.position.y,
+          }}
+        >
+          <div className="p-1">
+            {/* Session name header */}
+            <div className="px-2 py-1.5 text-xs text-muted-foreground truncate border-b border-border mb-1">
+              {getSessionTitle(sessionContextMenu.session)}
+            </div>
+
+            {/* Rename option */}
+            <button
+              onClick={() => handleRenameSession(sessionContextMenu.session)}
+              aria-label={t("session.contextMenu.rename", "Rename session")}
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm",
+                "hover:bg-accent hover:text-accent-foreground",
+                "transition-colors cursor-pointer"
+              )}
+            >
+              <Pencil className="w-4 h-4" />
+              <span>{t("session.contextMenu.rename", "Rename")}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Native Rename Dialog */}
+      <NativeRenameDialog
+        open={renameTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setRenameTarget(null);
+        }}
+        filePath={renameTarget?.filePath ?? ""}
+        currentName={renameTarget?.currentName ?? ""}
+        onSuccess={(newTitle) => {
+          setRenameTarget(null);
+          // Force refresh sessions for the currently selected project
+          if (selectedProject) {
+            loadProjectSessions(selectedProject.path, undefined, true);
+          }
+          console.log("Session renamed to:", newTitle);
+        }}
+      />
     </div>
   );
 };

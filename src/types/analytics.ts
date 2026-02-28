@@ -3,7 +3,8 @@
  * Clear type structure for readability and predictability
  */
 
-import type { ProjectStatsSummary, SessionComparison } from './index';
+import type { ProjectStatsSummary, SessionComparison, RecentEditsResult, StatsMode, MetricMode } from './index';
+import type { RecentEditsPaginationState } from '../utils/pagination';
 
 /**
  * App-wide view types (unified view state)
@@ -12,9 +13,15 @@ import type { ProjectStatsSummary, SessionComparison } from './index';
 export type { AppView } from './index';
 
 /**
- * @deprecated Use AppView instead. Kept for backward compatibility during migration.
+ * Pagination state for recent edits
+ * Re-exported from pagination utilities for backwards compatibility
  */
-export type AnalyticsView = 'messages' | 'tokenStats' | 'analytics';
+export type RecentEditsPagination = RecentEditsPaginationState;
+
+/**
+ * Analytics view type
+ */
+export type AnalyticsView = 'messages' | 'tokenStats' | 'analytics' | 'recentEdits' | 'settings' | 'board' | 'files' | 'commandHistory' | 'rawMessage';
 export type AnalyticsViewType = AnalyticsView;
 
 /**
@@ -25,18 +32,27 @@ export type AnalyticsViewType = AnalyticsView;
 export interface AnalyticsState {
   // Currently active view
   currentView: AnalyticsView;
+  statsMode: StatsMode;
+  metricMode: MetricMode;
 
   // Data state
   projectSummary: ProjectStatsSummary | null;
+  projectConversationSummary: ProjectStatsSummary | null;
   sessionComparison: SessionComparison | null;
+  recentEdits: RecentEditsResult | null;
+  recentEditsPagination: RecentEditsPagination;
+
+  recentEditsSearchQuery: string;
 
   // Loading states
   isLoadingProjectSummary: boolean;
   isLoadingSessionComparison: boolean;
+  isLoadingRecentEdits: boolean;
 
   // Error states
   projectSummaryError: string | null;
   sessionComparisonError: string | null;
+  recentEditsError: string | null;
 }
 
 /**
@@ -49,21 +65,28 @@ export interface AnalyticsActions {
 
   // Data setters
   setProjectSummary: (summary: ProjectStatsSummary | null) => void;
+  setProjectConversationSummary: (summary: ProjectStatsSummary | null) => void;
   setSessionComparison: (comparison: SessionComparison | null) => void;
+  setRecentEdits: (edits: RecentEditsResult | null) => void;
+  setRecentEditsSearchQuery: (query: string) => void;
 
   // Loading state management
   setLoadingProjectSummary: (loading: boolean) => void;
   setLoadingSessionComparison: (loading: boolean) => void;
+  setLoadingRecentEdits: (loading: boolean) => void;
 
   // Error state management
   setProjectSummaryError: (error: string | null) => void;
   setSessionComparisonError: (error: string | null) => void;
+  setRecentEditsError: (error: string | null) => void;
 
   // Composite actions (business logic)
   switchToMessages: () => void;
   switchToTokenStats: () => void;
   switchToAnalytics: () => void;
-  switchToFiles: () => void;
+  switchToRecentEdits: () => void;
+  setStatsMode: (mode: StatsMode, options?: { isViewingGlobalStats?: boolean }) => Promise<void>;
+  setMetricMode: (mode: MetricMode) => void;
 
   // Reset actions
   resetAnalytics: () => void;
@@ -73,14 +96,27 @@ export interface AnalyticsActions {
 /**
  * Initial analytics state
  */
+import { createInitialRecentEditsPagination } from '../utils/pagination';
+
+export const initialRecentEditsPagination: RecentEditsPagination =
+  createInitialRecentEditsPagination();
+
 export const initialAnalyticsState: AnalyticsState = {
   currentView: 'messages',
+  statsMode: "billing_total",
+  metricMode: "tokens",
   projectSummary: null,
+  projectConversationSummary: null,
   sessionComparison: null,
+  recentEdits: null,
+  recentEditsPagination: initialRecentEditsPagination,
+  recentEditsSearchQuery: "",
   isLoadingProjectSummary: false,
   isLoadingSessionComparison: false,
+  isLoadingRecentEdits: false,
   projectSummaryError: null,
   sessionComparisonError: null,
+  recentEditsError: null,
 };
 
 /**
@@ -96,7 +132,11 @@ export interface UseAnalyticsReturn {
     switchToMessages: () => void;
     switchToTokenStats: () => Promise<void>;
     switchToAnalytics: () => Promise<void>;
-    switchToFiles: () => Promise<void>;
+    switchToRecentEdits: () => Promise<void>;
+    switchToSettings: () => void;
+    switchToBoard: () => Promise<void>;
+    setStatsMode: (mode: StatsMode, options?: { isViewingGlobalStats?: boolean }) => Promise<void>;
+    setMetricMode: (mode: MetricMode) => void;
     refreshAnalytics: () => Promise<void>;
     clearAll: () => void;
   };
@@ -106,7 +146,16 @@ export interface UseAnalyticsReturn {
     isTokenStatsView: boolean;
     isAnalyticsView: boolean;
     isMessagesView: boolean;
+    isRecentEditsView: boolean;
+    isSettingsView: boolean;
+    isBoardView: boolean;
+    isFilesView: boolean;
+    isCommandHistoryView: boolean;
+    isRawMessageView: boolean;
     hasAnyError: boolean;
+    isLoadingAnalytics: boolean;
+    isLoadingTokenStats: boolean;
+    isLoadingRecentEdits: boolean;
     isAnyLoading: boolean;
   };
 }

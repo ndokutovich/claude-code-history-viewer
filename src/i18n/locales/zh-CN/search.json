@@ -1,9 +1,16 @@
 {
-  "loadingSessionInfo": "加载会话信息中...",
   "errors": {
     "missingProjectInfo": "无法跳转到消息：缺少项目信息",
     "projectNotFound": "找不到此会话的项目",
     "messageNotFound": "在对话中找不到消息。UUID: {{uuid}}",
     "jumpError": "跳转到消息时出错: {{error}}"
-  }
+  },
+  "loadingSessionInfo": "加载会话信息中...",
+  "search.enterQuery": "输入查询",
+  "search.foundResults": "找到结果",
+  "search.matches": "匹配",
+  "search.noResults": "未找到结果",
+  "search.placeholder": "搜索消息...",
+  "search.searching": "搜索中",
+  "search.title": "搜索"
 }

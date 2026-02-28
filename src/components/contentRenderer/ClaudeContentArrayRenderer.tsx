@@ -14,7 +14,7 @@ const isContentItem = (item: unknown): item is Record<string, unknown> => {
 };
 
 export const ClaudeContentArrayRenderer = ({ content }: Props) => {
-  const { t } = useTranslation("components");
+  const { t } = useTranslation("messages");
   if (!Array.isArray(content) || content.length === 0) {
     return null;
   }

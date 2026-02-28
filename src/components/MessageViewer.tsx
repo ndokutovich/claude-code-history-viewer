@@ -5,7 +5,7 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import { Loader2, MessageCircle, ChevronDown, Link2, Check, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { Loader2, MessageCircle, ChevronDown, Link2, Check, ArrowUpCircle, ArrowDownCircle, ListTree } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { UIMessage, UISession, PaginationState } from "../types";
 import { ClaudeContentArrayRenderer } from "./contentRenderer";
@@ -40,6 +40,11 @@ import {
   SCROLL_THROTTLE_DELAY,
   MIN_MESSAGES_FOR_SCROLL_BTN,
 } from "../constants/layout";
+import { MessageNavigator } from "./MessageNavigator";
+
+const DEFAULT_NAVIGATOR_WIDTH = 280;
+const MIN_NAVIGATOR_WIDTH = 200;
+const MAX_NAVIGATOR_WIDTH = 480;
 
 interface MessageViewerProps {
   messages: UIMessage[];
@@ -306,6 +311,46 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   // Session Builder Modal state for extract functionality
   const [isSessionBuilderOpen, setIsSessionBuilderOpen] = useState(false);
   const [extractedMessages, setExtractedMessages] = useState<MessageBuilder[]>([]);
+
+  // Message Navigator state
+  const [isNavigatorOpen, setIsNavigatorOpen] = useState(false);
+  const [isNavigatorCollapsed, setIsNavigatorCollapsed] = useState(false);
+  const [activeMessageUuid, setActiveMessageUuid] = useState<string | null>(null);
+  const [navigatorWidth, setNavigatorWidth] = useState(DEFAULT_NAVIGATOR_WIDTH);
+  const [isResizingNavigator, setIsResizingNavigator] = useState(false);
+
+  // Handle navigator resize via mouse drag on the left edge
+  const handleNavigatorResizeStart = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    setIsResizingNavigator(true);
+    const startX = e.clientX;
+    const startWidth = navigatorWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      // Navigator grows to the left, so width increases as mouse moves left
+      const delta = startX - moveEvent.clientX;
+      const newWidth = Math.min(MAX_NAVIGATOR_WIDTH, Math.max(MIN_NAVIGATOR_WIDTH, startWidth + delta));
+      setNavigatorWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingNavigator(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [navigatorWidth]);
+
+  // Navigate to a specific message by UUID
+  const handleNavigateToMessage = useCallback((uuid: string) => {
+    const element = document.getElementById(`message-${uuid}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setActiveMessageUuid(uuid);
+    }
+  }, []);
 
   // Handle extract message range
   const handleExtractRange = useCallback(async (startIndex: number, endIndex: number, openModal: boolean) => {
@@ -689,12 +734,36 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   };
 
   return (
-    <div className="relative flex-1 h-full">
-      <div
-        ref={scrollContainerRef}
-        className="flex-1 h-full overflow-y-auto scrollbar-thin"
-        style={{ scrollBehavior: "auto" }} // Use auto instead of smooth for immediate scroll
-      >
+    <div className="relative flex-1 h-full flex">
+      {/* Main message list area */}
+      <div className="flex-1 overflow-hidden relative">
+        {/* Navigator toggle button */}
+        <button
+          onClick={() => {
+            if (!isNavigatorOpen) {
+              setIsNavigatorOpen(true);
+              setIsNavigatorCollapsed(false);
+            } else {
+              setIsNavigatorOpen(false);
+            }
+          }}
+          className={cn(
+            "absolute top-2 right-2 z-40 p-1.5 rounded-lg transition-colors",
+            "bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground",
+            "border border-border/50 shadow-sm",
+            isNavigatorOpen && "bg-accent/10 text-accent"
+          )}
+          title={t("messageView.toggleNavigator")}
+          aria-label={t("messageView.toggleNavigator")}
+        >
+          <ListTree className="w-4 h-4" />
+        </button>
+
+        <div
+          ref={scrollContainerRef}
+          className="h-full overflow-y-auto scrollbar-thin"
+          style={{ scrollBehavior: "auto" }} // Use auto instead of smooth for immediate scroll
+        >
         {/* Debugging information */}
         {import.meta.env.DEV && (
           <div className="bg-yellow-50 p-2 text-xs text-yellow-800 border-b space-y-1">
@@ -864,7 +933,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           <button
             onClick={scrollToBottom}
             className={cn(
-              "fixed bottom-10 right-2 p-3 rounded-full shadow-lg transition-all duration-300 z-50",
+              "fixed bottom-10 p-3 rounded-full shadow-lg transition-all duration-300 z-50",
               "bg-blue-500/50 hover:bg-blue-600 text-white",
               "hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-300",
               "dark:bg-blue-600/50 dark:hover:bg-blue-700 dark:focus:ring-blue-800",
@@ -872,13 +941,29 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-2"
             )}
+            style={{ right: isNavigatorOpen ? `${navigatorWidth + 16}px` : '8px' }}
             title={t("messageViewer.scrollToBottom")}
             aria-label={t("messageViewer.scrollToBottom")}
           >
             <ChevronDown className="w-3 h-3" />
           </button>
         )}
+        </div>
       </div>
+
+      {/* Message Navigator Panel (right side) */}
+      {isNavigatorOpen && (
+        <MessageNavigator
+          messages={messages}
+          width={isNavigatorCollapsed ? 48 : navigatorWidth}
+          isResizing={isResizingNavigator}
+          onResizeStart={handleNavigatorResizeStart}
+          isCollapsed={isNavigatorCollapsed}
+          onToggleCollapse={() => setIsNavigatorCollapsed((prev) => !prev)}
+          activeMessageUuid={activeMessageUuid ?? undefined}
+          onNavigateToMessage={handleNavigateToMessage}
+        />
+      )}
 
       {/* Session Builder Modal for extracted messages */}
       <SessionBuilderModal

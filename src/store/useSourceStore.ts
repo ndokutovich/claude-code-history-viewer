@@ -166,11 +166,8 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
   // AUTO-DETECTION (INTERNAL)
   // ------------------------------------------------------------------------
 
-  // Unified detection: scans for all available providers
+  // Unified detection: scans for all available providers (in parallel)
   detectAllProviders: async (): Promise<string[]> => {
-    const detectedSources: string[] = [];
-
-    // List of all providers to detect
     const providers = [
       { name: 'Claude Code', command: 'get_claude_folder_path', id: 'claude-code' },
       { name: 'Cursor IDE', command: 'get_cursor_path', id: 'cursor' },
@@ -178,19 +175,26 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       { name: 'Codex CLI', command: 'get_codex_path', id: 'codex' },
     ];
 
-    for (const provider of providers) {
-      try {
+    const results = await Promise.allSettled(
+      providers.map(async (provider) => {
         const path = await invoke<string>(provider.command);
         const validation = await get().validatePath(path);
-
         if (validation.isValid && validation.providerId === provider.id) {
           console.log(`  ✓ Found ${provider.name} at: ${path}`);
-          detectedSources.push(path);
+          return path;
         }
-      } catch (error) {
-        console.log(`  ✗ ${provider.name} not found:`, (error as Error).message);
+        return null;
+      })
+    );
+
+    const detectedSources: string[] = [];
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled' && result.value) {
+        detectedSources.push(result.value);
+      } else if (result.status === 'rejected') {
+        console.log(`  ✗ ${providers[i]?.name} not found:`, (result.reason as Error).message);
       }
-    }
+    });
 
     return detectedSources;
   },

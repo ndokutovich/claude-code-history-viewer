@@ -256,10 +256,18 @@ export class AdapterRegistry {
       score: DetectionScore;
     }> = [];
 
-    // Test all adapters
-    for (const adapter of this.adapters.values()) {
-      try {
+    // Test all adapters in parallel
+    const adapters = [...this.adapters.values()];
+    const results = await Promise.allSettled(
+      adapters.map(async (adapter) => {
         const score = await adapter.canHandle(path);
+        return { adapter, score };
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        const { adapter, score } = result.value;
         if (score.canHandle) {
           scores.push({ adapter, score });
           console.log(
@@ -268,8 +276,8 @@ export class AdapterRegistry {
         } else {
           console.log(`  ✗ ${adapter.providerId}: Cannot handle`);
         }
-      } catch (error) {
-        console.error(`  ❌ ${adapter.providerId}: Detection failed`, error);
+      } else {
+        console.error(`  ❌ Detection failed:`, result.reason);
       }
     }
 

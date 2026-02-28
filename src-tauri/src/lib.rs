@@ -4,8 +4,9 @@ mod utils;
 
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::{
-    codex::*, cursor::*, feedback::*, files::*, gemini::*, project::*, resume::*,
-    secure_update::*, session::*, session_writer::*, stats::*, update::*,
+    claude_settings::*, codex::*, cursor::*, edits::*, feedback::*, files::*, gemini::*,
+    mcp_presets::*, project::*, rename::*, resume::*, secure_update::*, session::*,
+    session_writer::*, settings::*, stats::*, unified_presets::*, update::*, watcher::*,
 };
 use std::sync::Mutex;
 
@@ -13,6 +14,7 @@ use std::sync::Mutex;
 pub fn run() {
     tauri::Builder::default()
         .manage(GeminiResolverState(Mutex::new(GeminiHashResolver::new())))
+        .manage(WatcherMap::default())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::default().build())
@@ -75,11 +77,49 @@ pub fn run() {
             scan_codex_projects,
             load_codex_sessions,
             load_codex_messages,
+            // Global stats (upstream-enhanced)
+            get_global_stats_summary,
+            // Git log for Session Board
+            get_git_log,
+            // Native session renaming
+            rename_session_native,
+            reset_session_native_name,
             // Resume functionality
             resume_session,
             get_resume_command,
             get_session_cwd,
-            provider_supports_resume
+            provider_supports_resume,
+            // File watcher (real-time session detection)
+            start_file_watcher,
+            stop_file_watcher,
+            // Recent file edits tracking and restore
+            get_recent_edits,
+            restore_file,
+            // Settings CRUD and MCP server management
+            get_settings_by_scope,
+            save_settings,
+            get_all_settings,
+            get_mcp_servers,
+            get_all_mcp_servers,
+            save_mcp_servers,
+            get_claude_json_config,
+            write_text_file,
+            read_text_file,
+            // Settings presets
+            save_preset,
+            load_presets,
+            get_preset,
+            delete_preset,
+            // MCP presets
+            save_mcp_preset,
+            load_mcp_presets,
+            get_mcp_preset,
+            delete_mcp_preset,
+            // Unified presets
+            save_unified_preset,
+            load_unified_presets,
+            get_unified_preset,
+            delete_unified_preset
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

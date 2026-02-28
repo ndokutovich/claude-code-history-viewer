@@ -121,6 +121,8 @@ export interface UIMessage {
 export interface UIProject {
   name: string;
   path: string;
+  /** Decoded actual filesystem path (e.g., "/Users/jack/client/my-project") */
+  actual_path?: string;
   session_count: number;
   message_count: number;
   lastModified: string;
@@ -204,7 +206,7 @@ export interface AppError {
 /**
  * App-wide view type (unified view state)
  */
-export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search' | 'files';
+export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search' | 'files' | 'board' | 'recentEdits' | 'settings';
 
 /**
  * Loading progress tracking
@@ -307,6 +309,8 @@ export interface SessionTokenStats {
   message_count: number;
   first_message_time: string;
   last_message_time: string;
+  summary?: string;
+  most_used_tools?: ToolUsageStats[];
 }
 
 // Enhanced statistics types
@@ -341,6 +345,7 @@ export interface ProjectStatsSummary {
   total_tokens: number;
   avg_tokens_per_session: number;
   avg_session_duration: number; // in minutes
+  total_session_duration: number; // in minutes
   most_active_hour: number;
   most_used_tools: ToolUsageStats[];
   daily_stats: DailyStats[];
@@ -360,6 +365,68 @@ export interface SessionComparison {
   rank_by_tokens: number;
   rank_by_duration: number;
   is_above_average: boolean;
+}
+
+// Paginated token stats response
+export interface PaginatedTokenStats {
+  items: SessionTokenStats[];
+  total_count: number;
+  offset: number;
+  limit: number;
+  has_more: boolean;
+}
+
+// Global statistics types (upstream-enhanced)
+export interface GlobalStatsSummary {
+  total_projects: number;
+  total_sessions: number;
+  total_messages: number;
+  total_tokens: number;
+  total_session_duration_minutes: number;
+  token_distribution: {
+    input: number;
+    output: number;
+    cache_creation: number;
+    cache_read: number;
+  };
+  most_used_tools: ToolUsageStats[];
+  model_distribution: ModelStats[];
+  provider_distribution: ProviderUsageStats[];
+  top_projects: ProjectRanking[];
+  daily_stats: DailyStats[];
+  activity_heatmap: ActivityHeatmap[];
+  date_range: DateRange;
+}
+
+export interface DateRange {
+  first_message?: string;
+  last_message?: string;
+  days_span: number;
+}
+
+export interface ModelStats {
+  model_name: string;
+  message_count: number;
+  token_count: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_creation_tokens: number;
+  cache_read_tokens: number;
+}
+
+export interface ProjectRanking {
+  project_name: string;
+  sessions: number;
+  messages: number;
+  tokens: number;
+}
+
+export interface ProviderUsageStats {
+  provider_id: string;
+  projects: number;
+  sessions: number;
+  messages: number;
+  tokens: number;
 }
 
 // Update-related type definitions
@@ -443,6 +510,35 @@ export interface FileActivityFilters {
 }
 
 // ============================================================================
+// SETTINGS TYPES (Claude Code Settings Manager)
+// ============================================================================
+
+export * from './settings';
+export * from './presets';
+
+// Upstream compatibility aliases: upstream uses Claude* names, fork uses UI* names.
+// Components ported from upstream that import Claude* types will get UI* shape.
+export type ClaudeProject = UIProject;
+export type ClaudeSession = UISession;
+export type ClaudeMessage = UIMessage;
+
+// Git types (for Session Board)
+export interface GitCommit {
+  hash: string;
+  author: string;
+  timestamp: number;
+  date: string;
+  message: string;
+}
+
+// Provider ID type for analytics and multi-provider support
+export type ProviderId = 'claude' | 'codex' | 'opencode' | 'cursor' | 'gemini';
+
+// Stats mode types
+export type StatsMode = "billing_total" | "conversation_only";
+export type MetricMode = "tokens" | "cost_estimated";
+
+// ============================================================================
 // UNIVERSAL TYPES (v2.0.0 - Multi-Provider Support)
 // ============================================================================
 
@@ -458,3 +554,36 @@ export * from './providers';
 // ============================================================================
 
 export * from './sessionWriter';
+
+// ============================================================================
+// RECENT FILE EDIT TYPES (Recent Edits Viewer)
+// ============================================================================
+
+export interface RecentFileEdit {
+  file_path: string;
+  timestamp: string;
+  session_id: string;
+  operation_type: "edit" | "write";
+  content_after_change: string;
+  original_content?: string;
+  lines_added: number;
+  lines_removed: number;
+  cwd?: string;
+}
+
+export interface RecentEditsResult {
+  files: RecentFileEdit[];
+  total_edits_count: number;
+  unique_files_count: number;
+  project_cwd?: string;
+}
+
+export interface PaginatedRecentEdits {
+  files: RecentFileEdit[];
+  total_edits_count: number;
+  unique_files_count: number;
+  project_cwd?: string;
+  offset: number;
+  limit: number;
+  has_more: boolean;
+}

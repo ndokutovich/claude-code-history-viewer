@@ -1,9 +1,16 @@
 {
-  "loadingSessionInfo": "セッション情報を読み込み中...",
   "errors": {
     "missingProjectInfo": "メッセージにジャンプできません：プロジェクト情報がありません",
     "projectNotFound": "このセッションのプロジェクトが見つかりません",
     "messageNotFound": "会話内でメッセージが見つかりません。UUID: {{uuid}}",
     "jumpError": "メッセージへのジャンプ中にエラー: {{error}}"
-  }
+  },
+  "loadingSessionInfo": "セッション情報を読み込み中...",
+  "search.enterQuery": "検索語を入力",
+  "search.foundResults": "検索結果",
+  "search.matches": "件一致",
+  "search.noResults": "結果が見つかりません",
+  "search.placeholder": "検索...",
+  "search.searching": "検索中",
+  "search.title": "検索"
 }

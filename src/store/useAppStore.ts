@@ -9,6 +9,7 @@ import {
   type UIMessage,
   type SearchFilters,
   type SessionTokenStats,
+  type PaginatedTokenStats,
   type ProjectStatsSummary,
   type SessionComparison,
   type AppError,
@@ -1238,13 +1239,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
   loadProjectTokenStats: async (projectPath: string) => {
     try {
       set({ isLoadingTokenStats: true, error: null });
-      const stats = await invoke<SessionTokenStats[]>(
+      const result = await invoke<PaginatedTokenStats>(
         "get_project_token_stats",
         {
           projectPath,
         }
       );
-      set({ projectTokenStats: stats });
+      set({ projectTokenStats: result.items });
     } catch (error) {
       console.error("Failed to load project token stats:", error);
       set({
@@ -1457,6 +1458,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
         case 'messages':
           // Messages view doesn't need to load data
+          break;
+
+        case 'board':
+        case 'recentEdits':
+        case 'settings':
+        case 'files':
+          // These views load their own data via component-level useEffect
           break;
       }
     } catch (error) {

@@ -1,9 +1,16 @@
 {
-  "loadingSessionInfo": "載入工作階段資訊中...",
   "errors": {
     "missingProjectInfo": "無法跳轉到訊息：缺少專案資訊",
     "projectNotFound": "找不到此工作階段的專案",
     "messageNotFound": "在對話中找不到訊息。UUID: {{uuid}}",
     "jumpError": "跳轉到訊息時發生錯誤: {{error}}"
-  }
+  },
+  "loadingSessionInfo": "載入工作階段資訊中...",
+  "search.enterQuery": "輸入查詢",
+  "search.foundResults": "找到結果",
+  "search.matches": "符合",
+  "search.noResults": "未找到結果",
+  "search.placeholder": "搜尋訊息...",
+  "search.searching": "搜尋中",
+  "search.title": "搜尋"
 }

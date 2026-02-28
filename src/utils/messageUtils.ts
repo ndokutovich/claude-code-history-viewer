@@ -1,5 +1,31 @@
 import type { UIMessage } from "../types";
 
+// ============================================================================
+// Message Type Guards
+// ============================================================================
+
+/**
+ * Check if message is an assistant message
+ */
+export const isClaudeAssistantMessage = (msg: UIMessage): boolean =>
+  msg.type === 'assistant';
+
+/**
+ * Check if message is a user message
+ */
+export const isClaudeUserMessage = (msg: UIMessage): boolean =>
+  msg.type === 'user';
+
+/**
+ * Check if message is a system message
+ */
+export const isClaudeSystemMessage = (msg: UIMessage): boolean =>
+  msg.type === 'system';
+
+// ============================================================================
+// Content Extraction
+// ============================================================================
+
 export const extractUIMessageContent = (
   message: UIMessage
 ): string | null => {
