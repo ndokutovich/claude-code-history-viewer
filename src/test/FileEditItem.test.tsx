@@ -65,6 +65,8 @@ describe("FileEditItem", () => {
 
     // Prism renders <pre> with code tokens
     expect(container.querySelector("pre")).toBeTruthy();
+    // Should NOT have Markdown prose wrapper for non-markdown files
+    expect(container.querySelector("[class*='prose']")).toBeNull();
   });
 
   it("should show file name from path", () => {
@@ -91,12 +93,22 @@ describe("FileEditItem", () => {
 });
 
 describe("FileEditItem - Markdown Detection and Rendering", () => {
+  const originalClipboard = navigator.clipboard;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: vi.fn(() => Promise.resolve()),
-      },
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: vi.fn(() => Promise.resolve()) },
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: originalClipboard,
+      writable: true,
+      configurable: true,
     });
   });
 
@@ -109,7 +121,7 @@ describe("FileEditItem - Markdown Detection and Rendering", () => {
     expect(container.textContent).toContain("file.ts");
   });
 
-  it("should detect .md file and render markdown", () => {
+  it("should detect .md file and render markdown when expanded", () => {
     const mdEdit: RecentFileEdit = {
       ...baseEdit,
       file_path: "/docs/README.md",
@@ -119,6 +131,8 @@ describe("FileEditItem - Markdown Detection and Rendering", () => {
     const { container } = render(
       <FileEditItem edit={mdEdit} isDarkMode={false} />
     );
+
+    fireEvent.click(container.querySelector("[data-testid='file-edit-header']")!);
 
     expect(container).toBeTruthy();
     expect(container.textContent).toContain("README.md");
@@ -262,5 +276,22 @@ describe("FileEditItem - Markdown Detection and Rendering", () => {
 
     // Check that badge container exists
     expect(container.querySelector("[class*='px-2']")).toBeTruthy();
+  });
+
+  it("should render markdown for .markdown extension files when expanded", () => {
+    const markdownEdit: RecentFileEdit = {
+      ...baseEdit,
+      file_path: "/docs/CHANGELOG.markdown",
+      content_after_change: "## Changelog\n\n- item 1",
+    };
+
+    const { container } = render(
+      <FileEditItem edit={markdownEdit} isDarkMode={false} />
+    );
+
+    fireEvent.click(container.querySelector("[data-testid='file-edit-header']")!);
+
+    expect(container.querySelector("h2")?.textContent).toBe("Changelog");
+    expect(container.querySelectorAll("li").length).toBeGreaterThanOrEqual(1);
   });
 });

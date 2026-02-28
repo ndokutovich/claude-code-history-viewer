@@ -19,9 +19,7 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
-import remarkGfm from "remark-gfm";
+import { Markdown } from "../common";
 import { ToolIcon } from "../ToolIcon";
 import { useTranslation } from "react-i18next";
 import { getToolUseBlock } from "../../utils/cardSemantics";
@@ -378,9 +376,9 @@ export const ExpandedCard = memo(
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap select-text">
             {isMarkdownPretty && !toolUseBlock ? (
-              <div className="prose prose-xs dark:prose-invert max-w-none break-words">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>{content}</ReactMarkdown>
-              </div>
+              <Markdown className="break-words">
+                {content}
+              </Markdown>
             ) : content ? (
               content
             ) : (

@@ -1,7 +1,4 @@
-import { memo, useMemo } from "react";
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
-import remarkGfm from "remark-gfm";
+import { Markdown } from "../common";
 import { ThinkingRenderer } from "./ThinkingRenderer";
 import { ToolUseRenderer } from "./ToolUseRenderer";
 import { ImageRenderer } from "./ImageRenderer";
@@ -44,11 +41,9 @@ export const ClaudeContentArrayRenderer = ({ content }: Props) => {
                   key={index}
                   className="p-3 bg-gray-50 border border-gray-200 rounded-lg"
                 >
-                  <div className="prose prose-sm max-w-none text-foreground">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
-                      {item.text}
-                    </ReactMarkdown>
-                  </div>
+                  <Markdown className="text-foreground">
+                    {item.text}
+                  </Markdown>
                 </div>
               );
             }
