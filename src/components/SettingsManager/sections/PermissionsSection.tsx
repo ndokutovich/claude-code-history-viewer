@@ -128,7 +128,7 @@ const PermissionListEditor: React.FC<PermissionListEditorProps> = React.memo(({
                         setConfirmIndex(null);
                       }}
                     >
-                      {t("common.delete")}
+                      {t("common:delete")}
                     </Button>
                     <Button
                       variant="ghost"
@@ -136,7 +136,7 @@ const PermissionListEditor: React.FC<PermissionListEditorProps> = React.memo(({
                       className="h-6 text-xs px-2"
                       onClick={() => setConfirmIndex(null)}
                     >
-                      {t("common.cancel")}
+                      {t("common:cancel")}
                     </Button>
                   </div>
                 ) : (
@@ -145,7 +145,7 @@ const PermissionListEditor: React.FC<PermissionListEditorProps> = React.memo(({
                     size="sm"
                     className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => setConfirmIndex(index)}
-                    aria-label={t("common.remove")}
+                    aria-label={t("common:remove")}
                   >
                     <X className="w-3 h-3" />
                   </Button>
@@ -169,7 +169,7 @@ const PermissionListEditor: React.FC<PermissionListEditorProps> = React.memo(({
               }
             }}
           />
-          <Button size="sm" className="h-8" onClick={addItem} aria-label={t("common.add")}>
+          <Button size="sm" className="h-8" onClick={addItem} aria-label={t("common:add")}>
             <Plus className="w-4 h-4" />
           </Button>
         </div>
@@ -384,7 +384,7 @@ export const PermissionsSection: React.FC<PermissionsSectionProps> = React.memo(
                               setDirConfirmIndex(null);
                             }}
                           >
-                            {t("common.delete")}
+                            {t("common:delete")}
                           </Button>
                           <Button
                             variant="ghost"
@@ -392,7 +392,7 @@ export const PermissionsSection: React.FC<PermissionsSectionProps> = React.memo(
                             className="h-6 text-xs px-2"
                             onClick={() => setDirConfirmIndex(null)}
                           >
-                            {t("common.cancel")}
+                            {t("common:cancel")}
                           </Button>
                         </div>
                       ) : (
@@ -401,7 +401,7 @@ export const PermissionsSection: React.FC<PermissionsSectionProps> = React.memo(
                           size="sm"
                           className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => setDirConfirmIndex(index)}
-                          aria-label={t("common.remove")}
+                          aria-label={t("common:remove")}
                         >
                           <X className="w-3 h-3" />
                         </Button>

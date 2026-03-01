@@ -13,7 +13,7 @@ export const AccessibilityMenuGroup = () => {
   return (
     <>
       <DropdownMenuLabel>
-        {t("common.settings.accessibility.title")}
+        {t("common:settings.accessibility.title")}
       </DropdownMenuLabel>
       <DropdownMenuCheckboxItem
         checked={highContrast}
@@ -22,7 +22,7 @@ export const AccessibilityMenuGroup = () => {
         }}
       >
         <Contrast className="mr-2 h-4 w-4 text-foreground" />
-        <span>{t("common.settings.accessibility.highContrast")}</span>
+        <span>{t("common:settings.accessibility.highContrast")}</span>
       </DropdownMenuCheckboxItem>
     </>
   );

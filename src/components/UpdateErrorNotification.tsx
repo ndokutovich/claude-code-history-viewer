@@ -42,7 +42,7 @@ export function UpdateErrorNotification({
 
           <div className="flex-1 min-w-0">
             <h3 className={`${layout.bodyText} font-semibold text-foreground`}>
-              {t("common.error.updateCheckFailed")}
+              {t("common:error.updateCheckFailed")}
             </h3>
             <p className={`${layout.smallText} mt-1 text-foreground/80 line-clamp-2`}>
               {error}
@@ -56,7 +56,7 @@ export function UpdateErrorNotification({
                 className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                {t("common.retry")}
+                {t("common:retry")}
               </button>
             )}
           </div>

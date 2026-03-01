@@ -93,13 +93,13 @@ export const BillingBreakdownCard: React.FC<BillingBreakdownCardProps> = ({
             <p className="font-mono text-[14px] font-semibold text-foreground">
               {hasConversationTokenData
                 ? formatNumber(conversationTokenValue)
-                : t("common.dash", "\u2014")}
+                : t("common:dash", "\u2014")}
             </p>
             {hasCostData && (
               <p className="font-mono text-[11px] text-muted-foreground">
                 {hasConversationCostData
                   ? formatCurrency(conversationCostValue)
-                  : t("common.dash", "\u2014")}
+                  : t("common:dash", "\u2014")}
               </p>
             )}
             <p className="text-[10px] text-muted-foreground">
@@ -113,13 +113,13 @@ export const BillingBreakdownCard: React.FC<BillingBreakdownCardProps> = ({
             <p className="font-mono text-[14px] font-semibold text-foreground">
               {hasConversationTokenData
                 ? formatNumber(nonConversationTokenValue)
-                : t("common.dash", "\u2014")}
+                : t("common:dash", "\u2014")}
             </p>
             {hasCostData && (
               <p className="font-mono text-[11px] text-muted-foreground">
                 {hasConversationCostData
                   ? formatCurrency(nonConversationCostValue)
-                  : t("common.dash", "\u2014")}
+                  : t("common:dash", "\u2014")}
               </p>
             )}
             <p className="text-[10px] text-muted-foreground">

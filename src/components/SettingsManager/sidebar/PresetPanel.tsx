@@ -164,11 +164,11 @@ const PresetItem: React.FC<PresetItemProps> = React.memo(
                   <DropdownMenuContent align="end" className="w-36">
                     <DropdownMenuItem onClick={onEdit}>
                       <Pencil className="w-3.5 h-3.5 mr-2" />
-                      {t("common.edit")}
+                      {t("common:edit")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={onDuplicate}>
                       <Copy className="w-3.5 h-3.5 mr-2" />
-                      {t("common.duplicate")}
+                      {t("common:duplicate")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -176,7 +176,7 @@ const PresetItem: React.FC<PresetItemProps> = React.memo(
                       className="text-destructive focus:text-destructive"
                     >
                       <Trash2 className="w-3.5 h-3.5 mr-2" />
-                      {t("common.delete")}
+                      {t("common:delete")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -718,7 +718,7 @@ export const PresetPanel: React.FC = () => {
                 ? t("settingsManager.presets.createTitle")
                 : dialogMode === "edit"
                   ? t("settingsManager.presets.editTitle")
-                  : t("common.duplicate")}
+                  : t("common:duplicate")}
             </DialogTitle>
             {dialogMode === "create" && (
               <DialogDescription>
@@ -922,7 +922,7 @@ export const PresetPanel: React.FC = () => {
           )}
           <DialogFooter className="shrink-0">
             <Button variant="outline" onClick={closeDialog}>
-              {t("common.cancel")}
+              {t("common:cancel")}
             </Button>
             <Button
               onClick={
@@ -934,7 +934,7 @@ export const PresetPanel: React.FC = () => {
               }
               disabled={!formName.trim() || !!formNameError}
             >
-              {t("common.save")}
+              {t("common:save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1085,7 +1085,7 @@ export const PresetPanel: React.FC = () => {
               onClick={closeDialog}
               disabled={isApplying}
             >
-              {t("common.cancel")}
+              {t("common:cancel")}
             </Button>
             <Button
               onClick={handleApplyPreset}
@@ -1135,10 +1135,10 @@ export const PresetPanel: React.FC = () => {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={closeDialog}>
-              {t("common.cancel")}
+              {t("common:cancel")}
             </Button>
             <Button variant="destructive" onClick={handleDeletePreset}>
-              {t("common.delete")}
+              {t("common:delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -43,7 +43,7 @@ export const ToolUseCard = memo(function ToolUseCard({
                   styles.badgeText
                 )}
               >
-                {t("common.id")}: {toolId}
+                {t("common:id")}: {toolId}
               </code>
             )}
           </div>

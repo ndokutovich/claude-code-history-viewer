@@ -553,7 +553,7 @@ export const SettingsAnalyzerDialog: React.FC<SettingsAnalyzerDialogProps> = ({
                   <>
                     <Package aria-hidden className="w-4 h-4 mr-2" />
                     {isSaving
-                      ? t("common.loading")
+                      ? t("common:loading")
                       : t("settingsManager.analyzer.createBackup")}
                   </>
                 )}

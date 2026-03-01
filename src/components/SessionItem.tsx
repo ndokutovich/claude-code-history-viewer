@@ -346,7 +346,7 @@ export const SessionItem: React.FC<SessionItemProps> = ({
                   saveCustomName();
                 }}
                 className="p-1 rounded hover:bg-accent/20 text-accent"
-                title={t("common.save")}
+                title={t("common:save")}
               >
                 <Check className="w-3 h-3" />
               </button>
@@ -360,7 +360,7 @@ export const SessionItem: React.FC<SessionItemProps> = ({
                   cancelEditing();
                 }}
                 className="p-1 rounded hover:bg-destructive/20 text-destructive"
-                title={t("common.cancel")}
+                title={t("common:cancel")}
               >
                 <X className="w-3 h-3" />
               </button>

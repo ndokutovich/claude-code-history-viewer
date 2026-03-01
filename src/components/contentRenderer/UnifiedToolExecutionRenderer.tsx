@@ -46,7 +46,7 @@ const getToolDisplayName = (
   if (toolName === "Bash") {
     return t("tools.terminal");
   }
-  return toolName || t("common.unknown");
+  return toolName || t("common:unknown");
 };
 
 export const UnifiedToolExecutionRenderer = memo(function UnifiedToolExecutionRenderer({
@@ -68,17 +68,17 @@ export const UnifiedToolExecutionRenderer = memo(function UnifiedToolExecutionRe
   const statusBadge = hasError ? (
     <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded", layout.smallText, "bg-destructive/20 text-destructive")}>
       <AlertTriangle className={layout.iconSizeSmall} />
-      {t("common.error")}
+      {t("common:error")}
     </span>
   ) : isPending ? (
     <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded", layout.smallText, "bg-warning/20 text-warning")}>
       <Clock3 className={layout.iconSizeSmall} />
-      {t("common.pending")}
+      {t("common:pending")}
     </span>
   ) : (
     <span className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded", layout.smallText, "bg-success/20 text-success")}>
       <CheckCircle2 className={layout.iconSizeSmall} />
-      {t("common.completed")}
+      {t("common:completed")}
     </span>
   );
 
@@ -102,7 +102,7 @@ export const UnifiedToolExecutionRenderer = memo(function UnifiedToolExecutionRe
             {statusBadge}
               {toolId && (
                 <code className={cn(layout.monoText, "px-2 py-0.5", layout.rounded, styles.badge, styles.badgeText)}>
-                  {t("common.id")}: {toolId}
+                  {t("common:id")}: {toolId}
                 </code>
               )}
             </div>
@@ -117,7 +117,7 @@ export const UnifiedToolExecutionRenderer = memo(function UnifiedToolExecutionRe
 
         <details className="mb-2">
           <summary className={cn(layout.smallText, "cursor-pointer text-muted-foreground")}>
-            {t("common.input")}
+            {t("common:input")}
           </summary>
           <pre className={cn(layout.monoText, "mt-2 p-2 bg-secondary text-foreground rounded overflow-x-auto whitespace-pre-wrap", layout.codeMaxHeight)}>
             {stringifyPreview(toolInput)}
@@ -139,7 +139,7 @@ export const UnifiedToolExecutionRenderer = memo(function UnifiedToolExecutionRe
           </div>
         ) : (
           <div className={cn(layout.smallText, "text-muted-foreground italic")}>
-            {t("common.pending")}
+            {t("common:pending")}
           </div>
         )}
       </Renderer.Content>

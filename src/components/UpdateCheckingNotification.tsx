@@ -41,7 +41,7 @@ export function UpdateCheckingNotification({
               {t("updateSettingsModal.checking")}
             </h3>
             <p className={`${layout.smallText} mt-1 text-foreground/80`}>
-              {t("common.loading")}
+              {t("common:loading")}
             </p>
           </div>
 

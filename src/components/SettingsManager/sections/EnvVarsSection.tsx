@@ -99,7 +99,7 @@ const EnvVarCard: React.FC<EnvVarCardProps> = React.memo(({
                 size="sm"
                 className="h-5 w-5 p-0"
                 onClick={() => setShowValue(!showValue)}
-                aria-label={showValue ? t("common.hide") : t("common.show")}
+                aria-label={showValue ? t("common:hide") : t("common:show")}
               >
                 {showValue ? (
                   <EyeOff className="w-3 h-3" />
@@ -123,7 +123,7 @@ const EnvVarCard: React.FC<EnvVarCardProps> = React.memo(({
                     setIsDeleteConfirm(false);
                   }}
                 >
-                  {t("common.delete")}
+                  {t("common:delete")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -131,7 +131,7 @@ const EnvVarCard: React.FC<EnvVarCardProps> = React.memo(({
                   className="h-6 text-xs"
                   onClick={() => setIsDeleteConfirm(false)}
                 >
-                  {t("common.cancel")}
+                  {t("common:cancel")}
                 </Button>
               </div>
             ) : (
@@ -140,7 +140,7 @@ const EnvVarCard: React.FC<EnvVarCardProps> = React.memo(({
                 size="sm"
                 className="h-6 w-6 p-0"
                 onClick={() => setIsDeleteConfirm(true)}
-                aria-label={t("common.delete")}
+                aria-label={t("common:delete")}
               >
                 <Trash2 className="w-3 h-3" />
               </Button>
@@ -313,10 +313,10 @@ export const EnvVarsSection: React.FC<EnvVarsSectionProps> = React.memo(({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddOpen(false)}>
-              {t("common.cancel")}
+              {t("common:cancel")}
             </Button>
             <Button onClick={handleAddEnvVar} disabled={!newKey.trim()}>
-              {t("common.save")}
+              {t("common:save")}
             </Button>
           </DialogFooter>
         </DialogContent>

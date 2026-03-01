@@ -100,7 +100,7 @@ const HookCard: React.FC<HookCardProps> = React.memo(({
                     setIsDeleteConfirm(false);
                   }}
                 >
-                  {t("common.delete")}
+                  {t("common:delete")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -108,7 +108,7 @@ const HookCard: React.FC<HookCardProps> = React.memo(({
                   className="h-6 text-xs"
                   onClick={() => setIsDeleteConfirm(false)}
                 >
-                  {t("common.cancel")}
+                  {t("common:cancel")}
                 </Button>
               </div>
             ) : (
@@ -117,7 +117,7 @@ const HookCard: React.FC<HookCardProps> = React.memo(({
                 size="sm"
                 className="h-6 w-6 p-0"
                 onClick={() => setIsDeleteConfirm(true)}
-                aria-label={t("common.delete")}
+                aria-label={t("common:delete")}
               >
                 <Trash2 className="w-3 h-3" />
               </Button>
@@ -151,7 +151,7 @@ const HookCard: React.FC<HookCardProps> = React.memo(({
                       setCommandConfirmIndex(null);
                     }}
                   >
-                    {t("common.delete")}
+                    {t("common:delete")}
                   </Button>
                   <Button
                     variant="ghost"
@@ -159,7 +159,7 @@ const HookCard: React.FC<HookCardProps> = React.memo(({
                     className="h-5 text-xs px-2"
                     onClick={() => setCommandConfirmIndex(null)}
                   >
-                    {t("common.cancel")}
+                    {t("common:cancel")}
                   </Button>
                 </div>
               ) : (
@@ -168,7 +168,7 @@ const HookCard: React.FC<HookCardProps> = React.memo(({
                   size="sm"
                   className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100"
                   onClick={() => setCommandConfirmIndex(idx)}
-                  aria-label={t("common.remove")}
+                  aria-label={t("common:remove")}
                 >
                   <X className="w-3 h-3" />
                 </Button>
@@ -378,10 +378,10 @@ export const HooksSection: React.FC<HooksSectionProps> = React.memo(({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddOpen(false)}>
-              {t("common.cancel")}
+              {t("common:cancel")}
             </Button>
             <Button onClick={handleAddHook} disabled={!newCommand.trim()}>
-              {t("common.save")}
+              {t("common:save")}
             </Button>
           </DialogFooter>
         </DialogContent>

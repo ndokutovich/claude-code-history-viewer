@@ -437,7 +437,7 @@ const LoadingState = React.forwardRef<HTMLDivElement, LoadingStateProps>(
                 />
               </svg>
             </div>
-            <p className="text-sm text-muted-foreground">{i18next.t("common.noDataAvailable")}</p>
+            <p className="text-sm text-muted-foreground">{i18next.t("common:noDataAvailable")}</p>
           </div>
         </div>
       );

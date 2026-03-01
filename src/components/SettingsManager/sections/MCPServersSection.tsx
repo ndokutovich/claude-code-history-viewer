@@ -161,10 +161,10 @@ const ServerRow: React.FC<ServerRowProps> = React.memo(({
           className="h-7 text-xs font-mono"
         />
         <div className="flex items-center gap-1 justify-end">
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleSave} aria-label={t("common.save")}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleSave} aria-label={t("common:save")}>
             <Check className="w-4 h-4 text-green-600" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleCancel} aria-label={t("common.cancel")}>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleCancel} aria-label={t("common:cancel")}>
             <X className="w-4 h-4 text-muted-foreground" />
           </Button>
         </div>
@@ -186,14 +186,14 @@ const ServerRow: React.FC<ServerRowProps> = React.memo(({
             <button
               onClick={() => setIsEditing(true)}
               className="inline-flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              aria-label={t("common.edit")}
+              aria-label={t("common:edit")}
             >
               <Pencil className="w-3 h-3" />
             </button>
             <button
               onClick={onDelete}
               className="inline-flex items-center justify-center w-6 h-6 rounded-md text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
-              aria-label={t("common.delete")}
+              aria-label={t("common:delete")}
             >
               <Trash2 className="w-3 h-3" />
             </button>
@@ -538,7 +538,7 @@ export const MCPServersSection: React.FC<MCPServersSectionProps> = React.memo(({
 
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddOpen(false); resetForm(); }}>
-              {t("common.cancel")}
+              {t("common:cancel")}
             </Button>
             <Button
               onClick={handleAddServer}
@@ -563,10 +563,10 @@ export const MCPServersSection: React.FC<MCPServersSectionProps> = React.memo(({
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setServerToDelete(null)}>
-              {t("common.cancel")}
+              {t("common:cancel")}
             </Button>
             <Button variant="destructive" onClick={handleConfirmDelete}>
-              {t("common.delete")}
+              {t("common:delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

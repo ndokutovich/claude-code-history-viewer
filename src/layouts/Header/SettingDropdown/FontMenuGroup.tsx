@@ -21,7 +21,7 @@ export const FontMenuGroup = () => {
 
   return (
     <>
-      <DropdownMenuLabel>{t("common.settings.font.title")}</DropdownMenuLabel>
+      <DropdownMenuLabel>{t("common:settings.font.title")}</DropdownMenuLabel>
       <DropdownMenuRadioGroup
         value={String(fontScale)}
         onValueChange={(value) => {

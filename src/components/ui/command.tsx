@@ -32,7 +32,7 @@ interface CommandDialogProps extends DialogProps {
 
 function CommandDialog({ children, ariaLabel, ...props }: CommandDialogProps) {
   const { t } = useTranslation();
-  const label = ariaLabel ?? t("common.commandPalette", "Command Palette");
+  const label = ariaLabel ?? t("common:commandPalette", "Command Palette");
 
   return (
     <Dialog {...props}>

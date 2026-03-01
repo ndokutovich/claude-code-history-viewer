@@ -267,7 +267,7 @@ export const UnifiedSettingsManager: React.FC<UnifiedSettingsManagerProps> = ({
             </Button>
             <Button variant="ghost" size="sm" onClick={loadSettings}>
               <RefreshCw className="h-4 w-4 mr-2" />
-              {t("common.refresh")}
+              {t("common:refresh")}
             </Button>
           </div>
         </div>

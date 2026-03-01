@@ -390,7 +390,7 @@ export const ExportImport: React.FC<ExportImportProps> = ({
                 className="mt-6"
               >
                 <Download className="w-4 h-4 mr-2" />
-                {isExporting ? t("common.loading") : t("settingsManager.exportImport.exportButton")}
+                {isExporting ? t("common:loading") : t("settingsManager.exportImport.exportButton")}
               </Button>
             </div>
 
@@ -430,7 +430,7 @@ export const ExportImport: React.FC<ExportImportProps> = ({
             </div>
             <Button variant="outline" onClick={handleImport} disabled={isImporting}>
               <Upload className="w-4 h-4 mr-2" />
-              {isImporting ? t("common.loading") : t("settingsManager.exportImport.importButton")}
+              {isImporting ? t("common:loading") : t("settingsManager.exportImport.importButton")}
             </Button>
           </div>
         </CardContent>
@@ -459,7 +459,7 @@ export const ExportImport: React.FC<ExportImportProps> = ({
                 disabled={isExportingAll || !hasAnySettings}
               >
                 <Download className="w-4 h-4 mr-2" />
-                {isExportingAll ? t("common.loading") : t("settingsManager.exportImport.exportAllButton")}
+                {isExportingAll ? t("common:loading") : t("settingsManager.exportImport.exportAllButton")}
               </Button>
             </div>
             {hasAnySettings && (
@@ -493,7 +493,7 @@ export const ExportImport: React.FC<ExportImportProps> = ({
             </div>
             <Button variant="outline" onClick={handleImportAll} disabled={isImportingAll}>
               <FolderOpen className="w-4 h-4 mr-2" />
-              {isImportingAll ? t("common.loading") : t("settingsManager.exportImport.importAllButton")}
+              {isImportingAll ? t("common:loading") : t("settingsManager.exportImport.importAllButton")}
             </Button>
           </div>
         </CardContent>
@@ -528,7 +528,7 @@ export const ExportImport: React.FC<ExportImportProps> = ({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsImportPreviewOpen(false)}>
-              {t("common.cancel")}
+              {t("common:cancel")}
             </Button>
             <Button onClick={handleApplyImport}>
               {t("settingsManager.exportImport.apply")}
@@ -608,7 +608,7 @@ export const ExportImport: React.FC<ExportImportProps> = ({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsImportAllPreviewOpen(false)}>
-              {t("common.cancel")}
+              {t("common:cancel")}
             </Button>
             <Button onClick={handleApplyImportAll} variant="destructive">
               {t("settingsManager.exportImport.apply")}

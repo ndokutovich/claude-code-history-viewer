@@ -668,7 +668,7 @@ export const SettingsDiagnosticsPanel: React.FC = () => {
           {isScanning && (
             <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-sm">{t("common.loading")}</span>
+              <span className="text-sm">{t("common:loading")}</span>
             </div>
           )}
         </TabsContent>
@@ -710,7 +710,7 @@ export const SettingsDiagnosticsPanel: React.FC = () => {
           {isScanning && (
             <div className="flex items-center justify-center py-8 gap-3 text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-sm">{t("common.loading")}</span>
+              <span className="text-sm">{t("common:loading")}</span>
             </div>
           )}
 
@@ -730,7 +730,7 @@ export const SettingsDiagnosticsPanel: React.FC = () => {
               ) : (
                 <>
                   <Package aria-hidden className="w-4 h-4 mr-2" />
-                  {isSaving ? t("common.loading") : t("settingsManager.analyzer.createBackup")}
+                  {isSaving ? t("common:loading") : t("settingsManager.analyzer.createBackup")}
                 </>
               )}
             </Button>

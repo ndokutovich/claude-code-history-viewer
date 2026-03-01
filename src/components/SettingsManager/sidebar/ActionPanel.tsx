@@ -201,7 +201,7 @@ export const ActionPanel: React.FC = () => {
       >
         <Upload className="w-4 h-4 mr-2 text-muted-foreground" />
         {isImporting
-          ? t("common.loading")
+          ? t("common:loading")
           : t("settingsManager.exportImport.import")}
       </Button>
 
@@ -242,12 +242,12 @@ export const ActionPanel: React.FC = () => {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsExportOpen(false)}>
-              {t("common.cancel")}
+              {t("common:cancel")}
             </Button>
             <Button onClick={handleExport} disabled={isExporting}>
               <Download className="w-4 h-4 mr-2" />
               {isExporting
-                ? t("common.loading")
+                ? t("common:loading")
                 : t("settingsManager.exportImport.exportButton")}
             </Button>
           </DialogFooter>
@@ -300,7 +300,7 @@ export const ActionPanel: React.FC = () => {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsImportOpen(false)}>
-              {t("common.cancel")}
+              {t("common:cancel")}
             </Button>
             <Button onClick={handleApplyImport} disabled={!importedSettings}>
               {t("settingsManager.exportImport.apply")}
