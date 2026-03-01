@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "../../utils/cn";
+import { AnsiText } from "../common/AnsiText";
+import { hasAnsiCodes } from "@/utils/ansiToHtml";
 
 type Props = {
   text: string;
@@ -201,9 +203,13 @@ export const CommandRenderer = ({ text }: Props) => {
                 isError ? "command-output-error" : "command-output-success"
               )}
             >
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {output.content}
-              </ReactMarkdown>
+              {hasAnsiCodes(output.content) ? (
+                <AnsiText text={output.content} />
+              ) : (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {output.content}
+                </ReactMarkdown>
+              )}
             </div>
           </div>
         );

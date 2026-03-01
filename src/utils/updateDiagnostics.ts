@@ -24,6 +24,8 @@ export function buildUpdateDiagnostics({
   const info = {
     timestamp,
     error,
+    currentVersion: state.currentVersion,
+    newVersion: state.newVersion,
     hasUpdate: state.hasUpdate,
     isDownloading: state.isDownloading,
     isInstalling: state.isInstalling,
@@ -40,6 +42,8 @@ export function buildUpdateDiagnostics({
     "[Updater Diagnostics]",
     `timestamp=${info.timestamp}`,
     `error=${info.error}`,
+    `currentVersion=${info.currentVersion}`,
+    `newVersion=${info.newVersion}`,
     `hasUpdate=${info.hasUpdate}`,
     `isDownloading=${info.isDownloading}`,
     `isInstalling=${info.isInstalling}`,

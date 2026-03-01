@@ -109,8 +109,9 @@ const RendererHeader = ({
   }
   return (
     <div className={cn("flex items-center justify-between", isOpen && "mb-2")}>
-      <div
-        className="flex items-center space-x-2 cursor-pointer"
+      <button
+        type="button"
+        className="flex items-center space-x-2 cursor-pointer bg-transparent border-0 p-0 text-left"
         onClick={toggle}
       >
         <ChevronRight
@@ -135,7 +136,7 @@ const RendererHeader = ({
             {`${title} ${hasError ? t("errorOccurred") : ""}`}
           </span>
         </div>
-      </div>
+      </button>
       {rightContent}
     </div>
   );

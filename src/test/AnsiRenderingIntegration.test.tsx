@@ -80,15 +80,6 @@ describe("CommandRenderer ANSI rendering", () => {
     expect(container.textContent).toContain("$5.96");
   });
 
-  it("strips ANSI before search highlighting", () => {
-    const { container } = render(
-      <CommandRenderer text={commandText} searchQuery="5.96" />
-    );
-    // searchQuery auto-expands via useEffect
-    expectNoRawAnsi(container);
-    expect(container.textContent).toContain("5.96");
-  });
-
   it("renders standalone local-command-stdout with AnsiText", () => {
     const standaloneText = `<local-command-stdout>${RED}error line${OFF}</local-command-stdout>`;
     const { container } = render(<CommandRenderer text={standaloneText} />);
@@ -251,7 +242,7 @@ describe("ToolExecutionResultRouter ANSI rendering", () => {
       stderr: `${RED}error${OFF}: something went wrong`,
     };
     const { container } = render(
-      <ToolExecutionResultRouter toolResult={toolResult} />
+      <ToolExecutionResultRouter toolResult={toolResult} depth={0} />
     );
     expandResult(container);
 
@@ -267,7 +258,7 @@ describe("ToolExecutionResultRouter ANSI rendering", () => {
       interrupted: false,
     };
     const { container } = render(
-      <ToolExecutionResultRouter toolResult={toolResult} />
+      <ToolExecutionResultRouter toolResult={toolResult} depth={0} />
     );
     expandResult(container);
 

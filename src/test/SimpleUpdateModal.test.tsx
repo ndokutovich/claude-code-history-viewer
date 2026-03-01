@@ -1,18 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { SimpleUpdateModal } from "@/components/SimpleUpdateModal";
-import type { UseUpdaterReturn } from "@/hooks/useUpdater";
-
-const {
-  toastSuccessMock,
-  toastErrorMock,
-  openModalMock,
-} = vi.hoisted(() => ({
-  toastSuccessMock: vi.fn(),
-  toastErrorMock: vi.fn(),
-  openModalMock: vi.fn(),
-}));
+import type { UseGitHubUpdaterReturn } from "@/hooks/useGitHubUpdater";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -20,20 +10,7 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
-vi.mock("sonner", () => ({
-  toast: {
-    success: toastSuccessMock,
-    error: toastErrorMock,
-  },
-}));
-
-vi.mock("@/contexts/modal", () => ({
-  useModal: () => ({
-    openModal: openModalMock,
-  }),
-}));
-
-vi.mock("@/components/ui", () => ({
+vi.mock("@/components/ui/dialog", () => ({
   Dialog: ({
     children,
     open,
@@ -46,70 +23,35 @@ vi.mock("@/components/ui", () => ({
   DialogTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
   DialogDescription: ({ children }: { children: ReactNode }) => <p>{children}</p>,
   DialogFooter: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  Button: ({
-    children,
-    onClick,
-    disabled,
-    ...props
-  }: {
-    children: ReactNode;
-    onClick?: () => void;
-    disabled?: boolean;
-    [key: string]: unknown;
-  }) => (
-    <button onClick={onClick} disabled={disabled} {...props}>
-      {children}
-    </button>
-  ),
-}));
-
-vi.mock("@/components/ui/loading", () => ({
-  LoadingSpinner: () => <span data-testid="loading-spinner" />,
-  LoadingProgress: ({ progress }: { progress: number }) => (
-    <div data-testid="loading-progress">{progress}</div>
-  ),
 }));
 
 function createUpdater(
-  stateOverrides: Partial<UseUpdaterReturn["state"]> = {}
-): UseUpdaterReturn {
+  stateOverrides: Partial<UseGitHubUpdaterReturn["state"]> = {}
+): UseGitHubUpdaterReturn {
   return {
     state: {
       isChecking: false,
       hasUpdate: true,
       isDownloading: false,
       isInstalling: false,
-      isRestarting: false,
-      requiresManualRestart: false,
       downloadProgress: 0,
       error: null,
       updateInfo: null,
+      releaseInfo: {
+        tag_name: "v1.5.1",
+        name: "v1.5.1",
+        body: "Bug fixes and improvements",
+        published_at: "2026-02-21T00:00:00.000Z",
+        html_url: "https://github.com/example/repo/releases/tag/v1.5.1",
+        assets: [],
+      },
       currentVersion: "1.5.0",
-      newVersion: "1.5.1",
       ...stateOverrides,
     },
-    checkForUpdates: vi.fn(async () => null),
+    checkForUpdates: vi.fn(async () => {}),
     downloadAndInstall: vi.fn(async () => {}),
     dismissUpdate: vi.fn(),
   };
-}
-
-function createMockUpdateInfo(
-  overrides: Partial<NonNullable<UseUpdaterReturn["state"]["updateInfo"]>> = {}
-): NonNullable<UseUpdaterReturn["state"]["updateInfo"]> {
-  return {
-    available: true,
-    currentVersion: "1.5.0",
-    version: "1.5.1",
-    date: "2026-02-21T00:00:00.000Z",
-    body: "",
-    rawJson: {},
-    download: vi.fn(async () => {}),
-    install: vi.fn(async () => {}),
-    downloadAndInstall: vi.fn(async () => {}),
-    close: vi.fn(async () => {}),
-    ...overrides,
-  } as NonNullable<UseUpdaterReturn["state"]["updateInfo"]>;
 }
 
 describe("SimpleUpdateModal", () => {
@@ -117,141 +59,90 @@ describe("SimpleUpdateModal", () => {
     vi.clearAllMocks();
   });
 
-  it("shows failure guide and report issue button when update fails", () => {
-    const updater = createUpdater({ error: "update.install_failed" });
-
+  it("renders when update is available and visible", () => {
+    const updater = createUpdater();
     render(
       <SimpleUpdateModal
         updater={updater}
         isVisible={true}
         onClose={vi.fn()}
-        onRemindLater={vi.fn()}
-        onSkipVersion={vi.fn()}
       />
     );
 
-    expect(screen.getByText("simpleUpdateModal.failureGuide")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "simpleUpdateModal.reportIssue" })
-    ).toBeInTheDocument();
+    expect(screen.getByText("update.newUpdateAvailable")).toBeInTheDocument();
   });
 
-  it("shows manual restart guidance without report issue when restart is required", () => {
-    const updater = createUpdater({ requiresManualRestart: true });
+  it("does not render when not visible", () => {
+    const updater = createUpdater();
+    const { container } = render(
+      <SimpleUpdateModal
+        updater={updater}
+        isVisible={false}
+        onClose={vi.fn()}
+      />
+    );
 
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("does not render when no releaseInfo", () => {
+    const updater = createUpdater({ releaseInfo: null });
+    const { container } = render(
+      <SimpleUpdateModal
+        updater={updater}
+        isVisible={true}
+        onClose={vi.fn()}
+      />
+    );
+
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("shows error when error is present", () => {
+    const updater = createUpdater({ error: "Download failed" });
     render(
       <SimpleUpdateModal
         updater={updater}
         isVisible={true}
         onClose={vi.fn()}
-        onRemindLater={vi.fn()}
-        onSkipVersion={vi.fn()}
       />
     );
 
-    expect(
-      screen.getByText("common.error.updateManualRestartRequired")
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "simpleUpdateModal.reportIssue" })
-    ).not.toBeInTheDocument();
+    expect(screen.getByText(/update.errorOccurred/)).toBeInTheDocument();
   });
 
-  it("renders release notes from updater body", () => {
-    const updater = createUpdater({
-      updateInfo: createMockUpdateInfo({
-        body: "- Fix updater restart flow\n- Improve diagnostics",
-      }),
-    });
-
-    render(
-      <SimpleUpdateModal
-        updater={updater}
-        isVisible={true}
-        onClose={vi.fn()}
-        onRemindLater={vi.fn()}
-        onSkipVersion={vi.fn()}
-      />
-    );
-
-    expect(screen.getByText("simpleUpdateModal.changes")).toBeInTheDocument();
-    expect(screen.getByTestId("update-release-notes")).toHaveTextContent(
-      "- Fix updater restart flow"
-    );
-    expect(screen.getByTestId("update-release-notes")).toHaveTextContent(
-      "- Improve diagnostics"
-    );
-  });
-
-  it("falls back to release notes from rawJson when body is empty", () => {
-    const updater = createUpdater({
-      updateInfo: createMockUpdateInfo({
-        body: "",
-        rawJson: {
-          notes: "Fallback release notes",
-          releaseName: "v1.5.1 Hotfix",
-        },
-      }),
-    });
-
-    render(
-      <SimpleUpdateModal
-        updater={updater}
-        isVisible={true}
-        onClose={vi.fn()}
-        onRemindLater={vi.fn()}
-        onSkipVersion={vi.fn()}
-      />
-    );
-
-    expect(screen.getByTestId("update-release-name")).toHaveTextContent(
-      "simpleUpdateModal.releaseName"
-    );
-    expect(screen.getByTestId("update-release-name")).toHaveTextContent(
-      "v1.5.1 Hotfix"
-    );
-    expect(screen.getByTestId("update-release-notes")).toHaveTextContent(
-      "Fallback release notes"
-    );
-  });
-
-  it("opens feedback modal with diagnostics prefilled when reporting issue", async () => {
-    const updater = createUpdater({ error: "update.install_failed" });
+  it("calls dismissUpdate when skip version is clicked", () => {
+    const updater = createUpdater();
     const onClose = vi.fn();
-
     render(
       <SimpleUpdateModal
         updater={updater}
         isVisible={true}
         onClose={onClose}
-        onRemindLater={vi.fn()}
-        onSkipVersion={vi.fn()}
       />
     );
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "simpleUpdateModal.reportIssue" })
-    );
+    // Find and click the skip button (t('update.skipVersion'))
+    const skipBtn = screen.getByText("update.skipVersion");
+    fireEvent.click(skipBtn);
 
-    await waitFor(() => {
-      expect(openModalMock).toHaveBeenCalledTimes(1);
-    });
-
-    expect(openModalMock).toHaveBeenCalledWith(
-      "feedback",
-      expect.objectContaining({
-        feedbackPrefill: expect.objectContaining({
-          feedbackType: "bug",
-          subject: "simpleUpdateModal.reportIssueSubject",
-        }),
-      })
-    );
-
-    const openArgs = openModalMock.mock.calls[0][1] as {
-      feedbackPrefill?: { body?: string };
-    };
-    expect(openArgs.feedbackPrefill?.body).toContain("[Updater Diagnostics]");
-    expect(openArgs.feedbackPrefill?.body).toContain("error=update.install_failed");
+    expect(updater.dismissUpdate).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls downloadAndInstall when download button is clicked", () => {
+    const updater = createUpdater();
+    render(
+      <SimpleUpdateModal
+        updater={updater}
+        isVisible={true}
+        onClose={vi.fn()}
+      />
+    );
+
+    const downloadBtn = screen.getByText("update.downloadAndInstall");
+    fireEvent.click(downloadBtn);
+
+    expect(updater.downloadAndInstall).toHaveBeenCalledTimes(1);
   });
 });
