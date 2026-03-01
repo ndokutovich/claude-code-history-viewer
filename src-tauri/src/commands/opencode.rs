@@ -7,9 +7,12 @@
 // CLEAN CODE: Explicit types, standardized error prefixes
 
 use crate::commands::adapters::opencode::*;
+use crate::commands::rename::NativeRenameResult;
 use crate::models::universal::*;
+use serde_json;
 use std::fs;
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 // ============================================================================
 // PATH DETECTION COMMANDS
@@ -142,4 +145,102 @@ pub async fn load_opencode_messages(
 
     println!("Loaded {} OpenCode message(s)", messages.len());
     Ok(messages)
+}
+
+// ============================================================================
+// SESSION RENAMING
+// ============================================================================
+
+/// Rename an OpenCode session by updating the `title` field in its JSON file.
+///
+/// OpenCode sessions are stored as individual JSON files:
+///   `{base}/storage/session/{project_id}/{session_id}.json`
+///
+/// This command updates the `title` field atomically (temp file → rename).
+///
+/// # Arguments
+/// * `file_path` - Absolute path to the session JSON file
+/// * `new_title` - New title (empty string to clear the title)
+#[tauri::command]
+pub async fn rename_opencode_session_native(
+    file_path: String,
+    new_title: String,
+) -> Result<NativeRenameResult, String> {
+    let path_buf = PathBuf::from(&file_path);
+
+    // 1. Validate path exists
+    if !path_buf.exists() {
+        return Err(format!("Session file not found: {}", file_path));
+    }
+
+    // 2. Must be a .json file
+    if path_buf.extension().and_then(|e| e.to_str()) != Some("json") {
+        return Err("Expected a .json session file".to_string());
+    }
+
+    // 3. Must be an absolute path
+    if !path_buf.is_absolute() {
+        return Err("File path must be absolute".to_string());
+    }
+
+    // 4. Path must pass through storage/session (guards against wrong file)
+    let path_str = file_path.replace('\\', "/");
+    if !path_str.contains("/storage/session/") {
+        return Err("File path must be within an OpenCode storage/session/ directory".to_string());
+    }
+
+    // 5. Read and parse JSON
+    let content = fs::read_to_string(&file_path)
+        .map_err(|e| format!("Failed to read session file: {}", e))?;
+
+    let mut json: serde_json::Value = serde_json::from_str(&content)
+        .map_err(|e| format!("Invalid JSON format: {}", e))?;
+
+    // 6. Extract previous title
+    let previous_title = json
+        .get("title")
+        .and_then(|t| t.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    // 7. Update title field
+    let new_title_trimmed = new_title.trim();
+    if new_title_trimmed.is_empty() {
+        json["title"] = serde_json::Value::Null;
+    } else {
+        json["title"] = serde_json::Value::String(new_title_trimmed.to_string());
+    }
+
+    // 8. Serialize back (preserve formatting)
+    let updated_content = serde_json::to_string_pretty(&json)
+        .map_err(|e| format!("Failed to serialize JSON: {}", e))?;
+
+    // 9. Atomic write via temp file
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let temp_path = format!("{}.{}.tmp", file_path, nonce);
+
+    fs::write(&temp_path, &updated_content)
+        .map_err(|e| format!("Failed to write temp file: {}", e))?;
+
+    // 10. Atomic rename (Windows: remove original first)
+    #[cfg(target_os = "windows")]
+    {
+        if path_buf.exists() {
+            fs::remove_file(&file_path)
+                .map_err(|e| format!("Failed to remove original: {}", e))?;
+        }
+    }
+
+    fs::rename(&temp_path, &file_path)
+        .map_err(|e| format!("Failed to finalize rename: {}", e))?;
+
+    Ok(NativeRenameResult {
+        success: true,
+        previous_title,
+        new_title: new_title_trimmed.to_string(),
+        file_path,
+    })
 }

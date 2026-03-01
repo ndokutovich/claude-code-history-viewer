@@ -85,6 +85,7 @@ pub fn run() {
             scan_opencode_projects,
             load_opencode_sessions,
             load_opencode_messages,
+            rename_opencode_session_native,
             // Global stats (upstream-enhanced)
             get_global_stats_summary,
             // Git log for Session Board

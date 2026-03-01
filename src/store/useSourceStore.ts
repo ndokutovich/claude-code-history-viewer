@@ -173,6 +173,7 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       { name: 'Cursor IDE', command: 'get_cursor_path', id: 'cursor' },
       { name: 'Gemini CLI', command: 'get_gemini_path', id: 'gemini' },
       { name: 'Codex CLI', command: 'get_codex_path', id: 'codex' },
+      { name: 'OpenCode', command: 'get_opencode_path', id: 'opencode' },
     ];
 
     const results = await Promise.allSettled(

@@ -61,7 +61,15 @@ export const useNativeRename = (): UseNativeRenameReturn => {
       setError(null);
 
       try {
-        const result = await invoke<NativeRenameResult>("rename_session_native", {
+        // Dispatch to correct backend command based on file type:
+        // - .json  → OpenCode session (JSON file with "title" field)
+        // - .jsonl → Claude Code session (JSONL file with bracketed prefix)
+        const isOpenCode = filePath.endsWith('.json');
+        const command = isOpenCode
+          ? "rename_opencode_session_native"
+          : "rename_session_native";
+
+        const result = await invoke<NativeRenameResult>(command, {
           filePath,
           newTitle: normalizedTitle,
         });
