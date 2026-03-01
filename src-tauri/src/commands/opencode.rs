@@ -189,27 +189,49 @@ pub async fn rename_opencode_session_native(
         return Err("File path must be absolute".to_string());
     }
 
-    // 4. Path must pass through storage/session (guards against wrong file)
-    let path_str = file_path.replace('\\', "/");
-    if !path_str.contains("/storage/session/") {
-        return Err("File path must be within an OpenCode storage/session/ directory".to_string());
+    // 4. Block .. traversal components before canonicalizing
+    {
+        use std::path::Component;
+        for component in path_buf.components() {
+            if component == Component::ParentDir {
+                return Err("Path traversal (..) is not allowed".to_string());
+            }
+        }
     }
 
-    // 5. Read and parse JSON
+    // 5. Canonicalize and verify the path contains "storage" then "session" components
+    let canonical = fs::canonicalize(&path_buf)
+        .map_err(|e| format!("Failed to canonicalize path: {}", e))?;
+
+    {
+        use std::path::Component;
+        let components: Vec<_> = canonical.components().collect();
+        let has_storage_then_session = components.windows(2).any(|w| {
+            matches!(w[0], Component::Normal(s) if s == "storage")
+                && matches!(w[1], Component::Normal(s) if s == "session")
+        });
+        if !has_storage_then_session {
+            return Err(
+                "File path must be within an OpenCode storage/session/ directory".to_string(),
+            );
+        }
+    }
+
+    // 6. Read and parse JSON
     let content = fs::read_to_string(&file_path)
         .map_err(|e| format!("Failed to read session file: {}", e))?;
 
     let mut json: serde_json::Value = serde_json::from_str(&content)
         .map_err(|e| format!("Invalid JSON format: {}", e))?;
 
-    // 6. Extract previous title
+    // 7. Extract previous title
     let previous_title = json
         .get("title")
         .and_then(|t| t.as_str())
         .unwrap_or("")
         .to_string();
 
-    // 7. Update title field
+    // 8. Update title field
     let new_title_trimmed = new_title.trim();
     if new_title_trimmed.is_empty() {
         json["title"] = serde_json::Value::Null;
@@ -217,11 +239,11 @@ pub async fn rename_opencode_session_native(
         json["title"] = serde_json::Value::String(new_title_trimmed.to_string());
     }
 
-    // 8. Serialize back (preserve formatting)
+    // 9. Serialize back (preserve formatting)
     let updated_content = serde_json::to_string_pretty(&json)
         .map_err(|e| format!("Failed to serialize JSON: {}", e))?;
 
-    // 9. Atomic write via temp file
+    // 10. Atomic write via temp file
     let nonce = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_nanos())
@@ -231,7 +253,7 @@ pub async fn rename_opencode_session_native(
     fs::write(&temp_path, &updated_content)
         .map_err(|e| format!("Failed to write temp file: {}", e))?;
 
-    // 10. Atomic rename (Windows: remove original first)
+    // 11. Atomic rename (Windows: remove original first)
     #[cfg(target_os = "windows")]
     {
         if path_buf.exists() {

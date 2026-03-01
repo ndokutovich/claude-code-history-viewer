@@ -111,8 +111,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       diff:
-        specifier: ^8.0.2
-        version: 8.0.2
+        specifier: ^8.0.3
+        version: 8.0.3
       docx:
         specifier: ^9.5.1
         version: 9.5.1
@@ -1983,12 +1983,12 @@ packages:
     resolution: {integrity: sha512-EjePK1srD3P08o2j4f0ExnylqRs5B9tJjcp9t1krH2qRi8CCdsYfwe9JgSLurFBWwq4uOlipzfk5fHNvwFKr8Q==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
-  diff@5.2.0:
-    resolution: {integrity: sha512-uIFDxqpRZGZ6ThOk84hEfqWoHx2devRFvpTZcTHur85vImfaxUbTW9Ryh4CpCuDnToOP1CEtXKIgytHBPVff5A==}
+  diff@5.2.2:
+    resolution: {integrity: sha512-vtcDfH3TOjP8UekytvnHH1o1P4FcUdt4eQ1Y+Abap1tk/OB2MWQvcwS2ClCd1zuIhc3JKOx6p3kod8Vfys3E+A==}
     engines: {node: '>=0.3.1'}
 
-  diff@8.0.2:
-    resolution: {integrity: sha512-sSuxWU5j5SR9QQji/o2qMvqRNYRDOcBTgsJ/DeCf4iSN4gW+gNMXM7wFIP+fdXZxoNiAnHUTGjCr+TSWXdRDKg==}
+  diff@8.0.3:
+    resolution: {integrity: sha512-qejHi7bcSD4hQAZE0tNAawRK1ZtafHDmMTMkrrIGgSLl7hTnQHmKCeB45xAcbfTqK2zowkM3j3bHt/4b/ARbYQ==}
     engines: {node: '>=0.3.1'}
 
   docx@9.5.1:
@@ -4980,7 +4980,7 @@ snapshots:
 
   '@types/diff@8.0.0':
     dependencies:
-      diff: 8.0.2
+      diff: 8.0.3
 
   '@types/estree-jsx@1.0.5':
     dependencies:
@@ -5477,9 +5477,9 @@ snapshots:
 
   diff-sequences@29.6.3: {}
 
-  diff@5.2.0: {}
+  diff@5.2.2: {}
 
-  diff@8.0.2: {}
+  diff@8.0.3: {}
 
   docx@9.5.1:
     dependencies:
@@ -6820,7 +6820,7 @@ snapshots:
     dependencies:
       '@emotion/css': 11.13.5
       classnames: 2.5.1
-      diff: 5.2.0
+      diff: 5.2.2
       memoize-one: 6.0.0
       prop-types: 15.8.1
       react: 19.1.0

@@ -213,12 +213,15 @@ fn open_terminal_with_command(cwd: &str, command: &str) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     {
         // macOS: Open Terminal.app
+        // Escape single quotes in both cwd and command to prevent AppleScript injection
+        let safe_cwd = cwd.replace('\'', "'\\''");
+        let safe_command = command.replace('\'', "'\\''");
         let script = format!(
             r#"tell application "Terminal"
                 activate
                 do script "cd '{}' && {}"
             end tell"#,
-            cwd, command
+            safe_cwd, safe_command
         );
 
         Command::new("osascript")
@@ -230,10 +233,13 @@ fn open_terminal_with_command(cwd: &str, command: &str) -> Result<(), String> {
     #[cfg(target_os = "linux")]
     {
         // Linux: Try common terminals in order
+        // Escape single quotes to prevent shell injection via cwd or command
+        let safe_cwd = cwd.replace('\'', "'\\''");
+        let safe_command = command.replace('\'', "'\\''");
         // Create command strings first to avoid lifetime issues
-        let gnome_cmd = format!("cd '{}' && {}; exec bash", cwd, command);
-        let konsole_cmd = format!("{}; exec bash", command);
-        let xterm_cmd = format!("cd '{}' && {}; exec bash", cwd, command);
+        let gnome_cmd = format!("cd '{}' && {}; exec bash", safe_cwd, safe_command);
+        let konsole_cmd = format!("{}; exec bash", safe_command);
+        let xterm_cmd = format!("cd '{}' && {}; exec bash", safe_cwd, safe_command);
 
         let terminals = vec![
             ("gnome-terminal", vec!["--", "bash", "-c", gnome_cmd.as_str()]),

@@ -72,7 +72,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "diff": "^8.0.2",
+    "diff": "^8.0.3",
     "docx": "^9.5.1",
     "file-saver": "^2.0.5",
     "flexsearch": "^0.8.212",

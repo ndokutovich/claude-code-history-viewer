@@ -150,17 +150,12 @@ pub async fn rename_session_native(
         }
     }
 
-    // 13. Atomic rename (Windows compatibility: remove existing file first)
-    #[cfg(target_os = "windows")]
-    {
-        if std::path::Path::new(&file_path).exists() {
-            fs::remove_file(&file_path)
-                .map_err(|e| RenameError::IoError(e.to_string()).to_string())?;
-        }
-    }
-
-    fs::rename(&temp_path, &file_path)
-        .map_err(|e| RenameError::IoError(e.to_string()).to_string())?;
+    // 13. Atomic rename (Windows-safe via fs_utils helper)
+    super::fs_utils::atomic_rename(
+        std::path::Path::new(&temp_path),
+        std::path::Path::new(&file_path),
+    )
+    .map_err(|e| RenameError::IoError(e).to_string())?;
 
     Ok(NativeRenameResult {
         success: true,
