@@ -36,6 +36,18 @@ import { useSourceStore } from "./useSourceStore";
 import type { SearchState, SearchFilterType, SearchMatch } from "./slices/types";
 import { createEmptySearchState } from "./slices/types";
 import { searchMessages as searchMessagesFromIndex, buildSearchIndex, clearSearchIndex } from "../utils/searchIndex";
+import type { NavigationSliceState, NavigationSliceActions, ViewPreferences } from "./slices/navigationSlice";
+import { initialNavigationState } from "./slices/navigationSlice";
+import type { FilterSliceState, FilterSliceActions } from "./slices/filterSlice";
+import { initialFilterState } from "./slices/filterSlice";
+import type { SearchSliceState, SearchSliceActions } from "./slices/searchSlice";
+import { initialSearchState } from "./slices/searchSlice";
+import type { AnalyticsSliceState, AnalyticsSliceActions } from "./slices/analyticsSlice";
+import { initialAnalyticsState } from "./slices/analyticsSlice";
+import type { SettingsSliceState, SettingsSliceActions } from "./slices/settingsSlice";
+import { initialSettingsState } from "./slices/settingsSlice";
+import type { CaptureModeSliceState, CaptureModeSliceActions } from "./slices/captureModeSlice";
+import { initialCaptureModeState } from "./slices/captureModeSlice";
 
 // ============================================================================
 // VIEW MANAGEMENT SYSTEM (v1.5.1+)
@@ -226,37 +238,32 @@ function universalToUIMessage(msg: UniversalMessage): UIMessage {
   };
 }
 
-/**
- * View Preferences - Preserves user's view selection across navigation
- *
- * Design principles:
- * 1. User's view selection should persist when switching projects/sessions
- * 2. Only explicit user actions (clicking view buttons) should change views
- * 3. System should remember the last view the user was in
- * 4. Extensible for future views
- */
-interface ViewPreferences {
-  /** Last view the user explicitly selected */
-  lastSelectedView: AppView;
-  /** Whether to preserve view when switching projects (default: true) */
-  preserveViewOnProjectSwitch: boolean;
-  /** Whether to preserve view when switching sessions (default: true) */
-  preserveViewOnSessionSwitch: boolean;
-}
+// ViewPreferences is defined in and imported from navigationSlice.ts
+// Re-export so existing code that imports it from this module still works.
+export type { ViewPreferences };
 
-interface AppStore extends AppState {
-  // Filter state
-  excludeSidechain: boolean;
-  sessionExcludeSidechain: boolean; // Per-session filter state (persists during pagination)
+interface AppStore extends AppState,
+  // ---- Slice type composition ----
+  // Each slice contributes a coherent group of state + actions.
+  // The slices provide the type definitions; implementations live below in create().
+  NavigationSliceState,   // currentView, viewPreferences + setViewPreferences
+  NavigationSliceActions,
+  FilterSliceState,       // showSystemMessages, metricMode, excludeSidechain, sessionExcludeSidechain
+  FilterSliceActions,
+  SearchSliceState,       // searchQuery, searchResults, searchFilters, sessionSearch
+  SearchSliceActions,
+  AnalyticsSliceState,    // sessionTokenStats, projectTokenStats, projectStatsSummary, sessionComparison, loading/error flags
+  AnalyticsSliceActions,
+  SettingsSliceState,     // fontScale, highContrast
+  SettingsSliceActions,
+  CaptureModeSliceState,  // isCaptureMode, hiddenMessageIds
+  CaptureModeSliceActions {
+  // ---- Actions NOT covered by slices ----
 
-  // View preferences
-  viewPreferences: ViewPreferences;
-
-  // Actions - View Management
+  // View switching (depends on cross-cutting data loading, kept in main store)
   switchView: (view: AppView) => Promise<void>;
-  setViewPreferences: (preferences: Partial<ViewPreferences>) => void;
 
-  // Actions - Data Loading
+  // Data loading
   initializeApp: () => Promise<void>;
   scanProjects: () => Promise<void>;
   selectProject: (project: UIProject | null) => Promise<void>;
@@ -267,30 +274,13 @@ interface AppStore extends AppState {
   loadAllMessages: () => Promise<void>;
   refreshCurrentSession: () => Promise<void>;
   searchMessages: (query: string, filters?: SearchFilters) => Promise<void>;
-  setSearchFilters: (filters: SearchFilters) => void;
   setError: (error: AppError | null) => void;
   setClaudePath: (path: string) => void;
   loadSessionTokenStats: (sessionPath: string) => Promise<void>;
   loadProjectTokenStats: (projectPath: string) => Promise<void>;
-  loadProjectStatsSummary: (
-    projectPath: string
-  ) => Promise<ProjectStatsSummary>;
-  loadSessionComparison: (
-    sessionId: string,
-    projectPath: string
-  ) => Promise<SessionComparison>;
+  loadProjectStatsSummary: (projectPath: string) => Promise<ProjectStatsSummary>;
+  loadSessionComparison: (sessionId: string, projectPath: string) => Promise<SessionComparison>;
   clearTokenStats: () => void;
-  setExcludeSidechain: (exclude: boolean) => void;
-
-  // Analytics data setters
-  setProjectSummary: (summary: ProjectStatsSummary | null) => void;
-  setSessionComparison: (comparison: SessionComparison | null) => void;
-  setLoadingProjectSummary: (loading: boolean) => void;
-  setLoadingSessionComparison: (loading: boolean) => void;
-  setProjectSummaryError: (error: string | null) => void;
-  setSessionComparisonError: (error: string | null) => void;
-  clearAnalyticsData: () => void;
-  clearAnalyticsErrors: () => void;
 
   // Project list preferences
   setProjectListPreferences: (preferences: Partial<ProjectListPreferences>) => void;
@@ -302,73 +292,37 @@ interface AppStore extends AppState {
   // Loading progress
   setLoadingProgress: (progress: LoadingProgress | null) => void;
 
-  // File activities actions (v1.5.0+)
+  // File activities (v1.5.0+)
   loadFileActivities: (projectPath: string, filters?: FileActivityFilters) => Promise<void>;
   setFileActivityFilters: (filters: FileActivityFilters) => void;
   clearFileActivities: () => void;
 
-  // Session writer actions (v1.6.0+)
+  // Session writer (v1.6.0+)
   createProject: (request: CreateProjectRequest) => Promise<CreateProjectResponse>;
   createSession: (request: CreateSessionRequest) => Promise<CreateSessionResponse>;
   appendToSession: (sessionPath: string, messages: MessageInput[]) => Promise<number>;
 
-  // Capture Mode actions (screenshot capture with hidden blocks)
-  isCaptureMode: boolean;
-  hiddenMessageIds: string[];
-  enterCaptureMode: () => void;
-  exitCaptureMode: () => void;
-  hideMessage: (uuid: string) => void;
-  showMessage: (uuid: string) => void;
-  restoreMessages: (uuids: string[]) => void;
-  restoreAllMessages: () => void;
-  isMessageHidden: (uuid: string) => boolean;
-  getHiddenCount: () => number;
-
-  // Provider-aware helpers (for GlobalSearch / multi-provider features)
+  // Provider-aware helpers
   /** List of active provider IDs (subset of all configured providers) */
   activeProviders: string[];
   /** Returns a human-readable display name for a session, or undefined if not found */
   getSessionDisplayName: (sessionId: string, fallbackSummary?: string) => string | undefined;
-
-  // Filter preferences
-  /** Whether to show system messages in the message list */
-  showSystemMessages: boolean;
-  setShowSystemMessages: (show: boolean) => void;
-
-  // Metric mode for analytics views
-  metricMode: MetricMode;
-  setMetricMode: (mode: MetricMode) => void;
-
-  // Accessibility settings
-  fontScale: number; // 90 | 100 | 110 | 120 | 130 (percent)
-  highContrast: boolean;
-  setFontScale: (scale: number) => void;
-  setHighContrast: (value: boolean) => void;
-
-  // In-session search (KakaoTalk-style navigation)
-  sessionSearch: SearchState;
-  setSessionSearchQuery: (query: string) => void;
-  setSearchFilterType: (filterType: SearchFilterType) => void;
-  goToNextMatch: () => void;
-  goToPrevMatch: () => void;
-  goToMatchIndex: (index: number) => void;
-  clearSessionSearch: () => void;
-  /** Build the FlexSearch index from the current message list */
-  rebuildSearchIndex: () => void;
 }
 
 const DEFAULT_PAGE_SIZE = 100; // Load 100 messages on initial loading
 
 export const useAppStore = create<AppStore>((set, get) => ({
-  // Root-level view state (single source of truth)
-  currentView: "messages" as AppView,
+  // ---- Slice initial states ----
+  // Each slice defines its own initial values; we spread them here so the
+  // store initialisation is the single composition point.
+  ...initialNavigationState,   // currentView, viewPreferences
+  ...initialFilterState,       // showSystemMessages, metricMode, excludeSidechain, sessionExcludeSidechain
+  ...initialSearchState,       // searchQuery, searchResults, searchFilters, sessionSearch
+  ...initialAnalyticsState,    // sessionTokenStats, projectTokenStats, projectStatsSummary, sessionComparison, etc.
+  ...initialSettingsState,     // fontScale, highContrast
+  ...initialCaptureModeState,  // isCaptureMode, hiddenMessageIds
 
-  // View preferences - Controls view persistence behavior
-  viewPreferences: {
-    lastSelectedView: "messages",
-    preserveViewOnProjectSwitch: true,
-    preserveViewOnSessionSwitch: true,
-  },
+  // ---- Non-slice initial state ----
 
   // Loading progress - Start with initializing state
   loadingProgress: {
@@ -402,7 +356,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   projects: [],
   selectedProject: null,
   sessions: [], // For selected project only (backward compatibility)
-  sessionsByProject: {}, // NEW: Cache sessions per-project
+  sessionsByProject: {}, // Cache sessions per-project
   selectedSession: null,
   messages: [],
   pagination: {
@@ -412,11 +366,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     hasMore: false,
     isLoadingMore: false,
   },
-
-  // Search state
-  searchQuery: "",
-  searchResults: [],
-  searchFilters: {},
 
   // File activities state (v1.5.0+)
   fileActivities: [],
@@ -428,44 +377,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   isLoadingProjects: false,
   isLoadingSessions: false,
   isLoadingMessages: false,
-  isLoadingTokenStats: false,
 
   // Error state
   error: null,
 
-  // Analytics data (separated from view state)
-  sessionTokenStats: null,
-  projectTokenStats: [],
-  projectStatsSummary: null,
-  sessionComparison: null,
-  isLoadingProjectSummary: false,
-  isLoadingSessionComparison: false,
-  projectSummaryError: null,
-  sessionComparisonError: null,
-
-  // Filter state
-  excludeSidechain: true,
-  sessionExcludeSidechain: true, // Initialize to match global default
-
-  // Capture mode initial state
-  isCaptureMode: false,
-  hiddenMessageIds: [],
-
   // Provider state
   activeProviders: ["claude"], // Default to Claude provider
-
-  // Filter preferences
-  showSystemMessages: false,
-
-  // Metric mode
-  metricMode: "tokens" as MetricMode,
-
-  // Accessibility settings
-  fontScale: 100,
-  highContrast: false,
-
-  // In-session search
-  sessionSearch: createEmptySearchState(),
 
   // Actions
   initializeApp: async () => {
