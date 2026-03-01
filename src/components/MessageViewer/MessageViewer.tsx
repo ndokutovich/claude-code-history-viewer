@@ -1,0 +1,1115 @@
+import React, {
+  useEffect,
+  useRef,
+  useCallback,
+  useState,
+  useMemo,
+} from "react";
+import { Loader2, MessageCircle, ChevronDown, Link2, Check, ArrowUpCircle, ArrowDownCircle, ListTree, Search, X, ChevronUp } from "lucide-react";
+import { useSearchState } from "../../hooks/useSearchState";
+import { useTranslation } from "react-i18next";
+import type { UIMessage, UISession, MessageBuilder } from "../../types";
+import { ClaudeContentArrayRenderer } from "../contentRenderer";
+import {
+  ClaudeToolUseDisplay,
+  ToolExecutionResultRouter,
+  MessageContentDisplay,
+  AssistantMessageDetails,
+  ProviderMetadataDisplay,
+} from "../messageRenderer";
+import { extractUIMessageContent } from "../../utils/messageUtils";
+import { cn } from "../../utils/cn";
+import { COLORS } from "../../constants/colors";
+import { formatTime } from "../../utils/time";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { SessionBuilderModal } from "../modals/SessionBuilderModal";
+import { invoke } from "@tauri-apps/api/core";
+import type { ExtractMessageRangeRequest, ExtractMessageRangeResponse } from "../../types/sessionWriter";
+import { adapterRegistry } from "../../adapters/registry/AdapterRegistry";
+import { useAppStore } from "../../store/useAppStore";
+import {
+  MAX_DEPTH_MARGIN,
+  SCROLL_ADJUSTMENT_DELAY,
+  SESSION_SCROLL_DELAY,
+  SCROLL_BOTTOM_THRESHOLD,
+  SCROLL_THROTTLE_DELAY,
+  MIN_MESSAGES_FOR_SCROLL_BTN,
+} from "../../constants/layout";
+import { MessageNavigator } from "../MessageNavigator";
+import type { MessageViewerProps, MessageNodeProps } from "./types";
+
+const DEFAULT_NAVIGATOR_WIDTH = 280;
+const MIN_NAVIGATOR_WIDTH = 200;
+const MAX_NAVIGATOR_WIDTH = 480;
+
+const UIMessageNode = ({ message, depth, providerName, sessionFilePath, allMessages, onExtractRange }: MessageNodeProps) => {
+  const { t } = useTranslation("components");
+  const [copiedReference, setCopiedReference] = React.useState(false);
+
+  const handleCopyReference = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      // Format: file_path:line_number or file_path#messageUUID
+      const reference = sessionFilePath
+        ? `${sessionFilePath}#${message.uuid}`
+        : message.uuid;
+
+      const { writeText } = await import("@tauri-apps/plugin-clipboard-manager");
+      await writeText(reference);
+      setCopiedReference(true);
+
+      const { toast } = await import("sonner");
+      toast.success(t("messageReference.referenceCopied"));
+
+      setTimeout(() => setCopiedReference(false), 2000);
+    } catch (error) {
+      console.error("Failed to copy reference:", error);
+      const { toast } = await import("sonner");
+      toast.error(t("messageReference.referenceCopyFailed"));
+    }
+  };
+
+  const handleExtractAbove = (openModal: boolean) => {
+    const currentIndex = allMessages.findIndex(m => m.uuid === message.uuid);
+    if (currentIndex >= 0) {
+      // Extract from start to current (inclusive)
+      onExtractRange(0, currentIndex, openModal);
+    }
+  };
+
+  const handleExtractBelow = (openModal: boolean) => {
+    const currentIndex = allMessages.findIndex(m => m.uuid === message.uuid);
+    if (currentIndex >= 0) {
+      // Extract from current to end (inclusive)
+      onExtractRange(currentIndex, allMessages.length - 1, openModal);
+    }
+  };
+
+  // Sidechain filtering is now handled at the data loading level (adapter.loadMessages)
+  // This is a defensive check to catch adapter bugs during development
+  if (message.isSidechain && import.meta.env.DEV) {
+    console.warn(
+      '[MessageViewer] Sidechain message not filtered by adapter:',
+      message.uuid,
+      'This indicates an adapter bug - sidechains should be filtered during data loading.'
+    );
+  }
+
+  // Apply left margin based on depth
+  const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, MAX_DEPTH_MARGIN)}` : "";
+
+  return (
+    <div
+      id={`message-${message.uuid}`}
+      className={cn(
+        "w-full px-4 py-2",
+        leftMargin,
+        message.isSidechain && "bg-gray-100 dark:bg-gray-800"
+      )}
+    >
+      <div className="max-w-full mx-auto px-4">
+        {/* Show depth (only in development mode) */}
+        {import.meta.env.DEV && depth > 0 && (
+          <div className="text-xs text-gray-400 dark:text-gray-600 mb-1">
+            └─ {t("messageViewer.reply", { depth })}
+          </div>
+        )}
+
+        {/* Message header */}
+        <div
+          className={`flex items-center space-x-2 mb-1 text-md text-gray-500 dark:text-gray-400 ${
+            message.type === "user" ? "justify-end" : "justify-start"
+          }`}
+        >
+          {message.type === "user" && (
+            <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
+          )}
+          <span className="font-medium whitespace-nowrap">
+            {message.type === "user"
+              ? t("messageViewer.user")
+              : message.type === "assistant"
+              ? providerName
+              : t("messageViewer.system")}
+          </span>
+          <span className="whitespace-nowrap">
+            {formatTime(message.timestamp)}
+          </span>
+          {message.isSidechain && (
+            <span className="px-2 py-1 whitespace-nowrap text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 rounded-full">
+              {t("messageViewer.branch")}
+            </span>
+          )}
+          {/* Copy Reference Button */}
+          <button
+            onClick={handleCopyReference}
+            className={cn(
+              "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
+              "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            )}
+            title={t("messageReference.referenceTooltip")}
+          >
+            {copiedReference ? (
+              <Check className="w-3.5 h-3.5 text-green-500" />
+            ) : (
+              <Link2 className="w-3.5 h-3.5" />
+            )}
+          </button>
+
+          {/* Extract Messages Above Button */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
+                  "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                )}
+                title={t("messageReference.extractAboveTooltip")}
+              >
+                <ArrowUpCircle className="w-3.5 h-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExtractAbove(true)}>
+                {t("messageReference.openInBuilder")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExtractAbove(false)}>
+                {t("messageReference.createDirectly")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Extract Messages Below Button */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
+                  "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                )}
+                title={t("messageReference.extractBelowTooltip")}
+              >
+                <ArrowDownCircle className="w-3.5 h-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExtractBelow(true)}>
+                {t("messageReference.openInBuilder")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExtractBelow(false)}>
+                {t("messageReference.createDirectly")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {message.type === "assistant" && (
+            <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
+          )}
+        </div>
+
+        {/* Message content */}
+        <div className="w-full">
+          {/* Message Content */}
+          <MessageContentDisplay
+            content={extractUIMessageContent(message)}
+            messageType={message.type}
+          />
+
+          {/* Claude API Content Array */}
+          {message.content &&
+            typeof message.content === "object" &&
+            Array.isArray(message.content) &&
+            (message.type !== "assistant" ||
+              (message.type === "assistant" &&
+                !extractUIMessageContent(message))) && (
+              <div className="mb-2">
+                <ClaudeContentArrayRenderer content={message.content} />
+              </div>
+            )}
+
+          {/* Special case: when content is null but toolUseResult exists */}
+          {!extractUIMessageContent(message) &&
+            message.toolUseResult &&
+            typeof message.toolUseResult === "object" &&
+            Array.isArray(message.toolUseResult.content) && (
+              <div className={cn("text-sm mb-2", COLORS.ui.text.tertiary)}>
+                <span className="italic">:</span>
+              </div>
+            )}
+
+          {/* Tool Use */}
+          {message.toolUse && (
+            <ClaudeToolUseDisplay toolUse={message.toolUse} />
+          )}
+
+          {/* Tool Result */}
+          {message.toolUseResult && (
+            <ToolExecutionResultRouter
+              toolResult={message.toolUseResult}
+              depth={depth}
+            />
+          )}
+
+          {/* Provider-specific Metadata (file attachments, etc.) */}
+          {message.provider_metadata && (
+            <ProviderMetadataDisplay metadata={message.provider_metadata} />
+          )}
+
+          {/* Assistant Metadata */}
+          <AssistantMessageDetails message={message} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Type-safe parent UUID extraction function
+const getParentUuid = (message: UIMessage): string | null | undefined => {
+  const msgWithParent = message as UIMessage & {
+    parentUuid?: string;
+    parent_uuid?: string;
+  };
+  return msgWithParent.parentUuid || msgWithParent.parent_uuid;
+};
+
+export const MessageViewer: React.FC<MessageViewerProps> = ({
+  messages,
+  pagination,
+  isLoading,
+  selectedSession,
+  onLoadMore,
+}) => {
+  // Get provider name for displaying in messages
+  const providerName = selectedSession?.providerName || "Claude Code";
+  const { t } = useTranslation("components");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLength = useRef(messages.length);
+
+  // Ref to prevent infinite rendering
+  const isProcessingLoadMore = useRef(false);
+  const lastPaginationCall = useRef<number>(0);
+
+  // Session Builder Modal state for extract functionality
+  const [isSessionBuilderOpen, setIsSessionBuilderOpen] = useState(false);
+  const [extractedMessages, setExtractedMessages] = useState<MessageBuilder[]>([]);
+
+  // Message Navigator state
+  const [isNavigatorOpen, setIsNavigatorOpen] = useState(false);
+  const [isNavigatorCollapsed, setIsNavigatorCollapsed] = useState(false);
+  const [activeMessageUuid, setActiveMessageUuid] = useState<string | null>(null);
+  const [navigatorWidth, setNavigatorWidth] = useState(DEFAULT_NAVIGATOR_WIDTH);
+  const [isResizingNavigator, setIsResizingNavigator] = useState(false);
+
+  // In-session search toolbar state
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const {
+    sessionSearch,
+    setSessionSearchQuery,
+    setSearchFilterType,
+    goToNextMatch,
+    goToPrevMatch,
+    clearSessionSearch,
+    rebuildSearchIndex,
+  } = useAppStore();
+
+  const { searchQuery, isSearchPending, handleSearchInput, handleClearSearch } = useSearchState({
+    onSearchChange: setSessionSearchQuery,
+    sessionId: selectedSession?.session_id,
+  });
+
+  // Rebuild search index when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      rebuildSearchIndex();
+    }
+  }, [messages, rebuildSearchIndex]);
+
+  // Scroll to current match when it changes
+  useEffect(() => {
+    const { matches, currentMatchIndex } = sessionSearch;
+    if (currentMatchIndex >= 0 && matches[currentMatchIndex]) {
+      const uuid = matches[currentMatchIndex].messageUuid;
+      const el = document.getElementById(`message-${uuid}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [sessionSearch.currentMatchIndex, sessionSearch.matches]);
+
+  // Ctrl+F / Cmd+F opens search toolbar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+        e.preventDefault();
+        setIsSearchOpen(true);
+        setTimeout(() => searchInputRef.current?.focus(), 0);
+      }
+      if (e.key === "Escape" && isSearchOpen) {
+        setIsSearchOpen(false);
+        clearSessionSearch();
+        handleClearSearch();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSearchOpen, clearSessionSearch, handleClearSearch]);
+
+  // Handle navigator resize via mouse drag on the left edge
+  const handleNavigatorResizeStart = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    setIsResizingNavigator(true);
+    const startX = e.clientX;
+    const startWidth = navigatorWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      // Navigator grows to the left, so width increases as mouse moves left
+      const delta = startX - moveEvent.clientX;
+      const newWidth = Math.min(MAX_NAVIGATOR_WIDTH, Math.max(MIN_NAVIGATOR_WIDTH, startWidth + delta));
+      setNavigatorWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingNavigator(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [navigatorWidth]);
+
+  // Navigate to a specific message by UUID
+  const handleNavigateToMessage = useCallback((uuid: string) => {
+    const element = document.getElementById(`message-${uuid}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setActiveMessageUuid(uuid);
+    }
+  }, []);
+
+  // Handle extract message range
+  const handleExtractRange = useCallback(async (startIndex: number, endIndex: number, openModal: boolean) => {
+    try {
+      // Extract messages from the range (inclusive)
+      const messagesToExtract = messages.slice(startIndex, endIndex + 1);
+
+      if (messagesToExtract.length === 0) {
+        const { toast } = await import("sonner");
+        toast.error(t("messageReference.noMessagesToExtract"));
+        return;
+      }
+
+      if (!selectedSession?.file_path) {
+        const { toast } = await import("sonner");
+        toast.error(t("messageReference.noSessionPath"));
+        return;
+      }
+
+      // Get extracted messages using the backend command
+      const request: ExtractMessageRangeRequest = {
+        session_path: selectedSession.file_path,
+        start_message_id: messagesToExtract[0]?.uuid,
+        end_message_id: messagesToExtract[messagesToExtract.length - 1]?.uuid,
+      };
+
+      const response = await invoke<ExtractMessageRangeResponse>(
+        "extract_message_range",
+        { request }
+      );
+
+      if (openModal) {
+        // Open Session Builder Modal with pre-filled messages
+        // Convert MessageInput[] to MessageBuilder[] by adding IDs
+        const messagesWithIds: MessageBuilder[] = response.messages.map((msg, index) => ({
+          ...msg,
+          id: `msg-${Date.now()}-${index}`,
+        }));
+        setExtractedMessages(messagesWithIds);
+        setIsSessionBuilderOpen(true);
+      } else {
+        // Directly create session file using adapter
+        if (!selectedSession.providerId) {
+          const { toast } = await import("sonner");
+          toast.error("Provider information not available");
+          return;
+        }
+
+        const adapter = adapterRegistry.get(selectedSession.providerId);
+        if (!adapter || !adapter.createSession) {
+          const { toast } = await import("sonner");
+          toast.error("This provider does not support session creation");
+          return;
+        }
+
+        // Get project path by removing the session filename from file_path
+        const projectPath = selectedSession.file_path.split(/[/\\]/).slice(0, -1).join('/');
+        console.log('[MessageViewer] Creating session in project:', projectPath);
+
+        const createResult = await adapter.createSession(projectPath, {
+          messages: response.messages.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+            parent_id: msg.parent_id,
+            model: msg.model,
+            tool_use: msg.tool_use,
+            tool_use_result: msg.tool_use_result,
+            usage: msg.usage,
+          })),
+          summary: response.summary || undefined,
+          cwd: response.cwd,
+        });
+
+        if (!createResult.success) {
+          throw new Error(createResult.error?.message || 'Failed to create session');
+        }
+
+        // Small delay to ensure file system operations complete
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        // Refresh the session list directly using the Tauri command
+        console.log('[MessageViewer] Refreshing session list for project:', projectPath);
+        const store = useAppStore.getState();
+
+        if (store.selectedProject) {
+          try {
+            const sessions = await invoke<UISession[]>(
+              "load_project_sessions",
+              {
+                projectPath: store.selectedProject.path,
+                excludeSidechain: store.excludeSidechain,
+              }
+            );
+            console.log('[MessageViewer] Loaded', sessions.length, 'sessions from backend');
+
+            // Update BOTH sessions and sessionsByProject (ProjectTree reads from sessionsByProject!)
+            useAppStore.setState({
+              sessions,
+              sessionsByProject: {
+                ...store.sessionsByProject,
+                [store.selectedProject.path]: sessions,
+              }
+            });
+            console.log('[MessageViewer] Updated sessionsByProject cache for:', store.selectedProject.path);
+          } catch (error) {
+            console.error('[MessageViewer] Failed to refresh sessions:', error);
+          }
+        }
+
+        const { toast } = await import("sonner");
+        toast.success(t("messageReference.sessionCreated", { count: response.messages.length }));
+      }
+    } catch (error) {
+      console.error("Failed to extract message range:", error);
+      const { toast } = await import("sonner");
+      toast.error(t("messageReference.extractFailed"));
+    }
+  }, [messages, selectedSession, t]);
+
+  // Detect message changes and adjust scroll position (optimized)
+  useEffect(() => {
+    const prevLength = prevMessagesLength.current;
+    const currentLength = messages.length;
+
+    // Only execute when message length changed and not currently processing
+    if (prevLength !== currentLength && !isProcessingLoadMore.current) {
+      // Adjust scroll only when messages are added via load more
+      if (prevLength > 0 && currentLength > prevLength) {
+        isProcessingLoadMore.current = true;
+
+        if (scrollContainerRef.current) {
+          const scrollElement = scrollContainerRef.current;
+          const currentScrollHeight = scrollElement.scrollHeight;
+          const heightDifference =
+            currentScrollHeight - prevScrollHeight.current;
+
+          if (heightDifference > 0 && prevScrollTop.current >= 0) {
+            const newScrollTop = prevScrollTop.current + heightDifference;
+            scrollElement.scrollTop = newScrollTop;
+          }
+
+          prevScrollHeight.current = currentScrollHeight;
+
+          // Processing complete
+          requestAnimationFrame(() => {
+            if (scrollElement.style.overflow === "hidden") {
+              scrollElement.style.overflow = "auto";
+            }
+            isProcessingLoadMore.current = false;
+          });
+        } else {
+          isProcessingLoadMore.current = false;
+        }
+      }
+
+      prevMessagesLength.current = currentLength;
+    }
+  }, [messages.length]);
+
+  // Memoize message tree structure (performance optimization)
+  const { rootMessages, uniqueMessages } = useMemo(() => {
+    if (messages.length === 0) {
+      return { rootMessages: [], uniqueMessages: [] };
+    }
+
+    // Remove duplicates
+    const uniqueMessages = Array.from(
+      new Map(messages.map((msg) => [msg.uuid, msg])).values()
+    );
+
+    // Find root messages
+    const roots: UIMessage[] = [];
+    uniqueMessages.forEach((msg) => {
+      const parentUuid = getParentUuid(msg);
+      if (!parentUuid) {
+        roots.push(msg);
+      }
+    });
+
+    return { rootMessages: roots, uniqueMessages };
+  }, [messages]);
+
+  // Track previous session ID
+  const prevSessionIdRef = useRef<string | null>(null);
+
+  // Function to scroll to bottom
+  const scrollToBottom = useCallback(() => {
+    if (scrollContainerRef.current) {
+      const element = scrollContainerRef.current;
+      // Multiple attempts to ensure scrolling to bottom
+      const attemptScroll = (attempts = 0) => {
+        element.scrollTop = element.scrollHeight;
+        if (
+          attempts < 3 &&
+          element.scrollTop < element.scrollHeight - element.clientHeight - 10
+        ) {
+          setTimeout(() => attemptScroll(attempts + 1), SCROLL_ADJUSTMENT_DELAY);
+        }
+      };
+      attemptScroll();
+    }
+  }, []);
+
+  // Scroll to bottom when new session is selected (chat style)
+  useEffect(() => {
+    // Execute only when session actually changed and messages are loaded
+    if (
+      selectedSession &&
+      prevSessionIdRef.current !== selectedSession.session_id &&
+      messages.length > 0 &&
+      !isLoading
+    ) {
+      // Update previous session ID
+      prevSessionIdRef.current = selectedSession.session_id;
+
+      // Execute scroll after DOM is fully updated
+      setTimeout(() => scrollToBottom(), SESSION_SCROLL_DELAY);
+    }
+  }, [selectedSession, messages.length, isLoading, scrollToBottom]);
+
+  // Scroll to bottom when pagination is reset (new session or refresh)
+  useEffect(() => {
+    if (pagination.currentOffset === 0 && messages.length > 0 && !isLoading) {
+      setTimeout(() => scrollToBottom(), SCROLL_ADJUSTMENT_DELAY);
+    }
+  }, [pagination.currentOffset, messages.length, isLoading, scrollToBottom]);
+
+  // Chat style: maintain scroll position after loading previous messages
+  const prevScrollHeight = useRef<number>(0);
+  const prevScrollTop = useRef<number>(0);
+
+  // Optimize load more button (prevent duplicate calls)
+  const handleLoadMoreWithScroll = useCallback(() => {
+    const now = Date.now();
+
+    // Prevent duplicate clicks (block duplicate calls within 1 second)
+    if (
+      !pagination.hasMore ||
+      pagination.isLoadingMore ||
+      isLoading ||
+      isProcessingLoadMore.current ||
+      now - lastPaginationCall.current < 1000
+    ) {
+      return;
+    }
+
+    lastPaginationCall.current = now;
+
+    if (scrollContainerRef.current) {
+      const scrollElement = scrollContainerRef.current;
+      prevScrollTop.current = scrollElement.scrollTop;
+      prevScrollHeight.current = scrollElement.scrollHeight;
+      scrollElement.style.overflow = "hidden";
+    }
+
+    try {
+      onLoadMore();
+    } catch (error) {
+      console.error("Load more execution error:", error);
+      isProcessingLoadMore.current = false;
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.style.overflow = "auto";
+      }
+    }
+  }, [pagination.hasMore, pagination.isLoadingMore, isLoading, onLoadMore]);
+
+  // Add scroll position state
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+
+  // Optimize scroll event (apply throttling)
+  useEffect(() => {
+    let throttleTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const handleScroll = () => {
+      if (throttleTimer) return;
+
+      throttleTimer = setTimeout(() => {
+        try {
+          if (scrollContainerRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } =
+              scrollContainerRef.current;
+            const isNearBottom = scrollHeight - scrollTop - clientHeight < SCROLL_BOTTOM_THRESHOLD;
+            setShowScrollToBottom(!isNearBottom && messages.length > MIN_MESSAGES_FOR_SCROLL_BTN);
+          }
+        } catch (error) {
+          console.error("Scroll handler error:", error);
+        }
+        throttleTimer = null;
+      }, SCROLL_THROTTLE_DELAY);
+    };
+
+    const scrollElement = scrollContainerRef.current;
+    if (scrollElement) {
+      scrollElement.addEventListener("scroll", handleScroll, { passive: true });
+      handleScroll();
+
+      return () => {
+        if (throttleTimer) {
+          clearTimeout(throttleTimer);
+        }
+        scrollElement.removeEventListener("scroll", handleScroll);
+      };
+    }
+  }, [messages.length]);
+
+  if (isLoading && messages.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center h-full">
+        <div className="flex items-center space-x-2 text-gray-500">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>{t("messageViewer.loadingMessages")}</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (messages.length === 0) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center text-gray-500 h-full">
+        <div className="mb-4">
+          <MessageCircle className="w-16 h-16 mx-auto text-gray-400" />
+        </div>
+        <h3 className="text-lg font-medium mb-2">
+          {t("messageViewer.noMessages")}
+        </h3>
+        <p className="text-sm text-center whitespace-pre-line">
+          {t("messageViewer.noMessagesDescription")}
+        </p>
+      </div>
+    );
+  }
+
+  const renderMessageTree = (
+    message: UIMessage,
+    depth = 0,
+    visitedIds = new Set<string>(),
+    keyPrefix = "",
+    sessionFilePath?: string
+  ): React.ReactNode[] => {
+    // Prevent circular references
+    if (visitedIds.has(message.uuid)) {
+      console.warn(`Circular reference detected for message: ${message.uuid}`);
+      return [];
+    }
+
+    visitedIds.add(message.uuid);
+    const children = messages.filter((m) => {
+      const parentUuid = getParentUuid(m);
+      return parentUuid === message.uuid;
+    });
+
+    // Generate unique key
+    const uniqueKey = keyPrefix ? `${keyPrefix}-${message.uuid}` : message.uuid;
+
+    // Add current message first, then child messages
+    const result: React.ReactNode[] = [
+      <UIMessageNode
+        key={uniqueKey}
+        message={message}
+        depth={depth}
+        providerName={providerName}
+        sessionFilePath={selectedSession?.file_path}
+        allMessages={messages}
+        onExtractRange={handleExtractRange}
+      />,
+    ];
+
+    // Recursively add child messages (increase depth)
+    children.forEach((child, index) => {
+      const childNodes = renderMessageTree(
+        child,
+        depth + 1,
+        new Set(visitedIds),
+        `${uniqueKey}-child-${index}`,
+        sessionFilePath
+      );
+      result.push(...childNodes);
+    });
+
+    return result;
+  };
+
+  return (
+    <div className="relative flex-1 h-full flex">
+      {/* Main message list area */}
+      <div className="flex-1 overflow-hidden relative">
+        {/* In-session search button */}
+        <button
+          onClick={() => {
+            setIsSearchOpen(true);
+            setTimeout(() => searchInputRef.current?.focus(), 0);
+          }}
+          className={cn(
+            "absolute top-2 right-10 z-40 p-1.5 rounded-lg transition-colors",
+            "bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground",
+            "border border-border/50 shadow-sm",
+            isSearchOpen && "bg-accent/10 text-accent"
+          )}
+          title={t("messageViewer.search.button", { defaultValue: "Search in session (Ctrl+F)" })}
+        >
+          <Search className="w-4 h-4" />
+        </button>
+
+        {/* Navigator toggle button */}
+        <button
+          onClick={() => {
+            if (!isNavigatorOpen) {
+              setIsNavigatorOpen(true);
+              setIsNavigatorCollapsed(false);
+            } else {
+              setIsNavigatorOpen(false);
+            }
+          }}
+          className={cn(
+            "absolute top-2 right-2 z-40 p-1.5 rounded-lg transition-colors",
+            "bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground",
+            "border border-border/50 shadow-sm",
+            isNavigatorOpen && "bg-accent/10 text-accent"
+          )}
+          title={t("messageView.toggleNavigator")}
+          aria-label={t("messageView.toggleNavigator")}
+        >
+          <ListTree className="w-4 h-4" />
+        </button>
+
+        {/* In-session search toolbar */}
+        {isSearchOpen && (
+          <div className="absolute top-0 left-0 right-0 z-50 bg-background border-b border-border flex items-center gap-2 px-3 py-2 shadow-sm">
+            {/* Filter type toggle */}
+            <div className="flex items-center gap-1 p-0.5 bg-muted/50 rounded text-xs">
+              <button
+                type="button"
+                onClick={() => setSearchFilterType("content")}
+                className={cn(
+                  "px-2 py-0.5 rounded transition-colors",
+                  sessionSearch.filterType === "content"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {t("messageViewer.search.content", { defaultValue: "Content" })}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSearchFilterType("toolId")}
+                className={cn(
+                  "px-2 py-0.5 rounded transition-colors",
+                  sessionSearch.filterType === "toolId"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {t("messageViewer.search.toolId", { defaultValue: "Tool ID" })}
+              </button>
+            </div>
+            <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchInput}
+              placeholder={t("messageViewer.search.placeholder", { defaultValue: "Search in session..." })}
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            {isSearchPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground shrink-0" />}
+            {sessionSearch.matches.length > 0 && (
+              <span className="text-xs text-muted-foreground shrink-0">
+                {sessionSearch.currentMatchIndex + 1} / {sessionSearch.matches.length}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={goToPrevMatch}
+              disabled={sessionSearch.matches.length === 0}
+              className="p-1 hover:bg-muted rounded disabled:opacity-40"
+              title="Previous match (Shift+Enter)"
+            >
+              <ChevronUp className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={goToNextMatch}
+              disabled={sessionSearch.matches.length === 0}
+              className="p-1 hover:bg-muted rounded disabled:opacity-40"
+              title="Next match (Enter)"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSearchOpen(false);
+                clearSessionSearch();
+                handleClearSearch();
+              }}
+              className="p-1 hover:bg-muted rounded"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        <div
+          ref={scrollContainerRef}
+          role="log"
+          aria-label={t("messageViewer.threadLabel", "Message thread")}
+          aria-live="off"
+          className="h-full overflow-y-auto scrollbar-thin"
+          style={{ scrollBehavior: "auto" }} // Use auto instead of smooth for immediate scroll
+        >
+        {/* Debugging information */}
+        {import.meta.env.DEV && (
+          <div className="bg-yellow-50 p-2 text-xs text-yellow-800 border-b space-y-1">
+            <div>
+              {t("messageViewer.debugInfo.messages", {
+                current: messages.length,
+                total: pagination.totalCount,
+              })}{" "}
+              |{" "}
+              {t("messageViewer.debugInfo.offset", {
+                offset: pagination.currentOffset,
+              })}{" "}
+              |{" "}
+              {t("messageViewer.debugInfo.hasMore", {
+                hasMore: pagination.hasMore ? "O" : "X",
+              })}{" "}
+              |{" "}
+              {t("messageViewer.debugInfo.loading", {
+                loading: pagination.isLoadingMore ? "O" : "X",
+              })}
+            </div>
+            <div>
+              {t("messageViewer.debugInfo.session", {
+                sessionId: selectedSession?.session_id?.slice(-8),
+              })}{" "}
+              |{" "}
+              {t("messageViewer.debugInfo.file", {
+                fileName: selectedSession?.file_path
+                  ?.split("/")
+                  .pop()
+                  ?.slice(0, 20),
+              })}
+            </div>
+            {messages.length > 0 && (
+              <div>
+                {t("messageViewer.debugInfo.firstMessage", {
+                  timestamp: messages[0]?.timestamp,
+                })}{" "}
+                |{" "}
+                {t("messageViewer.debugInfo.lastMessage", {
+                  timestamp: messages[messages.length - 1]?.timestamp,
+                })}
+              </div>
+            )}
+          </div>
+        )}
+        <div className="max-w-full mx-auto px-4">
+          {/* Load previous messages button (top) - chat style */}
+          {pagination.hasMore && (
+            <div className="flex items-center justify-center py-4">
+              {pagination.isLoadingMore ? (
+                <div className="flex items-center space-x-2 text-gray-500 py-2 px-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>
+                    {t("messageViewer.loadingPreviousMessages", {
+                      current: messages.length,
+                      total: pagination.totalCount,
+                    })}
+                  </span>
+                </div>
+              ) : (
+                <button
+                  onClick={handleLoadMoreWithScroll}
+                  className="flex items-center space-x-2 py-2 px-4 bg-blue-50 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>
+                    {t("messageViewer.loadMoreMessages", {
+                      count: (() => {
+                        const remainingMessages =
+                          pagination.totalCount - messages.length;
+                        const messagesToLoad = Math.min(
+                          pagination.pageSize,
+                          remainingMessages
+                        );
+                        return messagesToLoad;
+                      })(),
+                      current: messages.length,
+                      total: pagination.totalCount,
+                    })}
+                  </span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Loading complete message (top) */}
+          {!pagination.hasMore && messages.length > 0 && (
+            <div className="flex items-center justify-center py-4">
+              <div className="text-gray-400 text-sm">
+                {t("messageViewer.allMessagesLoaded", {
+                  count: pagination.totalCount,
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Message list */}
+          {(() => {
+            try {
+              if (rootMessages.length > 0) {
+                // Render tree structure
+                return rootMessages
+                  .map((message) => renderMessageTree(message, 0, new Set(), "", selectedSession?.file_path))
+                  .flat();
+              } else {
+                // Render flat structure
+
+                return uniqueMessages.map((message, index) => {
+                  // Generate unique key: use index and timestamp if UUID is missing or duplicated
+                  const uniqueKey =
+                    message.uuid && message.uuid !== "unknown-session"
+                      ? `${message.uuid}-${index}`
+                      : `fallback-${index}-${message.timestamp}-${message.type}`;
+
+                  return (
+                    <UIMessageNode
+                      key={uniqueKey}
+                      message={message}
+                      depth={0}
+                      providerName={providerName}
+                      sessionFilePath={selectedSession?.file_path}
+                      allMessages={messages}
+                      onExtractRange={handleExtractRange}
+                    />
+                  );
+                });
+              }
+            } catch (error) {
+              console.error("Message rendering error:", error);
+              console.error("Message state when error occurred:", {
+                messagesLength: messages.length,
+                rootMessagesLength: rootMessages.length,
+                pagination,
+                firstMessage: messages[0],
+                lastMessage: messages[messages.length - 1],
+              });
+
+              // Safe fallback rendering on error
+              return (
+                <div
+                  key="error-fallback"
+                  className="flex items-center justify-center p-8"
+                >
+                  <div className="text-center text-red-600">
+                    <div className="text-lg font-semibold mb-2">
+                      {t("messageViewer.renderError")}
+                    </div>
+                    <div className="text-sm">
+                      {t("messageViewer.checkConsole")}
+                    </div>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                      {t("messageViewer.refresh")}
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+          })()}
+        </div>
+
+        {/* Floating scroll to bottom button */}
+        {showScrollToBottom && (
+          <button
+            onClick={scrollToBottom}
+            className={cn(
+              "fixed bottom-10 p-3 rounded-full shadow-lg transition-all duration-300 z-50",
+              "bg-blue-500/50 hover:bg-blue-600 text-white",
+              "hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-300",
+              "dark:bg-blue-600/50 dark:hover:bg-blue-700 dark:focus:ring-blue-800",
+              showScrollToBottom
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2"
+            )}
+            style={{ right: isNavigatorOpen ? `${navigatorWidth + 16}px` : '8px' }}
+            title={t("messageViewer.scrollToBottom")}
+            aria-label={t("messageViewer.scrollToBottom")}
+          >
+            <ChevronDown className="w-3 h-3" />
+          </button>
+        )}
+        </div>
+      </div>
+
+      {/* Message Navigator Panel (right side) */}
+      {isNavigatorOpen && (
+        <MessageNavigator
+          messages={messages}
+          width={isNavigatorCollapsed ? 48 : navigatorWidth}
+          isResizing={isResizingNavigator}
+          onResizeStart={handleNavigatorResizeStart}
+          isCollapsed={isNavigatorCollapsed}
+          onToggleCollapse={() => setIsNavigatorCollapsed((prev) => !prev)}
+          activeMessageUuid={activeMessageUuid ?? undefined}
+          onNavigateToMessage={handleNavigateToMessage}
+        />
+      )}
+
+      {/* Session Builder Modal for extracted messages */}
+      <SessionBuilderModal
+        isOpen={isSessionBuilderOpen}
+        onClose={() => {
+          setIsSessionBuilderOpen(false);
+          setExtractedMessages([]);
+        }}
+        initialMessages={extractedMessages}
+      />
+    </div>
+  );
+};
