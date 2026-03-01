@@ -48,6 +48,22 @@ import type { SettingsSliceState, SettingsSliceActions } from "./slices/settings
 import { initialSettingsState } from "./slices/settingsSlice";
 import type { CaptureModeSliceState, CaptureModeSliceActions } from "./slices/captureModeSlice";
 import { initialCaptureModeState } from "./slices/captureModeSlice";
+import type { BoardSliceState, BoardSliceActions } from "./slices/boardSlice";
+import { initialBoardState } from "./slices/boardSlice";
+import type { GlobalStatsSliceState, GlobalStatsSliceActions } from "./slices/globalStatsSlice";
+import { initialGlobalStatsState } from "./slices/globalStatsSlice";
+import type { MessageSliceState, MessageSliceActions } from "./slices/messageSlice";
+import { initialMessageState } from "./slices/messageSlice";
+import type { MetadataSliceState, MetadataSliceActions } from "./slices/metadataSlice";
+import { initialMetadataState } from "./slices/metadataSlice";
+import type { NavigatorSliceState, NavigatorSliceActions } from "./slices/navigatorSlice";
+import { initialNavigatorState } from "./slices/navigatorSlice";
+import type { ProjectSliceState, ProjectSliceActions } from "./slices/projectSlice";
+import { initialProjectState } from "./slices/projectSlice";
+import type { ProviderSliceState, ProviderSliceActions } from "./slices/providerSlice";
+import { initialProviderState } from "./slices/providerSlice";
+import type { WatcherSliceState, WatcherSliceActions } from "./slices/watcherSlice";
+import { initialWatcherState } from "./slices/watcherSlice";
 
 // ============================================================================
 // VIEW MANAGEMENT SYSTEM (v1.5.1+)
@@ -257,7 +273,23 @@ interface AppStore extends AppState,
   SettingsSliceState,     // fontScale, highContrast
   SettingsSliceActions,
   CaptureModeSliceState,  // isCaptureMode, hiddenMessageIds
-  CaptureModeSliceActions {
+  CaptureModeSliceActions,
+  BoardSliceState,        // boardViewMode, boardSelectedSessionId, boardExpandedCards
+  BoardSliceActions,
+  GlobalStatsSliceState,  // globalStats, isLoadingGlobalStats, globalStatsError
+  GlobalStatsSliceActions,
+  MessageSliceState,      // messageScrollPosition, messageHighlightIds
+  MessageSliceActions,
+  MetadataSliceState,     // sessionMetadataCache, isSavingMetadata
+  MetadataSliceActions,
+  NavigatorSliceState,    // navigatorOpen, navigatorWidth, navigatorActiveId
+  NavigatorSliceActions,
+  ProjectSliceState,      // isLoadingAllSessions, projectsLastRefreshed
+  ProjectSliceActions,
+  ProviderSliceState,     // defaultProviderId, providerHealthStatus
+  ProviderSliceActions,
+  WatcherSliceState,      // isWatchingEnabled, watcherError, lastWatcherSyncTime
+  WatcherSliceActions {
   // ---- Actions NOT covered by slices ----
 
   // View switching (depends on cross-cutting data loading, kept in main store)
@@ -321,6 +353,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...initialAnalyticsState,    // sessionTokenStats, projectTokenStats, projectStatsSummary, sessionComparison, etc.
   ...initialSettingsState,     // fontScale, highContrast
   ...initialCaptureModeState,  // isCaptureMode, hiddenMessageIds
+  ...initialBoardState,        // boardViewMode, boardSelectedSessionId, boardExpandedCards
+  ...initialGlobalStatsState,  // globalStats, isLoadingGlobalStats, globalStatsError
+  ...initialMessageState,      // messageScrollPosition, messageHighlightIds
+  ...initialMetadataState,     // sessionMetadataCache, isSavingMetadata
+  ...initialNavigatorState,    // navigatorOpen, navigatorWidth, navigatorActiveId
+  ...initialProjectState,      // isLoadingAllSessions, projectsLastRefreshed
+  ...initialProviderState,     // defaultProviderId, providerHealthStatus
+  ...initialWatcherState,      // isWatchingEnabled, watcherError, lastWatcherSyncTime
 
   // ---- Non-slice initial state ----
 
@@ -1873,4 +1913,59 @@ export const useAppStore = create<AppStore>((set, get) => ({
       buildSearchIndex(messages);
     }
   },
+
+  // ============================================================
+  // Board slice actions
+  // ============================================================
+  setBoardViewMode: (mode) => set({ boardViewMode: mode }),
+  setBoardSelectedSessionId: (id) => set({ boardSelectedSessionId: id }),
+  setBoardExpandedCards: (ids) => set({ boardExpandedCards: ids }),
+
+  // ============================================================
+  // Global stats slice actions
+  // ============================================================
+  setGlobalStats: (stats) => set({ globalStats: stats }),
+  setIsLoadingGlobalStats: (loading) => set({ isLoadingGlobalStats: loading }),
+  setGlobalStatsError: (error) => set({ globalStatsError: error }),
+
+  // ============================================================
+  // Message slice actions
+  // ============================================================
+  setMessageScrollPosition: (position) => set({ messageScrollPosition: position }),
+  setMessageHighlightIds: (ids) => set({ messageHighlightIds: ids }),
+  clearMessageHighlights: () => set({ messageHighlightIds: [] }),
+
+  // ============================================================
+  // Metadata slice actions
+  // ============================================================
+  setSessionMetadataCache: (cache) => set({ sessionMetadataCache: cache }),
+  setIsSavingMetadata: (saving) => set({ isSavingMetadata: saving }),
+  clearMetadataCache: () => set({ sessionMetadataCache: {} }),
+
+  // ============================================================
+  // Navigator slice actions
+  // ============================================================
+  setNavigatorOpen: (open) => set({ navigatorOpen: open }),
+  setNavigatorWidth: (width) => set({ navigatorWidth: width }),
+  setNavigatorActiveId: (id) => set({ navigatorActiveId: id }),
+  toggleNavigator: () => set((state) => ({ navigatorOpen: !state.navigatorOpen })),
+
+  // ============================================================
+  // Project slice actions
+  // ============================================================
+  setIsLoadingAllSessions: (loading) => set({ isLoadingAllSessions: loading }),
+  setProjectsLastRefreshed: (timestamp) => set({ projectsLastRefreshed: timestamp }),
+
+  // ============================================================
+  // Provider slice actions
+  // ============================================================
+  setDefaultProviderId: (id) => set({ defaultProviderId: id }),
+  setProviderHealthStatus: (status) => set({ providerHealthStatus: status }),
+
+  // ============================================================
+  // Watcher slice actions
+  // ============================================================
+  setIsWatchingEnabled: (enabled) => set({ isWatchingEnabled: enabled }),
+  setWatcherError: (error) => set({ watcherError: error }),
+  setLastWatcherSyncTime: (time) => set({ lastWatcherSyncTime: time }),
 }));
