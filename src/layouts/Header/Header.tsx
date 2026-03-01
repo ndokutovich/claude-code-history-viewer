@@ -70,6 +70,7 @@ export const Header = () => {
 
   return (
     <header
+      role="banner"
       className={cn(
         "px-6 py-4 border-b",
         COLORS.ui.background.secondary,
@@ -93,7 +94,10 @@ export const Header = () => {
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <nav
+          aria-label={t("nav.toolbarLabel", "Application toolbar")}
+          className="flex items-center space-x-4"
+        >
           <div className="flex items-center space-x-2">
             {/* Sources Button */}
             <TooltipButton
@@ -324,7 +328,7 @@ export const Header = () => {
             {/* Dropdown here again */}
             <SettingDropdown />
           </div>
-        </div>
+        </nav>
       </div>
 
       {/* Sources Modal */}

@@ -331,6 +331,9 @@ export const GlobalSearchModal = ({
                         value={query}
                         onChange={handleInputChange}
                         placeholder={t("globalSearch.placeholder")}
+                        aria-label={t("globalSearch.searchLabel", "Search across all conversations")}
+                        aria-autocomplete="list"
+                        aria-controls="global-search-results"
                         className="border-0 shadow-none focus-visible:ring-0 px-0 h-auto text-sm"
                         autoComplete="off"
                         autoCorrect="off"
@@ -357,6 +360,11 @@ export const GlobalSearchModal = ({
                 {/* Results */}
                 <div
                     ref={resultsContainerRef}
+                    id="global-search-results"
+                    role="listbox"
+                    aria-label={t("globalSearch.resultsLabel", "Search results")}
+                    aria-live="polite"
+                    aria-busy={isSearching}
                     className="max-h-100 overflow-y-auto"
                 >
                     {isSearching && results.length === 0 && (

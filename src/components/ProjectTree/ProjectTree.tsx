@@ -1,5 +1,5 @@
 // src/components/ProjectTree/ProjectTree.tsx
-import React, { useEffect, useMemo, useCallback } from "react";
+import React, { useEffect, useMemo, useCallback, useRef, useState } from "react";
 import {
   Folder,
   Wrench,
@@ -24,6 +24,12 @@ import { useAppStore } from "../../store/useAppStore";
 import { ProviderIcon, getProviderColorClass } from "../icons/ProviderIcons";
 import type { ProjectTreeProps } from "./types";
 import { useProjectTreeState } from "./hooks/useProjectTreeState";
+import {
+  buildTreeItemAnnouncement,
+  findTypeaheadMatchIndex,
+  getNextTreeItemIndex,
+  type TreeNavigationKey,
+} from "../../utils/treeKeyboard";
 
 export const ProjectTree: React.FC<ProjectTreeProps> = ({
   projects,
@@ -424,6 +430,172 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     [setSessionContextMenu, setRenameTarget]
   );
 
+  // --- Keyboard navigation (ARIA tree) ---
+  const treeRef = useRef<HTMLDivElement>(null);
+  const typeaheadQueryRef = useRef("");
+  const typeaheadTimeoutRef = useRef<number | null>(null);
+  const [treeAnnouncement, setTreeAnnouncement] = useState("");
+
+  const announceTree = useCallback((message: string) => {
+    if (!message) return;
+    setTreeAnnouncement((prev) => (prev === message ? `${message} ` : message));
+  }, []);
+
+  const describeTreeItem = useCallback((item: HTMLElement): string => {
+    const rawLabel = item.getAttribute("aria-label") || item.textContent || "";
+    return buildTreeItemAnnouncement(
+      rawLabel,
+      {
+        ariaExpanded: item.getAttribute("aria-expanded") as "true" | "false" | null,
+        ariaSelected: item.getAttribute("aria-selected") as "true" | "false" | null,
+      },
+      {
+        expanded: t("project.a11y.expandedState", "expanded"),
+        collapsed: t("project.a11y.collapsedState", "collapsed"),
+        selected: t("project.a11y.selectedState", "selected"),
+      },
+      t("project.explorer", "Project Explorer")
+    );
+  }, [t]);
+
+  const syncRovingTabIndex = useCallback((preferredItem?: HTMLElement) => {
+    const tree = treeRef.current;
+    if (!tree) return;
+
+    const treeItems = Array.from(
+      tree.querySelectorAll<HTMLElement>('[role="treeitem"]')
+    );
+    if (treeItems.length === 0) return;
+
+    const activeElement = document.activeElement;
+    const focusedItem =
+      activeElement instanceof HTMLElement
+        ? activeElement.closest<HTMLElement>('[role="treeitem"]')
+        : null;
+
+    const selectedItem = treeItems.find(
+      (item) => item.getAttribute("aria-selected") === "true"
+    );
+    const fallbackItem = selectedItem ?? treeItems[0];
+    const nextTabStop = preferredItem ?? focusedItem ?? fallbackItem;
+
+    for (const item of treeItems) {
+      item.tabIndex = item === nextTabStop ? 0 : -1;
+    }
+  }, []);
+
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => syncRovingTabIndex());
+    return () => cancelAnimationFrame(frameId);
+  }, [
+    syncRovingTabIndex,
+    filteredAndSortedProjects.length,
+    selectedProject?.path,
+    selectedSession?.session_id,
+  ]);
+
+  useEffect(() => () => {
+    if (typeaheadTimeoutRef.current) {
+      window.clearTimeout(typeaheadTimeoutRef.current);
+    }
+  }, []);
+
+  const handleTreeKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const treeItems = Array.from(
+        event.currentTarget.querySelectorAll<HTMLElement>('[role="treeitem"]')
+      );
+      if (treeItems.length === 0) return;
+
+      const currentItem = (event.target as HTMLElement).closest<HTMLElement>(
+        '[role="treeitem"]'
+      );
+      const currentIndex = currentItem ? treeItems.indexOf(currentItem) : -1;
+      if (currentIndex < 0) return;
+
+      // Typeahead: single printable character (no modifiers)
+      if (
+        event.key.length === 1 &&
+        !event.altKey &&
+        !event.ctrlKey &&
+        !event.metaKey
+      ) {
+        const nextQuery = `${typeaheadQueryRef.current}${event.key.toLowerCase()}`;
+        typeaheadQueryRef.current = nextQuery;
+        if (typeaheadTimeoutRef.current) {
+          window.clearTimeout(typeaheadTimeoutRef.current);
+        }
+        typeaheadTimeoutRef.current = window.setTimeout(() => {
+          typeaheadQueryRef.current = "";
+          typeaheadTimeoutRef.current = null;
+        }, 500);
+
+        const labels = treeItems.map((item) => item.textContent ?? "");
+        const matchIndex = findTypeaheadMatchIndex(labels, currentIndex, nextQuery);
+        if (matchIndex >= 0) {
+          event.preventDefault();
+          const nextItem = treeItems[matchIndex];
+          syncRovingTabIndex(nextItem);
+          nextItem?.focus();
+          if (nextItem) announceTree(describeTreeItem(nextItem));
+        }
+        return;
+      }
+
+      // Arrow Left on a non-expandable (level-2) item: move focus to parent
+      if (event.key === "ArrowLeft") {
+        const level = currentItem?.getAttribute("aria-level");
+        if (level === "2") {
+          event.preventDefault();
+          const parentItem = treeItems
+            .slice(0, currentIndex)
+            .reverse()
+            .find((item) => item.getAttribute("aria-level") === "1");
+          if (parentItem) {
+            syncRovingTabIndex(parentItem);
+            parentItem.focus();
+            announceTree(describeTreeItem(parentItem));
+          }
+          return;
+        }
+        // For level-1 expandable items, the onKeyDown on the button handles it
+        return;
+      }
+
+      // Enter / Space: activate current item
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        currentItem?.click();
+        return;
+      }
+
+      // Arrow Up/Down, Home, End
+      if (
+        event.key !== "ArrowDown" &&
+        event.key !== "ArrowUp" &&
+        event.key !== "Home" &&
+        event.key !== "End"
+      ) {
+        return;
+      }
+
+      const nextIndex = getNextTreeItemIndex(
+        currentIndex,
+        treeItems.length,
+        event.key as TreeNavigationKey
+      );
+      if (nextIndex === currentIndex || nextIndex < 0) return;
+
+      event.preventDefault();
+      const nextItem = treeItems[nextIndex];
+      if (!nextItem) return;
+      syncRovingTabIndex(nextItem);
+      nextItem.focus();
+      announceTree(describeTreeItem(nextItem));
+    },
+    [announceTree, describeTreeItem, syncRovingTabIndex]
+  );
+
   // Expose expand/collapse functions via custom event for ProjectListControls
   useEffect(() => {
     const handleExpandAll = async () => {
@@ -494,7 +666,26 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       )}
 
       {/* Projects List */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin">
+      <div
+        ref={treeRef}
+        role="tree"
+        aria-label={t("projectTree.ariaLabel", "Project explorer")}
+        onKeyDown={handleTreeKeyDown}
+        onFocusCapture={(event) => {
+          const target = event.target as HTMLElement;
+          const treeItem = target.closest<HTMLElement>('[role="treeitem"]');
+          if (treeItem) {
+            syncRovingTabIndex(treeItem);
+            announceTree(describeTreeItem(treeItem));
+          }
+        }}
+        className="flex-1 overflow-y-auto scrollbar-thin"
+      >
+        {/* Screen-reader live region for keyboard navigation announcements */}
+        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          {treeAnnouncement}
+        </div>
+
         {filteredAndSortedProjects.length === 0 ? (
           <div className="p-4 text-center text-gray-400 dark:text-gray-600 h-full flex items-center">
             <div className="flex flex-col justify-center w-full">
@@ -521,6 +712,10 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                 return (
                   <button
                     key={session.session_id}
+                    role="treeitem"
+                    aria-level={1}
+                    aria-selected={isSelected}
+                    tabIndex={-1}
                     onClick={() => {
                       // Find the project for this session
                       const project = filteredAndSortedProjects.find(p => p.path === session.projectPath);
@@ -531,7 +726,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                     }}
                     onContextMenu={(e) => handleSessionContextMenu(e, session)}
                     className={cn(
-                      "text-left w-full p-2 rounded transition-colors flex items-start space-x-2",
+                      "text-left w-full p-2 rounded transition-colors flex items-start space-x-2 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset",
                       isSelected
                         ? "bg-blue-100 dark:bg-blue-900/40 border-l-2 border-blue-500"
                         : "hover:bg-gray-200 dark:hover:bg-gray-700"
@@ -635,6 +830,12 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
                         {/* Project Name - Clickable area for selection */}
                         <button
+                          role="treeitem"
+                          data-tree-expandable="true"
+                          aria-level={1}
+                          aria-expanded={isExpanded}
+                          aria-selected={selectedProject?.path === project.path}
+                          tabIndex={-1}
                           onClick={() => {
                             // Select project and expand if collapsed
                             onProjectSelect(project);
@@ -644,7 +845,19 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                               toggleProject(project.path);
                             }
                           }}
-                          className="flex-1 text-left p-3 pl-1 flex items-center space-x-2"
+                          onKeyDown={async (e) => {
+                            if (e.key === "ArrowRight" && !isExpanded) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleProject(project.path);
+                              await loadSessionsForProjects([project.path]);
+                            } else if (e.key === "ArrowLeft" && isExpanded) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleProject(project.path);
+                            }
+                          }}
+                          className="flex-1 text-left p-3 pl-1 flex items-center space-x-2 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset rounded"
                         >
                           <ProviderIcon
                             providerId={project.providerId || ""}
@@ -676,6 +889,10 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                         return (
                           <button
                             key={session.session_id}
+                            role="treeitem"
+                            aria-level={2}
+                            aria-selected={isSessionSelected}
+                            tabIndex={-1}
                             onClick={() => {
                               // Toggle: click selected session to deselect
                               if (isSessionSelected) {
@@ -686,7 +903,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                             }}
                             onContextMenu={(e) => handleSessionContextMenu(e, session)}
                             className={cn(
-                              "w-full text-left p-3 rounded-lg transition-colors",
+                              "w-full text-left p-3 rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset",
                               isSessionSelected
                                 ? "bg-blue-100 dark:bg-blue-900 border-l-4 border-blue-400 dark:border-blue-500"
                                 : "hover:bg-gray-200 dark:hover:bg-gray-700"
