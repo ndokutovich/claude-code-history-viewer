@@ -124,6 +124,8 @@ pub async fn load_opencode_sessions(
 pub async fn load_opencode_messages(
     opencode_path: String,
     session_id: String,
+    project_id: Option<String>,
+    source_id: Option<String>,
     offset: usize,
     limit: usize,
 ) -> Result<Vec<UniversalMessage>, String> {
@@ -141,7 +143,11 @@ pub async fn load_opencode_messages(
         ));
     }
 
-    let messages = load_opencode_messages_impl(&path_buf, &session_id, offset, limit)?;
+    let proj_id = project_id.as_deref().unwrap_or("");
+    let src_id = source_id.as_deref().unwrap_or("");
+
+    let messages =
+        load_opencode_messages_impl(&path_buf, &session_id, proj_id, src_id, offset, limit)?;
 
     println!("Loaded {} OpenCode message(s)", messages.len());
     Ok(messages)

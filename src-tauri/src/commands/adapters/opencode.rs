@@ -425,6 +425,8 @@ fn count_messages_for_session(base_path: &Path, session_id: &str) -> usize {
 pub fn load_opencode_messages_impl(
     base_path: &Path,
     session_id: &str,
+    project_id: &str,
+    source_id: &str,
     offset: usize,
     limit: usize,
 ) -> Result<Vec<UniversalMessage>, String> {
@@ -499,6 +501,8 @@ pub fn load_opencode_messages_impl(
             &raw_msg,
             parts,
             session_id,
+            project_id,
+            source_id,
             (start + idx) as i32,
         );
 
@@ -564,6 +568,8 @@ fn opencode_message_to_universal(
     msg: &OpenCodeMessage,
     parts: Vec<OpenCodePart>,
     session_id: &str,
+    project_id: &str,
+    source_id: &str,
     sequence_number: i32,
 ) -> UniversalMessage {
     let role = match msg.role.as_str() {
@@ -605,8 +611,8 @@ fn opencode_message_to_universal(
     UniversalMessage {
         id: msg.id.clone(),
         session_id: session_id.to_string(),
-        project_id: String::new(), // Will be set by caller context if needed
-        source_id: String::new(),  // Will be set by caller context if needed
+        project_id: project_id.to_string(),
+        source_id: source_id.to_string(),
         provider_id: "opencode".to_string(),
         timestamp: epoch_ms_to_rfc3339(msg.time.created),
         sequence_number,

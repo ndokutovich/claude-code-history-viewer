@@ -54,9 +54,9 @@ pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
     // ---- Claude Code -------------------------------------------------------
     {
         let (available, path, error) =
-            probe(|| crate::commands::project::get_claude_folder_path());
+            probe(|| crate::commands::project::get_claude_folder_path()).await;
         providers.push(DetectedProvider {
-            id: "claude".to_string(),
+            id: "claude-code".to_string(),
             display_name: "Claude Code".to_string(),
             base_path: path,
             is_available: available,
@@ -66,7 +66,7 @@ pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
 
     // ---- Codex CLI ---------------------------------------------------------
     {
-        let (available, path, error) = probe(|| crate::commands::codex::get_codex_path());
+        let (available, path, error) = probe(|| crate::commands::codex::get_codex_path()).await;
         providers.push(DetectedProvider {
             id: "codex".to_string(),
             display_name: "Codex CLI".to_string(),
@@ -78,7 +78,7 @@ pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
 
     // ---- Gemini CLI --------------------------------------------------------
     {
-        let (available, path, error) = probe(|| crate::commands::gemini::get_gemini_path());
+        let (available, path, error) = probe(|| crate::commands::gemini::get_gemini_path()).await;
         providers.push(DetectedProvider {
             id: "gemini".to_string(),
             display_name: "Gemini CLI".to_string(),
@@ -90,7 +90,7 @@ pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
 
     // ---- Cursor IDE --------------------------------------------------------
     {
-        let (available, path, error) = probe(|| crate::commands::cursor::get_cursor_path());
+        let (available, path, error) = probe(|| crate::commands::cursor::get_cursor_path()).await;
         providers.push(DetectedProvider {
             id: "cursor".to_string(),
             display_name: "Cursor IDE".to_string(),
@@ -155,7 +155,7 @@ pub async fn scan_all_projects(
     let mut all_projects: Vec<UniversalProject> = Vec::new();
 
     // ---- Claude Code -------------------------------------------------------
-    if wanted.iter().any(|p| p == "claude") {
+    if wanted.iter().any(|p| p == "claude-code") {
         let base = claude_path.clone().or_else(|| {
             futures_lite_workaround_get_claude_path()
         });
@@ -243,7 +243,7 @@ pub async fn load_provider_sessions(
     source_id: String,
 ) -> Result<Vec<UniversalSession>, String> {
     match provider.as_str() {
-        "claude" => {
+        "claude-code" => {
             // Claude sessions are loaded per JSONL file; the project_path is the
             // directory containing the JSONL files.
             let claude_sessions =
@@ -326,7 +326,7 @@ pub async fn load_provider_messages(
     limit: usize,
 ) -> Result<Vec<UniversalMessage>, String> {
     match provider.as_str() {
-        "claude" => {
+        "claude-code" => {
             // load_session_messages returns Vec<UniversalMessage> directly;
             // apply manual offset/limit pagination after loading.
             let all = crate::commands::session::load_session_messages(session_path).await?;
@@ -366,9 +366,18 @@ pub async fn load_provider_messages(
             if let Some(opencode_base) = get_opencode_base_path() {
                 let opencode_path = opencode_base.to_string_lossy().to_string();
                 let session_id = extract_last_segment(&session_path);
+                // Derive project_id from the session_path parent directory segment
+                let project_id = PathBuf::from(&session_path)
+                    .parent()
+                    .and_then(|p| p.file_name())
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default();
+                let source_id = format!("opencode:{}", opencode_path);
                 crate::commands::opencode::load_opencode_messages(
                     opencode_path,
                     session_id,
+                    Some(project_id),
+                    Some(source_id),
                     offset,
                     limit,
                 )
@@ -417,7 +426,7 @@ pub async fn search_all_providers(
     let mut all_results: Vec<UniversalMessage> = Vec::new();
 
     // ---- Claude Code -------------------------------------------------------
-    if wanted.iter().any(|p| p == "claude") {
+    if wanted.iter().any(|p| p == "claude-code") {
         if let Some(claude_base) = futures_lite_workaround_get_claude_path() {
             let filters = SearchFilters {
                 date_range: None,
@@ -469,7 +478,7 @@ pub async fn search_all_providers(
                                     .unwrap_or(&project.path)
                                     .to_string(),
                                 0,
-                                usize::MAX,
+                                SEARCH_MAX_MESSAGES_PER_SESSION,
                             )
                             .await
                             {
@@ -504,8 +513,10 @@ pub async fn search_all_providers(
                             if let Ok(msgs) = crate::commands::opencode::load_opencode_messages(
                                 opencode_path.clone(),
                                 session.id.clone(),
+                                Some(project.id.clone()),
+                                Some(source_id.clone()),
                                 0,
-                                usize::MAX,
+                                SEARCH_MAX_MESSAGES_PER_SESSION,
                             )
                             .await
                             {
@@ -533,20 +544,17 @@ pub async fn search_all_providers(
 // PRIVATE HELPERS
 // ============================================================================
 
-/// Synchronously probe a provider's path-detection async command by running it
-/// in the current async context.  Returns (available, path, error).
-fn probe<F, Fut>(f: F) -> (bool, Option<String>, Option<String>)
+/// Maximum number of messages loaded per session during a federated search.
+/// Prevents OOM on sessions with huge message counts.
+const SEARCH_MAX_MESSAGES_PER_SESSION: usize = 10_000;
+
+/// Probe a provider's path-detection async command.  Returns (available, path, error).
+async fn probe<F, Fut>(f: F) -> (bool, Option<String>, Option<String>)
 where
     F: FnOnce() -> Fut,
     Fut: std::future::Future<Output = Result<String, String>>,
 {
-    // We are already inside a Tokio runtime spawned by Tauri; use
-    // futures_executor::block_on is wrong here.  Instead call f() and
-    // immediately await it via a nested async block.  Since `probe` itself is
-    // called from within an async fn we create a tiny synchronous wrapper that
-    // blocks via std::thread to avoid nested runtime issues.
-    let rt = tokio::runtime::Handle::current();
-    let result = rt.block_on(f());
+    let result = f().await;
     result_to_probe(result)
 }
 
@@ -599,11 +607,11 @@ fn claude_project_to_universal(
     claude_base: &str,
 ) -> UniversalProject {
     use std::collections::HashMap;
-    let source_id = format!("claude:{}", claude_base);
+    let source_id = format!("claude-code:{}", claude_base);
     UniversalProject {
         id: p.path.clone(),
         source_id,
-        provider_id: "claude".to_string(),
+        provider_id: "claude-code".to_string(),
         name: p.name,
         path: p.path,
         session_count: p.session_count,
@@ -634,7 +642,7 @@ fn claude_session_to_universal(
         id: s.session_id.clone(),
         project_id: project_path.to_string(),
         source_id: source_id.to_string(),
-        provider_id: "claude".to_string(),
+        provider_id: "claude-code".to_string(),
         title: s
             .summary
             .clone()
