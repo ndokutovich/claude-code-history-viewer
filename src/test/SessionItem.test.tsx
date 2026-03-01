@@ -438,7 +438,7 @@ describe("SessionItem", () => {
       fireEvent.change(input, { target: { value: "Custom Name" } });
 
       // Click save button (Check icon) - title is the i18n key since mock returns key
-      const saveButton = screen.getByTitle("common.save");
+      const saveButton = screen.getByTitle("common:save");
       fireEvent.click(saveButton);
 
       await waitFor(() => {
@@ -467,7 +467,7 @@ describe("SessionItem", () => {
       fireEvent.change(input, { target: { value: "" } });
 
       // Click save button - title is the i18n key since mock returns key
-      const saveButton = screen.getByTitle("common.save");
+      const saveButton = screen.getByTitle("common:save");
       fireEvent.click(saveButton);
 
       await waitFor(() => {
@@ -492,7 +492,7 @@ describe("SessionItem", () => {
       fireEvent.doubleClick(summaryText);
 
       // Input already has original summary, just save
-      const saveButton = screen.getByTitle("common.save");
+      const saveButton = screen.getByTitle("common:save");
       fireEvent.click(saveButton);
 
       await waitFor(() => {
@@ -523,7 +523,7 @@ describe("SessionItem", () => {
       fireEvent.change(input, { target: { value: "Modified" } });
 
       // Click cancel button
-      const cancelButton = screen.getByTitle("common.cancel");
+      const cancelButton = screen.getByTitle("common:cancel");
       fireEvent.click(cancelButton);
 
       // Should exit edit mode without saving
