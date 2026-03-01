@@ -1,4 +1,4 @@
-A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, Codex CLI, and Gemini AI Studio conversation history stored in their respective data folders.
+A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, Codex CLI, Gemini AI Studio, and OpenCode conversation history stored in their respective data folders.
 
 ![Version](https://img.shields.io/github/v/release/ndokutovich/claude-code-history-viewer?label=Version&color=blue)
 ![Downloads](https://img.shields.io/github/downloads/ndokutovich/claude-code-history-viewer/total?label=Downloads&color=brightgreen)
@@ -12,7 +12,7 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 
 ## Why this exists
 
-Claude Code, Cursor IDE, Codex CLI, and Gemini AI Studio store conversation history in various formats (JSONL files, SQLite databases) scattered across their data folders. These are hard to read and search through. This app gives you a unified interface to browse conversations from all these AI coding assistants, see usage stats, resume sessions, and find old discussions.
+Claude Code, Cursor IDE, Codex CLI, Gemini AI Studio, and OpenCode store conversation history in various formats (JSONL files, SQLite databases, JSON files) scattered across their data folders. These are hard to read and search through. This app gives you a unified interface to browse conversations from all these AI coding assistants, see usage stats, resume sessions, and find old discussions.
 
 ## Screenshots & Demo
 
@@ -40,6 +40,37 @@ Per-project token usage breakdown and session-level analysis
 ### Demo
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## What's New in v1.9.0
+
+**OpenCode Provider**:
+- Browse and search your OpenCode conversation history
+- Auto-detected from `$OPENCODE_HOME`, `$XDG_DATA_HOME/opencode`, `~/.local/share/opencode`, or `%APPDATA%/opencode` (Windows)
+- Reads `storage/project/{id}.json`, `storage/session/`, and `storage/message/` file layout
+- Session renaming supported via `rename_opencode_session_native` command with path traversal protection
+- Now 5 AI coding assistants supported: Claude Code, Cursor IDE, Codex CLI, Gemini AI Studio, and OpenCode
+
+**Multi-Provider Facade**:
+- New `multi_provider.rs` backend module centralizes provider detection and routing
+- `detect_providers` runs on startup and auto-discovers all installed tools
+- `search_all_providers` enables cross-provider search bounded to 10,000 messages/session to prevent memory issues
+
+**Metadata Persistence**:
+- Custom session names, starred sessions, tags, and notes are now saved between app restarts
+- Stored in `~/.claude-history-viewer/metadata.json` (Windows: `%LOCALAPPDATA%\claude-history-viewer\metadata.json`)
+- Provider-agnostic: metadata follows sessions regardless of which AI tool created them
+
+**Security Hardening**:
+- `withGlobalTauri: false` - Tauri global no longer exposed to the window object
+- OpenCode rename command includes `..` component blocking and `canonicalize` verification
+- AppleScript/shell invocations use single-quote escaping for cwd and command values
+- `diff` npm dependency updated to `^8.0.3` for ReDoS fix
+
+**211 Unit Tests**:
+- Unit test count grew from 84 to 211 passing tests
+- New coverage: ProjectTree components, MessageViewer hooks, useFileWatcher, useUpdater, store slices
+
+---
 
 ## What's New in v1.7.0
 
@@ -143,7 +174,7 @@ Per-project token usage breakdown and session-level analysis
 
 ## What it does
 
-**Multi-provider support**: Unified interface for 4 AI coding assistants - Claude Code, Cursor IDE, Codex CLI, and Gemini AI Studio. Auto-detects all installed tools and aggregates conversations in one place.
+**Multi-provider support**: Unified interface for 5 AI coding assistants - Claude Code, Cursor IDE, Codex CLI, Gemini AI Studio, and OpenCode. Auto-detects all installed tools and aggregates conversations in one place.
 
 **Resume sessions**: Continue conversations directly in their native tools with a single click. Provider-aware resume commands launch the correct AI assistant with proper working directory context.
 
@@ -246,6 +277,7 @@ pnpm tauri:build:linux    # Linux x86_64
    - Cursor IDE: AppData/Cursor database
    - Codex CLI: `~/.codex/sessions/`
    - Gemini AI Studio: `~/.gemini/conversations/`
+   - OpenCode: `~/.local/share/opencode` (Linux/macOS) or `%APPDATA%\opencode` (Windows)
 3. Browse projects in the left sidebar tree (organized by provider)
 4. Click any session to view messages
 5. Use the tabs at the top to switch between:
@@ -353,9 +385,10 @@ The app expects this structure:
   - Claude Code: `~/.claude/projects/`
   - Codex CLI: `~/.codex/sessions/`
   - Gemini AI Studio: `~/.gemini/conversations/`
+  - OpenCode: `~/.local/share/opencode` (macOS/Linux) or `%APPDATA%\opencode` (Windows)
   - Cursor IDE: AppData/Cursor folder
-- **macOS/Linux**: `ls ~/.claude ~/.codex ~/.gemini`
-- **Windows**: Check `C:\Users\<YourUsername>\.claude`, `.codex`, `.gemini`
+- **macOS/Linux**: `ls ~/.claude ~/.codex ~/.gemini ~/.local/share/opencode`
+- **Windows**: Check `C:\Users\<YourUsername>\.claude`, `.codex`, `.gemini`, and `%APPDATA%\opencode`
 
 **Performance issues**:
 - Large sessions (1,000+ messages) use virtual scrolling for smooth performance
@@ -428,7 +461,7 @@ Thanks to everyone who has contributed to this project! Special thanks to:
 
 **State & Data**:
 - **Zustand** - Lightweight state management
-- **i18next** - Internationalization with 5 languages
+- **i18next** - Internationalization with 6 languages and 16 namespaces
 - **@tanstack/react-virtual** - Virtual scrolling for performance
 
 **Build & Tools**:

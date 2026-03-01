@@ -34,7 +34,7 @@ The enhanced prompts will follow the language of the original prompt (e.g., Kore
   - `./name/index.ts` (folder index)
 - Lesson learned: We had two i18n config files and spent hours debugging why translations weren't loading
 
-**⚠️ Platform Note**: This application is officially tested and supported on **macOS only**. Windows and Linux builds may compile but functionality is not guaranteed. See "Platform and Deployment" section for details.
+**Platform Note**: This application is officially tested and supported on **macOS and Windows**. Linux builds compile but are not formally tested. See "Platform and Deployment" section for details.
 
 ## Project Overview
 
@@ -227,7 +227,7 @@ The architecture uses three distinct type layers to maintain clear separation of
 
 3. **UIMessage** (UI Display Format)
    - Frontend display format with UI-friendly field names
-   - Defined in `src/types/index.ts`
+   - Defined in `src/types/index.ts`; base types split into `src/types/core/` and derived types in `src/types/derived/`
    - Converted from UniversalMessage by frontend adapters
    - Used by all React components
 
@@ -270,15 +270,20 @@ UI Components (React)
 
 #### Provider Support
 
-Currently supported providers:
+Currently supported providers (5 total):
 - ✅ **Claude Code** - JSONL files in `~/.claude/projects/`
 - ✅ **Cursor IDE** - SQLite database in `AppData/Roaming/Cursor/`
+- ✅ **Codex CLI** - JSON files in `~/.codex/sessions/`
+- ✅ **Gemini AI Studio** - JSON files in `~/.gemini/conversations/`
+- ✅ **OpenCode** - JSON files at `$OPENCODE_HOME`, `$XDG_DATA_HOME/opencode`, `~/.local/share/opencode`, or `%APPDATA%/opencode`
+
+Multi-provider coordination is handled by `src-tauri/src/commands/multi_provider.rs`, which exposes `detect_providers`, `scan_all_projects`, `load_provider_sessions`, `load_provider_messages`, and `search_all_providers` commands.
 
 Adding new providers requires:
 1. Backend Rust adapter implementing `ProviderAdapter` trait
 2. Frontend TypeScript adapter extending `BaseProviderAdapter`
-3. Add to `src-tauri/src/commands/source_manager.rs`
-4. Add translations for provider name in i18n files
+3. Register in `src-tauri/src/commands/multi_provider.rs`
+4. Add translations for provider name in all 6 locale files
 
 ### Frontend (React + TypeScript)
 
@@ -292,7 +297,7 @@ Adding new providers requires:
   - **Configuration**: `src/i18n.config.ts` - Single source of truth for i18n setup
     - ⚠️ **IMPORTANT**: Named `.config.ts` to avoid collision with `src/i18n/` folder
     - Supports 6 languages: English, Korean, Japanese, Simplified Chinese, Traditional Chinese, Russian
-    - Namespaces: `common`, `components`, `messages`, `sourceManager`, `splash`, `search`
+    - Namespaces (16 total): `common`, `components`, `messages`, `sourceManager`, `splash`, `search`, `tools`, `error`, `message`, `renderers`, `update`, `feedback`, `session`, plus 3 additional feature namespaces
   - **Translation files**: `src/i18n/locales/{lang}/{namespace}.json`
   - **Never** create `src/i18n/index.ts` - it will conflict with the config file!
 
@@ -321,9 +326,10 @@ Adding new providers requires:
 
 - **Internationalization**:
   - Uses i18next with react-i18next
-  - Supports: English, Korean, Japanese, Simplified Chinese, Traditional Chinese
+  - Supports: English, Korean, Japanese, Simplified Chinese, Traditional Chinese, Russian
   - Language files in `src/i18n/locales/{lang}/`
   - Auto-detection with localStorage persistence
+  - Translation keys use colon notation: `t("namespace:key")` - never dot notation
 
 - **Theme System**:
   - Context-based theme provider in `src/contexts/theme/`
@@ -373,8 +379,20 @@ Adding new providers requires:
 - **Provider Adapters** (in `src-tauri/src/commands/adapters/`):
   - `claude_code.rs` - Reads JSONL files from `~/.claude/projects/`
   - `cursor.rs` - Reads SQLite database from Cursor IDE
+  - `opencode.rs` - Reads JSON files from OpenCode data directory
   - Each adapter implements unified interface returning `UniversalMessage`
   - Handles provider-specific parsing, filtering, and normalization
+
+- **Multi-Provider Facade** (`src-tauri/src/commands/multi_provider.rs`):
+  - `detect_providers` - Auto-detects all installed AI tools on startup
+  - `scan_all_projects` - Aggregates projects across all active providers
+  - `load_provider_sessions` / `load_provider_messages` - Provider-routed data loading
+  - `search_all_providers` - Cross-provider full-text search (bounded to 10,000 messages/session to prevent OOM)
+
+- **Metadata Persistence** (`src-tauri/src/commands/metadata.rs`):
+  - Stores custom session names, starred flags, tags, and notes
+  - Location: `~/.claude-history-viewer/metadata.json` (Windows: `%LOCALAPPDATA%\claude-history-viewer\metadata.json`)
+  - `rename_opencode_session_native` Tauri command with path traversal protection (`..` blocking + canonicalize)
 
 - **Data Flow** (Universal Architecture):
   - Provider adapter reads data source (JSONL, SQLite, etc.)
@@ -467,6 +485,15 @@ Assistant messages contain additional metadata within the `message` object:
 - Radix UI components for accessible dialogs, dropdowns, and tooltips
 - Syntax highlighting with Prism for code blocks
 
+### Metadata Persistence
+- Custom session names, starred sessions, tags, and notes are stored separately from provider data
+- Metadata file location: `~/.claude-history-viewer/metadata.json` (macOS/Linux) or `%LOCALAPPDATA%\claude-history-viewer\metadata.json` (Windows)
+- Metadata is provider-agnostic and keyed by session ID
+- The store exposes a `metadataSlice` for reading and writing metadata from React components
+
+### Store Architecture (14 slices)
+The Zustand store is split into 14 focused slices: `navigation`, `filter`, `search`, `analytics`, `settings`, `captureMode`, `metadata`, `provider`, `board`, `globalStats`, `message`, `metadataSlice`, `navigator`, `project`, and `watcher`. This replaces the earlier monolithic `useAppStore.ts` structure.
+
 ### Update System
 - Auto-update checking via GitHub releases
 - SHA-256 checksum verification for download integrity
@@ -487,8 +514,9 @@ Assistant messages contain additional metadata within the `message` object:
 - Components use `invoke` from `@tauri-apps/api/core` for backend calls
 - State updates should trigger appropriate loading states
 - Message adapters normalize data between Rust structs and frontend types
-- i18next translation keys use namespace pattern: `namespace:key`
+- i18next translation keys use colon separator: `t("namespace:key")` - using a dot (`t("namespace.key")`) is incorrect and will cause missing translations
 - Theme changes propagate via React Context
+- Security: `withGlobalTauri: false` (Tauri global is not exposed to the window object)
 
 ### Testing
 
@@ -496,7 +524,8 @@ Assistant messages contain additional metadata within the `message` object:
 - Vitest for unit tests with jsdom environment
 - Testing library for React component tests
 - Configuration in `vite.config.ts` (lines 129-139)
-- Currently minimal test coverage
+- 211 tests passing as of v1.9.0 (up from 84 before)
+- Test suites cover: ProjectTree components, MessageViewer hooks, useFileWatcher, useUpdater, store slices
 
 **E2E Tests (Playwright)**
 - Playwright tests for full application behavioral testing
@@ -516,38 +545,13 @@ Assistant messages contain additional metadata within the `message` object:
 
 ## Missing Features and Implementation Gaps
 
-### ⚠️ Search Functionality (Backend Ready, UI Missing)
+### Search Functionality - Implemented in v1.9.0
 
-**Current State:**
-- ✅ **Backend**: Fully implemented in `src-tauri/src/commands/session.rs:558-613`
-  - `search_messages` command searches across ALL projects in `~/.claude/projects/`
-  - Case-insensitive string matching in message content
-  - Returns full message objects with metadata (uuid, timestamp, content, etc.)
-- ✅ **Frontend Store**: Ready to use in `src/store/useAppStore.ts:324-344`
-  - `searchMessages()` action invokes backend command
-  - State includes `searchQuery`, `searchResults`, `searchFilters`
-  - `SearchFilters` interface defined in `src/types/index.ts:128-135`
-- ❌ **UI Components**: Completely missing
-  - No search bar in Header or anywhere else
-  - No search results display component
-  - No way for users to trigger search functionality
-  - README claims "Search and filter" feature exists, but UI is not implemented
-
-**Implementation Path for Future Development:**
-1. Add search input to Header component (with icon button)
-2. Create `SearchResults.tsx` component to display matches
-   - Show which project/session each result is from
-   - Allow clicking result to jump to that session
-   - Highlight search terms in results
-3. Add search filters UI (date range, project selector, message type)
-4. Wire search input to `useAppStore().searchMessages()`
-5. Display results in main content area or modal
-
-**Backend Search Capabilities:**
-- Searches through all JSONL files in `~/.claude/projects/`
-- Matches against both user and assistant message content
-- Supports string content and array content types
-- Returns results with full context (session ID, project, timestamp)
+Search is now fully implemented end-to-end:
+- ✅ **Global search** (`GlobalSearchModal`): Cmd+K opens a cross-session, cross-provider search modal
+- ✅ **In-session search** (Ctrl+F): FlexSearch-based search within the current session with match counter and prev/next navigation
+- ✅ **Backend**: `search_all_providers` command searches across all active providers, bounded to 10,000 messages per session to prevent OOM
+- ✅ **Store**: `search` slice handles query state, results, and filter state
 
 ### Navigation and Discovery
 
@@ -859,24 +863,20 @@ Not Yet Supported:
 ## Platform and Deployment
 
 ### Current Platform Support
-- **macOS**: Primary and officially supported platform
+- **macOS**: Officially supported
   - Universal binary (Apple Silicon + Intel)
   - Minimum version: 10.13 (High Sierra)
   - Fully tested and production-ready
 
-- **Windows**: Experimental/Untested
-  - Build configuration exists (Tauri is cross-platform)
-  - **NOT officially tested or supported**
-  - May work but expect issues:
-    - Path handling differences (`~/.claude` vs Windows paths)
-    - File system permissions
-    - Auto-updater may not work
-    - UI rendering differences
-  - Community testing and contributions welcome
+- **Windows**: Officially supported as of v1.9.0
+  - MSI installer built and verified
+  - WebView2 runtime auto-installed if absent
+  - Path resolution uses `%LOCALAPPDATA%` and `%APPDATA%` correctly
+  - Provider data directories resolved per Windows conventions
 
-- **Linux**: Planned but not yet implemented
-  - Build targets not configured
-  - No testing or packaging for Linux distributions
+- **Linux**: Build targets configured, not formally tested
+  - `.deb`, `.AppImage`, `.rpm` packages produced by GitHub Actions
+  - Community testing and contributions welcome
 
 ### Build Configuration
 - Tauri v2 with auto-updater plugin enabled
@@ -987,25 +987,19 @@ Triggered by pushing a version tag (`v*`), the workflow (`.github/workflows/upda
 ## Known Issues and Limitations
 
 ### Platform Issues
-- **Windows/Linux**: Not officially supported or tested
-  - macOS is the only supported platform currently
-  - Windows builds may compile but functionality not guaranteed
-  - Path resolution issues likely on Windows (`~/.claude` expansion)
-  - Linux builds not configured in Tauri
-  - See "Platform and Deployment" section for details
+- **macOS and Windows**: Officially tested and supported as of v1.9.0
+  - Windows MSI installer built and verified
+  - Path resolution uses proper platform-aware logic (`%LOCALAPPDATA%`, `%APPDATA%`, etc.)
+- **Linux**: Build targets are configured and compile; not formally tested
+  - Community testing and contributions welcome
 
 ### Missing Features (High Priority)
-- **Search UI**: Backend fully implemented, frontend UI completely missing
-  - Cannot search across conversations despite README claim
-  - Backend command `search_messages` exists and works
-  - Store actions ready but no UI components
-  - See "Missing Features and Implementation Gaps" section for details
+- **Search**: Fully implemented in v1.9.0 - global (Cmd+K) and in-session (Ctrl+F). See "Missing Features and Implementation Gaps" section for current status.
 
-- **Session Navigation**: Limited discovery capabilities
+- **Session Navigation**: Limited discovery capabilities remain
   - No filtering or sorting options in ProjectTree
-  - No search within sessions list
   - No recently viewed history
-  - No bookmarks/favorites
+  - Bookmarks/favorites are stored via metadata but no dedicated UI panel
 
 ### Performance Issues
 - **Initial Load**: Large conversation histories (1000+ messages) slow to load
@@ -1035,16 +1029,16 @@ Triggered by pushing a version tag (`v*`), the workflow (`.github/workflows/upda
   - Shown as raw JSON currently
 
 ### Testing Coverage
-- **Unit Tests**: Minimal coverage
-  - Vitest configured but barely used
-  - Opportunity for contribution
+- **Unit Tests**: 211 tests passing as of v1.9.0 (up from 84)
+  - Covers: ProjectTree components, MessageViewer hooks, useFileWatcher, useUpdater, store slices
+  - Still room to grow: analytics, token stats, and content renderer tests are sparse
 
 - **E2E Tests**: Comprehensive Playwright test suite ✅
   - App initialization and startup
   - Project and session navigation
   - View switching (messages, analytics, tokens)
   - Theme management (light/dark)
-  - Language switching (5 languages)
+  - Language switching (6 languages)
   - Settings interactions
   - Keyboard navigation basics
   - **Missing E2E coverage**:
@@ -1053,7 +1047,7 @@ Triggered by pushing a version tag (`v*`), the workflow (`.github/workflows/upda
     - Token statistics display
     - Error scenarios
     - Update system
-    - Search functionality (when UI added)
+    - Search result interactions
 
 ### Auto-Update System
 - **Beta Status**: Update system still being tested
@@ -1062,10 +1056,10 @@ Triggered by pushing a version tag (`v*`), the workflow (`.github/workflows/upda
   - Force update mechanism not fully validated
 
 ### Data Limitations
-- **Read-Only**: Cannot edit or delete conversations
-  - App only reads JSONL files
-  - No write capability to add notes/tags
-  - No export functionality besides raw JSONL
+- **Read-Only for provider data**: Cannot edit or delete conversations from source files
+  - App reads JSONL, SQLite, and JSON files but does not modify them
+  - Custom notes, tags, starred state, and session names are writable via the metadata store (`~/.claude-history-viewer/metadata.json`)
+  - No export functionality besides raw JSONL in base configuration
 
 ### Internationalization
 - **Partial Coverage**: Some UI strings not internationalized
@@ -1077,17 +1071,14 @@ Triggered by pushing a version tag (`v*`), the workflow (`.github/workflows/upda
 
 This section documents features that are planned or partially implemented, providing a roadmap for future development.
 
-### 🔍 Search and Discovery (High Priority)
+### Search and Discovery
 
-**Global Search UI** (Backend Ready ✅)
-- Add search bar to Header or as dedicated view
-- Create `SearchResults.tsx` component with result cards
-- Show matching text with highlights
-- Display project/session context for each result
-- Allow clicking result to navigate to that session
-- Add keyboard shortcuts (Cmd/Ctrl+K for search)
+**Global Search** (Implemented in v1.9.0 ✅)
+- `GlobalSearchModal` opens with Cmd+K, searches across all providers
+- In-session search (Ctrl+F) using FlexSearch with match counter and prev/next navigation
+- Results bounded to 10,000 messages/session to prevent OOM
 
-**Advanced Search Filters**
+**Advanced Search Filters** (Planned)
 - Date range picker
 - Project selector (multi-select)
 - Message type filter (user/assistant/all)
@@ -1095,7 +1086,7 @@ This section documents features that are planned or partially implemented, provi
 - Error filter (messages with errors)
 - Token usage thresholds
 
-**Search Results Features**
+**Search Results Features** (Planned)
 - Pagination for large result sets
 - Sort by relevance, date, project
 - Export search results
