@@ -1295,5 +1295,9 @@
   "webSearchRenderer.results": "結果",
   "webSearchRenderer.seconds": "秒",
   "webSearchRenderer.title": "Web検索",
-  "webSearchRenderer.unknownResultFormat": "不明な結果フォーマット"
+  "webSearchRenderer.unknownResultFormat": "不明な結果フォーマット",
+  "messageViewer.search.button": "セッション内検索 (Ctrl+F)",
+  "messageViewer.search.content": "コンテンツ",
+  "messageViewer.search.placeholder": "セッション内を検索...",
+  "messageViewer.search.toolId": "ツーID"
 }

@@ -459,5 +459,19 @@
   "update.viewOnGitHub": "GitHub에서 보기",
   "validation.enterPath": "경로를 입력하세요",
   "validation.invalidPath": "잘못된 경로",
-  "view": "보기"
+  "view": "보기",
+  "globalSearch.close": "닫기",
+  "globalSearch.hint": "2자 이상 입력하면 모든 세션에서 검색합니다",
+  "globalSearch.navigate": "이동",
+  "globalSearch.noPreview": "미리보기 없음",
+  "globalSearch.noResults": "결과 없음",
+  "globalSearch.placeholder": "모든 세션에서 검색...",
+  "globalSearch.results": "{{count}}개 결과",
+  "globalSearch.searching": "검색 중...",
+  "globalSearch.select": "선택",
+  "globalSearch.title": "전체 검색",
+  "globalSearch.unknownProject": "알 수 없는 프로젝트",
+  "common.settings.filter.showSystemMessages": "시스템 메시지 표시",
+  "common.settings.filter.title": "필터",
+  "common.errorOccurred": "오류 발생"
 }

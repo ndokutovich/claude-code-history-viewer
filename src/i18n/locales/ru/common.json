@@ -459,5 +459,19 @@
   "update.viewOnGitHub": "Посмотреть на GitHub",
   "validation.enterPath": "Введите путь",
   "validation.invalidPath": "Недопустимый путь",
-  "view": "Просмотр"
+  "view": "Просмотр",
+  "globalSearch.close": "Закрыть",
+  "globalSearch.hint": "Введите не менее 2 символов для поиска по всем сессиям",
+  "globalSearch.navigate": "Навигация",
+  "globalSearch.noPreview": "Нет превью",
+  "globalSearch.noResults": "Результаты не найдены",
+  "globalSearch.placeholder": "Поиск по всем сессиям...",
+  "globalSearch.results": "{{count}} результатов",
+  "globalSearch.searching": "Поиск...",
+  "globalSearch.select": "Выбрать",
+  "globalSearch.title": "Глобальный поиск",
+  "globalSearch.unknownProject": "Неизвестный проект",
+  "common.settings.filter.showSystemMessages": "Показать системные сообщения",
+  "common.settings.filter.title": "Фильтр",
+  "common.errorOccurred": "Произошла ошибка"
 }

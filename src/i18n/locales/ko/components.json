@@ -1177,5 +1177,9 @@
   "webSearchRenderer.results": "결과",
   "webSearchRenderer.seconds": "초",
   "webSearchRenderer.title": "제목",
-  "webSearchRenderer.unknownResultFormat": "알 수 없는 결과 형식"
+  "webSearchRenderer.unknownResultFormat": "알 수 없는 결과 형식",
+  "messageViewer.search.button": "세션 내 검색 (Ctrl+F)",
+  "messageViewer.search.content": "내용",
+  "messageViewer.search.placeholder": "세션 내 검색...",
+  "messageViewer.search.toolId": "도구 ID"
 }

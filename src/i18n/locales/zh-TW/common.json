@@ -468,5 +468,19 @@
   "update.viewOnGitHub": "在 GitHub 上檢視",
   "validation.enterPath": "輸入路徑",
   "validation.invalidPath": "無效路徑",
-  "view": "檢視"
+  "view": "檢視",
+  "globalSearch.close": "關閉",
+  "globalSearch.hint": "輸入至少2個字元以搜尋所有工作階段",
+  "globalSearch.navigate": "導覽",
+  "globalSearch.noPreview": "無預覽",
+  "globalSearch.noResults": "無結果",
+  "globalSearch.placeholder": "搜尋所有工作階段...",
+  "globalSearch.results": "{{count}}個結果",
+  "globalSearch.searching": "搜尋中...",
+  "globalSearch.select": "選擇",
+  "globalSearch.title": "全域搜尋",
+  "globalSearch.unknownProject": "未知專案",
+  "common.settings.filter.showSystemMessages": "顯示系統訊息",
+  "common.settings.filter.title": "篩選",
+  "common.errorOccurred": "發生錯誤"
 }

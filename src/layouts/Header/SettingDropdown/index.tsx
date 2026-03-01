@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import { useModal } from "@/contexts/modal";
 import { ThemeMenuGroup } from "./ThemeMenuGroup";
 import { LanguageMenuGroup } from "./LanguageMenuGroup";
+import { FilterMenuGroup } from "./FilterMenuGroup";
 
 export const SettingDropdown = () => {
   const manualUpdater = useGitHubUpdater();
@@ -71,6 +72,9 @@ export const SettingDropdown = () => {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <ThemeMenuGroup />
+
+          <DropdownMenuSeparator />
+          <FilterMenuGroup />
 
           <DropdownMenuSeparator />
           <LanguageMenuGroup />

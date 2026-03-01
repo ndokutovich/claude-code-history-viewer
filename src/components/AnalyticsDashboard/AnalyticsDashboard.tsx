@@ -16,6 +16,8 @@ import { useAnalyticsDashboard } from "../../hooks/useAnalyticsDashboard";
 import type { AnalyticsDashboardProps } from "./types";
 import { ProjectStatsView, SessionStatsView, GlobalStatsView } from "./views";
 import { DatePickerHeader } from "../ui/DatePickerHeader";
+import { MetricModeToggle } from "../ui/MetricModeToggle";
+import { useAppStore } from "@/store/useAppStore";
 
 export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   isViewingGlobalStats = false,
@@ -37,6 +39,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   } = useAnalyticsDashboard();
 
   const [activeTab, setActiveTab] = useState<"project" | "session">("project");
+  const { metricMode, setMetricMode } = useAppStore();
 
   const sessionStats = sessionTokenStats;
   const hasSessionData =
@@ -145,8 +148,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             </div>
           )}
 
-          {/* Global Date Picker */}
+          {/* Global Date Picker + Metric Mode */}
           <div className="flex items-center gap-2 flex-wrap justify-end">
+            <MetricModeToggle value={metricMode} onChange={setMetricMode} />
             <DatePickerHeader
               dateFilter={dateFilter}
               setDateFilter={setDateFilter}

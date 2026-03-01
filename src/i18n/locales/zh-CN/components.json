@@ -1175,5 +1175,9 @@
   "webSearchRenderer.results": "结果",
   "webSearchRenderer.seconds": "秒",
   "webSearchRenderer.title": "网页搜索",
-  "webSearchRenderer.unknownResultFormat": "未知结果格式"
+  "webSearchRenderer.unknownResultFormat": "未知结果格式",
+  "messageViewer.search.button": "在会话中搜索 (Ctrl+F)",
+  "messageViewer.search.content": "内容",
+  "messageViewer.search.placeholder": "在会话中搜索...",
+  "messageViewer.search.toolId": "工具ID"
 }

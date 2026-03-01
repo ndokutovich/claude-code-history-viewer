@@ -5,7 +5,8 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import { Loader2, MessageCircle, ChevronDown, Link2, Check, ArrowUpCircle, ArrowDownCircle, ListTree } from "lucide-react";
+import { Loader2, MessageCircle, ChevronDown, Link2, Check, ArrowUpCircle, ArrowDownCircle, ListTree, Search, X, ChevronUp } from "lucide-react";
+import { useSearchState } from "../hooks/useSearchState";
 import { useTranslation } from "react-i18next";
 import type { UIMessage, UISession, PaginationState } from "../types";
 import { ClaudeContentArrayRenderer } from "./contentRenderer";
@@ -318,6 +319,59 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   const [activeMessageUuid, setActiveMessageUuid] = useState<string | null>(null);
   const [navigatorWidth, setNavigatorWidth] = useState(DEFAULT_NAVIGATOR_WIDTH);
   const [isResizingNavigator, setIsResizingNavigator] = useState(false);
+
+  // In-session search toolbar state
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const {
+    sessionSearch,
+    setSessionSearchQuery,
+    setSearchFilterType,
+    goToNextMatch,
+    goToPrevMatch,
+    clearSessionSearch,
+    rebuildSearchIndex,
+  } = useAppStore();
+
+  const { searchQuery, isSearchPending, handleSearchInput, handleClearSearch } = useSearchState({
+    onSearchChange: setSessionSearchQuery,
+    sessionId: selectedSession?.session_id,
+  });
+
+  // Rebuild search index when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      rebuildSearchIndex();
+    }
+  }, [messages, rebuildSearchIndex]);
+
+  // Scroll to current match when it changes
+  useEffect(() => {
+    const { matches, currentMatchIndex } = sessionSearch;
+    if (currentMatchIndex >= 0 && matches[currentMatchIndex]) {
+      const uuid = matches[currentMatchIndex].messageUuid;
+      const el = document.getElementById(`message-${uuid}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [sessionSearch.currentMatchIndex, sessionSearch.matches]);
+
+  // Ctrl+F / Cmd+F opens search toolbar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+        e.preventDefault();
+        setIsSearchOpen(true);
+        setTimeout(() => searchInputRef.current?.focus(), 0);
+      }
+      if (e.key === "Escape" && isSearchOpen) {
+        setIsSearchOpen(false);
+        clearSessionSearch();
+        handleClearSearch();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isSearchOpen, clearSessionSearch, handleClearSearch]);
 
   // Handle navigator resize via mouse drag on the left edge
   const handleNavigatorResizeStart = useCallback((e: React.MouseEvent<HTMLElement>) => {
@@ -737,6 +791,23 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     <div className="relative flex-1 h-full flex">
       {/* Main message list area */}
       <div className="flex-1 overflow-hidden relative">
+        {/* In-session search button */}
+        <button
+          onClick={() => {
+            setIsSearchOpen(true);
+            setTimeout(() => searchInputRef.current?.focus(), 0);
+          }}
+          className={cn(
+            "absolute top-2 right-10 z-40 p-1.5 rounded-lg transition-colors",
+            "bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground",
+            "border border-border/50 shadow-sm",
+            isSearchOpen && "bg-accent/10 text-accent"
+          )}
+          title={t("messageViewer.search.button", { defaultValue: "Search in session (Ctrl+F)" })}
+        >
+          <Search className="w-4 h-4" />
+        </button>
+
         {/* Navigator toggle button */}
         <button
           onClick={() => {
@@ -758,6 +829,85 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
         >
           <ListTree className="w-4 h-4" />
         </button>
+
+        {/* In-session search toolbar */}
+        {isSearchOpen && (
+          <div className="absolute top-0 left-0 right-0 z-50 bg-background border-b border-border flex items-center gap-2 px-3 py-2 shadow-sm">
+            {/* Filter type toggle */}
+            <div className="flex items-center gap-1 p-0.5 bg-muted/50 rounded text-xs">
+              <button
+                type="button"
+                onClick={() => setSearchFilterType("content")}
+                className={cn(
+                  "px-2 py-0.5 rounded transition-colors",
+                  sessionSearch.filterType === "content"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {t("messageViewer.search.content", { defaultValue: "Content" })}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSearchFilterType("toolId")}
+                className={cn(
+                  "px-2 py-0.5 rounded transition-colors",
+                  sessionSearch.filterType === "toolId"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {t("messageViewer.search.toolId", { defaultValue: "Tool ID" })}
+              </button>
+            </div>
+            <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchInput}
+              placeholder={t("messageViewer.search.placeholder", { defaultValue: "Search in session..." })}
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            {isSearchPending && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground shrink-0" />}
+            {sessionSearch.matches.length > 0 && (
+              <span className="text-xs text-muted-foreground shrink-0">
+                {sessionSearch.currentMatchIndex + 1} / {sessionSearch.matches.length}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={goToPrevMatch}
+              disabled={sessionSearch.matches.length === 0}
+              className="p-1 hover:bg-muted rounded disabled:opacity-40"
+              title="Previous match (Shift+Enter)"
+            >
+              <ChevronUp className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={goToNextMatch}
+              disabled={sessionSearch.matches.length === 0}
+              className="p-1 hover:bg-muted rounded disabled:opacity-40"
+              title="Next match (Enter)"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSearchOpen(false);
+                clearSessionSearch();
+                handleClearSearch();
+              }}
+              className="p-1 hover:bg-muted rounded"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         <div
           ref={scrollContainerRef}

@@ -459,5 +459,19 @@
   "update.viewOnGitHub": "GitHubで表示",
   "validation.enterPath": "パスを入力",
   "validation.invalidPath": "無効なパス",
-  "view": "表示"
+  "view": "表示",
+  "globalSearch.close": "閉じる",
+  "globalSearch.hint": "2文字以上入力するとセッション全体を検索します",
+  "globalSearch.navigate": "移動",
+  "globalSearch.noPreview": "プレビューなし",
+  "globalSearch.noResults": "結果なし",
+  "globalSearch.placeholder": "全セッションを検索...",
+  "globalSearch.results": "{{count}}件の結果",
+  "globalSearch.searching": "検索中...",
+  "globalSearch.select": "選択",
+  "globalSearch.title": "グローバル検索",
+  "globalSearch.unknownProject": "不明なプロジェクト",
+  "common.settings.filter.showSystemMessages": "システムメッセージを表示",
+  "common.settings.filter.title": "フィルター",
+  "common.errorOccurred": "エラーが発生しました"
 }

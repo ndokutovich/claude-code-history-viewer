@@ -459,5 +459,19 @@
   "update.viewOnGitHub": "在 GitHub 上查看",
   "validation.enterPath": "输入路径",
   "validation.invalidPath": "无效路径",
-  "view": "查看"
+  "view": "查看",
+  "globalSearch.close": "关闭",
+  "globalSearch.hint": "输入至少2个字符以搜索所有会话",
+  "globalSearch.navigate": "导航",
+  "globalSearch.noPreview": "无预览",
+  "globalSearch.noResults": "无结果",
+  "globalSearch.placeholder": "搜索所有会话...",
+  "globalSearch.results": "{{count}}个结果",
+  "globalSearch.searching": "搜索中...",
+  "globalSearch.select": "选择",
+  "globalSearch.title": "全局搜索",
+  "globalSearch.unknownProject": "未知项目",
+  "common.settings.filter.showSystemMessages": "显示系统消息",
+  "common.settings.filter.title": "过滤",
+  "common.errorOccurred": "发生错误"
 }

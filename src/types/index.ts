@@ -113,11 +113,20 @@ export interface UIMessage {
   };
   // Search metadata
   projectPath?: string;
+  projectName?: string;
+  provider?: string;
   // Provider-specific metadata (tool results, file attachments, etc.)
   provider_metadata?: Record<string, unknown>;
 }
 
 // UI display format for projects (provider-agnostic)
+export interface GitInfo {
+  /** Whether this is a main repo, linked worktree, or not a git repo */
+  worktree_type?: "main" | "linked" | "not_git";
+  /** For linked worktrees: the actual_path of the main repo */
+  main_project_path?: string;
+}
+
 export interface UIProject {
   name: string;
   path: string;
@@ -130,6 +139,8 @@ export interface UIProject {
   sourceId?: string;
   providerId?: string;
   providerName?: string; // Human-readable name like "Claude Code" or "Cursor IDE"
+  /** Git worktree metadata (populated by backend when available) */
+  git_info?: GitInfo;
 }
 
 // UI display format for sessions (provider-agnostic)

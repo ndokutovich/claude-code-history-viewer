@@ -1159,5 +1159,9 @@
   "webSearchRenderer.results": "Результаты",
   "webSearchRenderer.seconds": "Секунд",
   "webSearchRenderer.title": "Веб-поиск",
-  "webSearchRenderer.unknownResultFormat": "Неизвестный формат результата"
+  "webSearchRenderer.unknownResultFormat": "Неизвестный формат результата",
+  "messageViewer.search.button": "Поиск в сессии (Ctrl+F)",
+  "messageViewer.search.content": "Содержимое",
+  "messageViewer.search.placeholder": "Поиск в сессии...",
+  "messageViewer.search.toolId": "ID инструмента"
 }

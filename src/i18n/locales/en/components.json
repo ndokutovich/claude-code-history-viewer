@@ -1156,5 +1156,9 @@
   "webSearchRenderer.results": "Results",
   "webSearchRenderer.seconds": "Seconds",
   "webSearchRenderer.title": "Title",
-  "webSearchRenderer.unknownResultFormat": "Unknown Result Format"
+  "webSearchRenderer.unknownResultFormat": "Unknown Result Format",
+  "messageViewer.search.button": "Search in session (Ctrl+F)",
+  "messageViewer.search.content": "Content",
+  "messageViewer.search.placeholder": "Search in session...",
+  "messageViewer.search.toolId": "Tool ID"
 }

@@ -37,11 +37,13 @@ import { cn } from "./utils/cn";
 import { COLORS } from "./constants/colors";
 import { Header } from "@/layouts/Header/Header";
 import { ModalContainer } from "./layouts/Header/SettingDropdown/ModalContainer";
+import { GlobalSearchModal } from "./components/modals/globalSearch/GlobalSearchModal";
 
 // UI Constants
 const DEFAULT_SIDEBAR_WIDTH = 351; // pixels
 
 function App() {
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
   const {
     projects,
     sessions,
@@ -208,6 +210,18 @@ function App() {
     initialize();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty deps to run only once on mount
+
+  // Cmd+K / Ctrl+K — Global Search
+  useEffect(() => {
+    const handleGlobalSearch = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsGlobalSearchOpen((open) => !open);
+      }
+    };
+    window.addEventListener("keydown", handleGlobalSearch);
+    return () => window.removeEventListener("keydown", handleGlobalSearch);
+  }, []);
 
   // Cmd+F keyboard shortcut
   useEffect(() => {
@@ -705,6 +719,10 @@ function App() {
 
       {/* Modals */}
       <ModalContainer />
+      <GlobalSearchModal
+        isOpen={isGlobalSearchOpen}
+        onClose={() => setIsGlobalSearchOpen(false)}
+      />
 
       {/* Debug Console */}
       <DebugConsole />

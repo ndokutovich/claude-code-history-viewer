@@ -1175,5 +1175,9 @@
   "webSearchRenderer.results": "結果",
   "webSearchRenderer.seconds": "秒",
   "webSearchRenderer.title": "網頁搜尋",
-  "webSearchRenderer.unknownResultFormat": "未知結果格式"
+  "webSearchRenderer.unknownResultFormat": "未知結果格式",
+  "messageViewer.search.button": "在工作階段中搜尋 (Ctrl+F)",
+  "messageViewer.search.content": "內容",
+  "messageViewer.search.placeholder": "在工作階段中搜尋...",
+  "messageViewer.search.toolId": "工具ID"
 }

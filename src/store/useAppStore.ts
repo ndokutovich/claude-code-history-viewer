@@ -29,9 +29,13 @@ import {
   type CreateSessionRequest,
   type CreateSessionResponse,
   type MessageInput,
+  type MetricMode,
 } from "../types";
 import { adapterRegistry } from "@/adapters/registry/AdapterRegistry";
 import { useSourceStore } from "./useSourceStore";
+import type { SearchState, SearchFilterType, SearchMatch } from "./slices/types";
+import { createEmptySearchState } from "./slices/types";
+import { searchMessages as searchMessagesFromIndex, buildSearchIndex, clearSearchIndex } from "../utils/searchIndex";
 
 // ============================================================================
 // VIEW MANAGEMENT SYSTEM (v1.5.1+)
@@ -307,6 +311,44 @@ interface AppStore extends AppState {
   createProject: (request: CreateProjectRequest) => Promise<CreateProjectResponse>;
   createSession: (request: CreateSessionRequest) => Promise<CreateSessionResponse>;
   appendToSession: (sessionPath: string, messages: MessageInput[]) => Promise<number>;
+
+  // Capture Mode actions (screenshot capture with hidden blocks)
+  isCaptureMode: boolean;
+  hiddenMessageIds: string[];
+  enterCaptureMode: () => void;
+  exitCaptureMode: () => void;
+  hideMessage: (uuid: string) => void;
+  showMessage: (uuid: string) => void;
+  restoreMessages: (uuids: string[]) => void;
+  restoreAllMessages: () => void;
+  isMessageHidden: (uuid: string) => boolean;
+  getHiddenCount: () => number;
+
+  // Provider-aware helpers (for GlobalSearch / multi-provider features)
+  /** List of active provider IDs (subset of all configured providers) */
+  activeProviders: string[];
+  /** Returns a human-readable display name for a session, or undefined if not found */
+  getSessionDisplayName: (sessionId: string, fallbackSummary?: string) => string | undefined;
+
+  // Filter preferences
+  /** Whether to show system messages in the message list */
+  showSystemMessages: boolean;
+  setShowSystemMessages: (show: boolean) => void;
+
+  // Metric mode for analytics views
+  metricMode: MetricMode;
+  setMetricMode: (mode: MetricMode) => void;
+
+  // In-session search (KakaoTalk-style navigation)
+  sessionSearch: SearchState;
+  setSessionSearchQuery: (query: string) => void;
+  setSearchFilterType: (filterType: SearchFilterType) => void;
+  goToNextMatch: () => void;
+  goToPrevMatch: () => void;
+  goToMatchIndex: (index: number) => void;
+  clearSessionSearch: () => void;
+  /** Build the FlexSearch index from the current message list */
+  rebuildSearchIndex: () => void;
 }
 
 const DEFAULT_PAGE_SIZE = 100; // Load 100 messages on initial loading
@@ -398,6 +440,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Filter state
   excludeSidechain: true,
   sessionExcludeSidechain: true, // Initialize to match global default
+
+  // Capture mode initial state
+  isCaptureMode: false,
+  hiddenMessageIds: [],
+
+  // Provider state
+  activeProviders: ["claude"], // Default to Claude provider
+
+  // Filter preferences
+  showSystemMessages: false,
+
+  // Metric mode
+  metricMode: "tokens" as MetricMode,
+
+  // In-session search
+  sessionSearch: createEmptySearchState(),
 
   // Actions
   initializeApp: async () => {
@@ -1745,6 +1803,141 @@ export const useAppStore = create<AppStore>((set, get) => ({
         },
       });
       throw error;
+    }
+  },
+
+  // ============================================================
+  // Capture Mode
+  // ============================================================
+  enterCaptureMode: () => set({ isCaptureMode: true }),
+  exitCaptureMode: () => set({ isCaptureMode: false }),
+  hideMessage: (uuid: string) => {
+    const { hiddenMessageIds } = get();
+    if (!hiddenMessageIds.includes(uuid)) {
+      set({ hiddenMessageIds: [...hiddenMessageIds, uuid] });
+    }
+  },
+  showMessage: (uuid: string) => {
+    set({ hiddenMessageIds: get().hiddenMessageIds.filter((id) => id !== uuid) });
+  },
+  restoreMessages: (uuids: string[]) => {
+    set({ hiddenMessageIds: get().hiddenMessageIds.filter((id) => !uuids.includes(id)) });
+  },
+  restoreAllMessages: () => set({ hiddenMessageIds: [] }),
+  isMessageHidden: (uuid: string) => {
+    const { isCaptureMode, hiddenMessageIds } = get();
+    return isCaptureMode && hiddenMessageIds.includes(uuid);
+  },
+  getHiddenCount: () => get().hiddenMessageIds.length,
+
+  // ============================================================
+  // Provider helpers
+  // ============================================================
+  getSessionDisplayName: (sessionId: string, fallbackSummary?: string) => {
+    const { sessions } = get();
+    const session = sessions.find(
+      (s) => s.actual_session_id === sessionId || s.session_id === sessionId
+    );
+    return session?.summary || fallbackSummary;
+  },
+
+  // ============================================================
+  // Filter preferences
+  // ============================================================
+  setShowSystemMessages: (show: boolean) => set({ showSystemMessages: show }),
+
+  // ============================================================
+  // Metric mode
+  // ============================================================
+  setMetricMode: (mode: MetricMode) => set({ metricMode: mode }),
+
+  // ============================================================
+  // In-session search (KakaoTalk-style navigation)
+  // ============================================================
+  setSessionSearchQuery: (query: string) => {
+    const { messages, sessionSearch } = get();
+    const { filterType } = sessionSearch;
+
+    if (!query.trim()) {
+      set({ sessionSearch: createEmptySearchState(filterType) });
+      return;
+    }
+
+    set((state) => ({
+      sessionSearch: { ...state.sessionSearch, query, isSearching: true },
+    }));
+
+    try {
+      const searchResults = searchMessagesFromIndex(query, filterType);
+
+      const matches: SearchMatch[] = searchResults.filter(
+        (result) => result.messageIndex >= 0 && result.messageIndex < messages.length
+      ).map((result) => ({
+        messageUuid: result.messageUuid,
+        messageIndex: result.messageIndex,
+        matchIndex: result.matchIndex,
+        matchCount: result.matchCount,
+      }));
+
+      set((state) => ({
+        sessionSearch: {
+          query,
+          matches,
+          currentMatchIndex: matches.length > 0 ? 0 : -1,
+          isSearching: false,
+          filterType: state.sessionSearch.filterType,
+          results: [],
+        },
+      }));
+    } catch (error) {
+      console.error("[Search] Failed to search messages:", error);
+      set((state) => ({
+        sessionSearch: {
+          query,
+          matches: [],
+          currentMatchIndex: -1,
+          isSearching: false,
+          filterType: state.sessionSearch.filterType,
+          results: [],
+        },
+      }));
+    }
+  },
+
+  setSearchFilterType: (filterType: SearchFilterType) => {
+    set({ sessionSearch: createEmptySearchState(filterType) });
+  },
+
+  goToNextMatch: () => {
+    const { sessionSearch } = get();
+    if (sessionSearch.matches.length === 0) return;
+    const nextIndex = (sessionSearch.currentMatchIndex + 1) % sessionSearch.matches.length;
+    set({ sessionSearch: { ...sessionSearch, currentMatchIndex: nextIndex } });
+  },
+
+  goToPrevMatch: () => {
+    const { sessionSearch } = get();
+    if (sessionSearch.matches.length === 0) return;
+    const total = sessionSearch.matches.length;
+    const prevIndex = sessionSearch.currentMatchIndex <= 0 ? total - 1 : sessionSearch.currentMatchIndex - 1;
+    set({ sessionSearch: { ...sessionSearch, currentMatchIndex: prevIndex } });
+  },
+
+  goToMatchIndex: (index: number) => {
+    const { sessionSearch } = get();
+    if (index < 0 || index >= sessionSearch.matches.length) return;
+    set({ sessionSearch: { ...sessionSearch, currentMatchIndex: index } });
+  },
+
+  clearSessionSearch: () => {
+    set((state) => ({ sessionSearch: createEmptySearchState(state.sessionSearch.filterType) }));
+  },
+
+  rebuildSearchIndex: () => {
+    const { messages } = get();
+    clearSearchIndex();
+    if (messages.length > 0) {
+      buildSearchIndex(messages);
     }
   },
 }));

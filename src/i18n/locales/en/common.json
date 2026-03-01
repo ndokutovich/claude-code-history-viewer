@@ -459,5 +459,19 @@
   "update.viewOnGitHub": "View On Git Hub",
   "validation.enterPath": "Enter Path",
   "validation.invalidPath": "Invalid Path",
-  "view": "View"
+  "view": "View",
+  "globalSearch.close": "Close",
+  "globalSearch.hint": "Type at least 2 characters to search across all sessions",
+  "globalSearch.navigate": "Navigate",
+  "globalSearch.noPreview": "No preview available",
+  "globalSearch.noResults": "No results found",
+  "globalSearch.placeholder": "Search across all sessions...",
+  "globalSearch.results": "{{count}} results",
+  "globalSearch.searching": "Searching...",
+  "globalSearch.select": "Select",
+  "globalSearch.title": "Global Search",
+  "globalSearch.unknownProject": "Unknown Project",
+  "common.settings.filter.showSystemMessages": "Show System Messages",
+  "common.settings.filter.title": "Filter",
+  "common.errorOccurred": "Error occurred"
 }
