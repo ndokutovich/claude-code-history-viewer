@@ -2,14 +2,7 @@
 import React, { useEffect, useMemo, useCallback, useRef, useState } from "react";
 import {
   Folder,
-  Wrench,
-  AlertTriangle,
-  AlertCircle,
-  ChevronDown,
-  ChevronRight,
-  MessageCircle,
   X,
-  Loader2,
   Pencil,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -21,7 +14,6 @@ import { ProjectListControls } from "../ProjectListControls";
 import { ProjectContextMenu } from "../ProjectContextMenu";
 import { NativeRenameDialog } from "../NativeRenameDialog";
 import { useAppStore } from "../../store/useAppStore";
-import { ProviderIcon, getProviderColorClass } from "../icons/ProviderIcons";
 import type { ProjectTreeProps } from "./types";
 import { useProjectTreeState } from "./hooks/useProjectTreeState";
 import {
@@ -30,6 +22,7 @@ import {
   getNextTreeItemIndex,
   type TreeNavigationKey,
 } from "../../utils/treeKeyboard";
+import { FlatSessionsList, ProjectGroup } from "./components";
 
 export const ProjectTree: React.FC<ProjectTreeProps> = ({
   projects,
@@ -700,297 +693,42 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
         ) : projectListPreferences.groupBy === 'sessions' ? (
           // FLAT SESSIONS VIEW (no projects, just all sessions mixed)
           <div className="space-y-1 p-2">
-            {allSessionsFlat.length === 0 ? (
-              <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">{t("components:session.noSessions", "No sessions found")}</p>
-              </div>
-            ) : (
-              allSessionsFlat.map((session) => {
-                const isSelected = selectedSession?.session_id === session.session_id;
-
-                return (
-                  <button
-                    key={session.session_id}
-                    role="treeitem"
-                    aria-level={1}
-                    aria-selected={isSelected}
-                    tabIndex={-1}
-                    onClick={() => {
-                      // Find the project for this session
-                      const project = filteredAndSortedProjects.find(p => p.path === session.projectPath);
-                      if (project) {
-                        onProjectSelect(project);
-                      }
-                      onSessionSelect(session);
-                    }}
-                    onContextMenu={(e) => handleSessionContextMenu(e, session)}
-                    className={cn(
-                      "text-left w-full p-2 rounded transition-colors flex items-start space-x-2 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset",
-                      isSelected
-                        ? "bg-blue-100 dark:bg-blue-900/40 border-l-2 border-blue-500"
-                        : "hover:bg-gray-200 dark:hover:bg-gray-700"
-                    )}
-                  >
-                    {/* Provider Icon */}
-                    <ProviderIcon
-                      providerId={session.providerId || ""}
-                      className={cn("w-4 h-4 mt-0.5 flex-shrink-0", getProviderColorClass(session.providerId))}
-                    />
-
-                    {/* Session Info */}
-                    <div className="flex-1 min-w-0">
-                      {/* Session Title */}
-                      <div className="flex items-center space-x-1">
-                        <MessageCircle className="w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                        <p className="text-sm text-gray-800 dark:text-gray-200 truncate font-medium">
-                          {getSessionTitle(session)}
-                        </p>
-                      </div>
-
-                      {/* Project Name (subdued) */}
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                        {session.projectName}
-                      </p>
-
-                      {/* Metadata row */}
-                      <div className="flex items-center space-x-2 mt-1 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
-                        <span className="whitespace-nowrap">{t("message.count", { count: session.message_count })}</span>
-                        <span>•</span>
-                        <span className="whitespace-nowrap">{formatTimeAgo(session.last_modified)}</span>
-                        {session.has_tool_use && (
-                          <Wrench className="w-3 h-3 flex-shrink-0" />
-                        )}
-                        {session.has_errors && (
-                          <AlertTriangle className="w-3 h-3 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
-                        )}
-                        {session.is_problematic && (
-                          <AlertCircle className="w-3 h-3 text-red-600 dark:text-red-500 flex-shrink-0" />
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })
-            )}
+            <FlatSessionsList
+              sessions={allSessionsFlat}
+              selectedSession={selectedSession}
+              projects={filteredAndSortedProjects}
+              onSessionSelect={onSessionSelect}
+              onProjectSelect={onProjectSelect}
+              onContextMenu={handleSessionContextMenu}
+              formatTimeAgo={formatTimeAgo}
+              t={t}
+            />
           </div>
         ) : (
           // NORMAL PROJECT TREE VIEW
           <div className="space-y-2">
             {Object.entries(groupedProjects).map(([groupName, groupProjects]) => (
-              <div key={groupName}>
-                {/* Group Header (only if grouped by source) */}
-                {projectListPreferences.groupBy === "source" && (
-                  <div className="px-3 py-2 bg-gray-200 dark:bg-gray-750 border-b border-gray-300 dark:border-gray-600">
-                    <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                      {groupName}
-                    </p>
-                  </div>
-                )}
-
-                {/* Projects in this group */}
-                {groupProjects.map((project) => {
-                  const isExpanded = expandedProjects.has(project.path);
-                  const isLoadingProject = loadingProjects.has(project.path);
-
-                  return (
-                    <div key={project.path}>
-                      {/* Project Header */}
-                      <div
-                        className="flex items-center w-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                        onContextMenu={(e) => handleProjectContextMenu(e, project)}
-                      >
-                        {/* Expand/Collapse Chevron - Separate clickable area */}
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation(); // Don't trigger project selection
-
-                            const willBeExpanded = !isExpanded;
-
-                            // Toggle expansion state
-                            toggleProject(project.path);
-
-                            // If expanding, load sessions for this project (without selecting it)
-                            if (willBeExpanded) {
-                              await loadSessionsForProjects([project.path]);
-                            }
-                          }}
-                          className="p-3 pr-1 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-l transition-colors"
-                          title={isExpanded ? "Collapse" : "Expand"}
-                          disabled={isLoadingProject}
-                        >
-                          {isLoadingProject ? (
-                            <Loader2 className="w-4 h-4 text-blue-500 dark:text-blue-400 animate-spin" />
-                          ) : isExpanded ? (
-                            <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                          )}
-                        </button>
-
-                        {/* Project Name - Clickable area for selection */}
-                        <button
-                          role="treeitem"
-                          data-tree-expandable="true"
-                          aria-level={1}
-                          aria-expanded={isExpanded}
-                          aria-selected={selectedProject?.path === project.path}
-                          tabIndex={-1}
-                          onClick={() => {
-                            // Select project and expand if collapsed
-                            onProjectSelect(project);
-
-                            // Auto-expand when selecting a project (if not already expanded)
-                            if (!isExpanded) {
-                              toggleProject(project.path);
-                            }
-                          }}
-                          onKeyDown={async (e) => {
-                            if (e.key === "ArrowRight" && !isExpanded) {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              toggleProject(project.path);
-                              await loadSessionsForProjects([project.path]);
-                            } else if (e.key === "ArrowLeft" && isExpanded) {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              toggleProject(project.path);
-                            }
-                          }}
-                          className="flex-1 text-left p-3 pl-1 flex items-center space-x-2 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset rounded"
-                        >
-                          <ProviderIcon
-                            providerId={project.providerId || ""}
-                            className={cn("w-4 h-4", getProviderColorClass(project.providerId))}
-                          />
-                          <div className="min-w-0 flex-1 flex items-center">
-                            <p
-                              className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm"
-                              title={project.name}
-                            >
-                              {project.name}
-                            </p>
-                          </div>
-                        </button>
-                      </div>
-
-                  {/* Sessions for expanded project */}
-                  {isExpanded && !isLoading && (() => {
-                    const projectSessions = getSessionsForProject(project.path);
-                    if (projectSessions.length === 0) {
-                      return null;
-                    }
-                    return (
-                      <div className="ml-6 space-y-1">
-                        {projectSessions.map((session) => {
-                        const isSessionSelected =
-                          selectedSession?.session_id === session.session_id;
-
-                        return (
-                          <button
-                            key={session.session_id}
-                            role="treeitem"
-                            aria-level={2}
-                            aria-selected={isSessionSelected}
-                            tabIndex={-1}
-                            onClick={() => {
-                              // Toggle: click selected session to deselect
-                              if (isSessionSelected) {
-                                onSessionSelect(null);
-                              } else {
-                                onSessionSelect(session);
-                              }
-                            }}
-                            onContextMenu={(e) => handleSessionContextMenu(e, session)}
-                            className={cn(
-                              "w-full text-left p-3 rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset",
-                              isSessionSelected
-                                ? "bg-blue-100 dark:bg-blue-900 border-l-4 border-blue-400 dark:border-blue-500"
-                                : "hover:bg-gray-200 dark:hover:bg-gray-700"
-                            )}
-                          >
-                            <div className="flex items-start space-x-3">
-                              <MessageCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-2">
-                                  <h3
-                                    className="font-medium text-gray-800 dark:text-gray-200 text-xs truncate flex-1 min-w-0"
-                                    title={getSessionTitle(session)}
-                                  >
-                                    {getSessionTitle(session)}
-                                  </h3>
-                                  <div className="flex items-center space-x-1 flex-shrink-0">
-                                    {session.has_tool_use && (
-                                      <span
-                                        title={t(
-                                          "components:tools.toolUsed",
-                                          "Tool used"
-                                        )}
-                                      >
-                                        <Wrench className="w-3 h-3 text-blue-400 flex-shrink-0" />
-                                      </span>
-                                    )}
-                                    {session.has_errors && (
-                                      <span
-                                        title={t(
-                                          "components:tools.errorOccurred",
-                                          "Error occurred"
-                                        )}
-                                      >
-                                        <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />
-                                      </span>
-                                    )}
-                                    {session.is_problematic && (
-                                      <span
-                                        title={t(
-                                          "components:tools.sessionProblematic",
-                                          "Session not resumable (fix available)"
-                                        )}
-                                      >
-                                        <AlertCircle className="w-3 h-3 text-red-500 flex-shrink-0" />
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center space-x-1 text-xs text-gray-400 mt-1 overflow-hidden">
-                                  <span className="whitespace-nowrap">
-                                    {formatTimeAgo(session.last_modified)}
-                                  </span>
-                                  <span>•</span>
-                                  <span className="whitespace-nowrap">
-                                    {t(
-                                      "components:message.count",
-                                      "{{count}} messages",
-                                      {
-                                        count: session.message_count,
-                                      }
-                                    )}
-                                  </span>
-                                  <span>•</span>
-                                  <span
-                                    className="truncate"
-                                    title={`${t(
-                                      "components:session.actualId",
-                                      "Actual ID"
-                                    )}: ${session.actual_session_id}`}
-                                  >
-                                    ID: {session.actual_session_id}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                      </div>
-                    );
-                  })()}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+              <ProjectGroup
+                key={groupName}
+                groupName={groupName}
+                projects={groupProjects}
+                showGroupHeader={projectListPreferences.groupBy === "source"}
+                expandedProjects={expandedProjects}
+                loadingProjects={loadingProjects}
+                selectedProject={selectedProject}
+                selectedSession={selectedSession}
+                isLoading={isLoading}
+                getSessionsForProject={getSessionsForProject}
+                onToggle={toggleProject}
+                onProjectSelect={onProjectSelect}
+                onSessionSelect={onSessionSelect}
+                onProjectContextMenu={handleProjectContextMenu}
+                onSessionContextMenu={handleSessionContextMenu}
+                onExpandRequest={(path) => loadSessionsForProjects([path])}
+                formatTimeAgo={formatTimeAgo}
+                t={t}
+              />
+            ))}
           </div>
         )}
       </div>

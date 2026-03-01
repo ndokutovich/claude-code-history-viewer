@@ -40,37 +40,30 @@ vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 vi.mock("@/utils/cn", () => ({ cn: (...args: string[]) => args.filter(Boolean).join(" ") }));
 vi.mock("../../utils/cn", () => ({ cn: (...args: string[]) => args.filter(Boolean).join(" ") }));
 
-// Stub the store - return minimal state
+// Stub the store - return minimal state.
+// The mock handles both the selector pattern (useAppStore(sel)) used by ProjectTree
+// and the no-selector pattern (useAppStore()) used by useProjectTreeState.
+const fakeStoreState = {
+  projectListPreferences: {
+    sortBy: "date",
+    sortOrder: "desc",
+    groupBy: "none",
+    hideEmptyProjects: false,
+    hideEmptySessions: false,
+    hideAgentSessions: false,
+    sessionSearchQuery: "",
+  },
+  loadProjectSessions: vi.fn().mockResolvedValue(undefined),
+};
+
 vi.mock("@/store/useAppStore", () => ({
-  useAppStore: vi.fn((selector: (state: Record<string, unknown>) => unknown) =>
-    selector({
-      projectListPreferences: {
-        sortBy: "date",
-        sortOrder: "desc",
-        groupBy: "none",
-        hideEmptyProjects: false,
-        hideEmptySessions: false,
-        hideAgentSessions: false,
-        sessionSearchQuery: "",
-      },
-      loadProjectSessions: vi.fn().mockResolvedValue(undefined),
-    })
+  useAppStore: vi.fn((selector?: (state: Record<string, unknown>) => unknown) =>
+    typeof selector === "function" ? selector(fakeStoreState) : fakeStoreState
   ),
 }));
 vi.mock("../../store/useAppStore", () => ({
-  useAppStore: vi.fn((selector: (state: Record<string, unknown>) => unknown) =>
-    selector({
-      projectListPreferences: {
-        sortBy: "date",
-        sortOrder: "desc",
-        groupBy: "none",
-        hideEmptyProjects: false,
-        hideEmptySessions: false,
-        hideAgentSessions: false,
-        sessionSearchQuery: "",
-      },
-      loadProjectSessions: vi.fn().mockResolvedValue(undefined),
-    })
+  useAppStore: vi.fn((selector?: (state: Record<string, unknown>) => unknown) =>
+    typeof selector === "function" ? selector(fakeStoreState) : fakeStoreState
   ),
 }));
 
@@ -171,10 +164,27 @@ describe("ProjectTree keyboard navigation", () => {
 
   it("marks the selected project treeitem as aria-selected=true", () => {
     const project = makeProject({ name: "selected-proj" });
+    // Provide a session so hasVisibleSessions returns true and the project
+    // is not filtered out of filteredAndSortedProjects.
+    const session: UISession = {
+      session_id: "s1",
+      actual_session_id: "actual-s1",
+      file_path: "/path/s1.jsonl",
+      project_name: "selected-proj",
+      message_count: 1,
+      first_message_time: new Date().toISOString(),
+      last_message_time: new Date().toISOString(),
+      last_modified: new Date().toISOString(),
+      has_tool_use: false,
+      has_errors: false,
+      is_problematic: false,
+    };
     render(
       <ProjectTree
         {...defaultProps}
         projects={[project]}
+        sessions={[session]}
+        sessionsByProject={{ [project.path]: [session] }}
         selectedProject={project}
       />
     );
