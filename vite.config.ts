@@ -178,7 +178,11 @@ export default defineConfig(({ mode }) => ({
     ],
     server: {
       deps: {
-        inline: ['@tauri-apps/plugin-http', '@tauri-apps/plugin-updater', '@tauri-apps/api']
+        inline: [
+          '@tauri-apps/plugin-http',
+          '@tauri-apps/plugin-updater',
+          '@tauri-apps/api',
+        ]
       }
     }
   },

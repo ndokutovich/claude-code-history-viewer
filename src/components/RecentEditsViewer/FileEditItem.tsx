@@ -88,6 +88,7 @@ export const FileEditItem: React.FC<FileEditItemProps> = ({ edit, isDarkMode }) 
     <div className="border-2 rounded-xl overflow-hidden transition-all duration-300 border-border bg-card hover:border-accent/30 hover:shadow-md">
       {/* Header */}
       <div
+        data-testid="file-edit-header"
         className={cn(
           "relative flex items-center justify-between p-4 cursor-pointer transition-all duration-300",
           edit.operation_type === "write"
