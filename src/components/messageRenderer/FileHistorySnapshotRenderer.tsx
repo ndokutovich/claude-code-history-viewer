@@ -102,8 +102,8 @@ export const FileHistorySnapshotRenderer = memo(
                 >
                   <FileArchive className={cn(layout.iconSizeSmall, "flex-shrink-0", styles.icon)} />
                   <span className={cn("font-mono truncate", styles.title)}>
-                    {typeof entry === "object" && entry?.originalPath
-                      ? entry.originalPath
+                    {typeof entry === "object" && (entry as { originalPath?: string })?.originalPath
+                      ? (entry as { originalPath?: string }).originalPath
                       : path}
                   </span>
                 </div>

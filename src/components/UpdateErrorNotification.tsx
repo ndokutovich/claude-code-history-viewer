@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { AlertCircle, X, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { layout } from "@/components/renderers";
-import { ERROR_NOTIFICATION_DURATION_MS } from "@/config/update.config";
+import { ERROR_NOTIFICATION_TIMEOUT_MS as ERROR_NOTIFICATION_DURATION_MS } from "@/config/update.config";
 
 interface UpdateErrorNotificationProps {
   error: string;

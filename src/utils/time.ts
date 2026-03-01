@@ -52,6 +52,24 @@ export const formatDuration = (minutes: number): string => {
   return parts.join(" ");
 };
 
+/** Compact date format: "Mar 1" or "Mar 1, 2024" for older dates */
+export const formatDateCompact = (timestamp: string): string => {
+  try {
+    const date = new Date(timestamp);
+    const currentLanguage = i18n.language || "en";
+    const locale = getLocale(currentLanguage);
+    const now = new Date();
+    const sameYear = date.getFullYear() === now.getFullYear();
+    return date.toLocaleDateString(locale, {
+      month: "short",
+      day: "numeric",
+      ...(sameYear ? {} : { year: "numeric" }),
+    });
+  } catch {
+    return "";
+  }
+};
+
 export const formatRelativeTime = (date: Date | string): string => {
   const now = new Date();
   const targetDate = typeof date === 'string' ? new Date(date) : date;

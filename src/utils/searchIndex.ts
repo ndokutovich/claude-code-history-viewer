@@ -73,7 +73,7 @@ const extractSearchableText = (message: UIMessage): string => {
 
     const MAX_CONTENT_LENGTH = 5000;
     if (message.toolUseResult) {
-      const result = message.toolUseResult;
+      const result = message.toolUseResult as Record<string, unknown> | string;
       if (typeof result === "string") {
         parts.push(result.slice(0, MAX_CONTENT_LENGTH));
       } else if (isRecord(result)) {

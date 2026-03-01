@@ -124,7 +124,7 @@ export const DocumentRenderer = memo(function DocumentRenderer({ document }: Pro
         </div>
       )}
 
-      {document.citations?.enabled && (
+      {(!Array.isArray(document.citations) && (document.citations as { enabled?: boolean })?.enabled) && (
         <div className={cn("mt-2 flex items-center", layout.iconSpacing, layout.smallText, "text-muted-foreground")}>
           <span>
             {t("documentRenderer.citationsEnabled")}

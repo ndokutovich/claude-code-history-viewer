@@ -69,7 +69,7 @@ export const ProgressRenderer = memo(function ProgressRenderer({
 }: ProgressRendererProps) {
   const { t } = useTranslation();
 
-  const config = PROGRESS_CONFIG[data.type] || PROGRESS_CONFIG.agent_progress;
+  const config = PROGRESS_CONFIG[data.type] ?? PROGRESS_CONFIG.agent_progress!;
   const styles = getVariantStyles(config.variant);
   const Icon = config.icon;
   const StatusIcon = data.status ? STATUS_ICON[data.status] || Activity : Activity;

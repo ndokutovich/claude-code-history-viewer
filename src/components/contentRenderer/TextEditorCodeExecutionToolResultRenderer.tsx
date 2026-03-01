@@ -48,7 +48,7 @@ export const TextEditorCodeExecutionToolResultRenderer = memo(
           toolUseId={toolUseId}
         >
           <div className={cn(layout.bodyText, "text-destructive")}>
-            {errorMessages[content.error_code] || content.error_code}
+            {(content.error_code ? errorMessages[content.error_code] : undefined) || content.error_code || content.message}
           </div>
         </ToolResultCard>
       );

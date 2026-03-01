@@ -109,7 +109,7 @@ export const CitationRenderer = memo(function CitationRenderer({
               <div className="flex-1 min-w-0">
                 <div className={cn("flex items-center flex-wrap", layout.iconSpacing)}>
                   <span className={cn(layout.titleText, "text-info")}>
-                    [{citation.document_index + 1}]
+                    [{(citation.document_index ?? 0) + 1}]
                   </span>
                   {citation.document_title && (
                     <span className={cn(layout.smallText, "text-info truncate")}>

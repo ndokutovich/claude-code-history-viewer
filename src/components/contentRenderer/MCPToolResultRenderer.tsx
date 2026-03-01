@@ -29,7 +29,7 @@ export const MCPToolResultRenderer = memo(function MCPToolResultRenderer({
   if (isError) {
     const getErrorMessage = (): string => {
       if (typeof content === "string") return content;
-      if (content.type === "text") return content.text;
+      if (content.type === "text") return content.text ?? "";
       return safeStringify(content);
     };
 

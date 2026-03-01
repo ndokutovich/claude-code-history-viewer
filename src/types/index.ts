@@ -550,6 +550,55 @@ export type StatsMode = "billing_total" | "conversation_only";
 export type MetricMode = "tokens" | "cost_estimated";
 
 // ============================================================================
+// PROGRESS / QUEUE TYPES (used by ProgressRenderer, QueueOperationRenderer)
+// ============================================================================
+
+export type ProgressDataType =
+  | "agent_progress"
+  | "mcp_progress"
+  | "bash_progress"
+  | "hook_progress"
+  | "search_results_received"
+  | "query_update"
+  | "waiting_for_task";
+
+export interface ProgressData {
+  type: ProgressDataType;
+  status: "running" | "completed" | "failed" | "waiting" | "error";
+  label?: string;
+  detail?: string;
+  prompt?: string;
+  normalizedMessages?: Array<{ role: string; content: unknown; message?: { content: unknown } }>;
+  toolUseID?: string;
+  parentToolUseID?: string;
+  durationMs?: number;
+  elapsedTimeMs?: number;
+  serverName?: string;
+  toolName?: string;
+  agentId?: string;
+  message?: string | Record<string, unknown>;
+}
+
+export type QueueOperationType = "enqueue" | "dequeue" | "remove" | "popAll";
+
+// ============================================================================
+// SESSION METADATA TYPES
+// ============================================================================
+
+export interface SessionMetadata {
+  customName?: string;
+  starred?: boolean;
+  tags?: string[];
+  notes?: string;
+  lastViewedAt?: string;
+}
+
+export interface UserMetadata {
+  sessions: Record<string, SessionMetadata>;
+  version?: string;
+}
+
+// ============================================================================
 // UNIVERSAL TYPES (v2.0.0 - Multi-Provider Support)
 // ============================================================================
 
@@ -597,4 +646,133 @@ export interface PaginatedRecentEdits {
   offset: number;
   limit: number;
   has_more: boolean;
+}
+
+// ============================================================================
+// CONTENT RENDERER TYPES (used by ported upstream renderers)
+// ============================================================================
+
+export interface BashCodeExecutionResult {
+  stdout?: string;
+  stderr?: string;
+  exit_code?: number;
+  return_code?: number;
+}
+
+export interface BashCodeExecutionError {
+  error_code: string;
+  message?: string;
+  code?: number;
+}
+
+export interface Citation {
+  start_page_number?: number;
+  end_page_number?: number;
+  start_char_index?: number;
+  end_char_index?: number;
+  start_block_index?: number;
+  end_block_index?: number;
+  document_index?: number;
+  document_title?: string;
+  cited_text?: string;
+  type?: string;
+}
+
+export interface Base64PDFSource {
+  type: "base64";
+  media_type: "application/pdf";
+  data: string;
+}
+
+export interface PlainTextSource {
+  type: "text";
+  data: string;
+}
+
+export interface URLPDFSource {
+  type: "url";
+  url: string;
+}
+
+export interface CitationsConfig {
+  enabled?: boolean;
+}
+
+export interface DocumentContent {
+  type: "document";
+  source: Base64PDFSource | PlainTextSource | URLPDFSource;
+  title?: string;
+  context?: string;
+  citations?: Citation[] | CitationsConfig;
+}
+
+export interface MCPToolResultData {
+  tool_use_id: string;
+  content?: unknown;
+  is_error?: boolean;
+  type?: string;
+  text?: string;
+  data?: string;
+  mimeType?: string;
+  uri?: string;
+}
+
+export interface SearchResultContent {
+  type: "search_result";
+  source?: string;
+  title?: string;
+  content?: Array<{ type: string; text: string }>;
+  citations?: Citation[];
+}
+
+export interface TextEditorResult {
+  type?: string;
+  path?: string;
+  content?: string;
+  old_str?: string;
+  new_str?: string;
+  command?: string;
+  operation?: string;
+  success?: boolean;
+}
+
+export interface TextEditorError {
+  type?: string;
+  message: string;
+  path?: string;
+  error_code?: string;
+}
+
+export interface WebSearchResultItem {
+  type?: string;
+  url?: string;
+  title?: string;
+  encrypted_content?: string;
+  page_age?: string;
+}
+
+export interface WebSearchToolError {
+  type: "error";
+  error_code?: string;
+  message?: string;
+}
+
+export interface FileHistorySnapshot {
+  timestamp: string;
+  content: string;
+  lineCount?: number;
+  originalPath?: string;
+}
+
+export interface FileHistorySnapshotData {
+  path: string;
+  originalPath?: string;
+  content?: string;
+  lineCount?: number;
+  modifiedAt?: string;
+  size?: number;
+  encoding?: string;
+  snapshots?: FileHistorySnapshot[];
+  timestamp?: string;
+  trackedFileBackups?: Record<string, object>;
 }

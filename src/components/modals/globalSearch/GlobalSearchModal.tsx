@@ -9,7 +9,8 @@ import {
     X,
     Loader2,
 } from "lucide-react";
-import { Dialog, DialogContent, Input } from "@/components/ui";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/store/useAppStore";
 import type { ClaudeMessage, ClaudeSession, ContentItem } from "@/types";
 import { getProviderLabel } from "@/utils/providers";
@@ -314,7 +315,7 @@ export const GlobalSearchModal = ({
     let currentResultIndex = 0;
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
             <DialogContent
                 className="sm:max-w-2xl p-0 gap-0 overflow-hidden"
                 onKeyDown={handleKeyDown}

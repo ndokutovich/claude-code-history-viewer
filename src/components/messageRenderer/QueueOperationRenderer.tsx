@@ -56,7 +56,7 @@ export const QueueOperationRenderer = memo(function QueueOperationRenderer({
 }: Props) {
   const { t } = useTranslation();
 
-  const config = OPERATION_CONFIG[operation] || OPERATION_CONFIG.enqueue;
+  const config = OPERATION_CONFIG[operation] ?? OPERATION_CONFIG.enqueue!;
   const Icon = config.icon;
   const styles = getVariantStyles(config.variant);
 

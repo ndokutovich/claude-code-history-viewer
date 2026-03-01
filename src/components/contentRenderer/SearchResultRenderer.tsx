@@ -13,7 +13,7 @@
 import { memo } from "react";
 import { Search, FileText } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { SearchResultContent, TextContent } from "../../types";
+import type { SearchResultContent } from "../../types";
 import { getVariantStyles, layout } from "@/components/renderers";
 import { cn } from "@/utils/cn";
 import { ToolResultCard } from "./ToolResultCard";
@@ -45,7 +45,7 @@ export const SearchResultRenderer = memo(function SearchResultRenderer({
 
       {content && content.length > 0 && (
         <div className="mt-2 space-y-1">
-          {content.map((textContent: TextContent, index: number) => (
+          {content.map((textContent, index) => (
             <div
               key={index}
               className={cn(layout.bodyText, layout.containerPadding, layout.rounded, searchStyles.badge, searchStyles.accent)}

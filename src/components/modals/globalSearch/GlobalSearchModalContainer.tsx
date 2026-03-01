@@ -1,15 +1,9 @@
-import { GlobalSearchModal } from "./GlobalSearchModal";
-import { useModal } from "@/contexts/modal";
-
+/**
+ * Thin container that reads open state from the app store.
+ * The store's isGlobalSearchOpen / setIsGlobalSearchOpen is managed in App.tsx.
+ * This container is kept for compatibility but is not used in the current UI.
+ */
 export const GlobalSearchModalContainer: React.FC = () => {
-    const { isOpen, closeModal } = useModal();
-
-    if (!isOpen("globalSearch")) return null;
-
-    return (
-        <GlobalSearchModal
-            isOpen={true}
-            onClose={() => closeModal("globalSearch")}
-        />
-    );
+    // Not wired via modal context — GlobalSearchModal is mounted directly in App.tsx
+    return null;
 };

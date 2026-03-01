@@ -64,7 +64,7 @@ export const SessionItem: React.FC<SessionItemProps> = ({
   const [localSummary, setLocalSummary] = useState(session.summary);
   const inputRef = useRef<HTMLInputElement>(null);
   const ignoreBlurRef = useRef<boolean>(false);
-  const providerId = session.provider ?? "claude";
+  const providerId = session.providerId ?? "claude";
   const supportsNativeRename = providerId === "claude" || providerId === "opencode";
   const isArchivedCodexSession =
     providerId === "codex" &&
@@ -239,14 +239,13 @@ export const SessionItem: React.FC<SessionItemProps> = ({
         }
 
         // Update sessions in store so other components see the change immediately
-        // Use getState() to avoid subscribing all SessionItem instances to sessions array
-        const { sessions: currentSessions, setSessions } = useAppStore.getState();
+        const { sessions: currentSessions } = useAppStore.getState();
         const updatedSessions = currentSessions.map(s =>
           s.session_id === session.session_id
             ? { ...s, summary: newTitle }
             : s
         );
-        setSessions(updatedSessions);
+        useAppStore.setState({ sessions: updatedSessions });
       }
     },
     [providerId, setHasClaudeCodeName, t, session.session_id]
@@ -509,7 +508,6 @@ export const SessionItem: React.FC<SessionItemProps> = ({
         onOpenChange={setIsNativeRenameOpen}
         filePath={session.file_path}
         currentName={localSummary || ""}
-        provider={providerId}
         onSuccess={handleNativeRenameSuccess}
       />
     </div>
