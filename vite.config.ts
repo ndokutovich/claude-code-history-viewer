@@ -7,29 +7,35 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 // Fix for Windows subst drives: Vite calls fs.realpathSync which resolves
-// W:/ to C:/_init/w/, causing absolute fileName errors in Rollup's build-html.
-// Patch realpathSync to return the subst path for project paths.
+// W:/ to C:/_init/w/, causing absolute fileName errors in Rollup's build-html
+// and duplicate React instances during testing (react vs react-dom use different paths).
+// Patch realpathSync to return the subst path for ALL paths on the subst drive,
+// not just paths under cwd (node_modules is in the parent project dir).
 const cwd = process.cwd();
-const realCwd = fs.realpathSync.native(cwd);
-if (cwd !== realCwd) {
+// Determine the subst drive letter and its real target path
+// e.g. cwd = "W:\_proj\..." -> drive = "W:" -> realDrive = "C:\_init\w"
+const driveLetter = cwd.match(/^([A-Za-z]:)/)?.[1] ?? "";
+const realDrive = driveLetter ? fs.realpathSync.native(driveLetter + "\\") : "";
+// realDrive ends with backslash (e.g. "C:\_init\w\"), so strip it for prefix matching
+const realDrivePrefix = realDrive.replace(/\\$/, "");
+const substDrivePrefix = driveLetter;
+if (driveLetter && realDrivePrefix && realDrivePrefix.toUpperCase() !== driveLetter.toUpperCase()) {
   const origRealpathSync = fs.realpathSync;
   const origNative = fs.realpathSync.native;
+  const reverseSubst = (result: string): string => {
+    if (typeof result === "string" && result.toLowerCase().startsWith(realDrivePrefix.toLowerCase())) {
+      return substDrivePrefix + result.slice(realDrivePrefix.length);
+    }
+    return result;
+  };
   fs.realpathSync = Object.assign(
     function patchedRealpathSync(p: fs.PathLike, options?: { encoding?: BufferEncoding | null }) {
-      const result = origRealpathSync.call(fs, p, options) as string;
-      if (typeof result === "string" && result.startsWith(realCwd)) {
-        return result.replace(realCwd, cwd);
-      }
-      return result;
+      return reverseSubst(origRealpathSync.call(fs, p, options) as string);
     },
     { native: origNative }
   ) as typeof fs.realpathSync;
   fs.realpathSync.native = function patchedNative(p: fs.PathLike, options?: { encoding?: BufferEncoding | null }) {
-    const result = origNative.call(fs, p, options) as string;
-    if (typeof result === "string" && result.startsWith(realCwd)) {
-      return result.replace(realCwd, cwd);
-    }
-    return result;
+    return reverseSubst(origNative.call(fs, p, options) as string);
   } as typeof fs.realpathSync.native;
 }
 
