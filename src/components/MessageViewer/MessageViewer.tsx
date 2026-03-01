@@ -3,277 +3,25 @@ import React, {
   useRef,
   useCallback,
   useState,
-  useMemo,
 } from "react";
-import { Loader2, MessageCircle, ChevronDown, Link2, Check, ArrowUpCircle, ArrowDownCircle, ListTree, Search, X, ChevronUp } from "lucide-react";
+import { Loader2, MessageCircle, ChevronDown, ListTree, Search, X, ChevronUp } from "lucide-react";
 import { useSearchState } from "../../hooks/useSearchState";
 import { useTranslation } from "react-i18next";
-import type { UIMessage, UISession, MessageBuilder } from "../../types";
-import { ClaudeContentArrayRenderer } from "../contentRenderer";
-import {
-  ClaudeToolUseDisplay,
-  ToolExecutionResultRouter,
-  MessageContentDisplay,
-  AssistantMessageDetails,
-  ProviderMetadataDisplay,
-} from "../messageRenderer";
-import { extractUIMessageContent } from "../../utils/messageUtils";
+import type { UISession, MessageBuilder } from "../../types";
 import { cn } from "../../utils/cn";
-import { COLORS } from "../../constants/colors";
-import { formatTime } from "../../utils/time";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { SessionBuilderModal } from "../modals/SessionBuilderModal";
 import { invoke } from "@tauri-apps/api/core";
 import type { ExtractMessageRangeRequest, ExtractMessageRangeResponse } from "../../types/sessionWriter";
 import { adapterRegistry } from "../../adapters/registry/AdapterRegistry";
 import { useAppStore } from "../../store/useAppStore";
-import {
-  MAX_DEPTH_MARGIN,
-  SCROLL_ADJUSTMENT_DELAY,
-  SESSION_SCROLL_DELAY,
-  SCROLL_BOTTOM_THRESHOLD,
-  SCROLL_THROTTLE_DELAY,
-  MIN_MESSAGES_FOR_SCROLL_BTN,
-} from "../../constants/layout";
 import { MessageNavigator } from "../MessageNavigator";
-import type { MessageViewerProps, MessageNodeProps } from "./types";
+import { SessionBuilderModal } from "../modals/SessionBuilderModal";
+import type { MessageViewerProps } from "./types";
+import { MessageNode } from "./components";
+import { useMessageScrolling, useMessageTree } from "./hooks";
 
 const DEFAULT_NAVIGATOR_WIDTH = 280;
 const MIN_NAVIGATOR_WIDTH = 200;
 const MAX_NAVIGATOR_WIDTH = 480;
-
-const UIMessageNode = ({ message, depth, providerName, sessionFilePath, allMessages, onExtractRange }: MessageNodeProps) => {
-  const { t } = useTranslation("components");
-  const [copiedReference, setCopiedReference] = React.useState(false);
-
-  const handleCopyReference = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      // Format: file_path:line_number or file_path#messageUUID
-      const reference = sessionFilePath
-        ? `${sessionFilePath}#${message.uuid}`
-        : message.uuid;
-
-      const { writeText } = await import("@tauri-apps/plugin-clipboard-manager");
-      await writeText(reference);
-      setCopiedReference(true);
-
-      const { toast } = await import("sonner");
-      toast.success(t("messageReference.referenceCopied"));
-
-      setTimeout(() => setCopiedReference(false), 2000);
-    } catch (error) {
-      console.error("Failed to copy reference:", error);
-      const { toast } = await import("sonner");
-      toast.error(t("messageReference.referenceCopyFailed"));
-    }
-  };
-
-  const handleExtractAbove = (openModal: boolean) => {
-    const currentIndex = allMessages.findIndex(m => m.uuid === message.uuid);
-    if (currentIndex >= 0) {
-      // Extract from start to current (inclusive)
-      onExtractRange(0, currentIndex, openModal);
-    }
-  };
-
-  const handleExtractBelow = (openModal: boolean) => {
-    const currentIndex = allMessages.findIndex(m => m.uuid === message.uuid);
-    if (currentIndex >= 0) {
-      // Extract from current to end (inclusive)
-      onExtractRange(currentIndex, allMessages.length - 1, openModal);
-    }
-  };
-
-  // Sidechain filtering is now handled at the data loading level (adapter.loadMessages)
-  // This is a defensive check to catch adapter bugs during development
-  if (message.isSidechain && import.meta.env.DEV) {
-    console.warn(
-      '[MessageViewer] Sidechain message not filtered by adapter:',
-      message.uuid,
-      'This indicates an adapter bug - sidechains should be filtered during data loading.'
-    );
-  }
-
-  // Apply left margin based on depth
-  const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, MAX_DEPTH_MARGIN)}` : "";
-
-  return (
-    <div
-      id={`message-${message.uuid}`}
-      className={cn(
-        "w-full px-4 py-2",
-        leftMargin,
-        message.isSidechain && "bg-gray-100 dark:bg-gray-800"
-      )}
-    >
-      <div className="max-w-full mx-auto px-4">
-        {/* Show depth (only in development mode) */}
-        {import.meta.env.DEV && depth > 0 && (
-          <div className="text-xs text-gray-400 dark:text-gray-600 mb-1">
-            └─ {t("messageViewer.reply", { depth })}
-          </div>
-        )}
-
-        {/* Message header */}
-        <div
-          className={`flex items-center space-x-2 mb-1 text-md text-gray-500 dark:text-gray-400 ${
-            message.type === "user" ? "justify-end" : "justify-start"
-          }`}
-        >
-          {message.type === "user" && (
-            <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
-          )}
-          <span className="font-medium whitespace-nowrap">
-            {message.type === "user"
-              ? t("messageViewer.user")
-              : message.type === "assistant"
-              ? providerName
-              : t("messageViewer.system")}
-          </span>
-          <span className="whitespace-nowrap">
-            {formatTime(message.timestamp)}
-          </span>
-          {message.isSidechain && (
-            <span className="px-2 py-1 whitespace-nowrap text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 rounded-full">
-              {t("messageViewer.branch")}
-            </span>
-          )}
-          {/* Copy Reference Button */}
-          <button
-            onClick={handleCopyReference}
-            className={cn(
-              "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
-              "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            )}
-            title={t("messageReference.referenceTooltip")}
-          >
-            {copiedReference ? (
-              <Check className="w-3.5 h-3.5 text-green-500" />
-            ) : (
-              <Link2 className="w-3.5 h-3.5" />
-            )}
-          </button>
-
-          {/* Extract Messages Above Button */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
-                  "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                )}
-                title={t("messageReference.extractAboveTooltip")}
-              >
-                <ArrowUpCircle className="w-3.5 h-3.5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExtractAbove(true)}>
-                {t("messageReference.openInBuilder")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExtractAbove(false)}>
-                {t("messageReference.createDirectly")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Extract Messages Below Button */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
-                  "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                )}
-                title={t("messageReference.extractBelowTooltip")}
-              >
-                <ArrowDownCircle className="w-3.5 h-3.5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExtractBelow(true)}>
-                {t("messageReference.openInBuilder")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExtractBelow(false)}>
-                {t("messageReference.createDirectly")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {message.type === "assistant" && (
-            <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
-          )}
-        </div>
-
-        {/* Message content */}
-        <div className="w-full">
-          {/* Message Content */}
-          <MessageContentDisplay
-            content={extractUIMessageContent(message)}
-            messageType={message.type}
-          />
-
-          {/* Claude API Content Array */}
-          {message.content &&
-            typeof message.content === "object" &&
-            Array.isArray(message.content) &&
-            (message.type !== "assistant" ||
-              (message.type === "assistant" &&
-                !extractUIMessageContent(message))) && (
-              <div className="mb-2">
-                <ClaudeContentArrayRenderer content={message.content} />
-              </div>
-            )}
-
-          {/* Special case: when content is null but toolUseResult exists */}
-          {!extractUIMessageContent(message) &&
-            message.toolUseResult &&
-            typeof message.toolUseResult === "object" &&
-            Array.isArray(message.toolUseResult.content) && (
-              <div className={cn("text-sm mb-2", COLORS.ui.text.tertiary)}>
-                <span className="italic">:</span>
-              </div>
-            )}
-
-          {/* Tool Use */}
-          {message.toolUse && (
-            <ClaudeToolUseDisplay toolUse={message.toolUse} />
-          )}
-
-          {/* Tool Result */}
-          {message.toolUseResult && (
-            <ToolExecutionResultRouter
-              toolResult={message.toolUseResult}
-              depth={depth}
-            />
-          )}
-
-          {/* Provider-specific Metadata (file attachments, etc.) */}
-          {message.provider_metadata && (
-            <ProviderMetadataDisplay metadata={message.provider_metadata} />
-          )}
-
-          {/* Assistant Metadata */}
-          <AssistantMessageDetails message={message} />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Type-safe parent UUID extraction function
-const getParentUuid = (message: UIMessage): string | null | undefined => {
-  const msgWithParent = message as UIMessage & {
-    parentUuid?: string;
-    parent_uuid?: string;
-  };
-  return msgWithParent.parentUuid || msgWithParent.parent_uuid;
-};
 
 export const MessageViewer: React.FC<MessageViewerProps> = ({
   messages,
@@ -285,12 +33,6 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   // Get provider name for displaying in messages
   const providerName = selectedSession?.providerName || "Claude Code";
   const { t } = useTranslation("components");
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const prevMessagesLength = useRef(messages.length);
-
-  // Ref to prevent infinite rendering
-  const isProcessingLoadMore = useRef(false);
-  const lastPaginationCall = useRef<number>(0);
 
   // Session Builder Modal state for extract functionality
   const [isSessionBuilderOpen, setIsSessionBuilderOpen] = useState(false);
@@ -507,191 +249,22 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     }
   }, [messages, selectedSession, t]);
 
-  // Detect message changes and adjust scroll position (optimized)
-  useEffect(() => {
-    const prevLength = prevMessagesLength.current;
-    const currentLength = messages.length;
+  // Scroll management hook
+  const {
+    scrollContainerRef,
+    showScrollToBottom,
+    handleScrollToBottom,
+    handleLoadMoreWithScroll,
+  } = useMessageScrolling({
+    messages,
+    selectedSession,
+    pagination,
+    isLoading,
+    onLoadMore,
+  });
 
-    // Only execute when message length changed and not currently processing
-    if (prevLength !== currentLength && !isProcessingLoadMore.current) {
-      // Adjust scroll only when messages are added via load more
-      if (prevLength > 0 && currentLength > prevLength) {
-        isProcessingLoadMore.current = true;
-
-        if (scrollContainerRef.current) {
-          const scrollElement = scrollContainerRef.current;
-          const currentScrollHeight = scrollElement.scrollHeight;
-          const heightDifference =
-            currentScrollHeight - prevScrollHeight.current;
-
-          if (heightDifference > 0 && prevScrollTop.current >= 0) {
-            const newScrollTop = prevScrollTop.current + heightDifference;
-            scrollElement.scrollTop = newScrollTop;
-          }
-
-          prevScrollHeight.current = currentScrollHeight;
-
-          // Processing complete
-          requestAnimationFrame(() => {
-            if (scrollElement.style.overflow === "hidden") {
-              scrollElement.style.overflow = "auto";
-            }
-            isProcessingLoadMore.current = false;
-          });
-        } else {
-          isProcessingLoadMore.current = false;
-        }
-      }
-
-      prevMessagesLength.current = currentLength;
-    }
-  }, [messages.length]);
-
-  // Memoize message tree structure (performance optimization)
-  const { rootMessages, uniqueMessages } = useMemo(() => {
-    if (messages.length === 0) {
-      return { rootMessages: [], uniqueMessages: [] };
-    }
-
-    // Remove duplicates
-    const uniqueMessages = Array.from(
-      new Map(messages.map((msg) => [msg.uuid, msg])).values()
-    );
-
-    // Find root messages
-    const roots: UIMessage[] = [];
-    uniqueMessages.forEach((msg) => {
-      const parentUuid = getParentUuid(msg);
-      if (!parentUuid) {
-        roots.push(msg);
-      }
-    });
-
-    return { rootMessages: roots, uniqueMessages };
-  }, [messages]);
-
-  // Track previous session ID
-  const prevSessionIdRef = useRef<string | null>(null);
-
-  // Function to scroll to bottom
-  const scrollToBottom = useCallback(() => {
-    if (scrollContainerRef.current) {
-      const element = scrollContainerRef.current;
-      // Multiple attempts to ensure scrolling to bottom
-      const attemptScroll = (attempts = 0) => {
-        element.scrollTop = element.scrollHeight;
-        if (
-          attempts < 3 &&
-          element.scrollTop < element.scrollHeight - element.clientHeight - 10
-        ) {
-          setTimeout(() => attemptScroll(attempts + 1), SCROLL_ADJUSTMENT_DELAY);
-        }
-      };
-      attemptScroll();
-    }
-  }, []);
-
-  // Scroll to bottom when new session is selected (chat style)
-  useEffect(() => {
-    // Execute only when session actually changed and messages are loaded
-    if (
-      selectedSession &&
-      prevSessionIdRef.current !== selectedSession.session_id &&
-      messages.length > 0 &&
-      !isLoading
-    ) {
-      // Update previous session ID
-      prevSessionIdRef.current = selectedSession.session_id;
-
-      // Execute scroll after DOM is fully updated
-      setTimeout(() => scrollToBottom(), SESSION_SCROLL_DELAY);
-    }
-  }, [selectedSession, messages.length, isLoading, scrollToBottom]);
-
-  // Scroll to bottom when pagination is reset (new session or refresh)
-  useEffect(() => {
-    if (pagination.currentOffset === 0 && messages.length > 0 && !isLoading) {
-      setTimeout(() => scrollToBottom(), SCROLL_ADJUSTMENT_DELAY);
-    }
-  }, [pagination.currentOffset, messages.length, isLoading, scrollToBottom]);
-
-  // Chat style: maintain scroll position after loading previous messages
-  const prevScrollHeight = useRef<number>(0);
-  const prevScrollTop = useRef<number>(0);
-
-  // Optimize load more button (prevent duplicate calls)
-  const handleLoadMoreWithScroll = useCallback(() => {
-    const now = Date.now();
-
-    // Prevent duplicate clicks (block duplicate calls within 1 second)
-    if (
-      !pagination.hasMore ||
-      pagination.isLoadingMore ||
-      isLoading ||
-      isProcessingLoadMore.current ||
-      now - lastPaginationCall.current < 1000
-    ) {
-      return;
-    }
-
-    lastPaginationCall.current = now;
-
-    if (scrollContainerRef.current) {
-      const scrollElement = scrollContainerRef.current;
-      prevScrollTop.current = scrollElement.scrollTop;
-      prevScrollHeight.current = scrollElement.scrollHeight;
-      scrollElement.style.overflow = "hidden";
-    }
-
-    try {
-      onLoadMore();
-    } catch (error) {
-      console.error("Load more execution error:", error);
-      isProcessingLoadMore.current = false;
-      if (scrollContainerRef.current) {
-        scrollContainerRef.current.style.overflow = "auto";
-      }
-    }
-  }, [pagination.hasMore, pagination.isLoadingMore, isLoading, onLoadMore]);
-
-  // Add scroll position state
-  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
-
-  // Optimize scroll event (apply throttling)
-  useEffect(() => {
-    let throttleTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const handleScroll = () => {
-      if (throttleTimer) return;
-
-      throttleTimer = setTimeout(() => {
-        try {
-          if (scrollContainerRef.current) {
-            const { scrollTop, scrollHeight, clientHeight } =
-              scrollContainerRef.current;
-            const isNearBottom = scrollHeight - scrollTop - clientHeight < SCROLL_BOTTOM_THRESHOLD;
-            setShowScrollToBottom(!isNearBottom && messages.length > MIN_MESSAGES_FOR_SCROLL_BTN);
-          }
-        } catch (error) {
-          console.error("Scroll handler error:", error);
-        }
-        throttleTimer = null;
-      }, SCROLL_THROTTLE_DELAY);
-    };
-
-    const scrollElement = scrollContainerRef.current;
-    if (scrollElement) {
-      scrollElement.addEventListener("scroll", handleScroll, { passive: true });
-      handleScroll();
-
-      return () => {
-        if (throttleTimer) {
-          clearTimeout(throttleTimer);
-        }
-        scrollElement.removeEventListener("scroll", handleScroll);
-      };
-    }
-  }, [messages.length]);
+  // Message tree hook
+  const { rootMessages, uniqueMessages, renderMessageTree } = useMessageTree(messages);
 
   if (isLoading && messages.length === 0) {
     return (
@@ -720,54 +293,11 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     );
   }
 
-  const renderMessageTree = (
-    message: UIMessage,
-    depth = 0,
-    visitedIds = new Set<string>(),
-    keyPrefix = "",
-    sessionFilePath?: string
-  ): React.ReactNode[] => {
-    // Prevent circular references
-    if (visitedIds.has(message.uuid)) {
-      console.warn(`Circular reference detected for message: ${message.uuid}`);
-      return [];
-    }
-
-    visitedIds.add(message.uuid);
-    const children = messages.filter((m) => {
-      const parentUuid = getParentUuid(m);
-      return parentUuid === message.uuid;
-    });
-
-    // Generate unique key
-    const uniqueKey = keyPrefix ? `${keyPrefix}-${message.uuid}` : message.uuid;
-
-    // Add current message first, then child messages
-    const result: React.ReactNode[] = [
-      <UIMessageNode
-        key={uniqueKey}
-        message={message}
-        depth={depth}
-        providerName={providerName}
-        sessionFilePath={selectedSession?.file_path}
-        allMessages={messages}
-        onExtractRange={handleExtractRange}
-      />,
-    ];
-
-    // Recursively add child messages (increase depth)
-    children.forEach((child, index) => {
-      const childNodes = renderMessageTree(
-        child,
-        depth + 1,
-        new Set(visitedIds),
-        `${uniqueKey}-child-${index}`,
-        sessionFilePath
-      );
-      result.push(...childNodes);
-    });
-
-    return result;
+  // Shared props for MessageNode (everything except message, depth, sessionFilePath)
+  const messageNodeProps = {
+    providerName,
+    allMessages: messages,
+    onExtractRange: handleExtractRange,
   };
 
   return (
@@ -1003,11 +533,20 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
               if (rootMessages.length > 0) {
                 // Render tree structure
                 return rootMessages
-                  .map((message) => renderMessageTree(message, 0, new Set(), "", selectedSession?.file_path))
+                  .map((message) =>
+                    renderMessageTree(
+                      message,
+                      0,
+                      new Set(),
+                      "",
+                      selectedSession?.file_path,
+                      MessageNode,
+                      messageNodeProps
+                    )
+                  )
                   .flat();
               } else {
                 // Render flat structure
-
                 return uniqueMessages.map((message, index) => {
                   // Generate unique key: use index and timestamp if UUID is missing or duplicated
                   const uniqueKey =
@@ -1016,7 +555,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                       : `fallback-${index}-${message.timestamp}-${message.type}`;
 
                   return (
-                    <UIMessageNode
+                    <MessageNode
                       key={uniqueKey}
                       message={message}
                       depth={0}
@@ -1067,7 +606,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
         {/* Floating scroll to bottom button */}
         {showScrollToBottom && (
           <button
-            onClick={scrollToBottom}
+            onClick={handleScrollToBottom}
             className={cn(
               "fixed bottom-10 p-3 rounded-full shadow-lg transition-all duration-300 z-50",
               "bg-blue-500/50 hover:bg-blue-600 text-white",
