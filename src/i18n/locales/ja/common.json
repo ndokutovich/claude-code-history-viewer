@@ -512,6 +512,13 @@
         "130": "最大"
       }
     },
+    "provider": {
+      "claude": "Claude Code",
+      "codex": "Codex CLI",
+      "opencode": "OpenCode",
+      "cursor": "Cursor IDE",
+      "gemini": "Gemini CLI"
+    },
     "show": "表示",
     "unknown": "不明"
   }

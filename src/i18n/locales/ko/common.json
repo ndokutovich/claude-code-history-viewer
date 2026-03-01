@@ -512,6 +512,13 @@
         "130": "가장 크게"
       }
     },
+    "provider": {
+      "claude": "Claude Code",
+      "codex": "Codex CLI",
+      "opencode": "OpenCode",
+      "cursor": "Cursor IDE",
+      "gemini": "Gemini CLI"
+    },
     "show": "표시",
     "unknown": "알 수 없음"
   }

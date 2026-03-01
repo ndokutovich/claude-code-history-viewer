@@ -56,7 +56,7 @@ export const initialProviderState: ProviderSliceState = {
   providerHealthStatus: {},
   detectedProviders: [],
   isDetectingProviders: false,
-  activeProviderIds: [],
+  activeProviderIds: ['claude-code'],
 };
 
 // ============================================================================

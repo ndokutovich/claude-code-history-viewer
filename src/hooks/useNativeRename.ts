@@ -62,9 +62,10 @@ export const useNativeRename = (): UseNativeRenameReturn => {
 
       try {
         // Dispatch to correct backend command based on file type:
-        // - .json  → OpenCode session (JSON file with "title" field)
+        // - .json inside storage/session/ → OpenCode session (JSON file with "title" field)
         // - .jsonl → Claude Code session (JSONL file with bracketed prefix)
-        const isOpenCode = filePath.endsWith('.json');
+        const isOpenCode = filePath.endsWith('.json') &&
+          (filePath.includes('/storage/session/') || filePath.includes('\\storage\\session\\'));
         const command = isOpenCode
           ? "rename_opencode_session_native"
           : "rename_session_native";

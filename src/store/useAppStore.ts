@@ -335,8 +335,6 @@ interface AppStore extends AppState,
   appendToSession: (sessionPath: string, messages: MessageInput[]) => Promise<number>;
 
   // Provider-aware helpers
-  /** List of active provider IDs (subset of all configured providers) */
-  activeProviders: string[];
   /** Returns a human-readable display name for a session, or undefined if not found */
   getSessionDisplayName: (sessionId: string, fallbackSummary?: string) => string | undefined;
 }
@@ -420,9 +418,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   // Error state
   error: null,
-
-  // Provider state
-  activeProviders: ["claude"], // Default to Claude provider
 
   // Actions
   initializeApp: async () => {
@@ -1801,7 +1796,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Provider helpers
   // ============================================================
   getSessionDisplayName: (sessionId: string, fallbackSummary?: string) => {
-    const { sessions } = get();
+    const { sessions, sessionMetadataCache } = get();
+    const cachedName = sessionMetadataCache[sessionId]?.custom_name;
+    if (cachedName) {
+      return cachedName;
+    }
     const session = sessions.find(
       (s) => s.actual_session_id === sessionId || s.session_id === sessionId
     );
