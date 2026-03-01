@@ -8,6 +8,12 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 
 **Languages**: [English](README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) | [中文 (简体)](README.zh-CN.md) | [中文 (繁體)](README.zh-TW.md) | [Русский](README.ru.md)
 
+**Download latest release**:
+[Windows (.exe)](https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.1_x64-setup.exe) |
+[macOS (.dmg)](https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.1_universal.dmg) |
+[Linux (.AppImage)](https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.1_amd64.AppImage) |
+[All releases](https://github.com/ndokutovich/claude-code-history-viewer/releases)
+
 > ⚠️ **Beta software** - Things might break or change. Report issues on [GitHub](https://github.com/ndokutovich/claude-code-history-viewer/issues).
 
 ## Why this exists
@@ -40,6 +46,19 @@ Per-project token usage breakdown and session-level analysis
 ### Demo
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## What's New in v1.9.1
+
+**Upstream feature port**:
+- Consistent markdown rendering across all content renderers with rehypeSanitize for XSS protection
+- Shared `Markdown` component extracted for unified rendering config
+- AnsiText applied to all terminal output paths (CommandRenderer, stdout/stderr)
+- Updater UX improved with manual restart fallback state
+- Accessibility: nav semantics and locale guidance for zh-CN, zh-TW, ru
+
+**278 Unit Tests** (up from 211): new coverage for markdown rendering and ANSI integration.
+
+---
 
 ## What's New in v1.9.0
 
