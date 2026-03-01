@@ -5,7 +5,7 @@ mod utils;
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::{
     claude_settings::*, codex::*, cursor::*, edits::*, feedback::*, files::*, gemini::*,
-    mcp_presets::*, project::*, rename::*, resume::*, secure_update::*, session::*,
+    mcp_presets::*, opencode::*, project::*, rename::*, resume::*, secure_update::*, session::*,
     session_writer::*, settings::*, stats::*, unified_presets::*, update::*, watcher::*,
 };
 use std::sync::Mutex;
@@ -77,6 +77,12 @@ pub fn run() {
             scan_codex_projects,
             load_codex_sessions,
             load_codex_messages,
+            // OpenCode support (v1.9.0)
+            get_opencode_path,
+            validate_opencode_folder,
+            scan_opencode_projects,
+            load_opencode_sessions,
+            load_opencode_messages,
             // Global stats (upstream-enhanced)
             get_global_stats_summary,
             // Git log for Session Board

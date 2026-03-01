@@ -18,4 +18,5 @@ pub mod settings; // Settings presets
 pub mod stats;
 pub mod unified_presets; // Unified presets (settings + MCP)
 pub mod update;
+pub mod opencode; // v1.9.0 - OpenCode support
 pub mod watcher; // File watcher for real-time session detection

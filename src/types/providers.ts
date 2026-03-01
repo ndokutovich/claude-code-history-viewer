@@ -87,8 +87,9 @@ export interface DetectionPattern {
 export enum ProviderID {
   CLAUDE_CODE = 'claude-code',
   CURSOR = 'cursor',
-  GEMINI = 'gemini', // v1.7.0 - Gemini CLI support
-  CODEX = 'codex',   // v1.8.0 - Codex CLI support
+  GEMINI = 'gemini',    // v1.7.0 - Gemini CLI support
+  CODEX = 'codex',     // v1.8.0 - Codex CLI support
+  OPENCODE = 'opencode', // v1.9.0 - OpenCode support
   COPILOT = 'copilot',
   CLINE = 'cline',
   AIDER = 'aider',

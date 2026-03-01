@@ -5,8 +5,9 @@ import type { IConversationAdapter } from '../base/IAdapter';
 import type { DetectionScore, ProviderDefinition } from '../../types/providers';
 import { ClaudeCodeAdapter } from '../providers/ClaudeCodeAdapter';
 import { CursorAdapter } from '../providers/CursorAdapter';
-import { GeminiAdapter } from '../providers/GeminiAdapter'; // v1.7.0 - Gemini CLI support
-import { CodexAdapter } from '../providers/CodexAdapter';   // v1.8.0 - Codex CLI support
+import { GeminiAdapter } from '../providers/GeminiAdapter';     // v1.7.0 - Gemini CLI support
+import { CodexAdapter } from '../providers/CodexAdapter';       // v1.8.0 - Codex CLI support
+import { OpenCodeAdapter } from '../providers/OpenCodeAdapter'; // v1.9.0 - OpenCode support
 
 // ============================================================================
 // DETECTION RESULT
@@ -86,6 +87,7 @@ export class AdapterRegistry {
       new CursorAdapter(),     // ✅ v2.0.0 COMPLETE
       new GeminiAdapter(),     // ✅ v1.7.0 - Gemini CLI support
       new CodexAdapter(),      // ✅ v1.8.0 - Codex CLI support
+      new OpenCodeAdapter(),   // ✅ v1.9.0 - OpenCode support
     ];
 
     const failures: Array<{ id: string; error: Error }> = [];
