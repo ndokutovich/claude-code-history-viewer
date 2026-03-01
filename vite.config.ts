@@ -164,6 +164,12 @@ export default defineConfig(({ mode }) => ({
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
     css: true,
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.claude/worktrees/**',
+      '**/e2e/**',
+    ],
     server: {
       deps: {
         inline: ['@tauri-apps/plugin-http', '@tauri-apps/plugin-updater', '@tauri-apps/api']
