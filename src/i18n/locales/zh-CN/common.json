@@ -473,5 +473,34 @@
   "globalSearch.unknownProject": "未知项目",
   "common.settings.filter.showSystemMessages": "显示系统消息",
   "common.settings.filter.title": "过滤",
-  "common.errorOccurred": "发生错误"
+  "common.errorOccurred": "发生错误",
+  "common": {
+    "add": "添加",
+    "cancel": "取消",
+    "commandPalette": "命令面板",
+    "completed": "已完成",
+    "dash": "仪表盘",
+    "delete": "删除",
+    "duplicate": "复制",
+    "edit": "编辑",
+    "errorOccurred": "发生错误",
+    "hide": "隐藏",
+    "id": "ID",
+    "input": "输入",
+    "loading": "加载中",
+    "noDataAvailable": "暂无数据",
+    "pending": "待处理",
+    "refresh": "刷新",
+    "remove": "移除",
+    "retry": "重试",
+    "save": "保存",
+    "settings": {
+      "filter": {
+        "showSystemMessages": "显示系统消息",
+        "title": "过滤"
+      }
+    },
+    "show": "显示",
+    "unknown": "未知"
+  }
 }

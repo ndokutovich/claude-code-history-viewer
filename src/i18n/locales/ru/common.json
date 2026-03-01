@@ -473,5 +473,34 @@
   "globalSearch.unknownProject": "Неизвестный проект",
   "common.settings.filter.showSystemMessages": "Показать системные сообщения",
   "common.settings.filter.title": "Фильтр",
-  "common.errorOccurred": "Произошла ошибка"
+  "common.errorOccurred": "Произошла ошибка",
+  "common": {
+    "add": "Добавить",
+    "cancel": "Отмена",
+    "commandPalette": "Палитра команд",
+    "completed": "Завершено",
+    "dash": "Панель",
+    "delete": "Удалить",
+    "duplicate": "Дублировать",
+    "edit": "Редактировать",
+    "errorOccurred": "Произошла ошибка",
+    "hide": "Скрыть",
+    "id": "ID",
+    "input": "Ввод",
+    "loading": "Загрузка",
+    "noDataAvailable": "Нет данных",
+    "pending": "Ожидание",
+    "refresh": "Обновить",
+    "remove": "Удалить",
+    "retry": "Повторить",
+    "save": "Сохранить",
+    "settings": {
+      "filter": {
+        "showSystemMessages": "Показать системные сообщения",
+        "title": "Фильтр"
+      }
+    },
+    "show": "Показать",
+    "unknown": "Неизвестно"
+  }
 }

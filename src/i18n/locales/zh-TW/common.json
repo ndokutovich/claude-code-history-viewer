@@ -482,5 +482,34 @@
   "globalSearch.unknownProject": "未知專案",
   "common.settings.filter.showSystemMessages": "顯示系統訊息",
   "common.settings.filter.title": "篩選",
-  "common.errorOccurred": "發生錯誤"
+  "common.errorOccurred": "發生錯誤",
+  "common": {
+    "add": "新增",
+    "cancel": "取消",
+    "commandPalette": "命令面板",
+    "completed": "已完成",
+    "dash": "儀表板",
+    "delete": "刪除",
+    "duplicate": "複製",
+    "edit": "編輯",
+    "errorOccurred": "發生錯誤",
+    "hide": "隱藏",
+    "id": "ID",
+    "input": "輸入",
+    "loading": "載入中",
+    "noDataAvailable": "暫無資料",
+    "pending": "待處理",
+    "refresh": "重新整理",
+    "remove": "移除",
+    "retry": "重試",
+    "save": "儲存",
+    "settings": {
+      "filter": {
+        "showSystemMessages": "顯示系統訊息",
+        "title": "篩選"
+      }
+    },
+    "show": "顯示",
+    "unknown": "未知"
+  }
 }

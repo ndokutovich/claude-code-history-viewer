@@ -473,5 +473,34 @@
   "globalSearch.unknownProject": "Unknown Project",
   "common.settings.filter.showSystemMessages": "Show System Messages",
   "common.settings.filter.title": "Filter",
-  "common.errorOccurred": "Error occurred"
+  "common.errorOccurred": "Error occurred",
+  "common": {
+    "add": "Add",
+    "cancel": "Cancel",
+    "commandPalette": "Command Palette",
+    "completed": "Completed",
+    "dash": "Dash",
+    "delete": "Delete",
+    "duplicate": "Duplicate",
+    "edit": "Edit",
+    "errorOccurred": "Error occurred",
+    "hide": "Hide",
+    "id": "ID",
+    "input": "Input",
+    "loading": "Loading",
+    "noDataAvailable": "No Data Available",
+    "pending": "Pending",
+    "refresh": "Refresh",
+    "remove": "Remove",
+    "retry": "Retry",
+    "save": "Save",
+    "settings": {
+      "filter": {
+        "showSystemMessages": "Show System Messages",
+        "title": "Filter"
+      }
+    },
+    "show": "Show",
+    "unknown": "Unknown"
+  }
 }
