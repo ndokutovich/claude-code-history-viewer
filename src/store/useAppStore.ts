@@ -55,7 +55,7 @@ import { initialGlobalStatsState } from "./slices/globalStatsSlice";
 import type { MessageSliceState, MessageSliceActions } from "./slices/messageSlice";
 import { initialMessageState } from "./slices/messageSlice";
 import type { MetadataSliceState, MetadataSliceActions } from "./slices/metadataSlice";
-import { initialMetadataState } from "./slices/metadataSlice";
+import { initialMetadataState, createMetadataActions } from "./slices/metadataSlice";
 import type { NavigatorSliceState, NavigatorSliceActions } from "./slices/navigatorSlice";
 import { initialNavigatorState } from "./slices/navigatorSlice";
 import type { ProjectSliceState, ProjectSliceActions } from "./slices/projectSlice";
@@ -1936,11 +1936,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   clearMessageHighlights: () => set({ messageHighlightIds: [] }),
 
   // ============================================================
-  // Metadata slice actions
+  // Metadata slice actions (v1.9.0 - real persistence via Rust backend)
   // ============================================================
-  setSessionMetadataCache: (cache) => set({ sessionMetadataCache: cache }),
-  setIsSavingMetadata: (saving) => set({ isSavingMetadata: saving }),
-  clearMetadataCache: () => set({ sessionMetadataCache: {} }),
+  ...createMetadataActions(
+    (partial) => set(partial as Parameters<typeof set>[0]),
+    () => get() as MetadataSliceState,
+  ),
 
   // ============================================================
   // Navigator slice actions
@@ -1961,6 +1962,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // ============================================================
   setDefaultProviderId: (id) => set({ defaultProviderId: id }),
   setProviderHealthStatus: (status) => set({ providerHealthStatus: status }),
+  setDetectedProviders: (providers) => set({ detectedProviders: providers }),
+  setIsDetectingProviders: (loading) => set({ isDetectingProviders: loading }),
+  setActiveProviderIds: (ids) => set({ activeProviderIds: ids }),
+  detectProviders: async () => {
+    set({ isDetectingProviders: true });
+    try {
+      const { invoke: tauriInvoke } = await import('@tauri-apps/api/core');
+      const providers = await tauriInvoke<import('./slices/providerSlice').ProviderSlice['detectedProviders'][number][]>('detect_providers');
+      const availableIds = providers.filter((p) => p.is_available).map((p) => p.id);
+      set({ detectedProviders: providers, activeProviderIds: availableIds });
+    } catch (err) {
+      console.error('[useAppStore] detect_providers failed:', err);
+    } finally {
+      set({ isDetectingProviders: false });
+    }
+  },
 
   // ============================================================
   // Watcher slice actions

@@ -5,8 +5,9 @@ mod utils;
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::{
     claude_settings::*, codex::*, cursor::*, edits::*, feedback::*, files::*, gemini::*,
-    mcp_presets::*, opencode::*, project::*, rename::*, resume::*, secure_update::*, session::*,
-    session_writer::*, settings::*, stats::*, unified_presets::*, update::*, watcher::*,
+    mcp_presets::*, metadata::*, multi_provider::*, opencode::*, project::*, rename::*,
+    resume::*, secure_update::*, session::*, session_writer::*, settings::*, stats::*,
+    unified_presets::*, update::*, watcher::*,
 };
 use std::sync::Mutex;
 
@@ -15,6 +16,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(GeminiResolverState(Mutex::new(GeminiHashResolver::new())))
         .manage(WatcherMap::default())
+        .manage(MetadataState::default())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::default().build())
@@ -125,7 +127,27 @@ pub fn run() {
             save_unified_preset,
             load_unified_presets,
             get_unified_preset,
-            delete_unified_preset
+            delete_unified_preset,
+            // Multi-provider unified commands (v1.9.0)
+            detect_providers,
+            scan_all_projects,
+            load_provider_sessions,
+            load_provider_messages,
+            search_all_providers,
+            // Metadata persistence (v1.9.0)
+            get_session_metadata,
+            set_session_custom_name,
+            set_session_starred,
+            set_session_has_claude_code_name,
+            add_session_tag,
+            remove_session_tag,
+            set_session_notes,
+            get_project_metadata,
+            set_project_hidden,
+            set_project_custom_name,
+            get_all_metadata,
+            clear_all_metadata,
+            load_user_metadata
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -382,6 +382,128 @@ pub struct UserSettings {
 }
 
 // ============================================================================
+// METADATA PERSISTENCE MODELS (v1.9.0)
+// ============================================================================
+
+/// Per-session user metadata persisted to ~/.claude-history-viewer/metadata.json
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionMeta {
+    pub session_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_name: Option<String>,
+    #[serde(default)]
+    pub starred: bool,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
+    /// Whether to display the real Claude-generated session name instead of custom_name
+    #[serde(default)]
+    pub has_claude_code_name: bool,
+    /// ISO 8601 timestamp: when this metadata entry was first created
+    pub created_at: String,
+    /// ISO 8601 timestamp: last time any field was updated
+    pub updated_at: String,
+}
+
+/// Per-project user metadata persisted alongside SessionMeta
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectMeta {
+    pub path: String,
+    #[serde(default)]
+    pub hidden: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_name: Option<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    pub updated_at: String,
+}
+
+/// Top-level container for all persisted user metadata
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AppMetadata {
+    #[serde(default)]
+    pub sessions: std::collections::HashMap<String, SessionMeta>,
+    #[serde(default)]
+    pub projects: std::collections::HashMap<String, ProjectMeta>,
+    #[serde(default = "default_metadata_version")]
+    pub version: u32,
+}
+
+fn default_metadata_version() -> u32 {
+    1
+}
+
+// Legacy compatibility types referenced from upstream metadata.rs
+/// Upstream-compatible alias – used by load_user_metadata / update_session_metadata
+pub type UserMetadata = AppMetadata;
+
+/// Upstream-compatible thin wrapper for session updates
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SessionMetadata {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_name: Option<String>,
+    #[serde(default)]
+    pub starred: bool,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
+    #[serde(default)]
+    pub has_claude_code_name: bool,
+}
+
+impl SessionMetadata {
+    /// Returns true when no field carries any useful data (used to decide whether to delete)
+    pub fn is_empty(&self) -> bool {
+        self.custom_name.is_none()
+            && !self.starred
+            && self.tags.is_empty()
+            && self.notes.is_none()
+            && !self.has_claude_code_name
+    }
+}
+
+/// Upstream-compatible thin wrapper for project updates
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ProjectMetadata {
+    #[serde(default)]
+    pub hidden: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_name: Option<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+}
+
+impl ProjectMetadata {
+    /// Returns true when no field carries any useful data (used to decide whether to delete)
+    pub fn is_empty(&self) -> bool {
+        !self.hidden && self.custom_name.is_none() && self.tags.is_empty()
+    }
+}
+
+impl AppMetadata {
+    pub fn new() -> Self {
+        Self {
+            sessions: std::collections::HashMap::new(),
+            projects: std::collections::HashMap::new(),
+            version: 1,
+        }
+    }
+
+    pub fn is_project_hidden(&self, path: &str) -> bool {
+        self.projects
+            .get(path)
+            .map(|p| p.hidden)
+            .unwrap_or(false)
+    }
+
+    pub fn get_session(&self, session_id: &str) -> Option<&SessionMeta> {
+        self.sessions.get(session_id)
+    }
+}
+
+// ============================================================================
 // RECENT FILE EDIT MODELS (Recent Edits Viewer)
 // ============================================================================
 
