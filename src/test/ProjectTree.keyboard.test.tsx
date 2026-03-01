@@ -130,21 +130,6 @@ function makeProject(overrides: Partial<UIProject> = {}): UIProject {
   } as UIProject;
 }
 
-function makeSession(overrides: Partial<UISession> = {}): UISession {
-  return {
-    session_id: "sess-1",
-    actual_session_id: "sess-1",
-    file_path: "/projects/alpha/sess-1.jsonl",
-    last_modified: new Date().toISOString(),
-    message_count: 5,
-    has_tool_use: false,
-    has_errors: false,
-    is_problematic: false,
-    summary: "Test session",
-    ...overrides,
-  } as UISession;
-}
-
 const defaultProps = {
   sessions: [] as UISession[],
   sessionsByProject: {} as Record<string, UISession[]>,

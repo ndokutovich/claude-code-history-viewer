@@ -33,7 +33,7 @@ import {
 } from "../types";
 import { adapterRegistry } from "@/adapters/registry/AdapterRegistry";
 import { useSourceStore } from "./useSourceStore";
-import type { SearchState, SearchFilterType, SearchMatch } from "./slices/types";
+import type { SearchFilterType, SearchMatch } from "./slices/types";
 import { createEmptySearchState } from "./slices/types";
 import { searchMessages as searchMessagesFromIndex, buildSearchIndex, clearSearchIndex } from "../utils/searchIndex";
 import type { NavigationSliceState, NavigationSliceActions, ViewPreferences } from "./slices/navigationSlice";

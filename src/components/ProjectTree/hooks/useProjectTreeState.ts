@@ -25,7 +25,7 @@ export interface ProjectTreeState {
     filePath: string;
     currentName: string;
   } | null;
-  sessionContextMenuRef: React.RefObject<HTMLDivElement>;
+  sessionContextMenuRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export interface ProjectTreeActions {
