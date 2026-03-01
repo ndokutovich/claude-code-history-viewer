@@ -504,9 +504,21 @@
     "retry": "重試",
     "save": "儲存",
     "settings": {
+      "accessibility": {
+        "title": "無障礙",
+        "highContrast": "高對比度"
+      },
       "filter": {
         "showSystemMessages": "顯示系統訊息",
         "title": "篩選"
+      },
+      "font": {
+        "title": "字型大小",
+        "90": "小",
+        "100": "正常",
+        "110": "大",
+        "120": "更大",
+        "130": "最大"
       }
     },
     "show": "顯示",

@@ -70,7 +70,22 @@ function App() {
     loadMoreMessages,
     refreshCurrentSession,
     setLoadingProgress,
+    fontScale,
+    highContrast,
   } = useAppStore();
+
+  // Apply font scale and high contrast accessibility settings to the document root
+  useEffect(() => {
+    document.documentElement.style.setProperty("--font-scale", String(fontScale / 100));
+  }, [fontScale]);
+
+  useEffect(() => {
+    if (highContrast) {
+      document.documentElement.classList.add("high-contrast");
+    } else {
+      document.documentElement.classList.remove("high-contrast");
+    }
+  }, [highContrast]);
 
   // Filter messages based on active filters
   const filteredMessages = useMemo(() => {

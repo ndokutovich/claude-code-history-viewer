@@ -495,9 +495,21 @@
     "retry": "Retry",
     "save": "Save",
     "settings": {
+      "accessibility": {
+        "title": "Accessibility",
+        "highContrast": "High Contrast"
+      },
       "filter": {
         "showSystemMessages": "Show System Messages",
         "title": "Filter"
+      },
+      "font": {
+        "title": "Font Size",
+        "90": "Small",
+        "100": "Normal",
+        "110": "Large",
+        "120": "Larger",
+        "130": "Largest"
       }
     },
     "show": "Show",

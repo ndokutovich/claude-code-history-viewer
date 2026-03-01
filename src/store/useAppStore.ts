@@ -339,6 +339,12 @@ interface AppStore extends AppState {
   metricMode: MetricMode;
   setMetricMode: (mode: MetricMode) => void;
 
+  // Accessibility settings
+  fontScale: number; // 90 | 100 | 110 | 120 | 130 (percent)
+  highContrast: boolean;
+  setFontScale: (scale: number) => void;
+  setHighContrast: (value: boolean) => void;
+
   // In-session search (KakaoTalk-style navigation)
   sessionSearch: SearchState;
   setSessionSearchQuery: (query: string) => void;
@@ -453,6 +459,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   // Metric mode
   metricMode: "tokens" as MetricMode,
+
+  // Accessibility settings
+  fontScale: 100,
+  highContrast: false,
 
   // In-session search
   sessionSearch: createEmptySearchState(),
@@ -1850,6 +1860,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Metric mode
   // ============================================================
   setMetricMode: (mode: MetricMode) => set({ metricMode: mode }),
+
+  // ============================================================
+  // Accessibility settings
+  // ============================================================
+  setFontScale: (scale: number) => set({ fontScale: scale }),
+  setHighContrast: (value: boolean) => set({ highContrast: value }),
 
   // ============================================================
   // In-session search (KakaoTalk-style navigation)

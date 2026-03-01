@@ -495,9 +495,21 @@
     "retry": "다시 시도",
     "save": "저장",
     "settings": {
+      "accessibility": {
+        "title": "접근성",
+        "highContrast": "고대비 모드"
+      },
       "filter": {
         "showSystemMessages": "시스템 메시지 표시",
         "title": "필터"
+      },
+      "font": {
+        "title": "글꼴 크기",
+        "90": "작게",
+        "100": "보통",
+        "110": "크게",
+        "120": "더 크게",
+        "130": "가장 크게"
       }
     },
     "show": "표시",

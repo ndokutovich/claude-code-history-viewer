@@ -495,9 +495,21 @@
     "retry": "重试",
     "save": "保存",
     "settings": {
+      "accessibility": {
+        "title": "辅助功能",
+        "highContrast": "高对比度"
+      },
       "filter": {
         "showSystemMessages": "显示系统消息",
         "title": "过滤"
+      },
+      "font": {
+        "title": "字体大小",
+        "90": "小",
+        "100": "正常",
+        "110": "大",
+        "120": "更大",
+        "130": "最大"
       }
     },
     "show": "显示",
