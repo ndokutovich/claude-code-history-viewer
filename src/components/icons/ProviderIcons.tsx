@@ -1,5 +1,5 @@
 import React from "react";
-import { Code2, Sparkles, Zap } from "lucide-react";
+import { Braces, Code2, Sparkles, Zap } from "lucide-react";
 
 interface ProviderIconProps {
   providerId: string;
@@ -77,6 +77,13 @@ export const CodexIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 /**
+ * OpenCode Icon - Amber/Yellow color scheme
+ */
+export const OpenCodeIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <Braces className={className} />
+);
+
+/**
  * Generic provider icon (fallback)
  */
 export const GenericProviderIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -96,6 +103,8 @@ export const ProviderIcon: React.FC<ProviderIconProps> = ({ providerId, classNam
       return <GeminiIcon className={className} />;
     case "codex":
       return <CodexIcon className={className} />;
+    case "opencode":
+      return <OpenCodeIcon className={className} />;
     default:
       return <GenericProviderIcon className={className} />;
   }
@@ -114,6 +123,8 @@ export const getProviderColorClass = (providerId?: string): string => {
       return "text-teal-500";
     case "codex":
       return "text-orange-500";
+    case "opencode":
+      return "text-amber-500";
     default:
       return "text-gray-500";
   }

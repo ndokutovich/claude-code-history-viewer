@@ -24,6 +24,9 @@ export interface UseAnalyticsReturn {
     switchToAnalytics: () => Promise<void>;
     switchToSearch: () => Promise<void>;
     switchToFiles: () => Promise<void>;
+    switchToBoard: () => Promise<void>;
+    switchToRecentEdits: () => Promise<void>;
+    switchToSettings: () => Promise<void>;
     refreshAnalytics: () => Promise<void>;
     clearAll: () => void;
   };
@@ -35,6 +38,9 @@ export interface UseAnalyticsReturn {
     isMessagesView: boolean;
     isSearchView: boolean;
     isFilesView: boolean;
+    isBoardView: boolean;
+    isRecentEditsView: boolean;
+    isSettingsView: boolean;
     hasAnyError: boolean;
     isAnyLoading: boolean;
   };
@@ -108,6 +114,33 @@ export const useAnalytics = (): UseAnalyticsReturn => {
   }, [selectedProject, switchView]);
 
   /**
+   * Switch to session board view
+   */
+  const switchToBoard = useCallback(async () => {
+    if (!selectedProject) {
+      throw new Error("No project selected.");
+    }
+    await switchView("board");
+  }, [selectedProject, switchView]);
+
+  /**
+   * Switch to recent edits view
+   */
+  const switchToRecentEdits = useCallback(async () => {
+    if (!selectedProject) {
+      throw new Error("No project selected.");
+    }
+    await switchView("recentEdits");
+  }, [selectedProject, switchView]);
+
+  /**
+   * Switch to settings view
+   */
+  const switchToSettings = useCallback(async () => {
+    await switchView("settings");
+  }, [switchView]);
+
+  /**
    * Refresh analytics data for the current view
    */
   const refreshAnalytics = useCallback(async () => {
@@ -133,6 +166,9 @@ export const useAnalytics = (): UseAnalyticsReturn => {
       isMessagesView: currentView === "messages",
       isSearchView: currentView === "search",
       isFilesView: currentView === "files",
+      isBoardView: currentView === "board",
+      isRecentEditsView: currentView === "recentEdits",
+      isSettingsView: currentView === "settings",
       hasAnyError: !!(projectSummaryError || sessionComparisonError),
       isAnyLoading:
         isLoadingProjectSummary ||
@@ -157,6 +193,9 @@ export const useAnalytics = (): UseAnalyticsReturn => {
       switchToAnalytics,
       switchToSearch,
       switchToFiles,
+      switchToBoard,
+      switchToRecentEdits,
+      switchToSettings,
       refreshAnalytics,
       clearAll,
     },

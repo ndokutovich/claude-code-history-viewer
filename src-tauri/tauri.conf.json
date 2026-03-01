@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Claude Code History Viewer",
+  "productName": "AI Code History Viewer",
   "version": "1.8.2",
   "identifier": "com.claude.history-viewer",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Claude Code & Cursor IDE History Viewer",
+        "title": "AI Code History Viewer — Claude, Cursor, Gemini, Codex",
         "width": 1280,
         "height": 800,
         "minWidth": 900,
@@ -31,7 +31,7 @@
         "http-requests"
       ]
     },
-    "withGlobalTauri": true
+    "withGlobalTauri": false
   },
   "plugins": {
     "fs": {

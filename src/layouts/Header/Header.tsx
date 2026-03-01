@@ -8,6 +8,9 @@ import {
   Database,
   FileText,
   PlusCircle,
+  Columns,
+  Clock,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -67,6 +70,7 @@ export const Header = () => {
 
   return (
     <header
+      role="banner"
       className={cn(
         "px-6 py-4 border-b",
         COLORS.ui.background.secondary,
@@ -90,7 +94,10 @@ export const Header = () => {
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <nav
+          aria-label={t("nav.toolbarLabel", "Application toolbar")}
+          className="flex items-center space-x-4"
+        >
           <div className="flex items-center space-x-2">
             {/* Sources Button */}
             <TooltipButton
@@ -207,6 +214,46 @@ export const Header = () => {
                     className={cn("w-5 h-5", COLORS.ui.text.primary)}
                   />
                 </TooltipButton>
+
+                {/* Session Board */}
+                <TooltipButton
+                  content={t("sessionBoard")}
+                  onClick={() => {
+                    if (computed.isBoardView) {
+                      analyticsActions.switchToMessages();
+                    } else {
+                      analyticsActions.switchToBoard();
+                    }
+                  }}
+                  className={cn(
+                    "p-2 rounded-lg transition-colors",
+                    computed.isBoardView
+                      ? COLORS.semantic.info.bgDark
+                      : COLORS.ui.interactive.hover
+                  )}
+                >
+                  <Columns className={cn("w-5 h-5", COLORS.ui.text.primary)} />
+                </TooltipButton>
+
+                {/* Recent Edits */}
+                <TooltipButton
+                  content={t("recentEdits")}
+                  onClick={() => {
+                    if (computed.isRecentEditsView) {
+                      analyticsActions.switchToMessages();
+                    } else {
+                      analyticsActions.switchToRecentEdits();
+                    }
+                  }}
+                  className={cn(
+                    "p-2 rounded-lg transition-colors",
+                    computed.isRecentEditsView
+                      ? COLORS.tools.file.bg
+                      : COLORS.ui.interactive.hover
+                  )}
+                >
+                  <Clock className={cn("w-5 h-5", COLORS.ui.text.primary)} />
+                </TooltipButton>
               </>
             )}
 
@@ -258,10 +305,30 @@ export const Header = () => {
               </>
             )}
 
+            {/* Settings Manager */}
+            <TooltipButton
+              content={t("settingsManager")}
+              onClick={() => {
+                if (computed.isSettingsView) {
+                  analyticsActions.switchToMessages();
+                } else {
+                  analyticsActions.switchToSettings();
+                }
+              }}
+              className={cn(
+                "p-2 rounded-lg transition-colors",
+                computed.isSettingsView
+                  ? COLORS.semantic.info.bgDark
+                  : COLORS.ui.interactive.hover
+              )}
+            >
+              <SlidersHorizontal className={cn("w-5 h-5", COLORS.ui.text.primary)} />
+            </TooltipButton>
+
             {/* Dropdown here again */}
             <SettingDropdown />
           </div>
-        </div>
+        </nav>
       </div>
 
       {/* Sources Modal */}

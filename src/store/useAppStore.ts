@@ -9,6 +9,7 @@ import {
   type UIMessage,
   type SearchFilters,
   type SessionTokenStats,
+  type PaginatedTokenStats,
   type ProjectStatsSummary,
   type SessionComparison,
   type AppError,
@@ -28,9 +29,41 @@ import {
   type CreateSessionRequest,
   type CreateSessionResponse,
   type MessageInput,
+  type MetricMode,
 } from "../types";
 import { adapterRegistry } from "@/adapters/registry/AdapterRegistry";
 import { useSourceStore } from "./useSourceStore";
+import type { SearchFilterType, SearchMatch } from "./slices/types";
+import { createEmptySearchState } from "./slices/types";
+import { searchMessages as searchMessagesFromIndex, buildSearchIndex, clearSearchIndex } from "../utils/searchIndex";
+import type { NavigationSliceState, NavigationSliceActions, ViewPreferences } from "./slices/navigationSlice";
+import { initialNavigationState } from "./slices/navigationSlice";
+import type { FilterSliceState, FilterSliceActions } from "./slices/filterSlice";
+import { initialFilterState } from "./slices/filterSlice";
+import type { SearchSliceState, SearchSliceActions } from "./slices/searchSlice";
+import { initialSearchState } from "./slices/searchSlice";
+import type { AnalyticsSliceState, AnalyticsSliceActions } from "./slices/analyticsSlice";
+import { initialAnalyticsState } from "./slices/analyticsSlice";
+import type { SettingsSliceState, SettingsSliceActions } from "./slices/settingsSlice";
+import { initialSettingsState } from "./slices/settingsSlice";
+import type { CaptureModeSliceState, CaptureModeSliceActions } from "./slices/captureModeSlice";
+import { initialCaptureModeState } from "./slices/captureModeSlice";
+import type { BoardSliceState, BoardSliceActions } from "./slices/boardSlice";
+import { initialBoardState } from "./slices/boardSlice";
+import type { GlobalStatsSliceState, GlobalStatsSliceActions } from "./slices/globalStatsSlice";
+import { initialGlobalStatsState } from "./slices/globalStatsSlice";
+import type { MessageSliceState, MessageSliceActions } from "./slices/messageSlice";
+import { initialMessageState } from "./slices/messageSlice";
+import type { MetadataSliceState, MetadataSliceActions } from "./slices/metadataSlice";
+import { initialMetadataState, createMetadataActions } from "./slices/metadataSlice";
+import type { NavigatorSliceState, NavigatorSliceActions } from "./slices/navigatorSlice";
+import { initialNavigatorState } from "./slices/navigatorSlice";
+import type { ProjectSliceState, ProjectSliceActions } from "./slices/projectSlice";
+import { initialProjectState } from "./slices/projectSlice";
+import type { ProviderSliceState, ProviderSliceActions } from "./slices/providerSlice";
+import { initialProviderState } from "./slices/providerSlice";
+import type { WatcherSliceState, WatcherSliceActions } from "./slices/watcherSlice";
+import { initialWatcherState } from "./slices/watcherSlice";
 
 // ============================================================================
 // VIEW MANAGEMENT SYSTEM (v1.5.1+)
@@ -221,37 +254,48 @@ function universalToUIMessage(msg: UniversalMessage): UIMessage {
   };
 }
 
-/**
- * View Preferences - Preserves user's view selection across navigation
- *
- * Design principles:
- * 1. User's view selection should persist when switching projects/sessions
- * 2. Only explicit user actions (clicking view buttons) should change views
- * 3. System should remember the last view the user was in
- * 4. Extensible for future views
- */
-interface ViewPreferences {
-  /** Last view the user explicitly selected */
-  lastSelectedView: AppView;
-  /** Whether to preserve view when switching projects (default: true) */
-  preserveViewOnProjectSwitch: boolean;
-  /** Whether to preserve view when switching sessions (default: true) */
-  preserveViewOnSessionSwitch: boolean;
-}
+// ViewPreferences is defined in and imported from navigationSlice.ts
+// Re-export so existing code that imports it from this module still works.
+export type { ViewPreferences };
 
-interface AppStore extends AppState {
-  // Filter state
-  excludeSidechain: boolean;
-  sessionExcludeSidechain: boolean; // Per-session filter state (persists during pagination)
+interface AppStore extends AppState,
+  // ---- Slice type composition ----
+  // Each slice contributes a coherent group of state + actions.
+  // The slices provide the type definitions; implementations live below in create().
+  NavigationSliceState,   // currentView, viewPreferences + setViewPreferences
+  NavigationSliceActions,
+  FilterSliceState,       // showSystemMessages, metricMode, excludeSidechain, sessionExcludeSidechain
+  FilterSliceActions,
+  SearchSliceState,       // searchQuery, searchResults, searchFilters, sessionSearch
+  SearchSliceActions,
+  AnalyticsSliceState,    // sessionTokenStats, projectTokenStats, projectStatsSummary, sessionComparison, loading/error flags
+  AnalyticsSliceActions,
+  SettingsSliceState,     // fontScale, highContrast
+  SettingsSliceActions,
+  CaptureModeSliceState,  // isCaptureMode, hiddenMessageIds
+  CaptureModeSliceActions,
+  BoardSliceState,        // boardViewMode, boardSelectedSessionId, boardExpandedCards
+  BoardSliceActions,
+  GlobalStatsSliceState,  // globalStats, isLoadingGlobalStats, globalStatsError
+  GlobalStatsSliceActions,
+  MessageSliceState,      // messageScrollPosition, messageHighlightIds
+  MessageSliceActions,
+  MetadataSliceState,     // sessionMetadataCache, isSavingMetadata
+  MetadataSliceActions,
+  NavigatorSliceState,    // navigatorOpen, navigatorWidth, navigatorActiveId
+  NavigatorSliceActions,
+  ProjectSliceState,      // isLoadingAllSessions, projectsLastRefreshed
+  ProjectSliceActions,
+  ProviderSliceState,     // defaultProviderId, providerHealthStatus
+  ProviderSliceActions,
+  WatcherSliceState,      // isWatchingEnabled, watcherError, lastWatcherSyncTime
+  WatcherSliceActions {
+  // ---- Actions NOT covered by slices ----
 
-  // View preferences
-  viewPreferences: ViewPreferences;
-
-  // Actions - View Management
+  // View switching (depends on cross-cutting data loading, kept in main store)
   switchView: (view: AppView) => Promise<void>;
-  setViewPreferences: (preferences: Partial<ViewPreferences>) => void;
 
-  // Actions - Data Loading
+  // Data loading
   initializeApp: () => Promise<void>;
   scanProjects: () => Promise<void>;
   selectProject: (project: UIProject | null) => Promise<void>;
@@ -262,30 +306,13 @@ interface AppStore extends AppState {
   loadAllMessages: () => Promise<void>;
   refreshCurrentSession: () => Promise<void>;
   searchMessages: (query: string, filters?: SearchFilters) => Promise<void>;
-  setSearchFilters: (filters: SearchFilters) => void;
   setError: (error: AppError | null) => void;
   setClaudePath: (path: string) => void;
   loadSessionTokenStats: (sessionPath: string) => Promise<void>;
   loadProjectTokenStats: (projectPath: string) => Promise<void>;
-  loadProjectStatsSummary: (
-    projectPath: string
-  ) => Promise<ProjectStatsSummary>;
-  loadSessionComparison: (
-    sessionId: string,
-    projectPath: string
-  ) => Promise<SessionComparison>;
+  loadProjectStatsSummary: (projectPath: string) => Promise<ProjectStatsSummary>;
+  loadSessionComparison: (sessionId: string, projectPath: string) => Promise<SessionComparison>;
   clearTokenStats: () => void;
-  setExcludeSidechain: (exclude: boolean) => void;
-
-  // Analytics data setters
-  setProjectSummary: (summary: ProjectStatsSummary | null) => void;
-  setSessionComparison: (comparison: SessionComparison | null) => void;
-  setLoadingProjectSummary: (loading: boolean) => void;
-  setLoadingSessionComparison: (loading: boolean) => void;
-  setProjectSummaryError: (error: string | null) => void;
-  setSessionComparisonError: (error: string | null) => void;
-  clearAnalyticsData: () => void;
-  clearAnalyticsErrors: () => void;
 
   // Project list preferences
   setProjectListPreferences: (preferences: Partial<ProjectListPreferences>) => void;
@@ -297,29 +324,43 @@ interface AppStore extends AppState {
   // Loading progress
   setLoadingProgress: (progress: LoadingProgress | null) => void;
 
-  // File activities actions (v1.5.0+)
+  // File activities (v1.5.0+)
   loadFileActivities: (projectPath: string, filters?: FileActivityFilters) => Promise<void>;
   setFileActivityFilters: (filters: FileActivityFilters) => void;
   clearFileActivities: () => void;
 
-  // Session writer actions (v1.6.0+)
+  // Session writer (v1.6.0+)
   createProject: (request: CreateProjectRequest) => Promise<CreateProjectResponse>;
   createSession: (request: CreateSessionRequest) => Promise<CreateSessionResponse>;
   appendToSession: (sessionPath: string, messages: MessageInput[]) => Promise<number>;
+
+  // Provider-aware helpers
+  /** Returns a human-readable display name for a session, or undefined if not found */
+  getSessionDisplayName: (sessionId: string, fallbackSummary?: string) => string | undefined;
 }
 
 const DEFAULT_PAGE_SIZE = 100; // Load 100 messages on initial loading
 
 export const useAppStore = create<AppStore>((set, get) => ({
-  // Root-level view state (single source of truth)
-  currentView: "messages" as AppView,
+  // ---- Slice initial states ----
+  // Each slice defines its own initial values; we spread them here so the
+  // store initialisation is the single composition point.
+  ...initialNavigationState,   // currentView, viewPreferences
+  ...initialFilterState,       // showSystemMessages, metricMode, excludeSidechain, sessionExcludeSidechain
+  ...initialSearchState,       // searchQuery, searchResults, searchFilters, sessionSearch
+  ...initialAnalyticsState,    // sessionTokenStats, projectTokenStats, projectStatsSummary, sessionComparison, etc.
+  ...initialSettingsState,     // fontScale, highContrast
+  ...initialCaptureModeState,  // isCaptureMode, hiddenMessageIds
+  ...initialBoardState,        // boardViewMode, boardSelectedSessionId, boardExpandedCards
+  ...initialGlobalStatsState,  // globalStats, isLoadingGlobalStats, globalStatsError
+  ...initialMessageState,      // messageScrollPosition, messageHighlightIds
+  ...initialMetadataState,     // sessionMetadataCache, isSavingMetadata
+  ...initialNavigatorState,    // navigatorOpen, navigatorWidth, navigatorActiveId
+  ...initialProjectState,      // isLoadingAllSessions, projectsLastRefreshed
+  ...initialProviderState,     // defaultProviderId, providerHealthStatus
+  ...initialWatcherState,      // isWatchingEnabled, watcherError, lastWatcherSyncTime
 
-  // View preferences - Controls view persistence behavior
-  viewPreferences: {
-    lastSelectedView: "messages",
-    preserveViewOnProjectSwitch: true,
-    preserveViewOnSessionSwitch: true,
-  },
+  // ---- Non-slice initial state ----
 
   // Loading progress - Start with initializing state
   loadingProgress: {
@@ -353,7 +394,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   projects: [],
   selectedProject: null,
   sessions: [], // For selected project only (backward compatibility)
-  sessionsByProject: {}, // NEW: Cache sessions per-project
+  sessionsByProject: {}, // Cache sessions per-project
   selectedSession: null,
   messages: [],
   pagination: {
@@ -363,11 +404,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
     hasMore: false,
     isLoadingMore: false,
   },
-
-  // Search state
-  searchQuery: "",
-  searchResults: [],
-  searchFilters: {},
 
   // File activities state (v1.5.0+)
   fileActivities: [],
@@ -379,24 +415,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
   isLoadingProjects: false,
   isLoadingSessions: false,
   isLoadingMessages: false,
-  isLoadingTokenStats: false,
 
   // Error state
   error: null,
-
-  // Analytics data (separated from view state)
-  sessionTokenStats: null,
-  projectTokenStats: [],
-  projectStatsSummary: null,
-  sessionComparison: null,
-  isLoadingProjectSummary: false,
-  isLoadingSessionComparison: false,
-  projectSummaryError: null,
-  sessionComparisonError: null,
-
-  // Filter state
-  excludeSidechain: true,
-  sessionExcludeSidechain: true, // Initialize to match global default
 
   // Actions
   initializeApp: async () => {
@@ -1238,13 +1259,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
   loadProjectTokenStats: async (projectPath: string) => {
     try {
       set({ isLoadingTokenStats: true, error: null });
-      const stats = await invoke<SessionTokenStats[]>(
+      const result = await invoke<PaginatedTokenStats>(
         "get_project_token_stats",
         {
           projectPath,
         }
       );
-      set({ projectTokenStats: stats });
+      set({ projectTokenStats: result.items });
     } catch (error) {
       console.error("Failed to load project token stats:", error);
       set({
@@ -1457,6 +1478,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
         case 'messages':
           // Messages view doesn't need to load data
+          break;
+
+        case 'board':
+        case 'recentEdits':
+        case 'settings':
+        case 'files':
+          // These views load their own data via component-level useEffect
           break;
       }
     } catch (error) {
@@ -1739,4 +1767,221 @@ export const useAppStore = create<AppStore>((set, get) => ({
       throw error;
     }
   },
+
+  // ============================================================
+  // Capture Mode
+  // ============================================================
+  enterCaptureMode: () => set({ isCaptureMode: true }),
+  exitCaptureMode: () => set({ isCaptureMode: false }),
+  hideMessage: (uuid: string) => {
+    const { hiddenMessageIds } = get();
+    if (!hiddenMessageIds.includes(uuid)) {
+      set({ hiddenMessageIds: [...hiddenMessageIds, uuid] });
+    }
+  },
+  showMessage: (uuid: string) => {
+    set({ hiddenMessageIds: get().hiddenMessageIds.filter((id) => id !== uuid) });
+  },
+  restoreMessages: (uuids: string[]) => {
+    set({ hiddenMessageIds: get().hiddenMessageIds.filter((id) => !uuids.includes(id)) });
+  },
+  restoreAllMessages: () => set({ hiddenMessageIds: [] }),
+  isMessageHidden: (uuid: string) => {
+    const { isCaptureMode, hiddenMessageIds } = get();
+    return isCaptureMode && hiddenMessageIds.includes(uuid);
+  },
+  getHiddenCount: () => get().hiddenMessageIds.length,
+
+  // ============================================================
+  // Provider helpers
+  // ============================================================
+  getSessionDisplayName: (sessionId: string, fallbackSummary?: string) => {
+    const { sessions, sessionMetadataCache } = get();
+    const cachedName = sessionMetadataCache[sessionId]?.custom_name;
+    if (cachedName) {
+      return cachedName;
+    }
+    const session = sessions.find(
+      (s) => s.actual_session_id === sessionId || s.session_id === sessionId
+    );
+    return session?.summary || fallbackSummary;
+  },
+
+  // ============================================================
+  // Filter preferences
+  // ============================================================
+  setShowSystemMessages: (show: boolean) => set({ showSystemMessages: show }),
+
+  // ============================================================
+  // Metric mode
+  // ============================================================
+  setMetricMode: (mode: MetricMode) => set({ metricMode: mode }),
+
+  // ============================================================
+  // Accessibility settings
+  // ============================================================
+  setFontScale: (scale: number) => set({ fontScale: scale }),
+  setHighContrast: (value: boolean) => set({ highContrast: value }),
+
+  // ============================================================
+  // In-session search (KakaoTalk-style navigation)
+  // ============================================================
+  setSessionSearchQuery: (query: string) => {
+    const { messages, sessionSearch } = get();
+    const { filterType } = sessionSearch;
+
+    if (!query.trim()) {
+      set({ sessionSearch: createEmptySearchState(filterType) });
+      return;
+    }
+
+    set((state) => ({
+      sessionSearch: { ...state.sessionSearch, query, isSearching: true },
+    }));
+
+    try {
+      const searchResults = searchMessagesFromIndex(query, filterType);
+
+      const matches: SearchMatch[] = searchResults.filter(
+        (result) => result.messageIndex >= 0 && result.messageIndex < messages.length
+      ).map((result) => ({
+        messageUuid: result.messageUuid,
+        messageIndex: result.messageIndex,
+        matchIndex: result.matchIndex,
+        matchCount: result.matchCount,
+      }));
+
+      set((state) => ({
+        sessionSearch: {
+          query,
+          matches,
+          currentMatchIndex: matches.length > 0 ? 0 : -1,
+          isSearching: false,
+          filterType: state.sessionSearch.filterType,
+          results: [],
+        },
+      }));
+    } catch (error) {
+      console.error("[Search] Failed to search messages:", error);
+      set((state) => ({
+        sessionSearch: {
+          query,
+          matches: [],
+          currentMatchIndex: -1,
+          isSearching: false,
+          filterType: state.sessionSearch.filterType,
+          results: [],
+        },
+      }));
+    }
+  },
+
+  setSearchFilterType: (filterType: SearchFilterType) => {
+    set({ sessionSearch: createEmptySearchState(filterType) });
+  },
+
+  goToNextMatch: () => {
+    const { sessionSearch } = get();
+    if (sessionSearch.matches.length === 0) return;
+    const nextIndex = (sessionSearch.currentMatchIndex + 1) % sessionSearch.matches.length;
+    set({ sessionSearch: { ...sessionSearch, currentMatchIndex: nextIndex } });
+  },
+
+  goToPrevMatch: () => {
+    const { sessionSearch } = get();
+    if (sessionSearch.matches.length === 0) return;
+    const total = sessionSearch.matches.length;
+    const prevIndex = sessionSearch.currentMatchIndex <= 0 ? total - 1 : sessionSearch.currentMatchIndex - 1;
+    set({ sessionSearch: { ...sessionSearch, currentMatchIndex: prevIndex } });
+  },
+
+  goToMatchIndex: (index: number) => {
+    const { sessionSearch } = get();
+    if (index < 0 || index >= sessionSearch.matches.length) return;
+    set({ sessionSearch: { ...sessionSearch, currentMatchIndex: index } });
+  },
+
+  clearSessionSearch: () => {
+    set((state) => ({ sessionSearch: createEmptySearchState(state.sessionSearch.filterType) }));
+  },
+
+  rebuildSearchIndex: () => {
+    const { messages } = get();
+    clearSearchIndex();
+    if (messages.length > 0) {
+      buildSearchIndex(messages);
+    }
+  },
+
+  // ============================================================
+  // Board slice actions
+  // ============================================================
+  setBoardViewMode: (mode) => set({ boardViewMode: mode }),
+  setBoardSelectedSessionId: (id) => set({ boardSelectedSessionId: id }),
+  setBoardExpandedCards: (ids) => set({ boardExpandedCards: ids }),
+
+  // ============================================================
+  // Global stats slice actions
+  // ============================================================
+  setGlobalStats: (stats) => set({ globalStats: stats }),
+  setIsLoadingGlobalStats: (loading) => set({ isLoadingGlobalStats: loading }),
+  setGlobalStatsError: (error) => set({ globalStatsError: error }),
+
+  // ============================================================
+  // Message slice actions
+  // ============================================================
+  setMessageScrollPosition: (position) => set({ messageScrollPosition: position }),
+  setMessageHighlightIds: (ids) => set({ messageHighlightIds: ids }),
+  clearMessageHighlights: () => set({ messageHighlightIds: [] }),
+
+  // ============================================================
+  // Metadata slice actions (v1.9.0 - real persistence via Rust backend)
+  // ============================================================
+  ...createMetadataActions(
+    (partial) => set(partial as Parameters<typeof set>[0]),
+    () => get() as MetadataSliceState,
+  ),
+
+  // ============================================================
+  // Navigator slice actions
+  // ============================================================
+  setNavigatorOpen: (open) => set({ navigatorOpen: open }),
+  setNavigatorWidth: (width) => set({ navigatorWidth: width }),
+  setNavigatorActiveId: (id) => set({ navigatorActiveId: id }),
+  toggleNavigator: () => set((state) => ({ navigatorOpen: !state.navigatorOpen })),
+
+  // ============================================================
+  // Project slice actions
+  // ============================================================
+  setIsLoadingAllSessions: (loading) => set({ isLoadingAllSessions: loading }),
+  setProjectsLastRefreshed: (timestamp) => set({ projectsLastRefreshed: timestamp }),
+
+  // ============================================================
+  // Provider slice actions
+  // ============================================================
+  setDefaultProviderId: (id) => set({ defaultProviderId: id }),
+  setProviderHealthStatus: (status) => set({ providerHealthStatus: status }),
+  setDetectedProviders: (providers) => set({ detectedProviders: providers }),
+  setIsDetectingProviders: (loading) => set({ isDetectingProviders: loading }),
+  setActiveProviderIds: (ids) => set({ activeProviderIds: ids }),
+  detectProviders: async () => {
+    set({ isDetectingProviders: true });
+    try {
+      const { invoke: tauriInvoke } = await import('@tauri-apps/api/core');
+      const providers = await tauriInvoke<import('./slices/providerSlice').ProviderSlice['detectedProviders'][number][]>('detect_providers');
+      const availableIds = providers.filter((p) => p.is_available).map((p) => p.id);
+      set({ detectedProviders: providers, activeProviderIds: availableIds });
+    } catch (err) {
+      console.error('[useAppStore] detect_providers failed:', err);
+    } finally {
+      set({ isDetectingProviders: false });
+    }
+  },
+
+  // ============================================================
+  // Watcher slice actions
+  // ============================================================
+  setIsWatchingEnabled: (enabled) => set({ isWatchingEnabled: enabled }),
+  setWatcherError: (error) => set({ watcherError: error }),
+  setLastWatcherSyncTime: (time) => set({ lastWatcherSyncTime: time }),
 }));

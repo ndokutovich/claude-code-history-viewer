@@ -1,9 +1,16 @@
 {
-  "loadingSessionInfo": "Загрузка информации о сеансе...",
   "errors": {
     "missingProjectInfo": "Невозможно перейти к сообщению: отсутствует информация о проекте",
     "projectNotFound": "Не удается найти проект для этого сеанса",
     "messageNotFound": "Сообщение не найдено в разговоре. UUID: {{uuid}}",
     "jumpError": "Ошибка при переходе к сообщению: {{error}}"
-  }
+  },
+  "loadingSessionInfo": "Загрузка информации о сеансе...",
+  "search.enterQuery": "Введите запрос",
+  "search.foundResults": "Найдено результатов",
+  "search.matches": "Совпадения",
+  "search.noResults": "Результатов не найдено",
+  "search.placeholder": "Поиск сообщений...",
+  "search.searching": "Поиск",
+  "search.title": "Поиск"
 }

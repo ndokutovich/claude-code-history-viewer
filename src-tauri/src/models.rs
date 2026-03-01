@@ -55,6 +55,7 @@ pub struct RawLogEntry {
     pub tool_use_result: Option<serde_json::Value>,
     #[serde(rename = "isSidechain")]
     pub is_sidechain: Option<bool>,
+    pub cwd: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,6 +89,15 @@ pub struct ClaudeMessage {
     pub project_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stop_reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GitCommit {
+    pub hash: String,
+    pub author: String,
+    pub timestamp: i64,
+    pub date: String,
+    pub message: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -132,22 +142,25 @@ pub struct MessagePage {
 pub struct SessionTokenStats {
     pub session_id: String,
     pub project_name: String,
-    pub total_input_tokens: u32,
-    pub total_output_tokens: u32,
-    pub total_cache_creation_tokens: u32,
-    pub total_cache_read_tokens: u32,
-    pub total_tokens: u32,
+    pub total_input_tokens: u64,
+    pub total_output_tokens: u64,
+    pub total_cache_creation_tokens: u64,
+    pub total_cache_read_tokens: u64,
+    pub total_tokens: u64,
     pub message_count: usize,
     pub first_message_time: String,
     pub last_message_time: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+    pub most_used_tools: Vec<ToolUsageStats>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct DailyStats {
     pub date: String,
-    pub total_tokens: u32,
-    pub input_tokens: u32,
-    pub output_tokens: u32,
+    pub total_tokens: u64,
+    pub input_tokens: u64,
+    pub output_tokens: u64,
     pub message_count: usize,
     pub session_count: usize,
     pub active_hours: usize,
@@ -166,7 +179,7 @@ pub struct ActivityHeatmap {
     pub hour: u8,
     pub day: u8,
     pub activity_count: u32,
-    pub tokens_used: u32,
+    pub tokens_used: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -174,9 +187,10 @@ pub struct ProjectStatsSummary {
     pub project_name: String,
     pub total_sessions: usize,
     pub total_messages: usize,
-    pub total_tokens: u32,
-    pub avg_tokens_per_session: u32,
+    pub total_tokens: u64,
+    pub avg_tokens_per_session: u64,
     pub avg_session_duration: u32,
+    pub total_session_duration: u32,
     pub most_active_hour: u8,
     pub most_used_tools: Vec<ToolUsageStats>,
     pub daily_stats: Vec<DailyStats>,
@@ -186,10 +200,66 @@ pub struct ProjectStatsSummary {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct TokenDistribution {
-    pub input: u32,
-    pub output: u32,
-    pub cache_creation: u32,
-    pub cache_read: u32,
+    pub input: u64,
+    pub output: u64,
+    pub cache_creation: u64,
+    pub cache_read: u64,
+}
+
+// ============================================================================
+// GLOBAL STATISTICS MODELS (upstream-enhanced)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct GlobalStatsSummary {
+    pub total_projects: u32,
+    pub total_sessions: u32,
+    pub total_messages: u32,
+    pub total_tokens: u64,
+    pub total_session_duration_minutes: u64,
+    pub token_distribution: TokenDistribution,
+    pub most_used_tools: Vec<ToolUsageStats>,
+    pub model_distribution: Vec<ModelStats>,
+    pub provider_distribution: Vec<ProviderUsageStats>,
+    pub top_projects: Vec<ProjectRanking>,
+    pub daily_stats: Vec<DailyStats>,
+    pub activity_heatmap: Vec<ActivityHeatmap>,
+    pub date_range: DateRange,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct DateRange {
+    pub first_message: Option<String>,
+    pub last_message: Option<String>,
+    pub days_span: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelStats {
+    pub model_name: String,
+    pub message_count: u32,
+    pub token_count: u64,
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+    pub cache_creation_tokens: u64,
+    pub cache_read_tokens: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectRanking {
+    pub project_name: String,
+    pub sessions: u32,
+    pub messages: u32,
+    pub tokens: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProviderUsageStats {
+    pub provider_id: String,
+    pub projects: u32,
+    pub sessions: u32,
+    pub messages: u32,
+    pub tokens: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -284,4 +354,169 @@ pub struct FileActivityFilters {
     pub file_extensions: Option<Vec<String>>,
     #[serde(rename = "searchQuery")]
     pub search_query: Option<String>,
+}
+
+// ============================================================================
+// USER SETTINGS MODELS (Settings Presets)
+// ============================================================================
+
+/// User settings for preset validation
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct UserSettings {
+    /// Glob patterns for projects to hide (e.g., "folders-dg-*")
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hidden_patterns: Vec<String>,
+
+    /// Whether to automatically group worktrees under their parent repos
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub worktree_grouping: Option<bool>,
+
+    /// Whether user has explicitly set worktree grouping (prevents auto-override)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub worktree_grouping_user_set: Option<bool>,
+
+    /// Project tree grouping mode: "none", "worktree", or "directory"
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub grouping_mode: Option<String>,
+}
+
+// ============================================================================
+// METADATA PERSISTENCE MODELS (v1.9.0)
+// ============================================================================
+
+/// Per-session user metadata persisted to ~/.claude-history-viewer/metadata.json
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionMeta {
+    pub session_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_name: Option<String>,
+    #[serde(default)]
+    pub starred: bool,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
+    /// Whether to display the real Claude-generated session name instead of custom_name
+    #[serde(default)]
+    pub has_claude_code_name: bool,
+    /// ISO 8601 timestamp: when this metadata entry was first created
+    pub created_at: String,
+    /// ISO 8601 timestamp: last time any field was updated
+    pub updated_at: String,
+}
+
+/// Per-project user metadata persisted alongside SessionMeta
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectMeta {
+    pub path: String,
+    #[serde(default)]
+    pub hidden: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_name: Option<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    pub updated_at: String,
+}
+
+/// Top-level container for all persisted user metadata
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AppMetadata {
+    #[serde(default)]
+    pub sessions: std::collections::HashMap<String, SessionMeta>,
+    #[serde(default)]
+    pub projects: std::collections::HashMap<String, ProjectMeta>,
+    #[serde(default = "default_metadata_version")]
+    pub version: u32,
+}
+
+fn default_metadata_version() -> u32 {
+    1
+}
+
+// Legacy compatibility types referenced from upstream metadata.rs
+/// Upstream-compatible alias – used by load_user_metadata / update_session_metadata
+pub type UserMetadata = AppMetadata;
+
+/// Upstream-compatible thin wrapper for session updates
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SessionMetadata {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_name: Option<String>,
+    #[serde(default)]
+    pub starred: bool,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
+    #[serde(default)]
+    pub has_claude_code_name: bool,
+}
+
+impl SessionMetadata {
+    /// Returns true when no field carries any useful data (used to decide whether to delete)
+    pub fn is_empty(&self) -> bool {
+        self.custom_name.is_none()
+            && !self.starred
+            && self.tags.is_empty()
+            && self.notes.is_none()
+            && !self.has_claude_code_name
+    }
+}
+
+/// Upstream-compatible thin wrapper for project updates
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ProjectMetadata {
+    #[serde(default)]
+    pub hidden: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub custom_name: Option<String>,
+    #[serde(default)]
+    pub tags: Vec<String>,
+}
+
+impl ProjectMetadata {
+    /// Returns true when no field carries any useful data (used to decide whether to delete)
+    pub fn is_empty(&self) -> bool {
+        !self.hidden && self.custom_name.is_none() && self.tags.is_empty()
+    }
+}
+
+impl AppMetadata {
+    pub fn new() -> Self {
+        Self {
+            sessions: std::collections::HashMap::new(),
+            projects: std::collections::HashMap::new(),
+            version: 1,
+        }
+    }
+
+    pub fn is_project_hidden(&self, path: &str) -> bool {
+        self.projects
+            .get(path)
+            .map(|p| p.hidden)
+            .unwrap_or(false)
+    }
+
+    pub fn get_session(&self, session_id: &str) -> Option<&SessionMeta> {
+        self.sessions.get(session_id)
+    }
+}
+
+// ============================================================================
+// RECENT FILE EDIT MODELS (Recent Edits Viewer)
+// ============================================================================
+
+/// Recent file edit information for recovery purposes
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RecentFileEdit {
+    pub file_path: String,
+    pub timestamp: String,
+    pub session_id: String,
+    pub operation_type: String, // "edit" or "write"
+    pub content_after_change: String,
+    pub original_content: Option<String>,
+    pub lines_added: usize,
+    pub lines_removed: usize,
+    pub cwd: Option<String>,
 }

@@ -5,8 +5,9 @@ import type { IConversationAdapter } from '../base/IAdapter';
 import type { DetectionScore, ProviderDefinition } from '../../types/providers';
 import { ClaudeCodeAdapter } from '../providers/ClaudeCodeAdapter';
 import { CursorAdapter } from '../providers/CursorAdapter';
-import { GeminiAdapter } from '../providers/GeminiAdapter'; // v1.7.0 - Gemini CLI support
-import { CodexAdapter } from '../providers/CodexAdapter';   // v1.8.0 - Codex CLI support
+import { GeminiAdapter } from '../providers/GeminiAdapter';     // v1.7.0 - Gemini CLI support
+import { CodexAdapter } from '../providers/CodexAdapter';       // v1.8.0 - Codex CLI support
+import { OpenCodeAdapter } from '../providers/OpenCodeAdapter'; // v1.9.0 - OpenCode support
 
 // ============================================================================
 // DETECTION RESULT
@@ -86,6 +87,7 @@ export class AdapterRegistry {
       new CursorAdapter(),     // ✅ v2.0.0 COMPLETE
       new GeminiAdapter(),     // ✅ v1.7.0 - Gemini CLI support
       new CodexAdapter(),      // ✅ v1.8.0 - Codex CLI support
+      new OpenCodeAdapter(),   // ✅ v1.9.0 - OpenCode support
     ];
 
     const failures: Array<{ id: string; error: Error }> = [];
@@ -256,10 +258,18 @@ export class AdapterRegistry {
       score: DetectionScore;
     }> = [];
 
-    // Test all adapters
-    for (const adapter of this.adapters.values()) {
-      try {
+    // Test all adapters in parallel
+    const adapters = [...this.adapters.values()];
+    const results = await Promise.allSettled(
+      adapters.map(async (adapter) => {
         const score = await adapter.canHandle(path);
+        return { adapter, score };
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        const { adapter, score } = result.value;
         if (score.canHandle) {
           scores.push({ adapter, score });
           console.log(
@@ -268,8 +278,8 @@ export class AdapterRegistry {
         } else {
           console.log(`  ✗ ${adapter.providerId}: Cannot handle`);
         }
-      } catch (error) {
-        console.error(`  ❌ ${adapter.providerId}: Detection failed`, error);
+      } else {
+        console.error(`  ❌ Detection failed:`, result.reason);
       }
     }
 

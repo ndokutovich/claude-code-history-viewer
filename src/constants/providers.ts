@@ -4,7 +4,13 @@
  * Centralized configuration for different AI coding assistant providers
  */
 
-export type ProviderId = 'claude-code' | 'cursor' | 'copilot';
+export type ProviderId =
+  | 'claude-code'
+  | 'cursor'
+  | 'gemini'
+  | 'codex'
+  | 'opencode'
+  | 'copilot';
 
 /**
  * Color class mappings for provider badges
@@ -12,8 +18,11 @@ export type ProviderId = 'claude-code' | 'cursor' | 'copilot';
  */
 export const PROVIDER_COLORS: Record<string, string> = {
   'claude-code': 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-  'cursor': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  'copilot': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  'cursor':      'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  'gemini':      'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
+  'codex':       'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+  'opencode':    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  'copilot':     'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
 };
 
 /**

@@ -113,14 +113,25 @@ export interface UIMessage {
   };
   // Search metadata
   projectPath?: string;
+  projectName?: string;
+  provider?: string;
   // Provider-specific metadata (tool results, file attachments, etc.)
   provider_metadata?: Record<string, unknown>;
 }
 
 // UI display format for projects (provider-agnostic)
+export interface GitInfo {
+  /** Whether this is a main repo, linked worktree, or not a git repo */
+  worktree_type?: "main" | "linked" | "not_git";
+  /** For linked worktrees: the actual_path of the main repo */
+  main_project_path?: string;
+}
+
 export interface UIProject {
   name: string;
   path: string;
+  /** Decoded actual filesystem path (e.g., "/Users/jack/client/my-project") */
+  actual_path?: string;
   session_count: number;
   message_count: number;
   lastModified: string;
@@ -128,6 +139,8 @@ export interface UIProject {
   sourceId?: string;
   providerId?: string;
   providerName?: string; // Human-readable name like "Claude Code" or "Cursor IDE"
+  /** Git worktree metadata (populated by backend when available) */
+  git_info?: GitInfo;
 }
 
 // UI display format for sessions (provider-agnostic)
@@ -204,7 +217,7 @@ export interface AppError {
 /**
  * App-wide view type (unified view state)
  */
-export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search' | 'files';
+export type AppView = 'messages' | 'tokenStats' | 'analytics' | 'search' | 'files' | 'board' | 'recentEdits' | 'settings';
 
 /**
  * Loading progress tracking
@@ -307,6 +320,8 @@ export interface SessionTokenStats {
   message_count: number;
   first_message_time: string;
   last_message_time: string;
+  summary?: string;
+  most_used_tools?: ToolUsageStats[];
 }
 
 // Enhanced statistics types
@@ -341,6 +356,7 @@ export interface ProjectStatsSummary {
   total_tokens: number;
   avg_tokens_per_session: number;
   avg_session_duration: number; // in minutes
+  total_session_duration: number; // in minutes
   most_active_hour: number;
   most_used_tools: ToolUsageStats[];
   daily_stats: DailyStats[];
@@ -360,6 +376,68 @@ export interface SessionComparison {
   rank_by_tokens: number;
   rank_by_duration: number;
   is_above_average: boolean;
+}
+
+// Paginated token stats response
+export interface PaginatedTokenStats {
+  items: SessionTokenStats[];
+  total_count: number;
+  offset: number;
+  limit: number;
+  has_more: boolean;
+}
+
+// Global statistics types (upstream-enhanced)
+export interface GlobalStatsSummary {
+  total_projects: number;
+  total_sessions: number;
+  total_messages: number;
+  total_tokens: number;
+  total_session_duration_minutes: number;
+  token_distribution: {
+    input: number;
+    output: number;
+    cache_creation: number;
+    cache_read: number;
+  };
+  most_used_tools: ToolUsageStats[];
+  model_distribution: ModelStats[];
+  provider_distribution: ProviderUsageStats[];
+  top_projects: ProjectRanking[];
+  daily_stats: DailyStats[];
+  activity_heatmap: ActivityHeatmap[];
+  date_range: DateRange;
+}
+
+export interface DateRange {
+  first_message?: string;
+  last_message?: string;
+  days_span: number;
+}
+
+export interface ModelStats {
+  model_name: string;
+  message_count: number;
+  token_count: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_creation_tokens: number;
+  cache_read_tokens: number;
+}
+
+export interface ProjectRanking {
+  project_name: string;
+  sessions: number;
+  messages: number;
+  tokens: number;
+}
+
+export interface ProviderUsageStats {
+  provider_id: string;
+  projects: number;
+  sessions: number;
+  messages: number;
+  tokens: number;
 }
 
 // Update-related type definitions
@@ -443,6 +521,84 @@ export interface FileActivityFilters {
 }
 
 // ============================================================================
+// SETTINGS TYPES (Claude Code Settings Manager)
+// ============================================================================
+
+export * from './settings';
+export * from './presets';
+
+// Upstream compatibility aliases: upstream uses Claude* names, fork uses UI* names.
+// Components ported from upstream that import Claude* types will get UI* shape.
+export type ClaudeProject = UIProject;
+export type ClaudeSession = UISession;
+export type ClaudeMessage = UIMessage;
+
+// Git types (for Session Board)
+export interface GitCommit {
+  hash: string;
+  author: string;
+  timestamp: number;
+  date: string;
+  message: string;
+}
+
+// Provider ID type for analytics and multi-provider support
+export type ProviderId = 'claude' | 'codex' | 'opencode' | 'cursor' | 'gemini';
+
+// Stats mode types
+export type StatsMode = "billing_total" | "conversation_only";
+export type MetricMode = "tokens" | "cost_estimated";
+
+// ============================================================================
+// PROGRESS / QUEUE TYPES (used by ProgressRenderer, QueueOperationRenderer)
+// ============================================================================
+
+export type ProgressDataType =
+  | "agent_progress"
+  | "mcp_progress"
+  | "bash_progress"
+  | "hook_progress"
+  | "search_results_received"
+  | "query_update"
+  | "waiting_for_task";
+
+export interface ProgressData {
+  type: ProgressDataType;
+  status: "running" | "completed" | "failed" | "waiting" | "error";
+  label?: string;
+  detail?: string;
+  prompt?: string;
+  normalizedMessages?: Array<{ role: string; content: unknown; message?: { content: unknown } }>;
+  toolUseID?: string;
+  parentToolUseID?: string;
+  durationMs?: number;
+  elapsedTimeMs?: number;
+  serverName?: string;
+  toolName?: string;
+  agentId?: string;
+  message?: string | Record<string, unknown>;
+}
+
+export type QueueOperationType = "enqueue" | "dequeue" | "remove" | "popAll";
+
+// ============================================================================
+// SESSION METADATA TYPES
+// ============================================================================
+
+export interface SessionMetadata {
+  customName?: string;
+  starred?: boolean;
+  tags?: string[];
+  notes?: string;
+  lastViewedAt?: string;
+}
+
+export interface UserMetadata {
+  sessions: Record<string, SessionMetadata>;
+  version?: string;
+}
+
+// ============================================================================
 // UNIVERSAL TYPES (v2.0.0 - Multi-Provider Support)
 // ============================================================================
 
@@ -458,3 +614,165 @@ export * from './providers';
 // ============================================================================
 
 export * from './sessionWriter';
+
+// ============================================================================
+// RECENT FILE EDIT TYPES (Recent Edits Viewer)
+// ============================================================================
+
+export interface RecentFileEdit {
+  file_path: string;
+  timestamp: string;
+  session_id: string;
+  operation_type: "edit" | "write";
+  content_after_change: string;
+  original_content?: string;
+  lines_added: number;
+  lines_removed: number;
+  cwd?: string;
+}
+
+export interface RecentEditsResult {
+  files: RecentFileEdit[];
+  total_edits_count: number;
+  unique_files_count: number;
+  project_cwd?: string;
+}
+
+export interface PaginatedRecentEdits {
+  files: RecentFileEdit[];
+  total_edits_count: number;
+  unique_files_count: number;
+  project_cwd?: string;
+  offset: number;
+  limit: number;
+  has_more: boolean;
+}
+
+// ============================================================================
+// CONTENT RENDERER TYPES (used by ported upstream renderers)
+// ============================================================================
+
+export interface BashCodeExecutionResult {
+  stdout?: string;
+  stderr?: string;
+  exit_code?: number;
+  return_code?: number;
+}
+
+export interface BashCodeExecutionError {
+  error_code: string;
+  message?: string;
+  code?: number;
+}
+
+export interface Citation {
+  start_page_number?: number;
+  end_page_number?: number;
+  start_char_index?: number;
+  end_char_index?: number;
+  start_block_index?: number;
+  end_block_index?: number;
+  document_index?: number;
+  document_title?: string;
+  cited_text?: string;
+  type?: string;
+}
+
+export interface Base64PDFSource {
+  type: "base64";
+  media_type: "application/pdf";
+  data: string;
+}
+
+export interface PlainTextSource {
+  type: "text";
+  data: string;
+}
+
+export interface URLPDFSource {
+  type: "url";
+  url: string;
+}
+
+export interface CitationsConfig {
+  enabled?: boolean;
+}
+
+export interface DocumentContent {
+  type: "document";
+  source: Base64PDFSource | PlainTextSource | URLPDFSource;
+  title?: string;
+  context?: string;
+  citations?: Citation[] | CitationsConfig;
+}
+
+export interface MCPToolResultData {
+  tool_use_id: string;
+  content?: unknown;
+  is_error?: boolean;
+  type?: string;
+  text?: string;
+  data?: string;
+  mimeType?: string;
+  uri?: string;
+}
+
+export interface SearchResultContent {
+  type: "search_result";
+  source?: string;
+  title?: string;
+  content?: Array<{ type: string; text: string }>;
+  citations?: Citation[];
+}
+
+export interface TextEditorResult {
+  type?: string;
+  path?: string;
+  content?: string;
+  old_str?: string;
+  new_str?: string;
+  command?: string;
+  operation?: string;
+  success?: boolean;
+}
+
+export interface TextEditorError {
+  type?: string;
+  message: string;
+  path?: string;
+  error_code?: string;
+}
+
+export interface WebSearchResultItem {
+  type?: string;
+  url?: string;
+  title?: string;
+  encrypted_content?: string;
+  page_age?: string;
+}
+
+export interface WebSearchToolError {
+  type: "error";
+  error_code?: string;
+  message?: string;
+}
+
+export interface FileHistorySnapshot {
+  timestamp: string;
+  content: string;
+  lineCount?: number;
+  originalPath?: string;
+}
+
+export interface FileHistorySnapshotData {
+  path: string;
+  originalPath?: string;
+  content?: string;
+  lineCount?: number;
+  modifiedAt?: string;
+  size?: number;
+  encoding?: string;
+  snapshots?: FileHistorySnapshot[];
+  timestamp?: string;
+  trackedFileBackups?: Record<string, object>;
+}

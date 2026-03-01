@@ -1,5 +1,22 @@
 export { ClaudeContentArrayRenderer } from "./ClaudeContentArrayRenderer";
 export { CommandRenderer } from "./CommandRenderer";
+export { TaskNotificationRenderer, hasTaskNotification } from "./TaskNotificationRenderer";
 export { ThinkingRenderer } from "./ThinkingRenderer";
 export { ToolUseRenderer } from "./ToolUseRenderer";
 export { ImageRenderer } from "./ImageRenderer";
+export { RedactedThinkingRenderer } from "./RedactedThinkingRenderer";
+export { ServerToolUseRenderer } from "./ServerToolUseRenderer";
+export { WebSearchResultRenderer } from "./WebSearchResultRenderer";
+export { DocumentRenderer } from "./DocumentRenderer";
+export { CitationRenderer } from "./CitationRenderer";
+export { SearchResultRenderer } from "./SearchResultRenderer";
+export { MCPToolUseRenderer } from "./MCPToolUseRenderer";
+export { MCPToolResultRenderer } from "./MCPToolResultRenderer";
+// 2025 Beta Content Types
+export { WebFetchToolResultRenderer } from "./WebFetchToolResultRenderer";
+export { CodeExecutionToolResultRenderer } from "./CodeExecutionToolResultRenderer";
+export { BashCodeExecutionToolResultRenderer } from "./BashCodeExecutionToolResultRenderer";
+export { TextEditorCodeExecutionToolResultRenderer } from "./TextEditorCodeExecutionToolResultRenderer";
+export { ToolSearchToolResultRenderer } from "./ToolSearchToolResultRenderer";
+export { UnifiedToolExecutionRenderer } from "./UnifiedToolExecutionRenderer";
+export { ToolResultCard } from "./ToolResultCard";

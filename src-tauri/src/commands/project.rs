@@ -3,7 +3,58 @@ use crate::utils::{estimate_message_count_from_size, extract_project_name};
 use chrono::{DateTime, Utc};
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 use walkdir::WalkDir;
+
+#[tauri::command]
+pub async fn get_git_log(actual_path: String, limit: usize) -> Result<Vec<GitCommit>, String> {
+    let path_buf = PathBuf::from(&actual_path);
+    if !path_buf.is_absolute() {
+        return Err("Path must be absolute".to_string());
+    }
+    if !path_buf.exists() || !path_buf.is_dir() {
+        return Err("Path does not exist or is not a directory".to_string());
+    }
+
+    let safe_path = path_buf
+        .canonicalize()
+        .map_err(|e| format!("Invalid path: {e}"))?;
+
+    let output = Command::new("git")
+        .args(["log", "-n"])
+        .arg(limit.to_string())
+        .args(["--pretty=format:%H|%an|%at|%s"])
+        .current_dir(&safe_path)
+        .output()
+        .map_err(|e| format!("Failed to execute git log: {e}"))?;
+
+    if !output.status.success() {
+        return Ok(vec![]);
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut commits = Vec::new();
+
+    for line in stdout.lines() {
+        let parts: Vec<&str> = line.splitn(4, '|').collect();
+        if parts.len() == 4 {
+            let timestamp = parts[2].parse::<i64>().unwrap_or(0);
+            let date = DateTime::<Utc>::from_timestamp(timestamp, 0)
+                .map(|dt| dt.to_rfc3339())
+                .unwrap_or_else(|| "unknown".to_string());
+
+            commits.push(GitCommit {
+                hash: parts[0].to_string(),
+                author: parts[1].to_string(),
+                timestamp,
+                date,
+                message: parts[3].to_string(),
+            });
+        }
+    }
+
+    Ok(commits)
+}
 
 #[tauri::command]
 pub async fn get_claude_folder_path() -> Result<String, String> {

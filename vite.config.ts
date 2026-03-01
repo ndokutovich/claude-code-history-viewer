@@ -1,9 +1,43 @@
 /// <reference types="vitest" />
+import fs from "fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { visualizer } from "rollup-plugin-visualizer";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+
+// Fix for Windows subst drives: Vite calls fs.realpathSync which resolves
+// W:/ to C:/_init/w/, causing absolute fileName errors in Rollup's build-html
+// and duplicate React instances during testing (react vs react-dom use different paths).
+// Patch realpathSync to return the subst path for ALL paths on the subst drive,
+// not just paths under cwd (node_modules is in the parent project dir).
+const cwd = process.cwd();
+// Determine the subst drive letter and its real target path
+// e.g. cwd = "W:\_proj\..." -> drive = "W:" -> realDrive = "C:\_init\w"
+const driveLetter = cwd.match(/^([A-Za-z]:)/)?.[1] ?? "";
+const realDrive = driveLetter ? fs.realpathSync.native(driveLetter + "\\") : "";
+// realDrive ends with backslash (e.g. "C:\_init\w\"), so strip it for prefix matching
+const realDrivePrefix = realDrive.replace(/\\$/, "");
+const substDrivePrefix = driveLetter;
+if (driveLetter && realDrivePrefix && realDrivePrefix.toUpperCase() !== driveLetter.toUpperCase()) {
+  const origRealpathSync = fs.realpathSync;
+  const origNative = fs.realpathSync.native;
+  const reverseSubst = (result: string): string => {
+    if (typeof result === "string" && result.toLowerCase().startsWith(realDrivePrefix.toLowerCase())) {
+      return substDrivePrefix + result.slice(realDrivePrefix.length);
+    }
+    return result;
+  };
+  fs.realpathSync = Object.assign(
+    function patchedRealpathSync(p: fs.PathLike, options?: { encoding?: BufferEncoding | null }) {
+      return reverseSubst(origRealpathSync.call(fs, p, options) as string);
+    },
+    { native: origNative }
+  ) as typeof fs.realpathSync;
+  fs.realpathSync.native = function patchedNative(p: fs.PathLike, options?: { encoding?: BufferEncoding | null }) {
+    return reverseSubst(origNative.call(fs, p, options) as string);
+  } as typeof fs.realpathSync.native;
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -109,13 +143,18 @@ export default defineConfig(({ mode }) => ({
     },
   },
 
+  server: {
+    fs: {
+      strict: false,
+      allow: ['..'],
+    },
+  },
+
   // Optimize dependencies pre-bundling
   optimizeDeps: {
     include: [
       "react",
       "react-dom",
-      "react-markdown",
-      "react-syntax-highlighter",
       "lucide-react",
     ],
     exclude: [
@@ -131,9 +170,19 @@ export default defineConfig(({ mode }) => ({
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
     css: true,
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.claude/worktrees/**',
+      '**/e2e/**',
+    ],
     server: {
       deps: {
-        inline: ['@tauri-apps/plugin-http', '@tauri-apps/plugin-updater', '@tauri-apps/api']
+        inline: [
+          '@tauri-apps/plugin-http',
+          '@tauri-apps/plugin-updater',
+          '@tauri-apps/api',
+        ]
       }
     }
   },

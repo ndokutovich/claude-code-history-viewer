@@ -2,6 +2,7 @@
 
 import { Terminal } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { AnsiText } from "@/components/common/AnsiText";
 
 type Props = {
   command: string;
@@ -65,7 +66,7 @@ export const TerminalStreamRenderer = ({
 
         {/* Output content */}
         <pre className="text-sm text-gray-100 whitespace-pre-wrap bg-gray-800 p-2 rounded overflow-auto max-h-80">
-          {String(output)}
+          <AnsiText text={String(output)} />
         </pre>
       </div>
     </div>

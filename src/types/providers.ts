@@ -2,6 +2,27 @@
 // FAIL FAST: All providers must implement complete definitions
 
 // ============================================================================
+// DETECTED PROVIDER (v1.9.0 - multi-provider facade)
+// ============================================================================
+
+/**
+ * Information about a provider detected (or not detected) on this system.
+ * Returned by the `detect_providers` Tauri command.
+ */
+export interface DetectedProvider {
+  /** Stable identifier: "claude", "codex", "gemini", "cursor", "opencode" */
+  id: string;
+  /** Human-readable display name */
+  display_name: string;
+  /** Resolved base path when the provider is available */
+  base_path?: string;
+  /** Whether the provider data directory exists and is readable */
+  is_available: boolean;
+  /** Reason the provider is unavailable (undefined when is_available = true) */
+  error?: string;
+}
+
+// ============================================================================
 // PROVIDER DEFINITION
 // ============================================================================
 
@@ -87,8 +108,9 @@ export interface DetectionPattern {
 export enum ProviderID {
   CLAUDE_CODE = 'claude-code',
   CURSOR = 'cursor',
-  GEMINI = 'gemini', // v1.7.0 - Gemini CLI support
-  CODEX = 'codex',   // v1.8.0 - Codex CLI support
+  GEMINI = 'gemini',    // v1.7.0 - Gemini CLI support
+  CODEX = 'codex',     // v1.8.0 - Codex CLI support
+  OPENCODE = 'opencode', // v1.9.0 - OpenCode support
   COPILOT = 'copilot',
   CLINE = 'cline',
   AIDER = 'aider',

@@ -1,0 +1,139 @@
+import React, { useState, useEffect, useId } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle, Terminal } from "lucide-react";
+import { useNativeRename } from "@/hooks/useNativeRename";
+
+interface NativeRenameDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  filePath: string;
+  currentName: string;
+  onSuccess?: (newTitle: string) => void;
+}
+
+export const NativeRenameDialog: React.FC<NativeRenameDialogProps> = ({
+  open,
+  onOpenChange,
+  filePath,
+  currentName,
+  onSuccess,
+}) => {
+  const { t } = useTranslation(["components", "common"]);
+  const { renameNative, isRenaming, error } = useNativeRename();
+  const [title, setTitle] = useState("");
+  const inputId = useId();
+
+  // Extract existing title if present
+  useEffect(() => {
+    if (open) {
+      const match = currentName.match(/^\[(.+?)\]/);
+      setTitle(match?.[1] ?? "");
+    }
+  }, [open, currentName]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const result = await renameNative(filePath, title);
+      onSuccess?.(result.new_title);
+      onOpenChange(false);
+    } catch {
+      // Error is handled by the hook
+    }
+  };
+
+  // Get base message (without prefix) for preview
+  const baseMessage = currentName.replace(/^\[.+?\]\s*/, "");
+  const titlePlaceholder = t("components:session.nativeRename.titlePlaceholder");
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Terminal className="w-5 h-5" />
+            {t("components:session.nativeRename.title")}
+          </DialogTitle>
+          <DialogDescription>
+            {t("components:session.nativeRename.description")}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                {t("components:session.nativeRename.warning")}
+              </AlertDescription>
+            </Alert>
+
+            {/* Current session name display */}
+            <div className="space-y-1">
+              <Label className="text-muted-foreground">
+                {t("components:session.nativeRename.currentName")}
+              </Label>
+              <p className="text-sm bg-muted/50 rounded-md px-3 py-2 break-words">
+                {currentName || t("components:session.summaryNotFound")}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor={inputId}>
+                {t("components:session.nativeRename.label")}
+              </Label>
+              <Input
+                id={inputId}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={t("components:session.nativeRename.placeholder")}
+                disabled={isRenaming}
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("components:session.nativeRename.preview", {
+                  title: title || titlePlaceholder,
+                  original: baseMessage.slice(0, 30),
+                })}
+              </p>
+            </div>
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isRenaming}
+            >
+              {t("common:cancel")}
+            </Button>
+            <Button type="submit" disabled={isRenaming}>
+              {isRenaming
+                ? t("common:saving")
+                : t("common:save")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};

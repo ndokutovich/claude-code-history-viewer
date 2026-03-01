@@ -66,6 +66,25 @@
   * {
     box-sizing: border-box;
   }
+
+  /* Font scale accessibility: controlled via --font-scale CSS custom property */
+  html {
+    font-size: calc(16px * var(--font-scale, 1));
+  }
+
+  /* High contrast mode overrides */
+  html.high-contrast {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 85%;
+    --border: 0 0% 50%;
+    --input: 0 0% 50%;
+  }
 }
 
 @layer components {

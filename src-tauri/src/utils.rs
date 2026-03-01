@@ -1,3 +1,48 @@
+/// Splits a byte slice into `(start, end)` byte offset pairs for each line.
+///
+/// Uses SIMD-accelerated `memchr` for fast newline detection (5-10x faster
+/// than byte-by-byte iteration on large files). Designed for use with
+/// memory-mapped files where random byte-offset access is O(1).
+pub fn find_line_ranges(data: &[u8]) -> Vec<(usize, usize)> {
+    use memchr::memchr_iter;
+
+    if data.is_empty() {
+        return Vec::new();
+    }
+
+    // Pre-allocate based on estimated average line length (~500 bytes for JSONL)
+    let estimated_lines = data.len() / 500;
+    let mut ranges = Vec::with_capacity(estimated_lines.max(16));
+    let mut start = 0;
+
+    for pos in memchr_iter(b'\n', data) {
+        // Trim trailing \r for Windows-style line endings
+        let end = if pos > start && data[pos - 1] == b'\r' {
+            pos - 1
+        } else {
+            pos
+        };
+        if end > start {
+            ranges.push((start, end));
+        }
+        start = pos + 1;
+    }
+
+    // Handle last line without trailing newline
+    if start < data.len() {
+        let end = if data[data.len() - 1] == b'\r' {
+            data.len() - 1
+        } else {
+            data.len()
+        };
+        if end > start {
+            ranges.push((start, end));
+        }
+    }
+
+    ranges
+}
+
 pub fn extract_project_name(raw_project_name: &str) -> String {
     if raw_project_name.starts_with('-') {
         let parts: Vec<&str> = raw_project_name.splitn(4, '-').collect();
