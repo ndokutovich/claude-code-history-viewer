@@ -313,7 +313,6 @@
   },
   "settings": {
     "title": "設定",
-    "changeFolder": "フォルダを変更",
     "theme": {
       "title": "テーマ",
       "light": "ライト",

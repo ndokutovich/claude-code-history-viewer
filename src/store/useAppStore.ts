@@ -659,7 +659,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const schemeProjectMatch = projectPath.match(/^[a-z-]+:\/\/(.+)/);
       let projectId: string;
       if (schemeProjectMatch) {
-        projectId = schemeProjectMatch[1];
+        projectId = schemeProjectMatch[1]!;
       } else {
         const normalizedSourcePath = source.path.replace(/\\/g, '/');
         const normalizedProjectPath = projectPath.replace(/\\/g, '/');

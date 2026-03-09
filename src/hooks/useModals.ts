@@ -1,10 +1,9 @@
 import { useState } from "react";
 
-export type ModalType = "feedback" | "folderSelector";
+export type ModalType = "feedback";
 
 export interface ModalState {
   feedback: boolean;
-  folderSelector: boolean;
 }
 
 interface UseModalsReturn {
@@ -17,7 +16,6 @@ interface UseModalsReturn {
 export const useModals = (): UseModalsReturn => {
   const [modals, setModals] = useState<ModalState>({
     feedback: false,
-    folderSelector: false,
   });
 
   const openModal = (name: ModalType): void => {
