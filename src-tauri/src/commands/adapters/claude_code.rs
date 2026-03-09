@@ -38,11 +38,11 @@ pub fn claude_message_to_universal(
 
     // Convert usage/tokens
     let tokens = msg.usage.as_ref().map(|u| TokenUsage {
-        input_tokens: u.input_tokens.unwrap_or(0) as i32,
-        output_tokens: u.output_tokens.unwrap_or(0) as i32,
-        total_tokens: (u.input_tokens.unwrap_or(0) + u.output_tokens.unwrap_or(0)) as i32,
-        cache_creation_tokens: u.cache_creation_input_tokens.map(|t| t as i32),
-        cache_read_tokens: u.cache_read_input_tokens.map(|t| t as i32),
+        input_tokens: u.input_tokens.unwrap_or(0).try_into().unwrap_or(i32::MAX),
+        output_tokens: u.output_tokens.unwrap_or(0).try_into().unwrap_or(i32::MAX),
+        total_tokens: (u.input_tokens.unwrap_or(0).saturating_add(u.output_tokens.unwrap_or(0))).try_into().unwrap_or(i32::MAX),
+        cache_creation_tokens: u.cache_creation_input_tokens.map(|t| t.try_into().unwrap_or(i32::MAX)),
+        cache_read_tokens: u.cache_read_input_tokens.map(|t| t.try_into().unwrap_or(i32::MAX)),
         service_tier: u.service_tier.clone(),
     });
 

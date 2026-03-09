@@ -41,7 +41,8 @@ pub struct OpenCodeSession {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OpenCodeTime {
     pub created: i64,  // epoch milliseconds
-    pub updated: i64,  // epoch milliseconds
+    #[serde(default)]
+    pub updated: Option<i64>,  // epoch milliseconds (absent in newer OpenCode versions)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -359,14 +360,18 @@ pub fn load_opencode_sessions_impl(
             .title
             .clone()
             .filter(|t| !t.is_empty())
-            .unwrap_or_else(|| format!("Session {}", &session.id[..8.min(session.id.len())]));
+            .unwrap_or_else(|| {
+                let truncated: String = session.id.chars().take(8).collect();
+                format!("Session {}", truncated)
+            });
 
         let first_message_at = epoch_ms_to_rfc3339(session.time.created);
-        let last_message_at = epoch_ms_to_rfc3339(session.time.updated);
+        let updated = session.time.updated.unwrap_or(session.time.created);
+        let last_message_at = epoch_ms_to_rfc3339(updated);
 
-        let duration = session.time.updated.saturating_sub(session.time.created);
+        let duration = updated.saturating_sub(session.time.created);
 
-        let checksum = format!("{:x}", session.id.len() ^ (session.time.updated as usize));
+        let checksum = format!("{:x}", session.id.len() ^ (updated as usize));
 
         sessions.push(UniversalSession {
             id: session.id.clone(),
@@ -382,7 +387,13 @@ pub fn load_opencode_sessions_impl(
             total_tokens: None,
             tool_call_count: 0,
             error_count: 0,
-            metadata: HashMap::new(),
+            metadata: {
+                let mut metadata = HashMap::new();
+                metadata.insert("filePath".to_string(), serde_json::Value::String(
+                    format!("opencode://{}", session.id)
+                ));
+                metadata
+            },
             checksum,
         });
     }
@@ -584,9 +595,9 @@ fn opencode_message_to_universal(
 
     // Extract tokens if available
     let tokens = msg.tokens.as_ref().map(|t| TokenUsage {
-        input_tokens: t.input as i32,
-        output_tokens: t.output as i32,
-        total_tokens: (t.input + t.output) as i32,
+        input_tokens: t.input.try_into().unwrap_or(i32::MAX),
+        output_tokens: t.output.try_into().unwrap_or(i32::MAX),
+        total_tokens: (t.input.saturating_add(t.output)).try_into().unwrap_or(i32::MAX),
         cache_creation_tokens: None,
         cache_read_tokens: None,
         service_tier: None,
@@ -784,17 +795,11 @@ fn extract_tool_calls(parts: &[OpenCodePart]) -> Vec<ToolCall> {
                     .unwrap_or("pending")
                     .to_string();
                 let output = state.get("output").and_then(|o| {
-                    if o.is_object() {
-                        Some(
-                            o.as_object()
-                                .unwrap()
-                                .iter()
-                                .map(|(k, v)| (k.clone(), v.clone()))
-                                .collect::<HashMap<String, Value>>(),
-                        )
-                    } else {
-                        None
-                    }
+                    o.as_object().map(|obj| {
+                        obj.iter()
+                            .map(|(k, v)| (k.clone(), v.clone()))
+                            .collect::<HashMap<String, Value>>()
+                    })
                 });
                 let error_str = state
                     .get("error")

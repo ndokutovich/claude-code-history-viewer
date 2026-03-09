@@ -458,13 +458,18 @@ export class OpenCodeAdapter implements IConversationAdapter {
    * We call the Rust backend to get the actual base path.
    */
   private async resolveOpencodePath(virtualOrRealPath: string): Promise<string> {
-    // If this is already a real filesystem path (not virtual), use it directly
-    if (!virtualOrRealPath.startsWith('opencode://')) {
-      return virtualOrRealPath;
+    // Virtual path - ask Rust for the real base path
+    if (virtualOrRealPath.startsWith('opencode://')) {
+      return invoke<string>('get_opencode_path');
     }
 
-    // Virtual path - ask Rust for the real base path
-    return invoke<string>('get_opencode_path');
+    // Bare UUID or non-path string — resolve via backend
+    if (!virtualOrRealPath.includes('/') && !virtualOrRealPath.includes('\\')) {
+      return invoke<string>('get_opencode_path');
+    }
+
+    // Real filesystem path - use it directly
+    return virtualOrRealPath;
   }
 
   private ensureInitialized(): void {

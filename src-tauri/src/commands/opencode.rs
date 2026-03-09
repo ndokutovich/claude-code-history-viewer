@@ -130,8 +130,8 @@ pub async fn load_opencode_messages(
     limit: usize,
 ) -> Result<Vec<UniversalMessage>, String> {
     println!(
-        "Loading OpenCode messages: session={}, offset={}, limit={}",
-        session_id, offset, limit
+        "Loading OpenCode messages: path={}, session={}, offset={}, limit={}",
+        opencode_path, session_id, offset, limit
     );
 
     let path_buf = PathBuf::from(&opencode_path);
