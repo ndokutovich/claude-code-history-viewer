@@ -205,8 +205,8 @@ pub async fn load_project_sessions(
                 };
 
                 let message_count = filtered_messages.len();
-                let first_message_time = messages.first().map(|m| m.timestamp.clone()).unwrap_or_default();
-                let last_message_time = messages.last().map(|m| m.timestamp.clone()).unwrap_or_default();
+                let first_message_time = filtered_messages.first().map(|m| m.timestamp.clone()).unwrap_or_default();
+                let last_message_time = filtered_messages.last().map(|m| m.timestamp.clone()).unwrap_or_default();
 
                 let has_tool_use = messages.iter().any(|m| {
                     // Debug: Check first message structure
