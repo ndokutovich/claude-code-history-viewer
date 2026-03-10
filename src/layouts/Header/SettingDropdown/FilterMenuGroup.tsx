@@ -7,18 +7,18 @@ import { Eye } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 
 export const FilterMenuGroup = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
   const { showSystemMessages, setShowSystemMessages } = useAppStore();
 
   return (
     <>
-      <DropdownMenuLabel>{t('common.settings.filter.title', { defaultValue: "필터" })}</DropdownMenuLabel>
+      <DropdownMenuLabel>{t('settings.filter.title')}</DropdownMenuLabel>
       <DropdownMenuCheckboxItem
         checked={showSystemMessages}
         onCheckedChange={setShowSystemMessages}
       >
         <Eye className="mr-2 h-4 w-4 text-foreground" />
-        <span>{t('common.settings.filter.showSystemMessages', { defaultValue: "시스템 메시지 표시" })}</span>
+        <span>{t('settings.filter.showSystemMessages')}</span>
       </DropdownMenuCheckboxItem>
     </>
   );
