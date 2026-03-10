@@ -154,15 +154,27 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
   }, [fetchGitHubRelease, state.currentVersion]);
 
   const downloadAndInstall = useCallback(async () => {
-    if (!state.updateInfo) return;
-
     try {
+      // If updateInfo is null (e.g., from cache hit), re-fetch the Update object
+      let updateObj = state.updateInfo;
+      if (!updateObj) {
+        updateObj = await check() ?? null;
+        if (!updateObj) {
+          setState((prev) => ({
+            ...prev,
+            error: "Could not prepare the update for download. Please try again.",
+          }));
+          return;
+        }
+        setState((prev) => ({ ...prev, updateInfo: updateObj }));
+      }
+
       setState((prev) => ({ ...prev, isDownloading: true, error: null }));
 
       // Download progress listener
       let downloaded = 0;
       let total = 0;
-      await state.updateInfo.downloadAndInstall((event) => {
+      await updateObj.downloadAndInstall((event) => {
         switch (event.event) {
           case "Started":
             // Capture total file size if available
