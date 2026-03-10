@@ -8,11 +8,34 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 
 **Languages**: [English](README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) | [中文 (简体)](README.zh-CN.md) | [中文 (繁體)](README.zh-TW.md) | [Русский](README.ru.md)
 
-**Download latest release**:
-[Windows (.exe)](https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.4_x64-setup.exe) |
-[macOS (.dmg)](https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.4_universal.dmg) |
-[Linux (.AppImage)](https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.4_amd64.AppImage) |
-[All releases](https://github.com/ndokutovich/claude-code-history-viewer/releases)
+### Download
+
+<table>
+<tr>
+<td align="center"><b>Windows</b></td>
+<td align="center"><b>macOS</b></td>
+<td align="center"><b>Linux</b></td>
+</tr>
+<tr>
+<td align="center">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.4_x64-setup.exe">
+<img src="https://img.shields.io/badge/Download-.exe-blue?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Download"/>
+</a>
+</td>
+<td align="center">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.4_universal.dmg">
+<img src="https://img.shields.io/badge/Download-.dmg-black?style=for-the-badge&logo=apple&logoColor=white" alt="macOS Download"/>
+</a>
+</td>
+<td align="center">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.4_amd64.AppImage">
+<img src="https://img.shields.io/badge/Download-.AppImage-orange?style=for-the-badge&logo=linux&logoColor=white" alt="Linux Download"/>
+</a>
+</td>
+</tr>
+</table>
+
+<sub>[All releases](https://github.com/ndokutovich/claude-code-history-viewer/releases)</sub>
 
 > ⚠️ **Beta software** - Things might break or change. Report issues on [GitHub](https://github.com/ndokutovich/claude-code-history-viewer/issues).
 
