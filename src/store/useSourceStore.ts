@@ -57,7 +57,7 @@ interface SourceStoreState {
   initializeSources: (onProgress?: (message: string, percent: number) => void) => Promise<void>;
   detectAllProviders: (onProgress?: (providerName: string, completed: number, total: number) => void) => Promise<string[]>;
   autoDetectDefaultSource: () => Promise<void>;
-  autoDetectAndMerge: () => Promise<void>;
+  autoDetectAndMerge: (onProgress?: (providerName: string, completed: number, total: number) => void) => Promise<void>;
 
   // Actions - Source CRUD
   addSource: (path: string, name?: string) => Promise<UniversalSource>;
