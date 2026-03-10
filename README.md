@@ -9,9 +9,9 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 **Languages**: [English](README.md) | [한국어](README.ko.md) | [日本語](README.ja.md) | [中文 (简体)](README.zh-CN.md) | [中文 (繁體)](README.zh-TW.md) | [Русский](README.ru.md)
 
 **Download latest release**:
-[Windows (.exe)](https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.1_x64-setup.exe) |
-[macOS (.dmg)](https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.1_universal.dmg) |
-[Linux (.AppImage)](https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.1_amd64.AppImage) |
+[Windows (.exe)](https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.4_x64-setup.exe) |
+[macOS (.dmg)](https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.4_universal.dmg) |
+[Linux (.AppImage)](https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.4_amd64.AppImage) |
 [All releases](https://github.com/ndokutovich/claude-code-history-viewer/releases)
 
 > ⚠️ **Beta software** - Things might break or change. Report issues on [GitHub](https://github.com/ndokutovich/claude-code-history-viewer/issues).
@@ -46,6 +46,25 @@ Per-project token usage breakdown and session-level analysis
 ### Demo
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## What's New in v1.9.4
+
+**Splash screen & startup**:
+- Granular progress reporting during source detection (per-provider progress)
+- 5-second timeout per provider prevents one slow provider from blocking startup
+- Animated progress bar in static HTML preloader while React bundles load
+
+**Upstream ports**:
+- External links now open in system browser instead of navigating the WebView
+- Key prop spreading fix in code preview (eliminates React warning)
+- Panel overlap fix on narrow windows (sidebar + navigator respect min-width)
+
+**Bug fixes**:
+- Fixed i18n regression where settings menu labels showed raw translation keys
+
+**281 Unit Tests** (up from 278).
+
+---
 
 ## What's New in v1.9.1
 
