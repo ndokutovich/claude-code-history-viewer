@@ -42,6 +42,8 @@
   "captureMode.hideBlock": "このブロックを非表示",
   "captureMode.restoreAll": "すべて復元",
   "captureMode.tooltip": "スクリーンショット用にメッセージブロックを非表示",
+  "captureMode.hideSession": "セッションを非表示",
+  "captureMode.hideProject": "プロジェクトを非表示",
   "citationRenderer.blockLocation": "ブロック {{start}}-{{end}}",
   "citationRenderer.charLocation": "文字 {{start}}-{{end}}",
   "citationRenderer.pageRange": "{{start}}-{{end}}ページ",

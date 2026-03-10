@@ -1803,7 +1803,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Capture Mode
   // ============================================================
   enterCaptureMode: () => set({ isCaptureMode: true }),
-  exitCaptureMode: () => set({ isCaptureMode: false }),
+  exitCaptureMode: () => set({
+    isCaptureMode: false,
+    hiddenMessageIds: [],
+    hiddenSessionIds: [],
+    hiddenProjectPaths: [],
+  }),
   hideMessage: (uuid: string) => {
     const { hiddenMessageIds } = get();
     if (!hiddenMessageIds.includes(uuid)) {
@@ -1821,7 +1826,30 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const { isCaptureMode, hiddenMessageIds } = get();
     return isCaptureMode && hiddenMessageIds.includes(uuid);
   },
-  getHiddenCount: () => get().hiddenMessageIds.length,
+  getHiddenMessageCount: () => get().hiddenMessageIds.length,
+  hideSession: (sessionId: string) => {
+    const { hiddenSessionIds } = get();
+    if (!hiddenSessionIds.includes(sessionId)) {
+      set({ hiddenSessionIds: [...hiddenSessionIds, sessionId] });
+    }
+  },
+  showSession: (sessionId: string) => {
+    set({ hiddenSessionIds: get().hiddenSessionIds.filter((id) => id !== sessionId) });
+  },
+  hideProject: (projectPath: string) => {
+    const { hiddenProjectPaths } = get();
+    if (!hiddenProjectPaths.includes(projectPath)) {
+      set({ hiddenProjectPaths: [...hiddenProjectPaths, projectPath] });
+    }
+  },
+  showProject: (projectPath: string) => {
+    set({ hiddenProjectPaths: get().hiddenProjectPaths.filter((p) => p !== projectPath) });
+  },
+  restoreAll: () => set({ hiddenMessageIds: [], hiddenSessionIds: [], hiddenProjectPaths: [] }),
+  getTotalHiddenCount: () => {
+    const { hiddenMessageIds, hiddenSessionIds, hiddenProjectPaths } = get();
+    return hiddenMessageIds.length + hiddenSessionIds.length + hiddenProjectPaths.length;
+  },
 
   // ============================================================
   // Provider helpers

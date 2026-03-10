@@ -11,6 +11,7 @@ import {
   Columns,
   Clock,
   SlidersHorizontal,
+  Camera,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -39,6 +40,9 @@ export const Header = () => {
     selectedSession,
     isLoadingMessages,
     refreshCurrentSession,
+    isCaptureMode,
+    enterCaptureMode,
+    exitCaptureMode,
   } = useAppStore();
 
   const {
@@ -300,6 +304,22 @@ export const Header = () => {
                       isLoadingMessages ? "animate-spin" : "",
                       COLORS.ui.text.primary
                     )}
+                  />
+                </TooltipButton>
+
+                {/* Capture Mode Toggle */}
+                <TooltipButton
+                  onClick={() => isCaptureMode ? exitCaptureMode() : enterCaptureMode()}
+                  className={cn(
+                    "p-2 rounded-lg transition-colors",
+                    isCaptureMode
+                      ? "bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400"
+                      : COLORS.ui.interactive.hover
+                  )}
+                  content={t("renderers:captureMode.tooltip")}
+                >
+                  <Camera
+                    className={cn("w-5 h-5", isCaptureMode ? "text-red-500" : COLORS.ui.text.primary)}
                   />
                 </TooltipButton>
               </>

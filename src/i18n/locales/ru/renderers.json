@@ -42,6 +42,8 @@
   "captureMode.hideBlock": "Hide this block",
   "captureMode.restoreAll": "Restore All",
   "captureMode.tooltip": "Hide message blocks for screenshots",
+  "captureMode.hideSession": "Скрыть сессию",
+  "captureMode.hideProject": "Скрыть проект",
   "citationRenderer.blockLocation": "blocks {{start}}-{{end}}",
   "citationRenderer.charLocation": "chars {{start}}-{{end}}",
   "citationRenderer.pageRange": "pages {{start}}-{{end}}",

@@ -11,11 +11,10 @@ import { cn } from "@/utils/cn";
 import { useAppStore } from "@/store/useAppStore";
 
 export function CaptureModeToolbar() {
-  const { t } = useTranslation();
-  const { hiddenMessageIds, restoreAllMessages, exitCaptureMode } =
-    useAppStore();
-
-  const hiddenCount = hiddenMessageIds.length;
+  const { t } = useTranslation("renderers");
+  const hiddenCount = useAppStore((s) => s.getTotalHiddenCount());
+  const restoreAll = useAppStore((s) => s.restoreAll);
+  const exitCaptureMode = useAppStore((s) => s.exitCaptureMode);
 
   return (
     <div
@@ -45,7 +44,7 @@ export function CaptureModeToolbar() {
         {/* Hidden count - minimal */}
         {hiddenCount > 0 && (
           <button
-            onClick={restoreAllMessages}
+            onClick={restoreAll}
             className={cn(
               "flex items-center gap-2 group",
               "text-zinc-500 hover:text-zinc-300 transition-colors"
@@ -53,7 +52,7 @@ export function CaptureModeToolbar() {
             title={t("captureMode.restoreAll")}
           >
             <span className="text-xs font-mono tabular-nums">
-              {hiddenCount} {hiddenCount === 1 ? "block" : "blocks"} hidden
+              {t("captureMode.hiddenCount", { count: hiddenCount })}
             </span>
             <RotateCcw className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>
