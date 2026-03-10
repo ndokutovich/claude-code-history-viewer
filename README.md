@@ -49,20 +49,9 @@ Per-project token usage breakdown and session-level analysis
 
 ## What's New in v1.9.4
 
-**Splash screen & startup**:
-- Granular progress reporting during source detection (per-provider progress)
-- 5-second timeout per provider prevents one slow provider from blocking startup
-- Animated progress bar in static HTML preloader while React bundles load
-
-**Upstream ports**:
-- External links now open in system browser instead of navigating the WebView
-- Key prop spreading fix in code preview (eliminates React warning)
-- Panel overlap fix on narrow windows (sidebar + navigator respect min-width)
-
-**Bug fixes**:
-- Fixed i18n regression where settings menu labels showed raw translation keys
-
-**281 Unit Tests** (up from 278).
+- Granular splash screen progress with per-provider detection status
+- External links open in system browser instead of navigating the WebView
+- Responsive panel layout prevents overlap on narrow windows
 
 ---
 
