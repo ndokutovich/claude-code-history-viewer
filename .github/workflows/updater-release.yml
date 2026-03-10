@@ -147,6 +147,80 @@ jobs:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
 
+  # Optional: Sign Windows artifacts via SignPath (free for OSS).
+  # If SIGNPATH_API_TOKEN is not configured or signing fails, the release
+  # proceeds with unsigned artifacts (continue-on-error: true).
+  sign-windows:
+    needs: [create-release, build-tauri]
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Check if SignPath is configured
+        id: check-signpath
+        env:
+          SIGNPATH_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+        run: |
+          if [ -z "$SIGNPATH_TOKEN" ]; then
+            echo "⏭️ SIGNPATH_API_TOKEN not configured, skipping signing"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ SignPath configured"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download Windows artifacts from release
+        if: steps.check-signpath.outputs.skip != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "📦 Downloading Windows artifacts for signing..."
+          RELEASE_INFO=$(gh api repos/${{ github.repository }}/releases/${{ needs.create-release.outputs.release_id }})
+
+          # Download .exe installer
+          EXE_URL=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | endswith("x64-setup.exe")) | .browser_download_url')
+          if [ -n "$EXE_URL" ] && [ "$EXE_URL" != "null" ]; then
+            echo "⬇️ Downloading exe: $EXE_URL"
+            curl -sL "$EXE_URL" -o installer.exe
+          else
+            echo "⚠️ No .exe found in release"
+            exit 0
+          fi
+
+      - name: Submit signing request to SignPath
+        if: steps.check-signpath.outputs.skip != 'true'
+        uses: signpath/github-actions/submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: "claude-code-history-viewer"
+          signing-policy-slug: "release-signing"
+          artifact-configuration-slug: "windows-installer"
+          github-artifact-id: ""
+          input-artifact-path: "installer.exe"
+          output-artifact-path: "installer-signed.exe"
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 600
+
+      - name: Replace unsigned exe in release
+        if: steps.check-signpath.outputs.skip != 'true' && success()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_INFO=$(gh api repos/${{ github.repository }}/releases/${{ needs.create-release.outputs.release_id }})
+          EXE_NAME=$(echo "$RELEASE_INFO" | jq -r '.assets[] | select(.name | endswith("x64-setup.exe")) | .name')
+
+          if [ -f "installer-signed.exe" ] && [ -n "$EXE_NAME" ]; then
+            echo "🔏 Uploading signed exe as $EXE_NAME..."
+            # Delete unsigned, upload signed
+            ASSET_ID=$(echo "$RELEASE_INFO" | jq -r ".assets[] | select(.name == \"$EXE_NAME\") | .id")
+            gh api -X DELETE repos/${{ github.repository }}/releases/assets/$ASSET_ID || true
+            gh release upload ${{ github.ref_name }} "installer-signed.exe#${EXE_NAME}" --clobber
+            echo "✅ Signed exe uploaded"
+          else
+            echo "⚠️ Signed artifact not found, keeping unsigned"
+          fi
+
   generate-updater-metadata:
     needs: [create-release, build-tauri]
     runs-on: ubuntu-latest
