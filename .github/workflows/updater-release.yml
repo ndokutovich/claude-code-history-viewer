@@ -192,9 +192,9 @@ jobs:
         uses: signpath/github-actions/submit-signing-request@v1
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
-          project-slug: "claude-code-history-viewer"
-          signing-policy-slug: "release-signing"
+          organization-id: "79e1f0df-bb54-494b-bc07-269e01057084"
+          project-slug: "Claude_Code_History_Viewer"
+          signing-policy-slug: "OOS_Sign"
           artifact-configuration-slug: "windows-installer"
           github-artifact-id: ""
           input-artifact-path: "installer.exe"
