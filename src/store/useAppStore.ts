@@ -151,7 +151,13 @@ function findSourceForPath(projectPath: string, providerId?: string): UniversalS
   // Fallback: match by providerId when path-based matching fails
   // (e.g., OpenCode sessions where file_path may be a UUID)
   if (providerId) {
-    return availableSources.find(s => s.providerId === providerId) ?? null;
+    // First try exact sourceId match (if providerId is actually a sourceId)
+    const bySourceId = availableSources.find(s => s.id === providerId);
+    if (bySourceId) return bySourceId;
+
+    // Only match by providerId when it's unambiguous (single source for that provider)
+    const byProviderId = availableSources.filter(s => s.providerId === providerId);
+    if (byProviderId.length === 1) return byProviderId[0];
   }
 
   return null;
