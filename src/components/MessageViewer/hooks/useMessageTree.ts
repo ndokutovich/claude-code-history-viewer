@@ -93,11 +93,12 @@ export const useMessageTree = (messages: UIMessage[]): UseMessageTreeResult => {
       ];
 
       // Recursively add child messages (increase depth)
+      // Reuse the same visitedIds Set — no need to copy since we traverse depth-first
       children.forEach((child, index) => {
         const childNodes = renderMessageTree(
           child,
           depth + 1,
-          new Set(visitedIds),
+          visitedIds,
           `${uniqueKey}-child-${index}`,
           sessionFilePath,
           NodeComponent,

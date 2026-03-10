@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { CommandRenderer, ImageRenderer } from "../contentRenderer";
 import { isImageUrl, isBase64Image } from "../../utils/messageUtils";
 import { TooltipButton } from "../../shared/TooltipButton";
+import { useDarkMode } from "../../hooks/useDarkMode";
 import type { Components } from "react-markdown";
 
 interface MessageContentDisplayProps {
@@ -19,23 +20,8 @@ export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = React
 }) => {
   const { t } = useTranslation("components");
 
-  // Detect dark mode
-  const [isDarkMode, setIsDarkMode] = React.useState(
-    document.documentElement.classList.contains('dark')
-  );
-
-  React.useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDarkMode(document.documentElement.classList.contains('dark'));
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-
-    return () => observer.disconnect();
-  }, []);
+  // Shared dark mode detection (single observer for all instances)
+  const isDarkMode = useDarkMode();
 
   // Custom markdown components for assistant messages with inline styles
   // Use useMemo to recreate when isDarkMode changes

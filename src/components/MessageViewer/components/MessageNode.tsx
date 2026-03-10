@@ -75,6 +75,12 @@ export const MessageNode = React.memo(({
     }
   };
 
+  // Cache content extraction (was called 3x per render)
+  const extractedContent = React.useMemo(
+    () => extractUIMessageContent(message),
+    [message]
+  );
+
   // Sidechain filtering is now handled at the data loading level (adapter.loadMessages)
   // This is a defensive check to catch adapter bugs during development
   if (message.isSidechain && import.meta.env.DEV) {
@@ -228,7 +234,7 @@ export const MessageNode = React.memo(({
             <>
               {/* Message Content */}
               <MessageContentDisplay
-                content={extractUIMessageContent(message)}
+                content={extractedContent}
                 messageType={message.type}
               />
 
@@ -238,14 +244,14 @@ export const MessageNode = React.memo(({
                 Array.isArray(message.content) &&
                 (message.type !== "assistant" ||
                   (message.type === "assistant" &&
-                    !extractUIMessageContent(message))) && (
+                    !extractedContent)) && (
                   <div className="mb-2">
                     <ClaudeContentArrayRenderer content={message.content} />
                   </div>
                 )}
 
               {/* Special case: when content is null but toolUseResult exists */}
-              {!extractUIMessageContent(message) &&
+              {!extractedContent &&
                 message.toolUseResult &&
                 typeof message.toolUseResult === "object" &&
                 Array.isArray(message.toolUseResult.content) && (
