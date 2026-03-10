@@ -52,6 +52,8 @@ Per-project token usage breakdown and session-level analysis
 - Granular splash screen progress with per-provider detection status
 - External links open in system browser instead of navigating the WebView
 - Responsive panel layout prevents overlap on narrow windows
+- Hardened OpenCode provider adapter stability
+- Improved auto-updater reliability
 
 ---
 
