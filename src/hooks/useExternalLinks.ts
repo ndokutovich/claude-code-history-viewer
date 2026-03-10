@@ -13,7 +13,7 @@ export function useExternalLinks(
     const container = containerRef.current;
     if (!container) return;
 
-    const handleClick = (e: MouseEvent) => {
+    const handleClick = async (e: MouseEvent) => {
       const anchor = (e.target as HTMLElement).closest("a[href]");
       if (!anchor) return;
 
@@ -24,9 +24,11 @@ export function useExternalLinks(
       if (href.startsWith("http://") || href.startsWith("https://")) {
         e.preventDefault();
         e.stopPropagation();
-        openUrl(href).catch((err) =>
-          console.error("Failed to open external URL:", err)
-        );
+        try {
+          await openUrl(href);
+        } catch (err) {
+          console.error("Failed to open external URL:", err);
+        }
       }
     };
 
