@@ -44,6 +44,7 @@
   "messageView.formatted": "Форматировано",
   "messageView.messagesOnly": "Только сообщения",
   "messageView.noMessages": "Нет сообщений",
+  "messageView.showNoise": "Показать шум",
   "messageView.raw": "Исходный",
   "messageView.rawCopied": "Исходные данные скопированы",
   "messageView.rawCopyFailed": "Не удалось скопировать исходные данные",

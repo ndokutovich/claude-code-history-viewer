@@ -44,6 +44,7 @@
   "messageView.formatted": "Formatted",
   "messageView.messagesOnly": "Messages Only",
   "messageView.noMessages": "No Messages",
+  "messageView.showNoise": "Show noise",
   "messageView.raw": "Raw",
   "messageView.rawCopied": "Raw Copied",
   "messageView.rawCopyFailed": "Raw Copy Failed",

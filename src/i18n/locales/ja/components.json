@@ -567,6 +567,7 @@
     "commandOnly": "コマンドのみ",
     "toolUseOnly": "ツール使用のみ",
     "messagesOnly": "メッセージのみ",
+    "showNoise": "ノイズ表示",
     "clearFilters": "クリア",
     "copyRaw": "JSONをコピー",
     "rawCopied": "生メッセージをコピーしました",

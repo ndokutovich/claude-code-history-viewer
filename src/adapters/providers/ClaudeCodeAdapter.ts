@@ -305,6 +305,7 @@ export class ClaudeCodeAdapter implements IConversationAdapter {
         offset: options.offset || 0,
         limit: options.limit || 100,
         excludeSidechain: options.excludeSidechain || false,
+        includeNoise: options.includeNoise || false,
       });
 
       // Messages are already in universal format from backend

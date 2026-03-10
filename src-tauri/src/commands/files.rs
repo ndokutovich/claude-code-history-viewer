@@ -49,7 +49,7 @@ pub async fn get_file_activities(
         let projects = scan_projects(claude_path).await?;
 
         for project in projects {
-            let sessions = load_project_sessions(project.path.clone(), Some(true)).await?;
+            let sessions = load_project_sessions(project.path.clone(), Some(true), None).await?;
 
             for session in sessions {
                 let messages = load_session_messages_for_files(&session.file_path).await?;
@@ -149,7 +149,7 @@ pub async fn get_file_activities(
             }
         } else {
             // Claude Code project
-            let sessions = load_project_sessions(project_path.clone(), Some(true)).await?;
+            let sessions = load_project_sessions(project_path.clone(), Some(true), None).await?;
 
             for session in sessions {
                 let messages = load_session_messages_for_files(&session.file_path).await?;
@@ -246,6 +246,8 @@ async fn load_session_messages_for_files(
                         model,
                         stop_reason,
                         project_path: None,
+                        subtype: None,
+                        system_metadata: None,
                     };
 
                     let project_id = extract_project_id(&None, &session_path);

@@ -247,7 +247,7 @@ pub async fn load_provider_sessions(
             // Claude sessions are loaded per JSONL file; the project_path is the
             // directory containing the JSONL files.
             let claude_sessions =
-                crate::commands::session::load_project_sessions(project_path.clone(), Some(false))
+                crate::commands::session::load_project_sessions(project_path.clone(), Some(false), None)
                     .await?;
 
             // Convert ClaudeSession → UniversalSession
@@ -329,7 +329,7 @@ pub async fn load_provider_messages(
         "claude-code" => {
             // load_session_messages returns Vec<UniversalMessage> directly;
             // apply manual offset/limit pagination after loading.
-            let all = crate::commands::session::load_session_messages(session_path).await?;
+            let all = crate::commands::session::load_session_messages(session_path, None).await?;
             let total = all.len();
             let start = offset.min(total);
             let end = (offset + limit).min(total);
