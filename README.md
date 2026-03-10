@@ -18,17 +18,17 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 </tr>
 <tr>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.5_x64-setup.exe">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.6_x64-setup.exe">
 <img src="https://img.shields.io/badge/Download-.exe-blue?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.5_universal.dmg">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.6_universal.dmg">
 <img src="https://img.shields.io/badge/Download-.dmg-black?style=for-the-badge&logo=apple&logoColor=white" alt="macOS Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.5_amd64.AppImage">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.6_amd64.AppImage">
 <img src="https://img.shields.io/badge/Download-.AppImage-orange?style=for-the-badge&logo=linux&logoColor=white" alt="Linux Download"/>
 </a>
 </td>
@@ -69,6 +69,28 @@ Per-project token usage breakdown and session-level analysis
 ### Demo
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## What's New in v1.9.6
+
+**Configurable Noise Filtering** — progress, file-history-snapshot, and queue-operation messages (~82% of large sessions) are now hidden by default:
+- "Show noise" checkbox in message view controls to toggle visibility
+- Backend-driven filtering via `include_noise` parameter for performance
+- Toggling triggers a full session reload (not just a frontend filter)
+- Translations for all 6 languages
+
+**Compaction Boundary Display** — system messages for context compaction now show metadata:
+- Token count before compaction, trigger reason, and subtype info
+- Applies to compact_boundary, microcompact_boundary, and stop_hook_summary
+
+**Cursor Scan Performance Fix** — resolved indefinite freeze at 65% "Scanning projects" on Windows:
+- Cursor IDE file locks on `state.vscdb` caused hangs; fixed with read-only SQLite flags
+- Single shared DB connection across all workspaces (was opening 104× per scan)
+- `EXISTS` queries replace `COUNT(*)` full-table scans
+- Scan time: infinite hang → ~500ms
+
+**295 Unit Tests** (up from 283) including 12 new noise filtering tests.
+
+---
 
 ## What's New in v1.9.5
 
