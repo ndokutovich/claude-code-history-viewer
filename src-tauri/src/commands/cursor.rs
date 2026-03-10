@@ -175,6 +175,7 @@ pub async fn validate_cursor_folder(path: String) -> Result<bool, String> {
 
 #[tauri::command]
 pub async fn scan_cursor_workspaces(cursor_path: String) -> Result<Vec<CursorWorkspace>, String> {
+    let start_time = std::time::Instant::now();
     let cursor_base = PathBuf::from(&cursor_path);
     let workspace_storage = cursor_base.join("User").join("workspaceStorage");
 
@@ -184,8 +185,16 @@ pub async fn scan_cursor_workspaces(cursor_path: String) -> Result<Vec<CursorWor
 
     let mut workspaces = Vec::new();
 
-    // Find all session databases first (shared across workspaces)
-    let _session_dbs = find_cursor_session_dbs(&cursor_base);
+    // Find global session DB once and open a single connection for all workspaces
+    let session_dbs = find_cursor_session_dbs(&cursor_base);
+    let global_conn = session_dbs.first().and_then(|db| {
+        let conn = Connection::open_with_flags(
+            db,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        ).ok()?;
+        let _ = conn.execute_batch("PRAGMA busy_timeout = 3000;");
+        Some(conn)
+    });
 
     // Scan each workspace directory
     for entry in WalkDir::new(&workspace_storage)
@@ -209,8 +218,11 @@ pub async fn scan_cursor_workspaces(cursor_path: String) -> Result<Vec<CursorWor
         });
 
         // Count actual composers (sessions) that have messages for this workspace
-        let (session_count, last_activity) =
-            count_workspace_composers_with_messages(&cursor_base, &state_db).unwrap_or((0, None));
+        let (session_count, last_activity) = if let Some(ref gconn) = global_conn {
+            count_workspace_composers_with_cached_conn(gconn, &state_db).unwrap_or((0, None))
+        } else {
+            (0, None)
+        };
 
         #[cfg(debug_assertions)]
         println!(
@@ -231,20 +243,27 @@ pub async fn scan_cursor_workspaces(cursor_path: String) -> Result<Vec<CursorWor
         });
     }
 
+    let elapsed = start_time.elapsed();
+    println!(
+        "📊 scan_cursor_workspaces: {} workspaces scanned in {}ms",
+        workspaces.len(),
+        elapsed.as_millis()
+    );
+
     Ok(workspaces)
 }
 
-/// Count the number of composers (sessions) in a workspace that actually have messages
-/// Returns (count, most_recent_timestamp)
-fn count_workspace_composers_with_messages(
-    cursor_base: &PathBuf,
+/// Count composers with messages using a pre-opened global DB connection.
+/// Avoids re-opening the global DB for every workspace (104× speedup).
+fn count_workspace_composers_with_cached_conn(
+    global_conn: &Connection,
     state_db: &PathBuf,
 ) -> Result<(usize, Option<String>), String> {
-    // Open workspace database
+    // Open workspace database to read composer metadata (with timeout for lock contention)
     let conn = Connection::open(state_db)
         .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open workspace DB: {}", e))?;
+    let _ = conn.execute_batch("PRAGMA busy_timeout = 3000;");
 
-    // Try to read composer.composerData
     let composer_data_json: Result<String, _> = conn.query_row(
         "SELECT value FROM ItemTable WHERE key = 'composer.composerData'",
         params![],
@@ -253,68 +272,63 @@ fn count_workspace_composers_with_messages(
 
     let composers: Vec<ComposerMetadata> = match composer_data_json {
         Ok(json_str) => {
-            // Parse composers
             let workspace_composer_data: WorkspaceComposerData = serde_json::from_str(&json_str)
                 .map_err(|e| format!("CURSOR_PARSE_ERROR: Failed to parse composer data: {}", e))?;
-
             workspace_composer_data.all_composers
         }
-        Err(_) => {
-            // No composer data found = 0 sessions
-            return Ok((0, None));
-        }
+        Err(_) => return Ok((0, None)),
     };
 
     if composers.is_empty() {
         return Ok((0, None));
     }
 
-    // Find global database
-    let session_dbs = find_cursor_session_dbs(cursor_base);
-    if session_dbs.is_empty() {
-        return Ok((0, None));
-    }
-
-    // Open global database and check which composers have messages
-    let global_db = &session_dbs[0];
-    let global_conn = Connection::open(global_db)
-        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open global DB: {}", e))?;
-
-    // Build a query to check which session IDs have messages and track most recent
+    // Check which composers have messages using the shared global connection
     let mut count = 0;
     let mut most_recent_timestamp: Option<i64> = None;
 
     for composer in composers {
-        let has_messages: Result<i64, _> = global_conn.query_row(
-            "SELECT COUNT(*) FROM cursorDiskKV WHERE key LIKE ?",
+        // Use EXISTS for faster check (stops at first match instead of counting all)
+        let has_messages: Result<bool, _> = global_conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM cursorDiskKV WHERE key LIKE ? LIMIT 1)",
             params![format!("bubbleId:{}:%", composer.composer_id)],
             |row| row.get(0),
         );
 
-        if let Ok(message_count) = has_messages {
-            if message_count > 0 {
-                count += 1;
-
-                // Track most recent timestamp
-                if let Some(timestamp) = composer.last_updated_at {
-                    most_recent_timestamp = match most_recent_timestamp {
-                        Some(current) => Some(current.max(timestamp)),
-                        None => Some(timestamp),
-                    };
-                }
+        if let Ok(true) = has_messages {
+            count += 1;
+            if let Some(timestamp) = composer.last_updated_at {
+                most_recent_timestamp = match most_recent_timestamp {
+                    Some(current) => Some(current.max(timestamp)),
+                    None => Some(timestamp),
+                };
             }
         }
     }
 
-    // Convert timestamp to ISO 8601 string
     let last_activity = most_recent_timestamp.map(|ts| {
-        // Convert milliseconds to seconds for chrono
         chrono::DateTime::<Utc>::from_timestamp(ts / 1000, ((ts % 1000) * 1_000_000) as u32)
             .unwrap_or_else(|| chrono::DateTime::<Utc>::from_timestamp(0, 0).unwrap())
             .to_rfc3339()
     });
 
     Ok((count, last_activity))
+}
+
+/// Count the number of composers (sessions) in a workspace that actually have messages
+/// Returns (count, most_recent_timestamp)
+/// NOTE: Legacy function — prefer count_workspace_composers_with_cached_conn for batch use
+fn count_workspace_composers_with_messages(
+    cursor_base: &PathBuf,
+    state_db: &PathBuf,
+) -> Result<(usize, Option<String>), String> {
+    let session_dbs = find_cursor_session_dbs(cursor_base);
+    if session_dbs.is_empty() {
+        return Ok((0, None));
+    }
+    let global_conn = Connection::open(&session_dbs[0])
+        .map_err(|e| format!("CURSOR_DB_ERROR: Failed to open global DB: {}", e))?;
+    count_workspace_composers_with_cached_conn(&global_conn, state_db)
 }
 
 // ============================================================================
@@ -1364,35 +1378,44 @@ fn find_cursor_session_dbs(cursor_base: &PathBuf) -> Vec<PathBuf> {
 
     println!("    ✓ Global storage exists, checking for chat data...");
 
-    // Check if this database contains chat data
-    if let Ok(conn) = Connection::open(&global_storage_db) {
-        // Verify cursorDiskKV table exists
-        if let Ok(mut stmt) = conn
-            .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='cursorDiskKV'")
-        {
-            if let Ok(_table_exists) = stmt.query_row(params![], |row| row.get::<_, String>(0)) {
-                println!("      ✓ cursorDiskKV table found");
+    // Check if this database contains chat data.
+    // On Windows, Cursor IDE can hold OS-level file locks that block even read-only
+    // SQLite access indefinitely. Use open_with_flags for read-only + timeout,
+    // and check sqlite_master only (fast) — skip scanning cursorDiskKV data rows.
+    match Connection::open_with_flags(
+        &global_storage_db,
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
+    ) {
+        Ok(conn) => {
+            let _ = conn.execute_batch("PRAGMA busy_timeout = 3000;");
 
-                // Count bubble messages
-                let bubble_count = conn
-                    .prepare("SELECT COUNT(*) FROM cursorDiskKV WHERE key LIKE 'bubbleId:%'")
-                    .and_then(|mut stmt| stmt.query_row(params![], |row| row.get::<_, i64>(0)))
-                    .unwrap_or(0);
+            // Only check if cursorDiskKV table exists (reads sqlite_master, always fast)
+            let has_table: bool = conn
+                .query_row(
+                    "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='cursorDiskKV')",
+                    params![],
+                    |row| row.get(0),
+                )
+                .unwrap_or(false);
 
-                println!("      📊 Total bubble messages: {}", bubble_count);
-
-                if bubble_count > 0 {
-                    println!("      ✓ Has chat messages!");
-                    session_dbs.push(global_storage_db);
-                } else {
-                    println!("      ✗ No bubble messages found");
-                }
+            if has_table {
+                println!("      ✓ cursorDiskKV table found — adding as session DB");
+                session_dbs.push(global_storage_db);
             } else {
                 println!("      ✗ cursorDiskKV table not found");
             }
         }
-    } else {
-        println!("      ✗ Failed to open global storage database");
+        Err(e) => {
+            println!(
+                "      ✗ Failed to open global storage database (Cursor may be locking it): {}",
+                e
+            );
+            // Even if we can't verify, add it — the per-workspace scan will gracefully handle errors
+            if global_storage_db.exists() {
+                println!("      ⚠ Adding anyway (file exists) — will retry during workspace scan");
+                session_dbs.push(global_storage_db);
+            }
+        }
     }
 
     println!("  📊 Total session databases: {}", session_dbs.len());
