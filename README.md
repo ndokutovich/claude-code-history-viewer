@@ -18,17 +18,17 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 </tr>
 <tr>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.4_x64-setup.exe">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.5_x64-setup.exe">
 <img src="https://img.shields.io/badge/Download-.exe-blue?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.4_universal.dmg">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.5_universal.dmg">
 <img src="https://img.shields.io/badge/Download-.dmg-black?style=for-the-badge&logo=apple&logoColor=white" alt="macOS Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.4_amd64.AppImage">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.5_amd64.AppImage">
 <img src="https://img.shields.io/badge/Download-.AppImage-orange?style=for-the-badge&logo=linux&logoColor=white" alt="Linux Download"/>
 </a>
 </td>
@@ -70,13 +70,17 @@ Per-project token usage breakdown and session-level analysis
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
 
-## What's New in v1.9.4
+## What's New in v1.9.5
 
-- Granular splash screen progress with per-provider detection status
-- External links open in system browser instead of navigating the WebView
-- Responsive panel layout prevents overlap on narrow windows
-- Hardened OpenCode provider adapter stability
-- Improved auto-updater reliability
+**Capture Mode** — selectively hide content before taking screenshots to protect private data:
+- Camera toggle in header activates capture mode with a minimal status toolbar
+- Hide individual **messages**, entire **sessions**, or whole **projects** with one click
+- EyeOff buttons appear on hover at all three levels
+- Toolbar shows total hidden count with "Restore All" and "Done" controls
+- Exiting capture mode automatically restores all hidden items
+- Fully localized in all 6 languages (EN, KO, JA, RU, ZH-CN, ZH-TW)
+
+**283 Unit Tests** with coverage reporting via `@vitest/coverage-v8`.
 
 ---
 
