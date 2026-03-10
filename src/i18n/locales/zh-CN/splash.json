@@ -4,6 +4,8 @@
   "status": {
     "initializing": "正在初始化应用",
     "loadingLanguage": "正在加载语言设置",
+    "initAdapters": "正在初始化适配器",
+    "loadingSaved": "正在加载已保存的源",
     "detectingSources": "正在检测对话源",
     "loadingAdapters": "正在加载适配器",
     "scanningProjects": "正在扫描项目",

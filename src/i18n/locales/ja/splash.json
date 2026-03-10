@@ -4,6 +4,8 @@
   "status": {
     "initializing": "アプリケーションを初期化中",
     "loadingLanguage": "言語設定を読み込み中",
+    "initAdapters": "アダプターを初期化中",
+    "loadingSaved": "保存されたソースを読み込み中",
     "detectingSources": "会話ソースを検出中",
     "loadingAdapters": "アダプターを読み込み中",
     "scanningProjects": "プロジェクトをスキャン中",

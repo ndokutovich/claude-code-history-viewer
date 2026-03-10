@@ -4,6 +4,8 @@
   "status": {
     "initializing": "正在初始化應用",
     "loadingLanguage": "正在載入語言設定",
+    "initAdapters": "正在初始化適配器",
+    "loadingSaved": "正在載入已儲存的來源",
     "detectingSources": "正在偵測對話源",
     "loadingAdapters": "正在載入適配器",
     "scanningProjects": "正在掃描專案",

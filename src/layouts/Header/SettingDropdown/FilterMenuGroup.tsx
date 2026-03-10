@@ -12,13 +12,13 @@ export const FilterMenuGroup = () => {
 
   return (
     <>
-      <DropdownMenuLabel>{t('settings.filter.title')}</DropdownMenuLabel>
+      <DropdownMenuLabel>{t('common.settings.filter.title')}</DropdownMenuLabel>
       <DropdownMenuCheckboxItem
         checked={showSystemMessages}
         onCheckedChange={setShowSystemMessages}
       >
         <Eye className="mr-2 h-4 w-4 text-foreground" />
-        <span>{t('settings.filter.showSystemMessages')}</span>
+        <span>{t('common.settings.filter.showSystemMessages')}</span>
       </DropdownMenuCheckboxItem>
     </>
   );
