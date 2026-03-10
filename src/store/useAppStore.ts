@@ -126,9 +126,17 @@ const isTauriAvailable = () => {
 /**
  * Find the source that contains the given project path
  */
-function findSourceForPath(projectPath: string): UniversalSource | null {
+function findSourceForPath(projectPath: string, providerId?: string): UniversalSource | null {
   const sourceStore = useSourceStore.getState();
   const availableSources = sourceStore.sources.filter(s => s.isAvailable);
+
+  // Match virtual path schemes (e.g., "opencode://..." → providerId "opencode")
+  const schemeMatch = projectPath.match(/^([a-z-]+):\/\//);
+  if (schemeMatch) {
+    const schemeProviderId = schemeMatch[1];
+    const found = availableSources.find(s => s.providerId === schemeProviderId);
+    if (found) return found;
+  }
 
   // Find source whose path is a prefix of the project path
   for (const source of availableSources) {
@@ -138,6 +146,18 @@ function findSourceForPath(projectPath: string): UniversalSource | null {
     if (normalizedProjectPath.startsWith(normalizedSourcePath)) {
       return source;
     }
+  }
+
+  // Fallback: match by providerId when path-based matching fails
+  // (e.g., OpenCode sessions where file_path may be a UUID)
+  if (providerId) {
+    // First try exact sourceId match (if providerId is actually a sourceId)
+    const bySourceId = availableSources.find(s => s.id === providerId);
+    if (bySourceId) return bySourceId;
+
+    // Only match by providerId when it's unambiguous (single source for that provider)
+    const byProviderId = availableSources.filter(s => s.providerId === providerId);
+    if (byProviderId.length === 1) return byProviderId[0];
   }
 
   return null;
@@ -627,7 +647,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
       // ========================================
 
       // Find which source this project belongs to
-      const source = findSourceForPath(projectPath);
+      // Look up providerId from the projects list for fallback matching
+      const matchingProject = get().projects.find(p => p.path === projectPath);
+      const source = findSourceForPath(projectPath, matchingProject?.providerId);
       if (!source) {
         throw new Error(`No source found for project path: ${projectPath}`);
       }
@@ -639,9 +661,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }
 
       // Extract project ID from path (relative to source)
-      const normalizedSourcePath = source.path.replace(/\\/g, '/');
-      const normalizedProjectPath = projectPath.replace(/\\/g, '/');
-      const projectId = normalizedProjectPath.substring(normalizedSourcePath.length).replace(/^\/+/, '');
+      // For virtual paths like "opencode://abc123", extract the ID after the scheme
+      const schemeProjectMatch = projectPath.match(/^[a-z-]+:\/\/(.+)/);
+      let projectId: string;
+      if (schemeProjectMatch) {
+        projectId = schemeProjectMatch[1]!;
+      } else {
+        const normalizedSourcePath = source.path.replace(/\\/g, '/');
+        const normalizedProjectPath = projectPath.replace(/\\/g, '/');
+        projectId = normalizedProjectPath.substring(normalizedSourcePath.length).replace(/^\/+/, '');
+      }
 
       // Load sessions using adapter
       const result = await adapter.loadSessions(
@@ -754,7 +783,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const sessionPath = session.file_path;
 
       // Find which source this session belongs to
-      const source = findSourceForPath(sessionPath);
+      const source = findSourceForPath(sessionPath, session.providerId);
       if (!source) {
         throw new Error(`No source found for session path: ${sessionPath}`);
       }
@@ -864,7 +893,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const sessionPath = selectedSession.file_path;
 
       // Find which source this session belongs to
-      const source = findSourceForPath(sessionPath);
+      const source = findSourceForPath(sessionPath, selectedSession.providerId);
       if (!source) {
         throw new Error(`No source found for session path: ${sessionPath}`);
       }
@@ -938,7 +967,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
     try {
       const sessionPath = selectedSession.file_path;
-      const source = findSourceForPath(sessionPath);
+      const source = findSourceForPath(sessionPath, selectedSession.providerId);
       if (!source) {
         throw new Error(`No source found for session path: ${sessionPath}`);
       }
@@ -1603,7 +1632,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         );
       } else {
         // Load from specific project's source
-        const source = findSourceForPath(projectPath);
+        // Look up providerId from the projects list for fallback matching
+        const matchingProject = get().projects.find(p => p.path === projectPath);
+        const source = findSourceForPath(projectPath, matchingProject?.providerId);
         if (!source) {
           throw new Error(`No source found for project path: ${projectPath}`);
         }

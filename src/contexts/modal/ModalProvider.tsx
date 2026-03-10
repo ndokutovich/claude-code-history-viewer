@@ -1,14 +1,11 @@
 import { useState, useCallback, useRef, type ReactNode, useMemo } from "react";
 import {
   ModalContext,
-  type FolderSelectorMode,
   type ModalType,
 } from "./context";
 
 interface ModalState {
   feedback: boolean;
-  folderSelector: boolean;
-  folderSelectorMode: FolderSelectorMode;
 }
 
 export const ModalProvider: React.FC<{ children: ReactNode }> = ({
@@ -37,8 +34,6 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({
 
   const [modalState, setModalState] = useState<ModalState>({
     feedback: false,
-    folderSelector: false,
-    folderSelectorMode: "notFound",
   });
 
   const isOpen = useCallback(
@@ -49,7 +44,7 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   const openModal = useCallback(
-    (modal: ModalType, options?: { mode?: FolderSelectorMode }) => {
+    (modal: ModalType) => {
       closeAllGenerationRef.current += 1;
       const activeElement = document.activeElement;
       if (activeElement instanceof HTMLElement) {
@@ -62,8 +57,6 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({
       setModalState((prev) => ({
         ...prev,
         [modal]: true,
-        ...(modal === "folderSelector" &&
-          options?.mode && { folderSelectorMode: options.mode }),
       }));
     },
     []
@@ -87,7 +80,6 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({
     setModalState((prev) => ({
       ...prev,
       feedback: false,
-      folderSelector: false,
     }));
     requestAnimationFrame(() => {
       if (generation !== closeAllGenerationRef.current) {
@@ -107,7 +99,6 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({
   const value = useMemo(
     () => ({
       isOpen,
-      folderSelectorMode: modalState.folderSelectorMode,
       openModal,
       closeModal,
       closeAllModals,
@@ -116,7 +107,6 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({
       closeAllModals,
       closeModal,
       isOpen,
-      modalState.folderSelectorMode,
       openModal,
     ]
   );

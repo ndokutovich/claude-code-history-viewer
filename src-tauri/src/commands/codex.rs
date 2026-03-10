@@ -173,7 +173,7 @@ pub async fn scan_codex_projects(
         // Use first file to extract metadata
         let first_file: &PathBuf = files.first().ok_or("CODEX_ERROR: Empty file group")?;
 
-        let display_name: String = format!("Codex Session {}", &session_id[..8]);
+        let display_name: String = format!("Codex Session {}", session_id.chars().take(8).collect::<String>());
 
         let mut metadata: HashMap<String, serde_json::Value> = HashMap::new();
         metadata.insert("sessionId".to_string(), serde_json::json!(session_id)); // camelCase!
@@ -268,8 +268,8 @@ pub async fn load_codex_sessions(
         .and_then(|p| p.get("content"))
         .and_then(|c| c.as_str())
         .map(|text| {
-            if text.len() > 100 {
-                format!("{}...", &text[..100])
+            if text.chars().count() > 100 {
+                format!("{}...", text.chars().take(100).collect::<String>())
             } else {
                 text.to_string()
             }
@@ -287,7 +287,7 @@ pub async fn load_codex_sessions(
     let duration: i64 = 0;
 
     // Title for the session
-    let title = summary.clone().unwrap_or_else(|| format!("Codex Session {}", &session_id[..8]));
+    let title = summary.clone().unwrap_or_else(|| format!("Codex Session {}", session_id.chars().take(8).collect::<String>()));
 
     let session: UniversalSession = UniversalSession {
         id: session_id.clone(),

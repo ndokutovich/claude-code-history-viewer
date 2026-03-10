@@ -1012,12 +1012,10 @@ pub async fn search_cursor_messages(
             row_result.map_err(|e| format!("CURSOR_DB_ERROR: Row error: {}", e))?;
 
         // Parse bubble
-        let bubble: Result<CursorBubble, _> = serde_json::from_str(&value_str);
-        if bubble.is_err() {
-            continue;
-        }
-
-        let bubble = bubble.unwrap();
+        let bubble: CursorBubble = match serde_json::from_str(&value_str) {
+            Ok(b) => b,
+            Err(_) => continue,
+        };
 
         // Skip entries without a bubble_type (likely metadata, not messages)
         let bubble_type = match bubble.bubble_type {

@@ -7,13 +7,13 @@ import { useTranslation } from "react-i18next";
 import { Contrast } from "lucide-react";
 
 export const AccessibilityMenuGroup = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
   const { highContrast, setHighContrast } = useAppStore();
 
   return (
     <>
       <DropdownMenuLabel>
-        {t("common:settings.accessibility.title")}
+        {t("settings.accessibility.title")}
       </DropdownMenuLabel>
       <DropdownMenuCheckboxItem
         checked={highContrast}
@@ -22,7 +22,7 @@ export const AccessibilityMenuGroup = () => {
         }}
       >
         <Contrast className="mr-2 h-4 w-4 text-foreground" />
-        <span>{t("common:settings.accessibility.highContrast")}</span>
+        <span>{t("settings.accessibility.highContrast")}</span>
       </DropdownMenuCheckboxItem>
     </>
   );

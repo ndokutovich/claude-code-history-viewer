@@ -8,20 +8,20 @@ import { useTranslation } from "react-i18next";
 import { Type } from "lucide-react";
 
 const FONT_SCALE_OPTIONS = [
-  { value: 90, labelKey: "common.settings.font.90" as const },
-  { value: 100, labelKey: "common.settings.font.100" as const },
-  { value: 110, labelKey: "common.settings.font.110" as const },
-  { value: 120, labelKey: "common.settings.font.120" as const },
-  { value: 130, labelKey: "common.settings.font.130" as const },
+  { value: 90, labelKey: "settings.font.90" as const },
+  { value: 100, labelKey: "settings.font.100" as const },
+  { value: 110, labelKey: "settings.font.110" as const },
+  { value: 120, labelKey: "settings.font.120" as const },
+  { value: 130, labelKey: "settings.font.130" as const },
 ];
 
 export const FontMenuGroup = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("common");
   const { fontScale, setFontScale } = useAppStore();
 
   return (
     <>
-      <DropdownMenuLabel>{t("common:settings.font.title")}</DropdownMenuLabel>
+      <DropdownMenuLabel>{t("settings.font.title")}</DropdownMenuLabel>
       <DropdownMenuRadioGroup
         value={String(fontScale)}
         onValueChange={(value) => {

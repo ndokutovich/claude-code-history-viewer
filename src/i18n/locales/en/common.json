@@ -313,7 +313,6 @@
   },
   "settings": {
     "title": "Settings",
-    "changeFolder": "Change Folder",
     "checking": "Checking...",
     "updateSettings": "Update Settings",
     "theme": {

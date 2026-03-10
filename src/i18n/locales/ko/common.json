@@ -313,7 +313,6 @@
   },
   "settings": {
     "title": "설정",
-    "changeFolder": "폴더 변경",
     "checking": "확인 중...",
     "updateSettings": "업데이트 설정",
     "theme": {

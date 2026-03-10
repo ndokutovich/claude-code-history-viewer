@@ -180,6 +180,7 @@
   "analytics.topProjectMeta": "{{sessions}} сеансов • {{messages}} сообщ.",
   "analytics.topProjects": "Лучшие проекты по токенам",
   "analytics.totalLabel": "Итого",
+  "analytics.totalUsage": "Всего использований",
   "analytics.totalMessages": "Всего сообщений",
   "analytics.totalMessagesCount": "Всего {{count}} сообщений",
   "analytics.totalProjects": "Всего проектов",

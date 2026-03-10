@@ -180,6 +180,7 @@
   "analytics.topProjectMeta": "{{sessions}} 個會話 • {{messages}} 則訊息",
   "analytics.topProjects": "按權杖數排名的專案",
   "analytics.totalLabel": "總計",
+  "analytics.totalUsage": "總使用次數",
   "analytics.totalMessages": "總訊息數",
   "analytics.totalMessagesCount": "共{{count}}則訊息",
   "analytics.totalProjects": "總專案數",

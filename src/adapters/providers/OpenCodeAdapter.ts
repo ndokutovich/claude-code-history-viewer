@@ -93,6 +93,7 @@ export class OpenCodeAdapter implements IConversationAdapter {
   };
 
   private initialized: boolean = false;
+  private lastKnownSourcePath: string | null = null;
 
   // -------------------------------------------------------------------------
   // LIFECYCLE (REQUIRED)
@@ -118,6 +119,7 @@ export class OpenCodeAdapter implements IConversationAdapter {
     }
 
     this.initialized = false;
+    this.lastKnownSourcePath = null;
     console.log('OpenCodeAdapter disposed');
   }
 
@@ -205,6 +207,9 @@ export class OpenCodeAdapter implements IConversationAdapter {
     this.ensureInitialized();
 
     try {
+      // Cache the source path for later use in loadSessions/loadMessages
+      this.lastKnownSourcePath = sourcePath;
+
       const projects = await invoke<UniversalProject[]>('scan_opencode_projects', {
         opencodePath: sourcePath,
         sourceId,
@@ -245,7 +250,7 @@ export class OpenCodeAdapter implements IConversationAdapter {
       //
       // Since OpenCode projects use virtual paths (opencode://{id}), we need to call
       // get_opencode_path first to obtain the real filesystem path.
-      const opencodePath = await this.resolveOpencodePath(projectPath);
+      const opencodePath = await this.resolveOpencodePath(projectPath, this.lastKnownSourcePath ?? undefined);
 
       const sessions = await invoke<UniversalSession[]>('load_opencode_sessions', {
         opencodePath,
@@ -287,7 +292,7 @@ export class OpenCodeAdapter implements IConversationAdapter {
     this.ensureInitialized();
 
     try {
-      const opencodePath = await this.resolveOpencodePath(sessionPath);
+      const opencodePath = await this.resolveOpencodePath(sessionPath, this.lastKnownSourcePath ?? undefined);
       const offset = options.offset ?? 0;
       const limit = options.limit ?? 20;
 
@@ -457,14 +462,20 @@ export class OpenCodeAdapter implements IConversationAdapter {
    * OpenCode projects use virtual paths like "opencode://{id}".
    * We call the Rust backend to get the actual base path.
    */
-  private async resolveOpencodePath(virtualOrRealPath: string): Promise<string> {
-    // If this is already a real filesystem path (not virtual), use it directly
-    if (!virtualOrRealPath.startsWith('opencode://')) {
-      return virtualOrRealPath;
+  private async resolveOpencodePath(virtualOrRealPath: string, sourcePath?: string): Promise<string> {
+    // If the caller already knows the source's configured root, prefer it
+    if (sourcePath) {
+      return sourcePath;
     }
 
-    // Virtual path - ask Rust for the real base path
-    return invoke<string>('get_opencode_path');
+    // Virtual path or bare UUID — fall back to global auto-detection
+    if (virtualOrRealPath.startsWith('opencode://') ||
+        (!virtualOrRealPath.includes('/') && !virtualOrRealPath.includes('\\'))) {
+      return invoke<string>('get_opencode_path');
+    }
+
+    // Real filesystem path - use it directly
+    return virtualOrRealPath;
   }
 
   private ensureInitialized(): void {

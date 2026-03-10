@@ -44,7 +44,7 @@ const getToolDisplayName = (
   t: (key: string, options?: Record<string, unknown>) => string
 ) => {
   if (toolName === "Bash") {
-    return t("tools.terminal");
+    return t("tools:tools.terminal");
   }
   return toolName || t("common:unknown");
 };

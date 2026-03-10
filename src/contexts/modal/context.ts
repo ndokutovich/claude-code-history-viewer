@@ -1,18 +1,13 @@
 import { createContext, useContext } from "react";
 
-export type ModalType = "feedback" | "folderSelector";
-export type FolderSelectorMode = "notFound" | "change";
+export type ModalType = "feedback";
 
 interface ModalContextValue {
   // State
   isOpen: (modal: ModalType) => boolean;
-  folderSelectorMode: FolderSelectorMode;
 
   // Actions
-  openModal: (
-    modal: ModalType,
-    options?: { mode?: FolderSelectorMode }
-  ) => void;
+  openModal: (modal: ModalType) => void;
   closeModal: (modal: ModalType) => void;
   closeAllModals: () => void;
 }

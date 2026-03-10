@@ -180,6 +180,7 @@
   "analytics.topProjectMeta": "{{sessions}}セッション • {{messages}}件",
   "analytics.topProjects": "トークン数上位プロジェクト",
   "analytics.totalLabel": "合計",
+  "analytics.totalUsage": "合計使用回数",
   "analytics.totalMessages": "総メッセージ数",
   "analytics.totalMessagesCount": "総{{count}}件メッセージ",
   "analytics.totalProjects": "総プロジェクト数",
