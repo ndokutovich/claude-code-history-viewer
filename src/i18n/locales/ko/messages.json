@@ -44,6 +44,7 @@
   "messageView.formatted": "서식 적용",
   "messageView.messagesOnly": "메시지만",
   "messageView.noMessages": "메시지 없음",
+  "messageView.showNoise": "노이즈 표시",
   "messageView.raw": "원본",
   "messageView.rawCopied": "원본 복사됨",
   "messageView.rawCopyFailed": "원본 복사 실패",

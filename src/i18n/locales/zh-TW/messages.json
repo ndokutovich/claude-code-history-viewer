@@ -44,6 +44,7 @@
   "messageView.formatted": "格式化",
   "messageView.messagesOnly": "僅訊息",
   "messageView.noMessages": "暫無訊息",
+  "messageView.showNoise": "顯示噪聲",
   "messageView.raw": "原始",
   "messageView.rawCopied": "原始資料已複製",
   "messageView.rawCopyFailed": "原始資料複製失敗",

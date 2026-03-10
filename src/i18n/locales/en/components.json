@@ -687,6 +687,7 @@
     "commandOnly": "Command only",
     "toolUseOnly": "Tool use only",
     "messagesOnly": "Messages only",
+    "showNoise": "Show noise",
     "clearFilters": "Clear",
     "copyRaw": "Copy JSON",
     "rawCopied": "Raw message copied",

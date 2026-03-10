@@ -255,6 +255,18 @@ function universalToUIMessage(msg: UniversalMessage): UIMessage {
     }
   }
 
+  // Extract system message fields from provider metadata
+  const pm = msg.providerMetadata || {};
+  const subtype = pm.subtype as string | undefined;
+  const level = pm.level as UIMessage["level"];
+  const compactMetadata = pm.compactMetadata as UIMessage["compactMetadata"];
+  const microcompactMetadata = pm.microcompactMetadata as UIMessage["microcompactMetadata"];
+  const durationMs = pm.durationMs as number | undefined;
+  const hookCount = pm.hookCount as number | undefined;
+  const hookInfos = pm.hookInfos as UIMessage["hookInfos"];
+  const stopReasonSystem = pm.stopReasonSystem as string | undefined;
+  const preventedContinuation = pm.preventedContinuation as boolean | undefined;
+
   return {
     uuid: msg.id,
     parentUuid: msg.parentId,
@@ -270,7 +282,17 @@ function universalToUIMessage(msg: UniversalMessage): UIMessage {
       cache_read_input_tokens: msg.tokens.cacheReadTokens,
     } : undefined,
     projectPath: msg.projectId,
-    provider_metadata: msg.providerMetadata, // Preserve provider-specific metadata
+    provider_metadata: msg.providerMetadata,
+    // System message fields
+    subtype,
+    level,
+    compactMetadata,
+    microcompactMetadata,
+    durationMs,
+    hookCount,
+    hookInfos,
+    stopReasonSystem,
+    preventedContinuation,
   };
 }
 
@@ -407,6 +429,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     showToolUseOnly: false,
     showMessagesOnly: false,
     showCommandOnly: false,
+    showNoiseMessages: false,
   },
 
   // Core state
@@ -524,6 +547,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       await Promise.all(
         availableSources.map(async (source) => {
+          const sourceStart = performance.now();
           try {
             const adapter = adapterRegistry.get(source.providerId);
             if (!adapter) {
@@ -531,7 +555,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
               return;
             }
 
+            console.log(`⏱️ [scanProjects] Starting: ${source.name} (${source.providerId})`);
             const result = await adapter.scanProjects(source.path, source.id);
+            console.log(`⏱️ [scanProjects] Done: ${source.name} → ${(performance.now() - sourceStart).toFixed(0)}ms, ${result.data?.length ?? 0} projects`);
 
             if (!result.success || !result.data) {
               console.error(`Failed to scan projects for ${source.name}:`, result.error);
@@ -541,6 +567,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             allUniversalProjects.push(...result.data);
           } catch (error) {
             console.error(`Error scanning source ${source.name}:`, error);
+            console.log(`⏱️ [scanProjects] FAILED: ${source.name} → ${(performance.now() - sourceStart).toFixed(0)}ms`);
           }
         })
       );
@@ -802,6 +829,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         : get().excludeSidechain;
 
       // Load messages using adapter
+      const shouldIncludeNoise = get().messageFilters.showNoiseMessages;
       const result = await adapter.loadMessages(
         sessionPath,
         session.session_id,
@@ -811,6 +839,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           sortOrder: 'desc', // Most recent first
           includeMetadata: true,
           excludeSidechain: shouldExcludeSidechain,
+          includeNoise: shouldIncludeNoise,
         }
       );
 
@@ -914,6 +943,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           sortOrder: 'desc',
           includeMetadata: true,
           excludeSidechain: get().sessionExcludeSidechain, // Use session-specific setting for consistency
+          includeNoise: get().messageFilters.showNoiseMessages,
         }
       );
 
@@ -988,6 +1018,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           sortOrder: 'desc',
           includeMetadata: true,
           excludeSidechain: get().sessionExcludeSidechain, // Use session-specific setting for consistency
+          includeNoise: get().messageFilters.showNoiseMessages,
         }
       );
 
@@ -1581,12 +1612,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   setMessageFilters: (filters: Partial<MessageFilters>) => {
+    const prevShowNoise = get().messageFilters.showNoiseMessages;
     set((state) => ({
       messageFilters: {
         ...state.messageFilters,
         ...filters,
       },
     }));
+    // showNoiseMessages is a backend filter — reload session when it changes
+    if (filters.showNoiseMessages !== undefined && filters.showNoiseMessages !== prevShowNoise) {
+      const { selectedSession } = get();
+      if (selectedSession) {
+        get().selectSession(selectedSession);
+      }
+    }
   },
 
   // Loading progress

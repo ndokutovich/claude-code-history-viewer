@@ -44,6 +44,7 @@
   "messageView.formatted": "整形表示",
   "messageView.messagesOnly": "メッセージのみ",
   "messageView.noMessages": "メッセージがありません",
+  "messageView.showNoise": "ノイズ表示",
   "messageView.raw": "生データ",
   "messageView.rawCopied": "生データをコピーしました",
   "messageView.rawCopyFailed": "生データのコピーに失敗しました",

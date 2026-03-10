@@ -705,6 +705,7 @@
     "commandOnly": "僅命令",
     "toolUseOnly": "僅工具使用",
     "messagesOnly": "僅訊息",
+    "showNoise": "顯示噪聲",
     "clearFilters": "清除",
     "copyRaw": "複製JSON",
     "rawCopied": "已複製原始訊息",

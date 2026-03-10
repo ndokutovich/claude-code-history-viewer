@@ -707,6 +707,7 @@
     "commandOnly": "명령어만",
     "toolUseOnly": "도구 사용만",
     "messagesOnly": "메시지만",
+    "showNoise": "노이즈 표시",
     "clearFilters": "지우기",
     "copyRaw": "JSON 복사",
     "rawCopied": "원시 메시지 복사됨",

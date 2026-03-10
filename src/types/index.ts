@@ -117,6 +117,16 @@ export interface UIMessage {
   provider?: string;
   // Provider-specific metadata (tool results, file attachments, etc.)
   provider_metadata?: Record<string, unknown>;
+  // System message fields (compaction boundaries, hooks, etc.)
+  subtype?: string;
+  level?: "info" | "warning" | "error" | "suggestion";
+  compactMetadata?: { trigger?: string; preTokens?: number };
+  microcompactMetadata?: { trigger?: string; preTokens?: number };
+  durationMs?: number;
+  hookCount?: number;
+  hookInfos?: Array<{ command: string; output?: string; error?: string }>;
+  stopReasonSystem?: string;
+  preventedContinuation?: boolean;
 }
 
 // UI display format for projects (provider-agnostic)
@@ -252,6 +262,7 @@ export interface MessageFilters {
   showToolUseOnly: boolean;
   showMessagesOnly: boolean;
   showCommandOnly: boolean; // Show only bash commands (like bash history)
+  showNoiseMessages: boolean; // Show progress/file-history-snapshot/queue-operation messages
 }
 
 export interface AppState {

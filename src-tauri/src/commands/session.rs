@@ -6,9 +6,57 @@ use crate::utils::{
 };
 use chrono::{DateTime, Utc};
 use memmap2::Mmap;
+use serde_json::json;
 use std::fs;
 use uuid::Uuid;
 use walkdir::WalkDir;
+
+/// Build system metadata JSON from a RawLogEntry's system-specific fields.
+/// Returns None for non-system messages or if no system fields are present.
+fn build_system_metadata(entry: &RawLogEntry) -> Option<serde_json::Value> {
+    if entry.message_type != "system" {
+        return None;
+    }
+    let mut meta = serde_json::Map::new();
+    if let Some(ref level) = entry.level {
+        meta.insert("level".to_string(), json!(level));
+    }
+    if let Some(ref cm) = entry.compact_metadata {
+        meta.insert("compactMetadata".to_string(), cm.clone());
+    }
+    if let Some(ref mcm) = entry.microcompact_metadata {
+        meta.insert("microcompactMetadata".to_string(), mcm.clone());
+    }
+    if let Some(ms) = entry.duration_ms {
+        meta.insert("durationMs".to_string(), json!(ms));
+    }
+    if let Some(count) = entry.hook_count {
+        meta.insert("hookCount".to_string(), json!(count));
+    }
+    if let Some(ref infos) = entry.hook_infos {
+        meta.insert("hookInfos".to_string(), infos.clone());
+    }
+    if let Some(ref reason) = entry.stop_reason_system {
+        meta.insert("stopReasonSystem".to_string(), json!(reason));
+    }
+    if let Some(prevented) = entry.prevented_continuation {
+        meta.insert("preventedContinuation".to_string(), json!(prevented));
+    }
+    if meta.is_empty() {
+        None
+    } else {
+        Some(serde_json::Value::Object(meta))
+    }
+}
+
+/// Check if a message type is non-conversation noise (progress, snapshots, queue ops).
+/// These are internal operational messages that should not be displayed as conversation content.
+fn is_noise_message_type(message_type: &str) -> bool {
+    matches!(
+        message_type,
+        "progress" | "queue-operation" | "file-history-snapshot"
+    )
+}
 
 /// Normalizes Windows extended-length paths by stripping the \\?\ prefix
 /// This ensures consistent path formatting across all commands
@@ -38,6 +86,7 @@ fn normalize_windows_path(path: &str) -> String {
 pub async fn load_project_sessions(
     project_path: String,
     exclude_sidechain: Option<bool>,
+    include_noise: Option<bool>,
 ) -> Result<Vec<ClaudeSession>, String> {
     let start_time = std::time::Instant::now();
     let mut sessions = Vec::new();
@@ -90,10 +139,16 @@ pub async fn load_project_sessions(
                                     // Apply preamble filtering to summary messages
                                     session_summary = log_entry.summary.map(|s| filter_preamble_from_title(&s));
                                 }
+                            } else if !include_noise.unwrap_or(false) && is_noise_message_type(&log_entry.message_type) {
+                                // Skip progress, file-history-snapshot, queue-operation (unless include_noise)
+                                continue;
                             } else {
                                 if log_entry.session_id.is_none() && log_entry.timestamp.is_none() {
                                     continue;
                                 }
+
+                                let subtype = log_entry.subtype.clone();
+                                let system_metadata = build_system_metadata(&log_entry);
 
                                 let uuid = log_entry.uuid.unwrap_or_else(|| {
                                     let new_uuid = format!(
@@ -122,7 +177,6 @@ pub async fn load_project_sessions(
                                     } else {
                                         (None, None, None, None, None)
                                     };
-
                                 let claude_message = ClaudeMessage {
                                 uuid,
                                 parent_uuid: log_entry.parent_uuid,
@@ -146,6 +200,8 @@ pub async fn load_project_sessions(
                                 model,
                                 stop_reason,
                                 project_path: None,
+                                subtype,
+                                system_metadata,
                             };
                                 messages.push(claude_message);
                             }
@@ -491,7 +547,7 @@ pub async fn load_project_sessions(
 }
 
 #[tauri::command]
-pub async fn load_session_messages(session_path: String) -> Result<Vec<UniversalMessage>, String> {
+pub async fn load_session_messages(session_path: String, include_noise: Option<bool>) -> Result<Vec<UniversalMessage>, String> {
     // Use memory-mapped I/O for zero-copy file access (faster than read_to_string for large files)
     let file = fs::File::open(&session_path)
         .map_err(|e| format!("SESSION_READ_ERROR: Failed to open session file: {}", e))?;
@@ -560,13 +616,21 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<Universal
                             model: None,
                             stop_reason: None,
                             project_path: None,
+                            subtype: None,
+                            system_metadata: None,
                         };
                         messages.push(summary_message);
                     }
+                } else if !include_noise.unwrap_or(false) && is_noise_message_type(&log_entry.message_type) {
+                    // Skip progress, file-history-snapshot, queue-operation (unless include_noise)
+                    continue;
                 } else {
                     if log_entry.session_id.is_none() && log_entry.timestamp.is_none() {
                         continue;
                     }
+
+                    let subtype = log_entry.subtype.clone();
+                    let system_metadata = build_system_metadata(&log_entry);
 
                     let uuid = log_entry.uuid.unwrap_or_else(|| {
                         let new_uuid =
@@ -592,7 +656,6 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<Universal
                         } else {
                             (None, None, None, None, None)
                         };
-
                     let claude_message = ClaudeMessage {
                         uuid,
                         parent_uuid: log_entry.parent_uuid,
@@ -616,6 +679,8 @@ pub async fn load_session_messages(session_path: String) -> Result<Vec<Universal
                         model,
                         stop_reason,
                         project_path: None,
+                        subtype,
+                        system_metadata,
                     };
                     messages.push(claude_message);
                 }
@@ -676,6 +741,7 @@ pub async fn load_session_messages_paginated(
     offset: usize,
     limit: usize,
     exclude_sidechain: Option<bool>,
+    include_noise: Option<bool>,
 ) -> Result<MessagePage, String> {
     let start_time = std::time::Instant::now();
 
@@ -716,7 +782,9 @@ pub async fn load_session_messages_paginated(
 
         match serde_json::from_str::<RawLogEntry>(line) {
             Ok(log_entry) => {
-                if log_entry.message_type != "summary" {
+                if log_entry.message_type != "summary"
+                    && (include_noise.unwrap_or(false) || !is_noise_message_type(&log_entry.message_type))
+                {
                     if log_entry.session_id.is_none() && log_entry.timestamp.is_none() {
                         continue;
                     }
@@ -739,6 +807,8 @@ pub async fn load_session_messages_paginated(
                             (None, None, None, None, None)
                         };
 
+                    let subtype = log_entry.subtype.clone();
+                    let system_metadata = build_system_metadata(&log_entry);
                     let claude_message = ClaudeMessage {
                         uuid: log_entry.uuid.unwrap_or_else(|| {
                             format!("{}-line-{}", Uuid::new_v4().to_string(), line_num + 1)
@@ -761,6 +831,8 @@ pub async fn load_session_messages_paginated(
                         model,
                         stop_reason,
                         project_path: None,
+                        subtype,
+                        system_metadata,
                     };
                     all_messages.push(claude_message);
                 }
@@ -907,6 +979,7 @@ pub async fn load_session_messages_paginated(
 pub async fn get_session_message_count(
     session_path: String,
     exclude_sidechain: Option<bool>,
+    include_noise: Option<bool>,
 ) -> Result<usize, String> {
     let content = fs::read_to_string(&session_path)
         .map_err(|e| format!("SESSION_READ_ERROR: Failed to read session file: {}", e))?;
@@ -919,7 +992,9 @@ pub async fn get_session_message_count(
         }
 
         if let Ok(log_entry) = serde_json::from_str::<RawLogEntry>(line) {
-            if log_entry.message_type != "summary" {
+            if log_entry.message_type != "summary"
+                && (include_noise.unwrap_or(false) || !is_noise_message_type(&log_entry.message_type))
+            {
                 if exclude_sidechain.unwrap_or(false) && log_entry.is_sidechain.unwrap_or(false) {
                     continue;
                 }
@@ -1179,6 +1254,8 @@ pub async fn search_messages(
                             };
 
                             if matches_search_terms(&content_str, &search_terms) {
+                                let subtype = log_entry.subtype.clone();
+                                let system_metadata = build_system_metadata(&log_entry);
                                 let claude_message = ClaudeMessage {
                                     uuid: log_entry.uuid.unwrap_or_else(|| {
                                         format!(
@@ -1205,6 +1282,8 @@ pub async fn search_messages(
                                     model: message_content.model.clone(),
                                     stop_reason: message_content.stop_reason.clone(),
                                     project_path: project_path.clone(),
+                                    subtype,
+                                    system_metadata,
                                 };
                                 all_messages.push(claude_message);
                             }

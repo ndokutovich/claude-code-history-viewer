@@ -137,6 +137,24 @@ export function MessageViewControls() {
           </span>
         </label>
 
+        {/* Separator before noise toggle */}
+        <div className={cn("h-4 w-px", COLORS.ui.border.light)} />
+
+        {/* Show noise messages (backend filter — triggers reload) */}
+        <label className="flex items-center gap-2 text-sm cursor-pointer hover:opacity-80">
+          <input
+            type="checkbox"
+            checked={messageFilters.showNoiseMessages}
+            onChange={(e) => setMessageFilters({
+              showNoiseMessages: e.target.checked,
+            })}
+            className="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
+          />
+          <span className={cn(COLORS.ui.text.secondary)}>
+            {t("messageView.showNoise")}
+          </span>
+        </label>
+
         {/* Clear filters button */}
         {hasActiveFilters && (
           <button
@@ -145,6 +163,7 @@ export function MessageViewControls() {
               showToolUseOnly: false,
               showMessagesOnly: false,
               showCommandOnly: false,
+              showNoiseMessages: false,
             })}
             className={cn(
               "text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700",

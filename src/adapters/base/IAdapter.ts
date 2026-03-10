@@ -195,6 +195,7 @@ export interface LoadOptions {
   offset?: number;
   limit?: number;
   excludeSidechain?: boolean;
+  includeNoise?: boolean; // Include progress/file-history-snapshot/queue-operation messages
   includeRaw?: boolean; // Include originalFormat field
   includeMetadata?: boolean; // Include full metadata
   sortOrder?: 'asc' | 'desc';
