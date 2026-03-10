@@ -304,7 +304,8 @@ export const FileEditItem: React.FC<FileEditItemProps> = ({ edit, isDarkMode }) 
                     })}
                   >
                     {tokens.map((line, i) => {
-                      const lineProps = getLineProps({ line, key: i });
+                      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                      const { key: _lineKey, ...lineProps } = getLineProps({ line, key: i });
                       return (
                         <div
                           key={i}
@@ -315,11 +316,12 @@ export const FileEditItem: React.FC<FileEditItemProps> = ({ edit, isDarkMode }) 
                             {i + 1}
                           </span>
                           <span style={getTokenContainerStyles()}>
-                            {line.map((token, key) => {
-                              const tokenProps = getTokenProps({ token, key });
+                            {line.map((token, tokenIdx) => {
+                              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                              const { key: _tokenKey, ...tokenProps } = getTokenProps({ token, key: tokenIdx });
                               return (
                                 <span
-                                  key={key}
+                                  key={tokenIdx}
                                   {...tokenProps}
                                   style={getTokenStyles(isDarkMode, tokenProps.style)}
                                 />
