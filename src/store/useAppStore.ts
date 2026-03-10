@@ -221,7 +221,7 @@ function universalToUISession(session: UniversalSession): UISession {
 /**
  * Convert UniversalMessage to UI display format
  */
-function universalToUIMessage(msg: UniversalMessage): UIMessage {
+export function universalToUIMessage(msg: UniversalMessage): UIMessage {
   // Extract text content from universal content array
   let content: string | any[] = "";
 

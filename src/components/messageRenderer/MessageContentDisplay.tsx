@@ -13,7 +13,7 @@ interface MessageContentDisplayProps {
   messageType: string;
 }
 
-export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = ({
+export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = React.memo(({
   content,
   messageType,
 }) => {
@@ -229,4 +229,4 @@ export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = ({
       <div className="whitespace-pre-wrap text-gray-800">{content}</div>
     </div>
   );
-};
+});

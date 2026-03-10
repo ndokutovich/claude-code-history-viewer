@@ -8,7 +8,7 @@
 
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
-import type { UISession, UIMessage, GitCommit } from "@/types";
+import type { UISession, UIMessage, GitCommit, UniversalMessage } from "@/types";
 import type {
   BoardSessionData,
   BoardSessionStats,
@@ -24,6 +24,7 @@ import {
   getToolUseBlock,
   isAssistantMessage,
 } from "@/utils/cardSemantics";
+import { universalToUIMessage } from "@/store/useAppStore";
 
 const TIMELINE_STORAGE_KEY = "timeline-expanded";
 
@@ -33,24 +34,30 @@ const TIMELINE_STORAGE_KEY = "timeline-expanded";
 
 async function loadSessionMessages(session: UISession): Promise<UIMessage[]> {
   const provider = session.providerId ?? "claude";
+  let raw: UniversalMessage[];
   switch (provider) {
     case "cursor":
-      return invoke<UIMessage[]>("load_cursor_messages", {
+      raw = await invoke<UniversalMessage[]>("load_cursor_messages", {
         sessionPath: session.file_path,
       });
+      break;
     case "gemini":
-      return invoke<UIMessage[]>("load_gemini_messages", {
+      raw = await invoke<UniversalMessage[]>("load_gemini_messages", {
         sessionPath: session.file_path,
       });
+      break;
     case "codex":
-      return invoke<UIMessage[]>("load_codex_messages", {
+      raw = await invoke<UniversalMessage[]>("load_codex_messages", {
         sessionPath: session.file_path,
       });
+      break;
     default:
-      return invoke<UIMessage[]>("load_session_messages", {
+      raw = await invoke<UniversalMessage[]>("load_session_messages", {
         sessionPath: session.file_path,
       });
+      break;
   }
+  return raw.map(universalToUIMessage);
 }
 
 // ---------------------------------------------------------------------------
