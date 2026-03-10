@@ -26,7 +26,7 @@ const TOOL_COLORS = [
 ];
 
 export const ToolUsageChart: React.FC<ToolUsageChartProps> = ({ tools }) => {
-  const { t } = useTranslation(["analytics", "components"]);
+  const { t } = useTranslation(["analytics", "components", "tools"]);
   const topTools = tools.slice(0, 6);
   const maxUsage = Math.max(...topTools.map((tool) => tool.usage_count), 1);
   const totalUsage = topTools.reduce((sum, tool) => sum + tool.usage_count, 0);
@@ -104,7 +104,7 @@ export const ToolUsageChart: React.FC<ToolUsageChartProps> = ({ tools }) => {
       {/* Total footer */}
       <div className="flex items-center justify-between pt-3 mt-2 border-t border-border/30">
         <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">
-          Total Usage
+          {t("analytics.totalUsage")}
         </span>
         <span className="font-mono text-sm font-semibold text-foreground tabular-nums">
           {totalUsage.toLocaleString()}

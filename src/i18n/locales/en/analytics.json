@@ -180,6 +180,7 @@
   "analytics.topProjectMeta": "{{sessions}} sessions • {{messages}} msgs",
   "analytics.topProjects": "Top Projects by Tokens",
   "analytics.totalLabel": "Total",
+  "analytics.totalUsage": "Total Usage",
   "analytics.totalMessages": "Total Messages",
   "analytics.totalMessagesCount": "Total {{count}} messages",
   "analytics.totalProjects": "Total Projects",

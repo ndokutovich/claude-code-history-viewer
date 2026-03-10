@@ -180,6 +180,7 @@
   "analytics.topProjectMeta": "{{sessions}}개 세션 • {{messages}}개 메시지",
   "analytics.topProjects": "토큰 기준 상위 프로젝트",
   "analytics.totalLabel": "총",
+  "analytics.totalUsage": "총 사용",
   "analytics.totalMessages": "총 메시지 수",
   "analytics.totalMessagesCount": "총 {{count}}개 메시지",
   "analytics.totalProjects": "전체 프로젝트",
