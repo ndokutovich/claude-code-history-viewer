@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { RawMessageView } from "./components/RawMessageView";
@@ -21,6 +21,7 @@ import { useSourceStore } from "./store/useSourceStore";
 import { useAnalytics } from "./hooks/useAnalytics";
 import { useFileWatcher } from "./hooks/useFileWatcher";
 import { useSessionBoard } from "./hooks/useSessionBoard";
+import { useExternalLinks } from "./hooks/useExternalLinks";
 import { fetchRecentEdits } from "./services/analyticsApi";
 import { getSessionTitle } from "./utils/sessionUtils";
 import { filterMessages } from "./utils/messageFilters";
@@ -104,6 +105,10 @@ function App() {
 
   // Sidebar width state for resizable splitter
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+
+  // Open external links in system browser instead of WebView
+  const appRef = useRef<HTMLDivElement>(null);
+  useExternalLinks(appRef);
 
   // Session Board store
   const { loadBoardSessions, isLoadingBoard } = useSessionBoard();
@@ -444,6 +449,7 @@ function App() {
   return (
     <>
       <div
+        ref={appRef}
         className={cn("h-screen flex flex-col", COLORS.ui.background.primary)}
       >
         {/* Header */}
@@ -452,7 +458,7 @@ function App() {
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
           {/* Sidebar with fixed width */}
-          <div style={{ width: `${sidebarWidth}px` }} className="flex-shrink-0 overflow-hidden">
+          <div style={{ width: `${sidebarWidth}px` }} className="shrink-0 overflow-hidden min-w-[200px]">
             <ProjectTree
               projects={projects}
               sessions={sessions}

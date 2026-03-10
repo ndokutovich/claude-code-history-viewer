@@ -94,7 +94,7 @@ export const MessageNavigator: React.FC<MessageNavigatorProps> = ({
         role="complementary"
         aria-label={t("navigator.title")}
         className={cn(
-          "flex-shrink-0 bg-muted/50 border-l border-border/50 flex h-full",
+          "shrink-0 overflow-hidden bg-muted/50 border-l border-border/50 flex h-full",
           isResizing && "select-none"
         )}
         style={{ width: "48px" }}
