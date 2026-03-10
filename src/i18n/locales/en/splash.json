@@ -4,6 +4,8 @@
   "status": {
     "initializing": "Initializing application",
     "loadingLanguage": "Loading language settings",
+    "initAdapters": "Initializing adapters",
+    "loadingSaved": "Loading saved sources",
     "detectingSources": "Detecting conversation sources",
     "loadingAdapters": "Loading adapters",
     "scanningProjects": "Scanning projects",

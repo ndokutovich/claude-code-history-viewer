@@ -168,7 +168,7 @@ function App() {
           progress: 15,
         });
 
-        // Stage 2: Detecting sources (20-40%)
+        // Stage 2: Detecting sources (20-45%)
         setLoadingProgress({
           stage: 'detecting-sources',
           message: i18nInstance.t('splash:status.detectingSources', 'Detecting conversation sources'),
@@ -176,7 +176,22 @@ function App() {
         });
 
         const t1 = performance.now();
-        await initializeSources();
+        await initializeSources((phase, pct) => {
+          // Map initializeSources internal 0-100% to our 25-45% range
+          const progress = 25 + Math.round((pct / 100) * 20);
+          const messageKey = phase === 'initAdapters' ? 'initAdapters'
+            : phase === 'loadingSaved' ? 'loadingSaved'
+            : phase === 'detectingProviders' ? 'detectingSources'
+            : 'detectingSources';
+          setLoadingProgress({
+            stage: 'detecting-sources',
+            message: i18nInstance.t(`splash:status.${messageKey}`, phase),
+            progress,
+            details: !['initAdapters', 'loadingSaved', 'detectingProviders', 'done'].includes(phase)
+              ? phase  // provider name like "Claude Code", "Cursor IDE" etc.
+              : undefined,
+          });
+        });
         console.log(`⏱️ initializeSources: ${(performance.now() - t1).toFixed(0)}ms`);
 
         setLoadingProgress({

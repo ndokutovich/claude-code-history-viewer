@@ -54,8 +54,8 @@ interface SourceStoreState {
   validationError: string | null;
 
   // Actions - Initialization
-  initializeSources: () => Promise<void>;
-  detectAllProviders: () => Promise<string[]>;
+  initializeSources: (onProgress?: (message: string, percent: number) => void) => Promise<void>;
+  detectAllProviders: (onProgress?: (providerName: string, completed: number, total: number) => void) => Promise<string[]>;
   autoDetectDefaultSource: () => Promise<void>;
   autoDetectAndMerge: () => Promise<void>;
 
@@ -107,14 +107,16 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
   // INITIALIZATION
   // ------------------------------------------------------------------------
 
-  initializeSources: async () => {
+  initializeSources: async (onProgress) => {
     set({ isLoadingSources: true, error: null });
 
     try {
       // Initialize adapter registry first
+      onProgress?.('initAdapters', 0);
       await adapterRegistry.initialize();
 
       // Load saved sources from persistent storage
+      onProgress?.('loadingSaved', 20);
       const store = await load('sources.json', { autoSave: false } as StoreOptions);
       const savedSources = await store.get<UniversalSource[]>(SOURCES_STORAGE_KEY);
       const savedSelectedId = await store.get<string>(SELECTED_SOURCE_KEY);
@@ -126,8 +128,13 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
 
         // ALWAYS run auto-detection to find new providers
         console.log('🔍 Checking for new providers...');
+        onProgress?.('detectingProviders', 35);
         try {
-          await get().autoDetectAndMerge();
+          await get().autoDetectAndMerge((name, done, total) => {
+            // Map provider detection progress to 35-90% of our range
+            const pct = 35 + Math.round((done / total) * 55);
+            onProgress?.(name, pct);
+          });
         } catch (err) {
           console.error('Failed to auto-detect new sources:', err);
         }
@@ -139,8 +146,11 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       } else {
         // No saved sources - try to auto-detect default Claude Code folder
         console.log('No saved sources found, attempting auto-detection...');
+        onProgress?.('detectingProviders', 35);
         await get().autoDetectDefaultSource();
       }
+
+      onProgress?.('done', 100);
     } catch (error) {
       console.error('Failed to initialize sources:', error);
       set({ error: `Failed to initialize sources: ${(error as Error).message}` });
@@ -167,7 +177,7 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
   // ------------------------------------------------------------------------
 
   // Unified detection: scans for all available providers (in parallel)
-  detectAllProviders: async (): Promise<string[]> => {
+  detectAllProviders: async (onProgress): Promise<string[]> => {
     const providers = [
       { name: 'Claude Code', command: 'get_claude_folder_path', id: 'claude-code' },
       { name: 'Cursor IDE', command: 'get_cursor_path', id: 'cursor' },
@@ -176,15 +186,35 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       { name: 'OpenCode', command: 'get_opencode_path', id: 'opencode' },
     ];
 
+    let completed = 0;
+    const PROVIDER_TIMEOUT = 5000; // 5s per provider to avoid blocking startup
     const results = await Promise.allSettled(
       providers.map(async (provider) => {
-        const path = await invoke<string>(provider.command);
-        const validation = await get().validatePath(path);
-        if (validation.isValid && validation.providerId === provider.id) {
-          console.log(`  ✓ Found ${provider.name} at: ${path}`);
-          return path;
+        const detect = async () => {
+          const path = await invoke<string>(provider.command);
+          const validation = await get().validatePath(path);
+          if (validation.isValid && validation.providerId === provider.id) {
+            console.log(`  ✓ Found ${provider.name} at: ${path}`);
+            return path;
+          }
+          return null;
+        };
+        try {
+          const result = await Promise.race([
+            detect(),
+            new Promise<null>((_, reject) =>
+              setTimeout(() => reject(new Error(`${provider.name} detection timed out`)), PROVIDER_TIMEOUT)
+            ),
+          ]);
+          completed++;
+          onProgress?.(provider.name, completed, providers.length);
+          return result;
+        } catch (err) {
+          completed++;
+          onProgress?.(provider.name, completed, providers.length);
+          console.warn(`  ⏱ ${provider.name} skipped:`, (err as Error).message);
+          return null;
         }
-        return null;
       })
     );
 
@@ -201,9 +231,9 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
   },
 
   // Auto-detect and merge new sources (doesn't replace existing)
-  autoDetectAndMerge: async () => {
+  autoDetectAndMerge: async (onProgress?: (providerName: string, completed: number, total: number) => void) => {
     const existingSources = get().sources;
-    const detectedSources = await get().detectAllProviders();
+    const detectedSources = await get().detectAllProviders(onProgress);
 
     // Filter out already existing sources
     const newSources = detectedSources.filter(

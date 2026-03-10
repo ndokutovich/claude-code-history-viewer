@@ -4,6 +4,8 @@
   "status": {
     "initializing": "Инициализация приложения",
     "loadingLanguage": "Загрузка языковых настроек",
+    "initAdapters": "Инициализация адаптеров",
+    "loadingSaved": "Загрузка сохранённых источников",
     "detectingSources": "Обнаружение источников диалога",
     "loadingAdapters": "Загрузка адаптеров",
     "scanningProjects": "Сканирование проектов",

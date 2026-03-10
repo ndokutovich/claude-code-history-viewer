@@ -4,6 +4,8 @@
   "status": {
     "initializing": "애플리케이션 초기화 중",
     "loadingLanguage": "언어 설정 로딩 중",
+    "initAdapters": "어댑터 초기화 중",
+    "loadingSaved": "저장된 소스 로딩 중",
     "detectingSources": "대화 소스 감지 중",
     "loadingAdapters": "어댑터 로딩 중",
     "scanningProjects": "프로젝트 스캔 중",

@@ -84,6 +84,34 @@
         80%, 100% { content: '...'; }
       }
 
+      .preloader-progress-track {
+        width: 200px;
+        height: 4px;
+        margin: 16px auto 0;
+        background: #e5e7eb;
+        border-radius: 2px;
+        overflow: hidden;
+      }
+
+      .preloader-progress-bar {
+        height: 100%;
+        width: 30%;
+        background: linear-gradient(90deg, #3b82f6, #9333ea);
+        border-radius: 2px;
+        animation: preloader-slide 1.2s ease-in-out infinite;
+      }
+
+      @keyframes preloader-slide {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(400%); }
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .preloader-progress-track {
+          background: #374151;
+        }
+      }
+
       /* Dark mode support */
       @media (prefers-color-scheme: dark) {
         #initial-preloader {
@@ -109,6 +137,9 @@
           <div class="preloader-title">AI Code History</div>
           <div class="preloader-subtitle">
             Loading<span class="preloader-dots"></span>
+          </div>
+          <div class="preloader-progress-track">
+            <div class="preloader-progress-bar"></div>
           </div>
         </div>
       </div>
