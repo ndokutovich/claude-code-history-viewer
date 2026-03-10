@@ -157,7 +157,7 @@ function findSourceForPath(projectPath: string, providerId?: string): UniversalS
 
     // Only match by providerId when it's unambiguous (single source for that provider)
     const byProviderId = availableSources.filter(s => s.providerId === providerId);
-    if (byProviderId.length === 1) return byProviderId[0];
+    if (byProviderId.length === 1) return byProviderId[0] ?? null;
   }
 
   return null;
