@@ -19,6 +19,10 @@ export interface CaptureModeSliceState {
   isCaptureMode: boolean;
   /** UUIDs of messages hidden during capture mode */
   hiddenMessageIds: string[];
+  /** Session IDs hidden during capture mode */
+  hiddenSessionIds: string[];
+  /** Project paths hidden during capture mode */
+  hiddenProjectPaths: string[];
 }
 
 export interface CaptureModeSliceActions {
@@ -30,6 +34,12 @@ export interface CaptureModeSliceActions {
   restoreAllMessages: () => void;
   isMessageHidden: (uuid: string) => boolean;
   getHiddenCount: () => number;
+  hideSession: (sessionId: string) => void;
+  showSession: (sessionId: string) => void;
+  hideProject: (projectPath: string) => void;
+  showProject: (projectPath: string) => void;
+  restoreAll: () => void;
+  getTotalHiddenCount: () => number;
 }
 
 export type CaptureModeSlice = CaptureModeSliceState & CaptureModeSliceActions;
@@ -41,4 +51,6 @@ export type CaptureModeSlice = CaptureModeSliceState & CaptureModeSliceActions;
 export const initialCaptureModeState: CaptureModeSliceState = {
   isCaptureMode: false,
   hiddenMessageIds: [],
+  hiddenSessionIds: [],
+  hiddenProjectPaths: [],
 };

@@ -28,6 +28,10 @@ export interface MessageNodeProps {
   sessionFilePath?: string;
   allMessages: UIMessage[];
   onExtractRange: (startIndex: number, endIndex: number, openModal: boolean) => void;
+  /** Capture mode: when true, show hide button on each message */
+  isCaptureMode?: boolean;
+  /** Callback to hide a message in capture mode */
+  onHideMessage?: (uuid: string) => void;
 }
 
 export interface MessageHeaderProps {

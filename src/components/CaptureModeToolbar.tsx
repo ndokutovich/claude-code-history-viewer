@@ -11,11 +11,11 @@ import { cn } from "@/utils/cn";
 import { useAppStore } from "@/store/useAppStore";
 
 export function CaptureModeToolbar() {
-  const { t } = useTranslation();
-  const { hiddenMessageIds, restoreAllMessages, exitCaptureMode } =
+  const { t } = useTranslation("renderers");
+  const { getTotalHiddenCount, restoreAll, exitCaptureMode } =
     useAppStore();
 
-  const hiddenCount = hiddenMessageIds.length;
+  const hiddenCount = getTotalHiddenCount();
 
   return (
     <div
@@ -45,7 +45,7 @@ export function CaptureModeToolbar() {
         {/* Hidden count - minimal */}
         {hiddenCount > 0 && (
           <button
-            onClick={restoreAllMessages}
+            onClick={restoreAll}
             className={cn(
               "flex items-center gap-2 group",
               "text-zinc-500 hover:text-zinc-300 transition-colors"

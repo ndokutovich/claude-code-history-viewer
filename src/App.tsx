@@ -16,6 +16,7 @@ import { DebugConsole } from "./components/DebugConsole";
 import { SplashScreen } from "./components/SplashScreen";
 import { ResizableSplitter } from "./components/ResizableSplitter";
 import { ExportControls } from "./components/ExportControls";
+import { CaptureModeToolbar } from "./components/CaptureModeToolbar";
 import { useAppStore } from "./store/useAppStore";
 import { useSourceStore } from "./store/useSourceStore";
 import { useAnalytics } from "./hooks/useAnalytics";
@@ -73,6 +74,7 @@ function App() {
     setLoadingProgress,
     fontScale,
     highContrast,
+    isCaptureMode,
   } = useAppStore();
 
   // Apply font scale and high contrast accessibility settings to the document root
@@ -454,6 +456,9 @@ function App() {
       >
         {/* Header */}
         <Header />
+
+        {/* Capture Mode Toolbar */}
+        {isCaptureMode && <CaptureModeToolbar />}
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">

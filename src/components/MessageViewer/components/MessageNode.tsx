@@ -1,5 +1,5 @@
 import React from "react";
-import { Check, Link2, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { Check, Link2, ArrowUpCircle, ArrowDownCircle, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ClaudeContentArrayRenderer } from "../../contentRenderer";
 import {
@@ -29,6 +29,8 @@ export const MessageNode = ({
   sessionFilePath,
   allMessages,
   onExtractRange,
+  isCaptureMode,
+  onHideMessage,
 }: MessageNodeProps) => {
   const { t } = useTranslation("components");
   const [copiedReference, setCopiedReference] = React.useState(false);
@@ -187,6 +189,19 @@ export const MessageNode = ({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          {/* Hide Block Button (Capture Mode) */}
+          {isCaptureMode && onHideMessage && (
+            <button
+              onClick={() => onHideMessage(message.uuid)}
+              className={cn(
+                "p-1 rounded transition-colors",
+                "text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30"
+              )}
+              title={t("renderers:captureMode.hideBlock")}
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+            </button>
+          )}
           {message.type === "assistant" && (
             <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
           )}

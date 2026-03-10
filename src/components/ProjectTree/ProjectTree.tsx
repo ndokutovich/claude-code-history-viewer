@@ -53,7 +53,19 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
   } = useProjectTreeState();
 
   const { t, i18n } = useTranslation('components');
-  const { projectListPreferences, loadProjectSessions } = useAppStore();
+  const {
+    projectListPreferences,
+    loadProjectSessions,
+    isCaptureMode,
+    hiddenSessionIds,
+    hiddenProjectPaths,
+    hideSession,
+    hideProject,
+  } = useAppStore();
+
+  // Capture mode: memoized Sets for efficient lookup
+  const hiddenSessionIdsSet = useMemo(() => new Set(hiddenSessionIds), [hiddenSessionIds]);
+  const hiddenProjectPathsSet = useMemo(() => new Set(hiddenProjectPaths), [hiddenProjectPaths]);
 
   // Load all sessions when search query is entered (with debouncing)
   useEffect(() => {
@@ -702,6 +714,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
               onContextMenu={handleSessionContextMenu}
               formatTimeAgo={formatTimeAgo}
               t={t}
+              isCaptureMode={isCaptureMode}
+              hiddenSessionIds={hiddenSessionIdsSet}
+              onHideSession={hideSession}
             />
           </div>
         ) : (
@@ -727,6 +742,11 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                 onExpandRequest={(path) => loadSessionsForProjects([path])}
                 formatTimeAgo={formatTimeAgo}
                 t={t}
+                isCaptureMode={isCaptureMode}
+                hiddenProjectPaths={hiddenProjectPathsSet}
+                hiddenSessionIds={hiddenSessionIdsSet}
+                onHideProject={hideProject}
+                onHideSession={hideSession}
               />
             ))}
           </div>

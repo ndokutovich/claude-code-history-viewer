@@ -42,6 +42,8 @@
   "captureMode.hideBlock": "隱藏此區塊",
   "captureMode.restoreAll": "全部恢復",
   "captureMode.tooltip": "隱藏訊息區塊以便截圖",
+  "captureMode.hideSession": "隱藏工作階段",
+  "captureMode.hideProject": "隱藏專案",
   "citationRenderer.blockLocation": "區塊 {{start}}-{{end}}",
   "citationRenderer.charLocation": "字元 {{start}}-{{end}}",
   "citationRenderer.pageRange": "第{{start}}-{{end}}頁",

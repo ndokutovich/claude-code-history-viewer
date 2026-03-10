@@ -6,8 +6,10 @@
  */
 
 import React from "react";
+import { EyeOff } from "lucide-react";
 import type { TFunction } from "i18next";
 import type { UIProject, UISession } from "../../../types";
+import { cn } from "../../../utils/cn";
 import { ProjectRow } from "./ProjectRow";
 import { SessionRow } from "./SessionRow";
 
@@ -30,6 +32,12 @@ export interface ProjectGroupProps {
   onExpandRequest: (projectPath: string) => Promise<void>;
   formatTimeAgo: (dateStr: string) => string;
   t: TFunction;
+  /** Capture mode props */
+  isCaptureMode?: boolean;
+  hiddenProjectPaths?: Set<string>;
+  hiddenSessionIds?: Set<string>;
+  onHideProject?: (projectPath: string) => void;
+  onHideSession?: (sessionId: string) => void;
 }
 
 export const ProjectGroup: React.FC<ProjectGroupProps> = ({
@@ -50,7 +58,17 @@ export const ProjectGroup: React.FC<ProjectGroupProps> = ({
   onExpandRequest,
   formatTimeAgo,
   t,
+  isCaptureMode,
+  hiddenProjectPaths,
+  hiddenSessionIds,
+  onHideProject,
+  onHideSession,
 }) => {
+  // Filter hidden projects in capture mode
+  const visibleProjects = isCaptureMode && hiddenProjectPaths
+    ? projects.filter((p) => !hiddenProjectPaths.has(p.path))
+    : projects;
+
   return (
     <div key={groupName}>
       {/* Group Header (only if grouped by source) */}
@@ -63,12 +81,12 @@ export const ProjectGroup: React.FC<ProjectGroupProps> = ({
       )}
 
       {/* Projects in this group */}
-      {projects.map((project) => {
+      {visibleProjects.map((project) => {
         const isExpanded = expandedProjects.has(project.path);
         const isLoadingProject = loadingProjects.has(project.path);
 
         return (
-          <div key={project.path}>
+          <div key={project.path} className="relative group/project">
             <ProjectRow
               project={project}
               isExpanded={isExpanded}
@@ -80,25 +98,59 @@ export const ProjectGroup: React.FC<ProjectGroupProps> = ({
               onExpandRequest={onExpandRequest}
             />
 
+            {/* Hide Project Button (Capture Mode) */}
+            {isCaptureMode && onHideProject && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onHideProject(project.path); }}
+                className={cn(
+                  "absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded",
+                  "opacity-0 group-hover/project:opacity-100 transition-opacity",
+                  "text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30"
+                )}
+                title={t("renderers:captureMode.hideProject", "Hide project")}
+              >
+                <EyeOff className="w-3.5 h-3.5" />
+              </button>
+            )}
+
             {/* Sessions for expanded project */}
             {isExpanded && !isLoading && (() => {
               const projectSessions = getSessionsForProject(project.path);
-              if (projectSessions.length === 0) {
+              // Filter hidden sessions in capture mode
+              const visibleSessions = isCaptureMode && hiddenSessionIds
+                ? projectSessions.filter((s) => !hiddenSessionIds.has(s.session_id))
+                : projectSessions;
+              if (visibleSessions.length === 0) {
                 return null;
               }
               return (
                 <div className="ml-6 space-y-1">
-                  {projectSessions.map((session) => (
-                    <SessionRow
-                      key={session.session_id}
-                      session={session}
-                      selectedSession={selectedSession}
-                      onSessionSelect={onSessionSelect}
-                      onContextMenu={onSessionContextMenu}
-                      formatTimeAgo={formatTimeAgo}
-                      t={t}
-                      ariaLevel={2}
-                    />
+                  {visibleSessions.map((session) => (
+                    <div key={session.session_id} className="relative group/session">
+                      <SessionRow
+                        session={session}
+                        selectedSession={selectedSession}
+                        onSessionSelect={onSessionSelect}
+                        onContextMenu={onSessionContextMenu}
+                        formatTimeAgo={formatTimeAgo}
+                        t={t}
+                        ariaLevel={2}
+                      />
+                      {/* Hide Session Button (Capture Mode) */}
+                      {isCaptureMode && onHideSession && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onHideSession(session.session_id); }}
+                          className={cn(
+                            "absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded",
+                            "opacity-0 group-hover/session:opacity-100 transition-opacity",
+                            "text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30"
+                          )}
+                          title={t("renderers:captureMode.hideSession", "Hide session")}
+                        >
+                          <EyeOff className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               );

@@ -56,6 +56,9 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     goToPrevMatch,
     clearSessionSearch,
     rebuildSearchIndex,
+    isCaptureMode,
+    hiddenMessageIds,
+    hideMessage,
   } = useAppStore();
 
   const { searchQuery, isSearchPending, handleSearchInput, handleClearSearch } = useSearchState({
@@ -293,11 +296,18 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     );
   }
 
+  // Filter out hidden messages in capture mode
+  const visibleMessages = isCaptureMode
+    ? messages.filter((m) => !hiddenMessageIds.includes(m.uuid))
+    : messages;
+
   // Shared props for MessageNode (everything except message, depth, sessionFilePath)
   const messageNodeProps = {
     providerName,
-    allMessages: messages,
+    allMessages: visibleMessages,
     onExtractRange: handleExtractRange,
+    isCaptureMode,
+    onHideMessage: hideMessage,
   };
 
   return (
@@ -530,9 +540,15 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           {/* Message list */}
           {(() => {
             try {
+              // In capture mode, filter out hidden messages
+              const hiddenSet = isCaptureMode ? new Set(hiddenMessageIds) : null;
+
               if (rootMessages.length > 0) {
-                // Render tree structure
-                return rootMessages
+                // Render tree structure (filter hidden in capture mode)
+                const visibleRoots = hiddenSet
+                  ? rootMessages.filter((m) => !hiddenSet.has(m.uuid))
+                  : rootMessages;
+                return visibleRoots
                   .map((message) =>
                     renderMessageTree(
                       message,
@@ -546,8 +562,11 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                   )
                   .flat();
               } else {
-                // Render flat structure
-                return uniqueMessages.map((message, index) => {
+                // Render flat structure (filter hidden in capture mode)
+                const visibleFlat = hiddenSet
+                  ? uniqueMessages.filter((m) => !hiddenSet.has(m.uuid))
+                  : uniqueMessages;
+                return visibleFlat.map((message, index) => {
                   // Generate unique key: use index and timestamp if UUID is missing or duplicated
                   const uniqueKey =
                     message.uuid && message.uuid !== "unknown-session"
@@ -561,8 +580,10 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                       depth={0}
                       providerName={providerName}
                       sessionFilePath={selectedSession?.file_path}
-                      allMessages={messages}
+                      allMessages={visibleMessages}
                       onExtractRange={handleExtractRange}
+                      isCaptureMode={isCaptureMode}
+                      onHideMessage={hideMessage}
                     />
                   );
                 });

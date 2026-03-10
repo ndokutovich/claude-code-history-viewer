@@ -42,6 +42,8 @@
   "captureMode.hideBlock": "이 블록 숨기기",
   "captureMode.restoreAll": "모두 복원",
   "captureMode.tooltip": "스크린샷용 메시지 블록 숨기기",
+  "captureMode.hideSession": "세션 숨기기",
+  "captureMode.hideProject": "프로젝트 숨기기",
   "citationRenderer.blockLocation": "블록 {{start}}-{{end}}",
   "citationRenderer.charLocation": "문자 {{start}}-{{end}}",
   "citationRenderer.pageRange": "{{start}}-{{end}}페이지",

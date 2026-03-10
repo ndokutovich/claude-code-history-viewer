@@ -184,6 +184,18 @@ export default defineConfig(({ mode }) => ({
           '@tauri-apps/api',
         ]
       }
-    }
+    },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'text-summary'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/test/**',
+        'src/**/__tests__/**',
+        'src/**/*.test.{ts,tsx}',
+        'src/types/**',
+        'src/i18n/**',
+      ],
+    },
   },
 }));
