@@ -22,7 +22,7 @@ import {
 import { MAX_DEPTH_MARGIN } from "../../../constants/layout";
 import type { MessageNodeProps } from "../types";
 
-export const MessageNode = ({
+export const MessageNode = React.memo(({
   message,
   depth,
   providerName,
@@ -261,4 +261,4 @@ export const MessageNode = ({
       </div>
     </div>
   );
-};
+});

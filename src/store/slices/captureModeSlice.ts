@@ -3,11 +3,13 @@
  *
  * Manages the screenshot/capture mode feature:
  * - isCaptureMode: whether capture mode is active
- * - hiddenMessageIds: which messages are hidden during capture
+ * - hiddenMessageIds: messages hidden during capture (by UUID)
+ * - hiddenSessionIds: sessions hidden during capture (by session ID)
+ * - hiddenProjectPaths: projects hidden during capture (by path)
  *
- * In capture mode users can selectively hide messages before taking
- * a screenshot. Hidden messages are tracked by UUID and can be
- * restored individually or all at once.
+ * In capture mode users can selectively hide messages, sessions, and
+ * projects before taking a screenshot. Hidden items are tracked and
+ * can be restored individually or all at once.
  */
 
 // ============================================================================
@@ -33,7 +35,7 @@ export interface CaptureModeSliceActions {
   restoreMessages: (uuids: string[]) => void;
   restoreAllMessages: () => void;
   isMessageHidden: (uuid: string) => boolean;
-  getHiddenCount: () => number;
+  getHiddenMessageCount: () => number;
   hideSession: (sessionId: string) => void;
   showSession: (sessionId: string) => void;
   hideProject: (projectPath: string) => void;

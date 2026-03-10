@@ -2,6 +2,7 @@ import React, {
   useEffect,
   useRef,
   useCallback,
+  useMemo,
   useState,
 } from "react";
 import { Loader2, MessageCircle, ChevronDown, ListTree, Search, X, ChevronUp } from "lucide-react";
@@ -296,9 +297,13 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     );
   }
 
-  // Filter out hidden messages in capture mode
+  // Filter out hidden messages in capture mode (Set for O(1) lookups)
+  const hiddenMessageSet = useMemo(
+    () => new Set(hiddenMessageIds),
+    [hiddenMessageIds]
+  );
   const visibleMessages = isCaptureMode
-    ? messages.filter((m) => !hiddenMessageIds.includes(m.uuid))
+    ? messages.filter((m) => !hiddenMessageSet.has(m.uuid))
     : messages;
 
   // Shared props for MessageNode (everything except message, depth, sessionFilePath)

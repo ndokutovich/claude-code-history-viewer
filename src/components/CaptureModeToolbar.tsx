@@ -12,10 +12,9 @@ import { useAppStore } from "@/store/useAppStore";
 
 export function CaptureModeToolbar() {
   const { t } = useTranslation("renderers");
-  const { getTotalHiddenCount, restoreAll, exitCaptureMode } =
-    useAppStore();
-
-  const hiddenCount = getTotalHiddenCount();
+  const hiddenCount = useAppStore((s) => s.getTotalHiddenCount());
+  const restoreAll = useAppStore((s) => s.restoreAll);
+  const exitCaptureMode = useAppStore((s) => s.exitCaptureMode);
 
   return (
     <div
@@ -53,7 +52,7 @@ export function CaptureModeToolbar() {
             title={t("captureMode.restoreAll")}
           >
             <span className="text-xs font-mono tabular-nums">
-              {hiddenCount} {hiddenCount === 1 ? "block" : "blocks"} hidden
+              {t("captureMode.hiddenCount", { count: hiddenCount })}
             </span>
             <RotateCcw className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>

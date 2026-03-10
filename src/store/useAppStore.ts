@@ -1821,7 +1821,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const { isCaptureMode, hiddenMessageIds } = get();
     return isCaptureMode && hiddenMessageIds.includes(uuid);
   },
-  getHiddenCount: () => get().hiddenMessageIds.length,
+  getHiddenMessageCount: () => get().hiddenMessageIds.length,
   hideSession: (sessionId: string) => {
     const { hiddenSessionIds } = get();
     if (!hiddenSessionIds.includes(sessionId)) {
