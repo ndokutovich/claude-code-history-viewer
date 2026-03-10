@@ -278,6 +278,24 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     [hiddenMessageIds]
   );
 
+  // All useMemo/useCallback hooks must be above early returns (Rules of Hooks)
+  // Filter out hidden messages in capture mode (memoized to stabilize reference)
+  const visibleMessages = useMemo(
+    () => isCaptureMode
+      ? messages.filter((m) => !hiddenMessageSet.has(m.uuid))
+      : messages,
+    [messages, isCaptureMode, hiddenMessageSet]
+  );
+
+  // Shared props for MessageNode — memoized so React.memo on MessageNode is effective
+  const messageNodeProps = useMemo(() => ({
+    providerName,
+    allMessages: visibleMessages,
+    onExtractRange: handleExtractRange,
+    isCaptureMode,
+    onHideMessage: hideMessage,
+  }), [providerName, visibleMessages, handleExtractRange, isCaptureMode, hideMessage]);
+
   if (isLoading && messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center h-full">
@@ -304,23 +322,6 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       </div>
     );
   }
-
-  // Filter out hidden messages in capture mode (memoized to stabilize reference)
-  const visibleMessages = useMemo(
-    () => isCaptureMode
-      ? messages.filter((m) => !hiddenMessageSet.has(m.uuid))
-      : messages,
-    [messages, isCaptureMode, hiddenMessageSet]
-  );
-
-  // Shared props for MessageNode — memoized so React.memo on MessageNode is effective
-  const messageNodeProps = useMemo(() => ({
-    providerName,
-    allMessages: visibleMessages,
-    onExtractRange: handleExtractRange,
-    isCaptureMode,
-    onHideMessage: hideMessage,
-  }), [providerName, visibleMessages, handleExtractRange, isCaptureMode, hideMessage]);
 
   return (
     <div className="relative flex-1 h-full flex">
