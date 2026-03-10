@@ -269,7 +269,6 @@ export const MessageNode = React.memo(({
               {message.toolUseResult && (
                 <ToolExecutionResultRouter
                   toolResult={message.toolUseResult}
-                  depth={depth}
                 />
               )}
 

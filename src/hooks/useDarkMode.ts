@@ -17,7 +17,7 @@ function subscribe(callback: () => void): () => void {
       const next = document.documentElement.classList.contains("dark");
       if (next !== darkMode) {
         darkMode = next;
-        listeners.forEach((fn) => fn());
+        listeners.forEach((fn) => { fn(); });
       }
     });
     observer.observe(document.documentElement, {

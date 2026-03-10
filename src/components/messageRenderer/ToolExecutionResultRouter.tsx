@@ -27,7 +27,6 @@ import { AnsiText } from "../common/AnsiText";
 
 interface ToolExecutionResultRouterProps {
   toolResult: Record<string, unknown> | string;
-  depth: number;
 }
 
 export const ToolExecutionResultRouter: React.FC<

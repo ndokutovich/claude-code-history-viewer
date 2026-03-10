@@ -139,8 +139,9 @@ fn process_session_file(
     // Track first user message content for summary fallback
     let mut first_user_content_raw: Option<String> = None;
 
-    // Track tool_use_result raw strings for git info fallback
+    // Track tool_use_result raw strings for git info fallback (capped to prevent OOM)
     let mut tool_result_raws: Vec<String> = Vec::new();
+    let mut git_info_found = false;
 
     for (_line_num, line_result) in reader.lines().enumerate() {
         let line = match line_result {
@@ -268,9 +269,18 @@ fn process_session_file(
             }
         }
 
-        // --- Collect tool_use_result raws for git info fallback ---
-        if let Some(ref raw) = scan_entry.tool_use_result {
-            tool_result_raws.push(raw.get().to_string());
+        // --- Collect tool_use_result raws for git info fallback (stop once found) ---
+        if !git_info_found {
+            if let Some(ref raw) = scan_entry.tool_use_result {
+                let raw_str = raw.get();
+                if raw_str.contains("stdout") || raw_str.len() < 1000 {
+                    tool_result_raws.push(raw_str.to_string());
+                }
+                // Stop collecting after 50 results — git info is always early
+                if tool_result_raws.len() >= 50 {
+                    git_info_found = true;
+                }
+            }
         }
     }
 
@@ -698,7 +708,7 @@ pub async fn load_session_messages_paginated(
 
     // === PASS 1: Lightweight scan for pagination ===
     // Only parse 4 fields per line to determine which lines are valid displayable messages.
-    let mut valid_line_indices: Vec<usize> = Vec::new();
+    let mut valid_line_indices: Vec<usize> = Vec::with_capacity(line_ranges.len());
 
     for (line_idx, &(start, end)) in line_ranges.iter().enumerate() {
         let line = std::str::from_utf8(&mmap[start..end]).unwrap_or_default();
