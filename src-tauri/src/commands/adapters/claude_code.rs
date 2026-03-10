@@ -78,6 +78,18 @@ pub fn claude_message_to_universal(
     // Preserve original message_type string
     provider_metadata.insert("original_type".to_string(), json!(msg.message_type));
 
+    // Preserve system message fields (subtype, compaction metadata, etc.)
+    if let Some(ref subtype) = msg.subtype {
+        provider_metadata.insert("subtype".to_string(), json!(subtype));
+    }
+    if let Some(ref sys_meta) = msg.system_metadata {
+        if let serde_json::Value::Object(map) = sys_meta {
+            for (key, value) in map {
+                provider_metadata.insert(key.clone(), value.clone());
+            }
+        }
+    }
+
     // Preserve raw content for debugging/recovery
     if let Some(ref content_value) = msg.content {
         provider_metadata.insert("raw_content".to_string(), content_value.clone());

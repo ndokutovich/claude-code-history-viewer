@@ -56,6 +56,24 @@ pub struct RawLogEntry {
     #[serde(rename = "isSidechain")]
     pub is_sidechain: Option<bool>,
     pub cwd: Option<String>,
+
+    // System message fields (compaction boundaries, hooks, etc.)
+    pub subtype: Option<String>,
+    pub level: Option<String>,
+    #[serde(rename = "compactMetadata")]
+    pub compact_metadata: Option<serde_json::Value>,
+    #[serde(rename = "microcompactMetadata")]
+    pub microcompact_metadata: Option<serde_json::Value>,
+    #[serde(rename = "durationMs")]
+    pub duration_ms: Option<u64>,
+    #[serde(rename = "hookCount")]
+    pub hook_count: Option<u32>,
+    #[serde(rename = "hookInfos")]
+    pub hook_infos: Option<serde_json::Value>,
+    #[serde(rename = "stopReasonSystem")]
+    pub stop_reason_system: Option<String>,
+    #[serde(rename = "preventedContinuation")]
+    pub prevented_continuation: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -89,6 +107,11 @@ pub struct ClaudeMessage {
     pub project_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stop_reason: Option<String>,
+    // System message fields
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub subtype: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "systemMetadata")]
+    pub system_metadata: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -9,6 +9,7 @@ import {
   AssistantMessageDetails,
   ProviderMetadataDisplay,
 } from "../../messageRenderer";
+import { SystemMessageRenderer } from "../../messageRenderer/SystemMessageRenderer";
 import { extractUIMessageContent } from "../../../utils/messageUtils";
 import { cn } from "../../../utils/cn";
 import { COLORS } from "../../../constants/colors";
@@ -209,54 +210,72 @@ export const MessageNode = React.memo(({
 
         {/* Message content */}
         <div className="w-full">
-          {/* Message Content */}
-          <MessageContentDisplay
-            content={extractUIMessageContent(message)}
-            messageType={message.type}
-          />
-
-          {/* Claude API Content Array */}
-          {message.content &&
-            typeof message.content === "object" &&
-            Array.isArray(message.content) &&
-            (message.type !== "assistant" ||
-              (message.type === "assistant" &&
-                !extractUIMessageContent(message))) && (
-              <div className="mb-2">
-                <ClaudeContentArrayRenderer content={message.content} />
-              </div>
-            )}
-
-          {/* Special case: when content is null but toolUseResult exists */}
-          {!extractUIMessageContent(message) &&
-            message.toolUseResult &&
-            typeof message.toolUseResult === "object" &&
-            Array.isArray(message.toolUseResult.content) && (
-              <div className={cn("text-sm mb-2", COLORS.ui.text.tertiary)}>
-                <span className="italic">:</span>
-              </div>
-            )}
-
-          {/* Tool Use */}
-          {message.toolUse && (
-            <ClaudeToolUseDisplay toolUse={message.toolUse} />
-          )}
-
-          {/* Tool Result */}
-          {message.toolUseResult && (
-            <ToolExecutionResultRouter
-              toolResult={message.toolUseResult}
-              depth={depth}
+          {/* System message with subtype → dedicated renderer */}
+          {message.type === "system" && message.subtype ? (
+            <SystemMessageRenderer
+              content={typeof message.content === "string" ? message.content : undefined}
+              subtype={message.subtype}
+              level={message.level}
+              hookCount={message.hookCount}
+              hookInfos={message.hookInfos}
+              stopReason={message.stopReasonSystem}
+              preventedContinuation={message.preventedContinuation}
+              durationMs={message.durationMs}
+              compactMetadata={message.compactMetadata}
+              microcompactMetadata={message.microcompactMetadata}
             />
-          )}
+          ) : (
+            <>
+              {/* Message Content */}
+              <MessageContentDisplay
+                content={extractUIMessageContent(message)}
+                messageType={message.type}
+              />
 
-          {/* Provider-specific Metadata (file attachments, etc.) */}
-          {message.provider_metadata && (
-            <ProviderMetadataDisplay metadata={message.provider_metadata} />
-          )}
+              {/* Claude API Content Array */}
+              {message.content &&
+                typeof message.content === "object" &&
+                Array.isArray(message.content) &&
+                (message.type !== "assistant" ||
+                  (message.type === "assistant" &&
+                    !extractUIMessageContent(message))) && (
+                  <div className="mb-2">
+                    <ClaudeContentArrayRenderer content={message.content} />
+                  </div>
+                )}
 
-          {/* Assistant Metadata */}
-          <AssistantMessageDetails message={message} />
+              {/* Special case: when content is null but toolUseResult exists */}
+              {!extractUIMessageContent(message) &&
+                message.toolUseResult &&
+                typeof message.toolUseResult === "object" &&
+                Array.isArray(message.toolUseResult.content) && (
+                  <div className={cn("text-sm mb-2", COLORS.ui.text.tertiary)}>
+                    <span className="italic">:</span>
+                  </div>
+                )}
+
+              {/* Tool Use */}
+              {message.toolUse && (
+                <ClaudeToolUseDisplay toolUse={message.toolUse} />
+              )}
+
+              {/* Tool Result */}
+              {message.toolUseResult && (
+                <ToolExecutionResultRouter
+                  toolResult={message.toolUseResult}
+                  depth={depth}
+                />
+              )}
+
+              {/* Provider-specific Metadata (file attachments, etc.) */}
+              {message.provider_metadata && (
+                <ProviderMetadataDisplay metadata={message.provider_metadata} />
+              )}
+
+              {/* Assistant Metadata */}
+              <AssistantMessageDetails message={message} />
+            </>
+          )}
         </div>
       </div>
     </div>
