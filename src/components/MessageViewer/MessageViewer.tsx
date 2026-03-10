@@ -270,6 +270,12 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   // Message tree hook
   const { rootMessages, uniqueMessages, renderMessageTree } = useMessageTree(messages);
 
+  // Memoize hidden message Set for O(1) lookups (must be above early returns)
+  const hiddenMessageSet = useMemo(
+    () => new Set(hiddenMessageIds),
+    [hiddenMessageIds]
+  );
+
   if (isLoading && messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center h-full">
@@ -297,11 +303,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     );
   }
 
-  // Filter out hidden messages in capture mode (Set for O(1) lookups)
-  const hiddenMessageSet = useMemo(
-    () => new Set(hiddenMessageIds),
-    [hiddenMessageIds]
-  );
+  // Filter out hidden messages in capture mode
   const visibleMessages = isCaptureMode
     ? messages.filter((m) => !hiddenMessageSet.has(m.uuid))
     : messages;
@@ -546,7 +548,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           {(() => {
             try {
               // In capture mode, filter out hidden messages
-              const hiddenSet = isCaptureMode ? new Set(hiddenMessageIds) : null;
+              const hiddenSet = isCaptureMode ? hiddenMessageSet : null;
 
               if (rootMessages.length > 0) {
                 // Render tree structure (filter hidden in capture mode)

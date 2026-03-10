@@ -1803,7 +1803,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // Capture Mode
   // ============================================================
   enterCaptureMode: () => set({ isCaptureMode: true }),
-  exitCaptureMode: () => set({ isCaptureMode: false }),
+  exitCaptureMode: () => set({
+    isCaptureMode: false,
+    hiddenMessageIds: [],
+    hiddenSessionIds: [],
+    hiddenProjectPaths: [],
+  }),
   hideMessage: (uuid: string) => {
     const { hiddenMessageIds } = get();
     if (!hiddenMessageIds.includes(uuid)) {
