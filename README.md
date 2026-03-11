@@ -18,17 +18,17 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 </tr>
 <tr>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.6_x64-setup.exe">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.7_x64-setup.exe">
 <img src="https://img.shields.io/badge/Download-.exe-blue?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.6_universal.dmg">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.7_universal.dmg">
 <img src="https://img.shields.io/badge/Download-.dmg-black?style=for-the-badge&logo=apple&logoColor=white" alt="macOS Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.6_amd64.AppImage">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.7_amd64.AppImage">
 <img src="https://img.shields.io/badge/Download-.AppImage-orange?style=for-the-badge&logo=linux&logoColor=white" alt="Linux Download"/>
 </a>
 </td>
@@ -69,6 +69,27 @@ Per-project token usage breakdown and session-level analysis
 ### Demo
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## What's New in v1.9.7
+
+**Performance: Faster Session Scanning** — project expansion now loads sessions significantly faster:
+- Lightweight `SessionScanEntry` with `RawValue` skips deep-parsing heavy content fields
+- Parallel JSONL file processing with rayon
+- Debug logging guarded behind `#[cfg(debug_assertions)]`
+
+**Performance: Two-Pass Message Pagination** — session loading no longer parses the entire file:
+- Pass 1: ultra-lightweight scan (4 fields) counts valid messages and records line indices
+- Pass 2: full-parses only the requested page (e.g., 100 out of 1000 messages)
+
+**Performance: Optimized React Rendering Pipeline** — smoother message list scrolling:
+- Memoized `visibleMessages` and `messageNodeProps` for stable React.memo references
+- Shared `useDarkMode` hook replaces per-component MutationObserver instances
+- O(n) tree traversal with pre-built childMap (was O(n²))
+- React.memo on all message rendering components
+
+**304 Unit Tests** (up from 295) including 9 new token aggregation tests.
+
+---
 
 ## What's New in v1.9.6
 
