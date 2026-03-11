@@ -76,6 +76,75 @@ pub struct RawLogEntry {
     pub prevented_continuation: Option<bool>,
 }
 
+// ============================================================================
+// LIGHTWEIGHT SCAN STRUCTS (Performance Optimization)
+// ============================================================================
+// These structs use RawValue to skip deep parsing of heavy fields (content,
+// tool_use, tool_use_result) during session scanning. Only metadata fields
+// needed for building ClaudeSession are fully parsed.
+
+/// Lightweight entry for session scanning — avoids deep-parsing message content,
+/// tool_use, and tool_use_result by using `Box<RawValue>`.
+/// Many fields are parsed by serde to ensure correct deserialization but only
+/// selectively accessed in Rust code.
+#[derive(Deserialize)]
+#[allow(dead_code)]
+pub struct SessionScanEntry {
+    pub uuid: Option<String>,
+    #[serde(rename = "parentUuid")]
+    pub parent_uuid: Option<String>,
+    #[serde(rename = "sessionId")]
+    pub session_id: Option<String>,
+    pub timestamp: Option<String>,
+    #[serde(rename = "type")]
+    pub message_type: String,
+    #[serde(rename = "gitBranch")]
+    pub git_branch: Option<String>,
+    #[serde(rename = "gitCommit")]
+    pub git_commit: Option<String>,
+    pub summary: Option<String>,
+    #[serde(rename = "isSidechain")]
+    pub is_sidechain: Option<bool>,
+    /// Lightweight message — only role, content as RawValue, and assistant metadata.
+    pub message: Option<SessionScanMessage>,
+    /// RawValue: skip deep parsing — just check presence for has_tool_use.
+    #[serde(rename = "toolUse")]
+    pub tool_use: Option<Box<serde_json::value::RawValue>>,
+    /// RawValue: lazily parsed only when checking for stderr errors.
+    #[serde(rename = "toolUseResult")]
+    pub tool_use_result: Option<Box<serde_json::value::RawValue>>,
+    // System message fields needed for metadata
+    pub subtype: Option<String>,
+    pub level: Option<String>,
+    #[serde(rename = "compactMetadata")]
+    pub compact_metadata: Option<Box<serde_json::value::RawValue>>,
+    #[serde(rename = "microcompactMetadata")]
+    pub microcompact_metadata: Option<Box<serde_json::value::RawValue>>,
+    #[serde(rename = "durationMs")]
+    pub duration_ms: Option<u64>,
+    #[serde(rename = "hookCount")]
+    pub hook_count: Option<u32>,
+    #[serde(rename = "hookInfos")]
+    pub hook_infos: Option<Box<serde_json::value::RawValue>>,
+    #[serde(rename = "stopReasonSystem")]
+    pub stop_reason_system: Option<String>,
+    #[serde(rename = "preventedContinuation")]
+    pub prevented_continuation: Option<bool>,
+}
+
+/// Lightweight message for session scanning — content kept as RawValue.
+#[derive(Deserialize)]
+#[allow(dead_code)]
+pub struct SessionScanMessage {
+    pub role: String,
+    /// Content as RawValue — only inspected as raw string for tool_use/interruption checks.
+    pub content: Option<Box<serde_json::value::RawValue>>,
+    pub id: Option<String>,
+    pub model: Option<String>,
+    pub stop_reason: Option<String>,
+    pub usage: Option<TokenUsage>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClaudeMessage {
     pub uuid: String,

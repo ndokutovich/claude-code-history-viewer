@@ -8,10 +8,16 @@ interface ClaudeToolUseDisplayProps {
   toolUse: Record<string, unknown>;
 }
 
-export const ClaudeToolUseDisplay: React.FC<ClaudeToolUseDisplayProps> = ({
+export const ClaudeToolUseDisplay: React.FC<ClaudeToolUseDisplayProps> = React.memo(({
   toolUse,
 }) => {
   const toolName = toolUse.name || toolUse.tool || "Unknown Tool";
+
+  // Memoize expensive JSON.stringify + Prism tokenization
+  const code = React.useMemo(
+    () => JSON.stringify(toolUse.parameters || toolUse, null, 2),
+    [toolUse]
+  );
 
   return (
     <div
@@ -35,7 +41,7 @@ export const ClaudeToolUseDisplay: React.FC<ClaudeToolUseDisplayProps> = ({
       <div className="rounded overflow-hidden max-h-96 overflow-y-auto">
         <Highlight
           theme={themes.vsDark}
-          code={JSON.stringify(toolUse.parameters || toolUse, null, 2)}
+          code={code}
           language="json"
         >
           {({ className, style, tokens, getLineProps, getTokenProps }) => (
@@ -61,4 +67,4 @@ export const ClaudeToolUseDisplay: React.FC<ClaudeToolUseDisplayProps> = ({
       </div>
     </div>
   );
-};
+});

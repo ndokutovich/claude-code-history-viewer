@@ -1,3 +1,4 @@
+import React from "react";
 import { Markdown } from "../common";
 import { ThinkingRenderer } from "./ThinkingRenderer";
 import { ToolUseRenderer } from "./ToolUseRenderer";
@@ -14,7 +15,7 @@ const isContentItem = (item: unknown): item is Record<string, unknown> => {
   return item !== null && typeof item === "object";
 };
 
-export const ClaudeContentArrayRenderer = ({ content }: Props) => {
+export const ClaudeContentArrayRenderer = React.memo(({ content }: Props) => {
   const { t } = useTranslation("messages");
   if (!Array.isArray(content) || content.length === 0) {
     return null;
@@ -98,4 +99,4 @@ export const ClaudeContentArrayRenderer = ({ content }: Props) => {
       })}
     </div>
   );
-};
+});

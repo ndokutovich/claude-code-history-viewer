@@ -67,12 +67,14 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     sessionId: selectedSession?.session_id,
   });
 
-  // Rebuild search index when messages change
+  // Rebuild search index when messages actually change (not just array reference)
+  const messageCount = messages.length;
+  const lastMessageId = messages[messages.length - 1]?.uuid;
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messageCount > 0) {
       rebuildSearchIndex();
     }
-  }, [messages, rebuildSearchIndex]);
+  }, [messageCount, lastMessageId, rebuildSearchIndex]);
 
   // Scroll to current match when it changes
   useEffect(() => {
@@ -276,6 +278,24 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     [hiddenMessageIds]
   );
 
+  // All useMemo/useCallback hooks must be above early returns (Rules of Hooks)
+  // Filter out hidden messages in capture mode (memoized to stabilize reference)
+  const visibleMessages = useMemo(
+    () => isCaptureMode
+      ? messages.filter((m) => !hiddenMessageSet.has(m.uuid))
+      : messages,
+    [messages, isCaptureMode, hiddenMessageSet]
+  );
+
+  // Shared props for MessageNode — memoized so React.memo on MessageNode is effective
+  const messageNodeProps = useMemo(() => ({
+    providerName,
+    allMessages: visibleMessages,
+    onExtractRange: handleExtractRange,
+    isCaptureMode,
+    onHideMessage: hideMessage,
+  }), [providerName, visibleMessages, handleExtractRange, isCaptureMode, hideMessage]);
+
   if (isLoading && messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center h-full">
@@ -302,20 +322,6 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       </div>
     );
   }
-
-  // Filter out hidden messages in capture mode
-  const visibleMessages = isCaptureMode
-    ? messages.filter((m) => !hiddenMessageSet.has(m.uuid))
-    : messages;
-
-  // Shared props for MessageNode (everything except message, depth, sessionFilePath)
-  const messageNodeProps = {
-    providerName,
-    allMessages: visibleMessages,
-    onExtractRange: handleExtractRange,
-    isCaptureMode,
-    onHideMessage: hideMessage,
-  };
 
   return (
     <div className="relative flex-1 h-full flex">

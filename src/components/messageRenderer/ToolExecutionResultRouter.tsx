@@ -27,12 +27,11 @@ import { AnsiText } from "../common/AnsiText";
 
 interface ToolExecutionResultRouterProps {
   toolResult: Record<string, unknown> | string;
-  depth: number;
 }
 
 export const ToolExecutionResultRouter: React.FC<
   ToolExecutionResultRouterProps
-> = ({ toolResult }) => {
+> = React.memo(({ toolResult }) => {
   const { t } = useTranslation("components");
   // Helper function to check if content is JSONL Claude session history
   const isClaudeSessionHistory = (content: string): boolean => {
@@ -370,4 +369,4 @@ export const ToolExecutionResultRouter: React.FC<
       </Renderer.Content>
     </Renderer>
   );
-};
+});

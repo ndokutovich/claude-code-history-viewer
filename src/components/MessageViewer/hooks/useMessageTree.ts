@@ -26,10 +26,10 @@ interface UseMessageTreeResult {
 }
 
 export const useMessageTree = (messages: UIMessage[]): UseMessageTreeResult => {
-  // Memoize message tree structure (performance optimization)
-  const { rootMessages, uniqueMessages } = useMemo(() => {
+  // Memoize message tree structure + child map (O(n) instead of O(n²))
+  const { rootMessages, uniqueMessages, childMap } = useMemo(() => {
     if (messages.length === 0) {
-      return { rootMessages: [], uniqueMessages: [] };
+      return { rootMessages: [], uniqueMessages: [], childMap: new Map<string, UIMessage[]>() };
     }
 
     // Remove duplicates
@@ -37,16 +37,25 @@ export const useMessageTree = (messages: UIMessage[]): UseMessageTreeResult => {
       new Map(messages.map((msg) => [msg.uuid, msg])).values()
     );
 
-    // Find root messages
+    // Build child map and find roots in a single pass
+    const childMap = new Map<string, UIMessage[]>();
     const roots: UIMessage[] = [];
+
     uniqueMessages.forEach((msg) => {
       const parentUuid = getParentUuid(msg);
       if (!parentUuid) {
         roots.push(msg);
+      } else {
+        const siblings = childMap.get(parentUuid);
+        if (siblings) {
+          siblings.push(msg);
+        } else {
+          childMap.set(parentUuid, [msg]);
+        }
       }
     });
 
-    return { rootMessages: roots, uniqueMessages };
+    return { rootMessages: roots, uniqueMessages, childMap };
   }, [messages]);
 
   const renderMessageTree = useCallback(
@@ -66,10 +75,8 @@ export const useMessageTree = (messages: UIMessage[]): UseMessageTreeResult => {
       }
 
       visitedIds.add(message.uuid);
-      const children = messages.filter((m) => {
-        const parentUuid = getParentUuid(m);
-        return parentUuid === message.uuid;
-      });
+      // O(1) child lookup via pre-built map instead of O(n) filter
+      const children = childMap.get(message.uuid) || [];
 
       // Generate unique key
       const uniqueKey = keyPrefix ? `${keyPrefix}-${message.uuid}` : message.uuid;
@@ -86,11 +93,12 @@ export const useMessageTree = (messages: UIMessage[]): UseMessageTreeResult => {
       ];
 
       // Recursively add child messages (increase depth)
+      // Reuse the same visitedIds Set — no need to copy since we traverse depth-first
       children.forEach((child, index) => {
         const childNodes = renderMessageTree(
           child,
           depth + 1,
-          new Set(visitedIds),
+          visitedIds,
           `${uniqueKey}-child-${index}`,
           sessionFilePath,
           NodeComponent,
@@ -101,7 +109,7 @@ export const useMessageTree = (messages: UIMessage[]): UseMessageTreeResult => {
 
       return result;
     },
-    [messages]
+    [childMap]
   );
 
   return { rootMessages, uniqueMessages, renderMessageTree };

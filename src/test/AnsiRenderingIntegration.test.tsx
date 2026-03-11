@@ -242,7 +242,7 @@ describe("ToolExecutionResultRouter ANSI rendering", () => {
       stderr: `${RED}error${OFF}: something went wrong`,
     };
     const { container } = render(
-      <ToolExecutionResultRouter toolResult={toolResult} depth={0} />
+      <ToolExecutionResultRouter toolResult={toolResult} />
     );
     expandResult(container);
 
@@ -258,7 +258,7 @@ describe("ToolExecutionResultRouter ANSI rendering", () => {
       interrupted: false,
     };
     const { container } = render(
-      <ToolExecutionResultRouter toolResult={toolResult} depth={0} />
+      <ToolExecutionResultRouter toolResult={toolResult} />
     );
     expandResult(container);
 

@@ -7,7 +7,7 @@ interface AssistantMessageDetailsProps {
   message: UIMessage;
 }
 
-export const AssistantMessageDetails: React.FC<AssistantMessageDetailsProps> = ({ message }) => {
+export const AssistantMessageDetails: React.FC<AssistantMessageDetailsProps> = React.memo(({ message }) => {
   const { t } = useTranslation('components');
   const { model, usage, type } = message;
 
@@ -34,4 +34,4 @@ export const AssistantMessageDetails: React.FC<AssistantMessageDetailsProps> = (
       )}
     </div>
   );
-};
+});

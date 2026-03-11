@@ -6,10 +6,25 @@ use crate::utils::{
 };
 use chrono::{DateTime, Utc};
 use memmap2::Mmap;
+use rayon::prelude::*;
+use serde::Deserialize;
 use serde_json::json;
 use std::fs;
 use uuid::Uuid;
 use walkdir::WalkDir;
+
+/// Ultra-lightweight struct for pagination pass 1 — only parses fields needed
+/// to decide whether a line is a valid, displayable message.
+#[derive(Deserialize)]
+struct PaginationScanEntry {
+    #[serde(rename = "type")]
+    message_type: String,
+    #[serde(rename = "sessionId")]
+    session_id: Option<Box<serde_json::value::RawValue>>,
+    timestamp: Option<Box<serde_json::value::RawValue>>,
+    #[serde(rename = "isSidechain")]
+    is_sidechain: Option<bool>,
+}
 
 /// Build system metadata JSON from a RawLogEntry's system-specific fields.
 /// Returns None for non-system messages or if no system fields are present.
@@ -82,6 +97,315 @@ fn normalize_windows_path(path: &str) -> String {
     path.to_string()
 }
 
+/// Process a single JSONL file into a `ClaudeSession` using lightweight `SessionScanEntry`.
+/// Returns `None` if the file has no valid messages.
+fn process_session_file(
+    entry: &walkdir::DirEntry,
+    exclude_sidechain: bool,
+    include_noise: bool,
+) -> Option<ClaudeSession> {
+    let file_path = entry.path().to_string_lossy().to_string();
+
+    let last_modified = entry
+        .metadata()
+        .ok()
+        .and_then(|m| m.modified().ok())
+        .map(|t| {
+            let dt: DateTime<Utc> = t.into();
+            dt.to_rfc3339()
+        })
+        .unwrap_or_else(|| Utc::now().to_rfc3339());
+
+    let file = std::fs::File::open(entry.path()).ok()?;
+    use std::io::{BufRead, BufReader};
+    let reader = BufReader::new(file);
+
+    // Lightweight scan state — no ClaudeMessage allocation
+    let mut session_summary: Option<String> = None;
+    let mut git_branch: Option<String> = None;
+    let mut git_commit: Option<String> = None;
+    let mut actual_session_id: Option<String> = None;
+    let mut message_count: usize = 0;
+    let mut first_message_time: Option<String> = None;
+    let mut last_message_time: Option<String> = None;
+    let mut has_tool_use = false;
+    let mut has_errors = false;
+
+    // Track the last non-sidechain entry for is_problematic check
+    let mut last_non_sidechain_type: Option<String> = None;
+    let mut last_non_sidechain_role: Option<String> = None;
+    let mut last_non_sidechain_content_raw: Option<String> = None;
+
+    // Track first user message content for summary fallback
+    let mut first_user_content_raw: Option<String> = None;
+
+    // Track tool_use_result raw strings for git info fallback (capped to prevent OOM)
+    let mut tool_result_raws: Vec<String> = Vec::new();
+    let mut git_info_found = false;
+
+    for (_line_num, line_result) in reader.lines().enumerate() {
+        let line = match line_result {
+            Ok(l) => l,
+            Err(_) => continue,
+        };
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        let scan_entry: SessionScanEntry = match serde_json::from_str(&line) {
+            Ok(e) => e,
+            Err(_e) => {
+                #[cfg(debug_assertions)]
+                eprintln!(
+                    "Error: Failed to parse JSONL at line {} in {}: {}",
+                    _line_num + 1,
+                    file_path,
+                    _e
+                );
+                continue;
+            }
+        };
+
+        // Extract git info from first message that has it
+        if git_branch.is_none() {
+            if let Some(ref branch) = scan_entry.git_branch {
+                git_branch = Some(branch.clone());
+            }
+        }
+        if git_commit.is_none() {
+            if let Some(ref commit) = scan_entry.git_commit {
+                git_commit = Some(commit.clone());
+            }
+        }
+
+        if scan_entry.message_type == "summary" {
+            if session_summary.is_none() {
+                session_summary =
+                    scan_entry.summary.map(|s| filter_preamble_from_title(&s));
+            }
+            continue;
+        }
+
+        if !include_noise && is_noise_message_type(&scan_entry.message_type) {
+            continue;
+        }
+
+        if scan_entry.session_id.is_none() && scan_entry.timestamp.is_none() {
+            continue;
+        }
+
+        let is_sidechain = scan_entry.is_sidechain.unwrap_or(false);
+        if exclude_sidechain && is_sidechain {
+            // Still count for has_tool_use/has_errors even if filtered from display count
+        } else {
+            message_count += 1;
+            if let Some(ref ts) = scan_entry.timestamp {
+                if first_message_time.is_none() {
+                    first_message_time = Some(ts.clone());
+                }
+                last_message_time = Some(ts.clone());
+            }
+        }
+
+        // Track actual session ID
+        if actual_session_id.is_none() {
+            if let Some(ref sid) = scan_entry.session_id {
+                actual_session_id = Some(sid.clone());
+            }
+        }
+
+        // --- has_tool_use check (lightweight, using RawValue strings) ---
+        if !has_tool_use {
+            // Check top-level tool_use/tool_use_result presence
+            if scan_entry.tool_use.is_some() {
+                has_tool_use = true;
+            }
+            // Check content array for "type":"tool_use" via raw string scan
+            if !has_tool_use && scan_entry.message_type == "assistant" {
+                if let Some(ref msg) = scan_entry.message {
+                    if let Some(ref content_raw) = msg.content {
+                        if content_raw.get().contains("\"type\":\"tool_use\"") {
+                            has_tool_use = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- has_errors check (lazy parse only tool_use_result with stderr) ---
+        if !has_errors {
+            if let Some(ref raw) = scan_entry.tool_use_result {
+                let raw_str = raw.get();
+                // Quick string check before attempting parse
+                if raw_str.contains("\"stderr\"") {
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(raw_str) {
+                        if let Some(stderr) = val.get("stderr") {
+                            if !stderr.as_str().unwrap_or("").is_empty() {
+                                has_errors = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Track last non-sidechain for is_problematic ---
+        if !is_sidechain {
+            last_non_sidechain_type = Some(scan_entry.message_type.clone());
+            last_non_sidechain_role = scan_entry.message.as_ref().map(|m| m.role.clone());
+            last_non_sidechain_content_raw = scan_entry
+                .message
+                .as_ref()
+                .and_then(|m| m.content.as_ref())
+                .map(|c| c.get().to_string());
+        }
+
+        // --- Track first user message content for summary fallback ---
+        if first_user_content_raw.is_none() && scan_entry.message_type == "user" {
+            if let Some(ref msg) = scan_entry.message {
+                if let Some(ref content_raw) = msg.content {
+                    first_user_content_raw = Some(content_raw.get().to_string());
+                }
+            }
+        }
+
+        // --- Collect tool_use_result raws for git info fallback (stop once found) ---
+        if !git_info_found {
+            if let Some(ref raw) = scan_entry.tool_use_result {
+                let raw_str = raw.get();
+                if raw_str.contains("stdout") || raw_str.len() < 1000 {
+                    tool_result_raws.push(raw_str.to_string());
+                }
+                // Stop collecting after 50 results — git info is always early
+                if tool_result_raws.len() >= 50 {
+                    git_info_found = true;
+                }
+            }
+        }
+    }
+
+    if message_count == 0 {
+        return None;
+    }
+
+    // --- is_problematic detection ---
+    let is_problematic = if let Some(ref msg_type) = last_non_sidechain_type {
+        if msg_type != "assistant" {
+            true
+        } else if let Some(ref role) = last_non_sidechain_role {
+            if role != "assistant" {
+                true
+            } else if let Some(ref content_str) = last_non_sidechain_content_raw {
+                content_str.contains("[Request interrupted")
+                    || content_str.contains("is_error\":true")
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+
+    // --- Summary from first user message (only if no summary message found) ---
+    let final_summary = if session_summary.is_some() {
+        session_summary
+    } else {
+        extract_summary_from_raw_content(first_user_content_raw.as_deref())
+    };
+
+    // --- Git info fallback from tool outputs ---
+    let tool_outputs: Vec<String> = tool_result_raws
+        .iter()
+        .filter_map(|raw_str| {
+            // Quick parse to extract stdout
+            if let Ok(val) = serde_json::from_str::<serde_json::Value>(raw_str) {
+                if let Some(stdout) = val.get("stdout").and_then(|v| v.as_str()) {
+                    return Some(stdout.to_string());
+                }
+                if let Some(text) = val.as_str() {
+                    return Some(text.to_string());
+                }
+            }
+            None
+        })
+        .collect();
+
+    let (fallback_branch, fallback_commit) = extract_git_info(&None, &tool_outputs);
+    let final_git_branch = git_branch.or(fallback_branch);
+    let final_git_commit = git_commit.or(fallback_commit);
+
+    let session_id = file_path.clone();
+    let raw_project_name = entry
+        .path()
+        .parent()
+        .and_then(|p| p.file_name())
+        .and_then(|n| n.to_str())
+        .unwrap_or("Unknown")
+        .to_string();
+    let project_name = extract_project_name(&raw_project_name);
+
+    Some(ClaudeSession {
+        session_id,
+        actual_session_id: actual_session_id.unwrap_or_else(|| "unknown-session".to_string()),
+        file_path,
+        project_name,
+        message_count,
+        first_message_time: first_message_time.unwrap_or_default(),
+        last_message_time: last_message_time.unwrap_or_default(),
+        last_modified,
+        has_tool_use,
+        has_errors,
+        is_problematic,
+        summary: final_summary,
+        git_branch: final_git_branch,
+        git_commit: final_git_commit,
+    })
+}
+
+/// Extract a summary string from raw JSON content of the first user message.
+/// The content may be a JSON string or an array with `{"type":"text","text":"..."}` items.
+fn extract_summary_from_raw_content(raw_content: Option<&str>) -> Option<String> {
+    let raw = raw_content?;
+    // Try parsing as serde_json::Value to handle both string and array forms
+    let val: serde_json::Value = serde_json::from_str(raw).ok()?;
+    match val {
+        serde_json::Value::String(text) => {
+            if text.trim().is_empty() {
+                None
+            } else {
+                let filtered = filter_preamble_from_title(&text);
+                Some(truncate_summary(&filtered))
+            }
+        }
+        serde_json::Value::Array(arr) => {
+            for item in &arr {
+                if item.get("type").and_then(|v| v.as_str()) == Some("text") {
+                    if let Some(text) = item.get("text").and_then(|v| v.as_str()) {
+                        if !text.trim().is_empty() {
+                            let filtered = filter_preamble_from_title(text);
+                            return Some(truncate_summary(&filtered));
+                        }
+                    }
+                }
+            }
+            None
+        }
+        _ => None,
+    }
+}
+
+/// Truncate a summary string to 100 characters with ellipsis.
+fn truncate_summary(s: &str) -> String {
+    if s.chars().count() > 100 {
+        let truncated: String = s.chars().take(100).collect();
+        format!("{}...", truncated)
+    } else {
+        s.to_string()
+    }
+}
+
 #[tauri::command]
 pub async fn load_project_sessions(
     project_path: String,
@@ -89,413 +413,21 @@ pub async fn load_project_sessions(
     include_noise: Option<bool>,
 ) -> Result<Vec<ClaudeSession>, String> {
     let start_time = std::time::Instant::now();
-    let mut sessions = Vec::new();
+    let exclude = exclude_sidechain.unwrap_or(false);
+    let noise = include_noise.unwrap_or(false);
 
-    for entry in WalkDir::new(&project_path)
+    // Collect file entries first for parallel processing
+    let file_entries: Vec<_> = WalkDir::new(&project_path)
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
-    {
-        let file_path = entry.path().to_string_lossy().to_string();
+        .collect();
 
-        let last_modified = if let Ok(metadata) = entry.metadata() {
-            if let Ok(modified) = metadata.modified() {
-                let dt: DateTime<Utc> = modified.into();
-                dt.to_rfc3339()
-            } else {
-                Utc::now().to_rfc3339()
-            }
-        } else {
-            Utc::now().to_rfc3339()
-        };
-
-        // Read file in streaming mode to reduce memory usage
-        if let Ok(file) = std::fs::File::open(entry.path()) {
-            use std::io::{BufRead, BufReader};
-            let reader = BufReader::new(file);
-            let mut messages: Vec<ClaudeMessage> = Vec::new();
-            let mut session_summary: Option<String> = None;
-            let mut git_branch: Option<String> = None;
-            let mut git_commit: Option<String> = None;
-
-            for (line_num, line_result) in reader.lines().enumerate() {
-                if let Ok(line) = line_result {
-                    if line.trim().is_empty() {
-                        continue;
-                    }
-
-                    match serde_json::from_str::<RawLogEntry>(&line) {
-                        Ok(log_entry) => {
-                            // Extract git info from first message that has it
-                            if git_branch.is_none() && log_entry.git_branch.is_some() {
-                                git_branch = log_entry.git_branch.clone();
-                            }
-                            if git_commit.is_none() && log_entry.git_commit.is_some() {
-                                git_commit = log_entry.git_commit.clone();
-                            }
-
-                            if log_entry.message_type == "summary" {
-                                if session_summary.is_none() {
-                                    // Apply preamble filtering to summary messages
-                                    session_summary = log_entry.summary.map(|s| filter_preamble_from_title(&s));
-                                }
-                            } else if !include_noise.unwrap_or(false) && is_noise_message_type(&log_entry.message_type) {
-                                // Skip progress, file-history-snapshot, queue-operation (unless include_noise)
-                                continue;
-                            } else {
-                                if log_entry.session_id.is_none() && log_entry.timestamp.is_none() {
-                                    continue;
-                                }
-
-                                let subtype = log_entry.subtype.clone();
-                                let system_metadata = build_system_metadata(&log_entry);
-
-                                let uuid = log_entry.uuid.unwrap_or_else(|| {
-                                    let new_uuid = format!(
-                                        "{}-line-{}",
-                                        Uuid::new_v4().to_string(),
-                                        line_num + 1
-                                    );
-                                    eprintln!(
-                                        "Warning: Missing UUID in line {} of {}, generated: {}",
-                                        line_num + 1,
-                                        file_path,
-                                        new_uuid
-                                    );
-                                    new_uuid
-                                });
-
-                                let (role, message_id, model, stop_reason, usage) =
-                                    if let Some(ref msg) = log_entry.message {
-                                        (
-                                            Some(msg.role.clone()),
-                                            msg.id.clone(),
-                                            msg.model.clone(),
-                                            msg.stop_reason.clone(),
-                                            msg.usage.clone(),
-                                        )
-                                    } else {
-                                        (None, None, None, None, None)
-                                    };
-                                let claude_message = ClaudeMessage {
-                                uuid,
-                                parent_uuid: log_entry.parent_uuid,
-                                session_id: log_entry.session_id.unwrap_or_else(|| {
-                                    eprintln!("Warning: Missing session_id in line {} of {}", line_num + 1, file_path);
-                                    "unknown-session".to_string()
-                                }),
-                                timestamp: log_entry.timestamp.unwrap_or_else(|| {
-                                    let now = Utc::now().to_rfc3339();
-                                    eprintln!("Warning: Missing timestamp in line {} of {}, using current time: {}", line_num + 1, file_path, now);
-                                    now
-                                }),
-                                message_type: log_entry.message_type,
-                                content: log_entry.message.map(|m| m.content),
-                                tool_use: log_entry.tool_use,
-                                tool_use_result: log_entry.tool_use_result,
-                                is_sidechain: log_entry.is_sidechain,
-                                usage,
-                                role,
-                                message_id,
-                                model,
-                                stop_reason,
-                                project_path: None,
-                                subtype,
-                                system_metadata,
-                            };
-                                messages.push(claude_message);
-                            }
-                        }
-                        Err(e) => {
-                            eprintln!(
-                                "Error: Failed to parse JSONL at line {} in {}",
-                                line_num + 1,
-                                file_path
-                            );
-                            eprintln!("  Parse error: {}", e);
-                            if line.len() > 200 {
-                                eprintln!("  Line content (truncated): {}...", &line[..200]);
-                            } else {
-                                eprintln!("  Line content: {}", line);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if !messages.is_empty() {
-                eprintln!("📁 Loaded {} messages from {}", messages.len(), file_path);
-
-                // Extract actual session ID from messages
-                let actual_session_id = messages
-                    .iter()
-                    .find_map(|m| {
-                        if m.session_id != "unknown-session" {
-                            Some(m.session_id.clone())
-                        } else {
-                            None
-                        }
-                    })
-                    .unwrap_or_else(|| "unknown-session".to_string());
-
-                // Create unique session ID based on file path
-                let session_id = file_path.clone();
-
-                let raw_project_name = entry
-                    .path()
-                    .parent()
-                    .and_then(|p| p.file_name())
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("Unknown")
-                    .to_string();
-
-                let project_name = extract_project_name(&raw_project_name);
-
-                let filtered_messages: Vec<&ClaudeMessage> = if exclude_sidechain.unwrap_or(false) {
-                    messages
-                        .iter()
-                        .filter(|m| !m.is_sidechain.unwrap_or(false))
-                        .collect()
-                } else {
-                    messages.iter().collect()
-                };
-
-                let message_count = filtered_messages.len();
-                let first_message_time = filtered_messages.first().map(|m| m.timestamp.clone()).unwrap_or_default();
-                let last_message_time = filtered_messages.last().map(|m| m.timestamp.clone()).unwrap_or_default();
-
-                let has_tool_use = messages.iter().any(|m| {
-                    // Debug: Check first message structure
-                    if messages.len() > 0 && m.uuid == messages[0].uuid {
-                        eprintln!("🔍 First message in session:");
-                        eprintln!("  - type: {}", m.message_type);
-                        eprintln!("  - has content: {}", m.content.is_some());
-                        eprintln!("  - has tool_use: {}", m.tool_use.is_some());
-                        eprintln!("  - has tool_use_result: {}", m.tool_use_result.is_some());
-                        if let Some(ref content) = m.content {
-                            eprintln!("  - content is array: {}", content.is_array());
-                            if let Some(arr) = content.as_array() {
-                                eprintln!("  - array length: {}", arr.len());
-                                if let Some(first) = arr.first() {
-                                    eprintln!("  - first item type: {:?}", first.get("type"));
-                                }
-                            }
-                        }
-                    }
-
-                    if m.message_type == "assistant" {
-                        if let Some(content) = &m.content {
-                            if let Some(content_array) = content.as_array() {
-                                for item in content_array {
-                                    if let Some(item_type) =
-                                        item.get("type").and_then(|v| v.as_str())
-                                    {
-                                        if item_type == "tool_use" {
-                                            eprintln!("✅ Found tool_use in content array!");
-                                            return true;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if m.tool_use.is_some() || m.tool_use_result.is_some() {
-                        eprintln!("✅ Found tool_use/tool_use_result field!");
-                        return true;
-                    }
-                    false
-                });
-
-                let has_errors = messages.iter().any(|m| {
-                    if let Some(result) = &m.tool_use_result {
-                        if let Some(stderr) = result.get("stderr") {
-                            let has_err = !stderr.as_str().unwrap_or("").is_empty();
-                            if has_err {
-                                eprintln!("✅ Found stderr in tool_use_result!");
-                            }
-                            return has_err;
-                        }
-                    }
-                    false
-                });
-
-                // Debug logging
-                if has_tool_use || has_errors {
-                    eprintln!("📊 Session {}: has_tool_use={}, has_errors={}",
-                        &session_id[..8], has_tool_use, has_errors);
-                }
-
-                // Detect if session is problematic (won't be resumable in Claude Code)
-                // A session is problematic if the last non-sidechain message:
-                // 1. Is NOT from assistant
-                // 2. Contains interruption markers
-                // 3. Is a tool_use without corresponding completion
-                let is_problematic = {
-                    let last_non_sidechain = messages
-                        .iter()
-                        .filter(|m| !m.is_sidechain.unwrap_or(false))
-                        .last();
-
-                    if let Some(msg) = last_non_sidechain {
-                        // Debug logging
-                        eprintln!("🔍 Session {}: Last message type={}, role={:?}",
-                            &session_id[..8], msg.message_type, msg.role);
-
-                        // Check 1: Last message is not from assistant
-                        if msg.message_type != "assistant" {
-                            eprintln!("⚠️ Session {}: Problematic - last message type is '{}'",
-                                &session_id[..8], msg.message_type);
-                            true
-                        } else if let Some(role) = &msg.role {
-                            // Also check role field if present
-                            if role != "assistant" {
-                                eprintln!("⚠️ Session {}: Problematic - last message role is '{}'",
-                                    &session_id[..8], role);
-                                true
-                            } else {
-                                // Check 2: Assistant message contains error or interruption markers
-                                let has_interruption = if let Some(content) = &msg.content {
-                                    let content_str = content.to_string();
-                                    content_str.contains("[Request interrupted")
-                                        || content_str.contains("is_error\":true")
-                                } else {
-                                    false
-                                };
-
-                                if has_interruption {
-                                    eprintln!("⚠️ Session {}: Problematic - contains interruption marker",
-                                        &session_id[..8]);
-                                }
-
-                                has_interruption
-                            }
-                        } else {
-                            false
-                        }
-                    } else {
-                        // Empty session, not problematic
-                        false
-                    }
-                };
-
-                // Extract text from first user message only when summary is not present
-                let final_summary = if session_summary.is_none() {
-                    messages
-                        .iter()
-                        .find(|m| m.message_type == "user")
-                        .and_then(|m| {
-                            if let Some(content) = &m.content {
-                                match content {
-                                    // Simple string case
-                                    serde_json::Value::String(text) => {
-                                        if text.trim().is_empty() {
-                                            None
-                                        } else {
-                                            // Apply preamble filtering first
-                                            let filtered = filter_preamble_from_title(text);
-                                            if filtered.chars().count() > 100 {
-                                                let truncated: String =
-                                                    filtered.chars().take(100).collect();
-                                                Some(format!("{}...", truncated))
-                                            } else {
-                                                Some(filtered)
-                                            }
-                                        }
-                                    }
-                                    // Array case: find type="text"
-                                    serde_json::Value::Array(arr) => {
-                                        for item in arr {
-                                            if let Some(item_type) =
-                                                item.get("type").and_then(|v| v.as_str())
-                                            {
-                                                if item_type == "text" {
-                                                    if let Some(text) =
-                                                        item.get("text").and_then(|v| v.as_str())
-                                                    {
-                                                        if !text.trim().is_empty() {
-                                                            // Apply preamble filtering first
-                                                            let filtered = filter_preamble_from_title(text);
-                                                            return if filtered.chars().count() > 100 {
-                                                                let truncated: String = filtered
-                                                                    .chars()
-                                                                    .take(100)
-                                                                    .collect();
-                                                                Some(format!("{}...", truncated))
-                                                            } else {
-                                                                Some(filtered)
-                                                            };
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        None
-                                    }
-                                    _ => None,
-                                }
-                            } else {
-                                None
-                            }
-                        })
-                } else {
-                    session_summary
-                };
-
-                // Extract git information from tool outputs
-                let tool_outputs: Vec<String> = messages
-                    .iter()
-                    .filter_map(|m| {
-                        if let Some(result) = &m.tool_use_result {
-                            // Extract stdout from Bash tool results
-                            if let Some(stdout) = result.get("stdout").and_then(|v| v.as_str()) {
-                                return Some(stdout.to_string());
-                            }
-                            // Also check for direct string results
-                            if let Some(text) = result.as_str() {
-                                return Some(text.to_string());
-                            }
-                        }
-                        None
-                    })
-                    .collect();
-
-                // Git info is already extracted from messages during parsing
-                // Keep extract_git_info call as fallback for sessions without gitBranch field
-                let (fallback_branch, fallback_commit) = extract_git_info(&None, &tool_outputs);
-                let final_git_branch = git_branch.or(fallback_branch);
-                let final_git_commit = git_commit.or(fallback_commit);
-
-                if final_git_branch.is_some() || final_git_commit.is_some() {
-                    eprintln!("📍 Git info for {}: branch={:?}, commit={:?}",
-                        &file_path[file_path.len().saturating_sub(50)..],
-                        final_git_branch,
-                        final_git_commit);
-                }
-
-                let session = ClaudeSession {
-                    session_id,
-                    actual_session_id,
-                    file_path,
-                    project_name,
-                    message_count,
-                    first_message_time,
-                    last_message_time,
-                    last_modified: last_modified.clone(),
-                    has_tool_use,
-                    has_errors,
-                    is_problematic,
-                    summary: final_summary,
-                    git_branch: final_git_branch.clone(),
-                    git_commit: final_git_commit.clone(),
-                };
-
-                eprintln!("✅ Created session with git_branch={:?}, git_commit={:?}",
-                    final_git_branch, final_git_commit);
-
-                sessions.push(session);
-            }
-        }
-    }
+    // Process files in parallel using rayon
+    let mut sessions: Vec<ClaudeSession> = file_entries
+        .par_iter()
+        .filter_map(|entry| process_session_file(entry, exclude, noise))
+        .collect();
 
     sessions.sort_by(|a, b| b.last_modified.cmp(&a.last_modified));
 
@@ -538,7 +470,7 @@ pub async fn load_project_sessions(
     let _elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
     println!(
-        "📊 load_project_sessions performance: {} sessions loaded in {}ms",
+        "load_project_sessions performance: {} sessions loaded in {}ms",
         sessions.len(),
         _elapsed.as_millis()
     );
@@ -771,120 +703,48 @@ pub async fn load_session_messages_paginated(
     // Use SIMD-accelerated line splitting
     let line_ranges = find_line_ranges(&mmap);
 
-    // First pass: collect all messages to get total count and support reverse ordering
-    let mut all_messages: Vec<ClaudeMessage> = Vec::new();
+    let exclude = exclude_sidechain.unwrap_or(false);
+    let noise = include_noise.unwrap_or(false);
 
-    for (line_num, &(start, end)) in line_ranges.iter().enumerate() {
+    // === PASS 1: Lightweight scan for pagination ===
+    // Only parse 4 fields per line to determine which lines are valid displayable messages.
+    let mut valid_line_indices: Vec<usize> = Vec::with_capacity(line_ranges.len());
+
+    for (line_idx, &(start, end)) in line_ranges.iter().enumerate() {
         let line = std::str::from_utf8(&mmap[start..end]).unwrap_or_default();
         if line.trim().is_empty() {
             continue;
         }
 
-        match serde_json::from_str::<RawLogEntry>(line) {
-            Ok(log_entry) => {
-                if log_entry.message_type != "summary"
-                    && (include_noise.unwrap_or(false) || !is_noise_message_type(&log_entry.message_type))
-                {
-                    if log_entry.session_id.is_none() && log_entry.timestamp.is_none() {
-                        continue;
-                    }
-
-                    if exclude_sidechain.unwrap_or(false) && log_entry.is_sidechain.unwrap_or(false)
-                    {
-                        continue;
-                    }
-
-                    let (role, message_id, model, stop_reason, usage) =
-                        if let Some(ref msg) = log_entry.message {
-                            (
-                                Some(msg.role.clone()),
-                                msg.id.clone(),
-                                msg.model.clone(),
-                                msg.stop_reason.clone(),
-                                msg.usage.clone(),
-                            )
-                        } else {
-                            (None, None, None, None, None)
-                        };
-
-                    let subtype = log_entry.subtype.clone();
-                    let system_metadata = build_system_metadata(&log_entry);
-                    let claude_message = ClaudeMessage {
-                        uuid: log_entry.uuid.unwrap_or_else(|| {
-                            format!("{}-line-{}", Uuid::new_v4().to_string(), line_num + 1)
-                        }),
-                        parent_uuid: log_entry.parent_uuid,
-                        session_id: log_entry
-                            .session_id
-                            .unwrap_or_else(|| "unknown-session".to_string()),
-                        timestamp: log_entry
-                            .timestamp
-                            .unwrap_or_else(|| Utc::now().to_rfc3339()),
-                        message_type: log_entry.message_type.clone(),
-                        content: log_entry.message.map(|m| m.content),
-                        tool_use: log_entry.tool_use,
-                        tool_use_result: log_entry.tool_use_result,
-                        is_sidechain: log_entry.is_sidechain,
-                        usage,
-                        role,
-                        message_id,
-                        model,
-                        stop_reason,
-                        project_path: None,
-                        subtype,
-                        system_metadata,
-                    };
-                    all_messages.push(claude_message);
+        match serde_json::from_str::<PaginationScanEntry>(line) {
+            Ok(entry) => {
+                if entry.message_type == "summary" {
+                    continue;
                 }
+                if !noise && is_noise_message_type(&entry.message_type) {
+                    continue;
+                }
+                if exclude && entry.is_sidechain.unwrap_or(false) {
+                    continue;
+                }
+                if entry.session_id.is_none() && entry.timestamp.is_none() {
+                    continue;
+                }
+                valid_line_indices.push(line_idx);
             }
-            Err(e) => {
+            Err(_e) => {
+                #[cfg(debug_assertions)]
                 eprintln!(
-                    "Failed to parse line {} in {}: {}. Line: {}",
-                    line_num + 1,
+                    "Failed to parse line {} in {}: {}",
+                    line_idx + 1,
                     session_path,
-                    e,
-                    line
+                    _e
                 );
             }
         }
     }
 
-    // Convert ClaudeMessages to UniversalMessages
-    // Extract full project path from session path for consistency with search_messages
-    // E.g., "/path/to/.claude/projects/my-project/session.jsonl" -> "/path/to/.claude/projects/my-project"
-    let project_id = if let Some(projects_idx) = session_path.find("projects") {
-        let after_projects = &session_path[projects_idx + "projects".len()..];
-        let parts: Vec<&str> = after_projects
-            .split(|c| c == '/' || c == '\\')
-            .filter(|s| !s.is_empty())
-            .collect();
-        if !parts.is_empty() {
-            // Reconstruct full path up to project directory
-            let up_to_projects = &session_path[..projects_idx + "projects".len()];
-            normalize_windows_path(&format!("{}/{}", up_to_projects, parts[0]))
-        } else {
-            "unknown".to_string()
-        }
-    } else {
-        "unknown".to_string()
-    };
-
-    let source_id = session_path
-        .split("projects")
-        .next()
-        .unwrap_or("")
-        .trim_end_matches('/')
-        .to_string();
-
-    let all_messages: Vec<UniversalMessage> = all_messages
-        .iter()
-        .enumerate()
-        .map(|(i, msg)| {
-            claude_message_to_universal(msg, project_id.clone(), source_id.clone(), i as i32)
-        })
-        .collect();
-
-    let total_count = all_messages.len();
+    let total_count = valid_line_indices.len();
 
     #[cfg(debug_assertions)]
     eprintln!(
@@ -925,12 +785,10 @@ pub async fn load_session_messages_paginated(
     );
 
     let (start_idx, end_idx) = if remaining_messages == 0 {
-        // No more messages to load
         #[cfg(debug_assertions)]
         eprintln!("No more messages available");
         (0, 0)
     } else {
-        // Load from (total_count - already_loaded - messages_to_load) to (total_count - already_loaded)
         let start = total_count - already_loaded - messages_to_load;
         let end = total_count - already_loaded;
         #[cfg(debug_assertions)]
@@ -941,12 +799,102 @@ pub async fn load_session_messages_paginated(
         (start, end)
     };
 
-    // Get the slice of messages we need
-    let messages: Vec<UniversalMessage> = all_messages
-        .into_iter()
-        .skip(start_idx)
-        .take(end_idx - start_idx)
-        .collect();
+    // === PASS 2: Full parse only the messages in the requested page ===
+    // Extract project_id and source_id from session path (same logic as before)
+    let project_id = if let Some(projects_idx) = session_path.find("projects") {
+        let after_projects = &session_path[projects_idx + "projects".len()..];
+        let parts: Vec<&str> = after_projects
+            .split(|c| c == '/' || c == '\\')
+            .filter(|s| !s.is_empty())
+            .collect();
+        if !parts.is_empty() {
+            let up_to_projects = &session_path[..projects_idx + "projects".len()];
+            normalize_windows_path(&format!("{}/{}", up_to_projects, parts[0]))
+        } else {
+            "unknown".to_string()
+        }
+    } else {
+        "unknown".to_string()
+    };
+
+    let source_id = session_path
+        .split("projects")
+        .next()
+        .unwrap_or("")
+        .trim_end_matches('/')
+        .to_string();
+
+    let page_indices = &valid_line_indices[start_idx..end_idx];
+    let mut messages: Vec<UniversalMessage> = Vec::with_capacity(page_indices.len());
+
+    for (i, &line_idx) in page_indices.iter().enumerate() {
+        let (start, end) = line_ranges[line_idx];
+        let line = std::str::from_utf8(&mmap[start..end]).unwrap_or_default();
+
+        match serde_json::from_str::<RawLogEntry>(line) {
+            Ok(log_entry) => {
+                let (role, message_id, model, stop_reason, usage) =
+                    if let Some(ref msg) = log_entry.message {
+                        (
+                            Some(msg.role.clone()),
+                            msg.id.clone(),
+                            msg.model.clone(),
+                            msg.stop_reason.clone(),
+                            msg.usage.clone(),
+                        )
+                    } else {
+                        (None, None, None, None, None)
+                    };
+
+                let subtype = log_entry.subtype.clone();
+                let system_metadata = build_system_metadata(&log_entry);
+                let claude_message = ClaudeMessage {
+                    uuid: log_entry.uuid.unwrap_or_else(|| {
+                        format!("{}-line-{}", Uuid::new_v4().to_string(), line_idx + 1)
+                    }),
+                    parent_uuid: log_entry.parent_uuid,
+                    session_id: log_entry
+                        .session_id
+                        .unwrap_or_else(|| "unknown-session".to_string()),
+                    timestamp: log_entry
+                        .timestamp
+                        .unwrap_or_else(|| Utc::now().to_rfc3339()),
+                    message_type: log_entry.message_type.clone(),
+                    content: log_entry.message.map(|m| m.content),
+                    tool_use: log_entry.tool_use,
+                    tool_use_result: log_entry.tool_use_result,
+                    is_sidechain: log_entry.is_sidechain,
+                    usage,
+                    role,
+                    message_id,
+                    model,
+                    stop_reason,
+                    project_path: None,
+                    subtype,
+                    system_metadata,
+                };
+
+                // sequence_number reflects global position, not local index
+                let seq = (start_idx + i) as i32;
+                let universal = claude_message_to_universal(
+                    &claude_message,
+                    project_id.clone(),
+                    source_id.clone(),
+                    seq,
+                );
+                messages.push(universal);
+            }
+            Err(_e) => {
+                #[cfg(debug_assertions)]
+                eprintln!(
+                    "Failed to full-parse line {} in {}: {}",
+                    line_idx + 1,
+                    session_path,
+                    _e
+                );
+            }
+        }
+    }
 
     // has_more is true if there are still older messages to load
     let has_more = start_idx > 0;
@@ -955,16 +903,10 @@ pub async fn load_session_messages_paginated(
     let _elapsed = start_time.elapsed();
     #[cfg(debug_assertions)]
     eprintln!(
-        "📊 load_session_messages_paginated performance: {} messages loaded in {}ms",
+        "load_session_messages_paginated performance: {} messages loaded (of {} total) in {}ms",
         messages.len(),
+        total_count,
         _elapsed.as_millis()
-    );
-    #[cfg(debug_assertions)]
-    eprintln!(
-        "Result: {} messages returned, has_more={}, next_offset={}",
-        messages.len(),
-        has_more,
-        next_offset
     );
 
     Ok(MessagePage {
