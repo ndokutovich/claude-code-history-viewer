@@ -13,13 +13,15 @@ import { SystemMessageRenderer } from "../../messageRenderer/SystemMessageRender
 import { extractUIMessageContent } from "../../../utils/messageUtils";
 import { cn } from "../../../utils/cn";
 import { COLORS } from "../../../constants/colors";
-import { formatTime } from "../../../utils/time";
+import { formatTime, formatTimeShort } from "../../../utils/time";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
+import { Tooltip, TooltipTrigger, TooltipContent } from "../../ui/tooltip";
+import { DateDivider } from "./DateDivider";
 import { MAX_DEPTH_MARGIN } from "../../../constants/layout";
 import type { MessageNodeProps } from "../types";
 
@@ -32,8 +34,10 @@ export const MessageNode = React.memo(({
   onExtractRange,
   isCaptureMode,
   onHideMessage,
+  dateDividerMap,
 }: MessageNodeProps) => {
   const { t } = useTranslation("components");
+  const dateDividerTimestamp = dateDividerMap?.get(message.uuid);
   const [copiedReference, setCopiedReference] = React.useState(false);
 
   const handleCopyReference = async (e: React.MouseEvent) => {
@@ -89,8 +93,11 @@ export const MessageNode = React.memo(({
   const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, MAX_DEPTH_MARGIN)}` : "";
 
   return (
+    <>
+    {dateDividerTimestamp && <DateDivider timestamp={dateDividerTimestamp} />}
     <div
       id={`message-${message.uuid}`}
+      data-timestamp={message.timestamp}
       className={cn(
         "w-full px-4 py-2",
         leftMargin,
@@ -121,9 +128,19 @@ export const MessageNode = React.memo(({
               ? providerName
               : t("messageViewer.system")}
           </span>
-          <span className="whitespace-nowrap">
-            {formatTime(message.timestamp)}
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="whitespace-nowrap cursor-default"
+              >
+                {formatTimeShort(message.timestamp)}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={4}>
+              {formatTime(message.timestamp)}
+            </TooltipContent>
+          </Tooltip>
           {message.isSidechain && (
             <span className="px-2 py-1 whitespace-nowrap text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 rounded-full">
               {t("messageViewer.subAgent")}
@@ -278,5 +295,6 @@ export const MessageNode = React.memo(({
         </div>
       </div>
     </div>
+    </>
   );
 });

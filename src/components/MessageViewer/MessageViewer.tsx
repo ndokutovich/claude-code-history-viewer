@@ -17,8 +17,9 @@ import { useAppStore } from "../../store/useAppStore";
 import { MessageNavigator } from "../MessageNavigator";
 import { SessionBuilderModal } from "../modals/SessionBuilderModal";
 import type { MessageViewerProps } from "./types";
-import { MessageNode } from "./components";
+import { MessageNode, FloatingDateOverlay } from "./components";
 import { useMessageScrolling, useMessageTree } from "./hooks";
+import { isSameDay } from "../../utils/time";
 
 const DEFAULT_NAVIGATOR_WIDTH = 280;
 const MIN_NAVIGATOR_WIDTH = 200;
@@ -287,6 +288,21 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     [messages, isCaptureMode, hiddenMessageSet]
   );
 
+  // Map of message UUID → timestamp where a date divider should appear.
+  // First message overall and the first message of each new calendar day get one.
+  const dateDividerMap = useMemo(() => {
+    const map = new Map<string, string>();
+    let prevTimestamp: string | null = null;
+    for (const msg of visibleMessages) {
+      if (!msg.timestamp) continue;
+      if (prevTimestamp === null || !isSameDay(prevTimestamp, msg.timestamp)) {
+        map.set(msg.uuid, msg.timestamp);
+      }
+      prevTimestamp = msg.timestamp;
+    }
+    return map;
+  }, [visibleMessages]);
+
   // Shared props for MessageNode — memoized so React.memo on MessageNode is effective
   const messageNodeProps = useMemo(() => ({
     providerName,
@@ -294,7 +310,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     onExtractRange: handleExtractRange,
     isCaptureMode,
     onHideMessage: hideMessage,
-  }), [providerName, visibleMessages, handleExtractRange, isCaptureMode, hideMessage]);
+    dateDividerMap,
+  }), [providerName, visibleMessages, handleExtractRange, isCaptureMode, hideMessage, dateDividerMap]);
 
   if (isLoading && messages.length === 0) {
     return (
@@ -444,6 +461,12 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
             </button>
           </div>
         )}
+
+        {/* Floating current-date overlay shown while scrolling */}
+        <FloatingDateOverlay
+          scrollContainerRef={scrollContainerRef}
+          revision={messages.length}
+        />
 
         <div
           ref={scrollContainerRef}
@@ -597,6 +620,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                       onExtractRange={handleExtractRange}
                       isCaptureMode={isCaptureMode}
                       onHideMessage={hideMessage}
+                      dateDividerMap={dateDividerMap}
                     />
                   );
                 });

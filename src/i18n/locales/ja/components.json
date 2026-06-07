@@ -827,6 +827,8 @@
     "start": "開始:",
     "end": "終了:",
     "lessThanMinute": "< 1分",
+    "today": "今日",
+    "yesterday": "昨日",
     "day": "日",
     "days": "日",
     "hour": "時間",

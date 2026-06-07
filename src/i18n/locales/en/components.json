@@ -1021,6 +1021,8 @@
     "start": "Start:",
     "end": "End:",
     "lessThanMinute": "< 1 min",
+    "today": "Today",
+    "yesterday": "Yesterday",
     "day": "day",
     "days": "days",
     "hour": "hour",

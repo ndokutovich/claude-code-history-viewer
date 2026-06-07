@@ -1042,6 +1042,8 @@
     "start": "시작:",
     "end": "종료:",
     "lessThanMinute": "< 1분",
+    "today": "오늘",
+    "yesterday": "어제",
     "day": "일",
     "days": "일",
     "hour": "시간",

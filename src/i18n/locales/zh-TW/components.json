@@ -1040,6 +1040,8 @@
     "start": "開始：",
     "end": "結束：",
     "lessThanMinute": "< 1分鐘",
+    "today": "今天",
+    "yesterday": "昨天",
     "day": "天",
     "days": "天",
     "hour": "小時",

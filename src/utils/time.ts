@@ -20,6 +20,65 @@ export const formatTime = (timestamp: string): string => {
   });
 };
 
+/** Short time format: "11:45 PM" (time only, no date). */
+export const formatTimeShort = (timestamp: string): string => {
+  const date = new Date(timestamp);
+  const currentLanguage = i18n.language || "en";
+  const locale = getLocale(currentLanguage);
+
+  return date.toLocaleTimeString(locale, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+/** Whether two timestamps fall on the same calendar day (local time). */
+export const isSameDay = (a: string, b: string): boolean => {
+  const dateA = new Date(a);
+  const dateB = new Date(b);
+  return (
+    dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate()
+  );
+};
+
+/**
+ * Format a timestamp as a date divider label.
+ * Returns "Today", "Yesterday", or a full date like "Friday, June 27, 2025".
+ */
+export const formatDateDivider = (timestamp: string): string => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const currentLanguage = i18n.language || "en";
+  const locale = getLocale(currentLanguage);
+
+  if (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  ) {
+    return i18n.t("time.today", { ns: "components" });
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (
+    date.getFullYear() === yesterday.getFullYear() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getDate() === yesterday.getDate()
+  ) {
+    return i18n.t("time.yesterday", { ns: "components" });
+  }
+
+  return date.toLocaleDateString(locale, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
 export const formatDuration = (minutes: number): string => {
   if (minutes < 1) {
     return i18n.t("time.lessThanMinute", { ns: "components" });
