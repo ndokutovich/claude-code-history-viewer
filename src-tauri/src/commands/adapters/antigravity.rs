@@ -448,6 +448,7 @@ fn build_session(
         total_tokens,
         tool_call_count: 0,
         error_count: 0,
+        entrypoint: None,
         metadata,
         checksum: format!("{}:{}", entry.id, summary.call_count),
     }
@@ -580,7 +581,7 @@ pub fn load_antigravity_messages(
 
     let total = messages.len();
     let start = offset.min(total);
-    let end = (offset + limit).min(total);
+    let end = offset.saturating_add(limit).min(total);
     Ok(messages[start..end].to_vec())
 }
 
@@ -936,6 +937,27 @@ mod tests {
         let last = msgs.last().unwrap();
         let calls = last.tool_calls.as_ref().expect("tool calls extracted");
         assert!(calls.iter().any(|c| c.name == "BrowserOpenUrl"));
+    }
+
+    #[test]
+    fn test_load_messages_huge_offset_limit_no_overflow() {
+        let dir = make_root();
+        let session_scheme = format!(
+            "antigravity://{}|sess-abc123",
+            dir.path().to_string_lossy()
+        );
+        // offset + limit would overflow usize without saturating arithmetic.
+        let msgs = load_antigravity_messages(
+            dir.path(),
+            "sess-abc123",
+            &session_scheme,
+            "proj",
+            "src",
+            usize::MAX,
+            usize::MAX,
+        )
+        .unwrap();
+        assert!(msgs.is_empty(), "huge offset returns empty, not a panic");
     }
 
     #[test]

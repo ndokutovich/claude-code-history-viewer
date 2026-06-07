@@ -32,6 +32,7 @@
   "analytics.billingTotal": "账单总计",
   "analytics.cacheCreation": "缓存创建",
   "analytics.cacheRead": "缓存读取",
+  "analytics.calendarTotal": "总计: {{count}}条消息",
   "analytics.calculating": "计算中",
   "analytics.clearFilter": "清除筛选",
   "analytics.close": "关闭",

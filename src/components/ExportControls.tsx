@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
-import { FileText, FileCode, Globe, Copy, Check, Wrench, Play } from "lucide-react";
+import { FileText, FileJson, FileCode, Globe, Copy, Check, Wrench, Play } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
-import { exportToMarkdown, exportToHTML, exportToDocx } from "@/utils/exportUtils";
+import { exportToMarkdown, exportToJson, exportToHTML, exportToDocx } from "@/utils/exportUtils";
 import type { UIMessage, UISession } from "@/types";
 import { getSessionTitle } from "@/utils/sessionUtils";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
@@ -62,7 +62,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
   }, [messages, messageFilters]);
 
   const handleExport = async (
-    format: "markdown" | "html" | "docx",
+    format: "markdown" | "json" | "html" | "docx",
     exportFn: (messages: UIMessage[], title: string, includeAttachments: boolean, mode: "formatted" | "raw", theme: "light" | "dark", filters?: typeof messageFilters) => Promise<string>
   ) => {
     if (filteredMessages.length === 0) {
@@ -212,6 +212,21 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
           >
             <FileText className="w-4 h-4" />
             <span>MD</span>
+          </button>
+
+          <button
+            onClick={() => handleExport("json", exportToJson)}
+            disabled={isExporting}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+              "hover:bg-amber-50 dark:hover:bg-amber-900/20",
+              COLORS.ui.text.secondary,
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+            title={t("export.jsonTooltip")}
+          >
+            <FileJson className="w-4 h-4" />
+            <span>JSON</span>
           </button>
 
           <button

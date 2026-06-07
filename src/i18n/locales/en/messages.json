@@ -75,6 +75,7 @@
   "navigator": {
     "title": "Message Navigator",
     "toggle": "Toggle navigator panel",
+    "userOnly": "Show user messages only",
     "filter": "Filter messages...",
     "noMessages": "No messages to display",
     "noResults": "No matching messages"

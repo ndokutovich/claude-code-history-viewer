@@ -32,6 +32,11 @@ export interface MessageNodeProps {
   isCaptureMode?: boolean;
   /** Callback to hide a message in capture mode */
   onHideMessage?: (uuid: string) => void;
+  /**
+   * Maps a message UUID to a timestamp for which a date divider should be
+   * rendered above that message (first message of each calendar day).
+   */
+  dateDividerMap?: Map<string, string>;
 }
 
 export interface MessageHeaderProps {

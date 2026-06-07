@@ -32,6 +32,7 @@
   "analytics.billingTotal": "請求合計",
   "analytics.cacheCreation": "キャッシュ作成",
   "analytics.cacheRead": "キャッシュ読み取り",
+  "analytics.calendarTotal": "合計: {{count}}件のメッセージ",
   "analytics.calculating": "計算中",
   "analytics.clearFilter": "フィルターをクリア",
   "analytics.close": "閉じる",

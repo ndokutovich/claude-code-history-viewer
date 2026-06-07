@@ -337,6 +337,7 @@
     "pathCopyFailed": "Не удалось скопировать путь",
     "copied": "Скопировано",
     "markdownTooltip": "Экспортировать разговор в формат Markdown",
+    "jsonTooltip": "Экспортировать беседу в формат JSON",
     "htmlTooltip": "Экспортировать разговор в формат HTML",
     "docxTooltip": "Экспортировать разговор в документ Word",
     "resume": "Возобновить",
@@ -653,6 +654,7 @@
     "count_plural": "{{count}} сообщений",
     "countWithTotal": "Сообщения: {{current}} / {{total}}",
     "branch": "Ветка",
+    "subAgent": "Суб-агент",
     "reply": "Ответ (глубина: {{depth}})",
     "renderError": "Ошибка отображения сообщения",
     "checkConsole": "Проверьте консоль для подробной информации об ошибке.",
@@ -689,7 +691,17 @@
     "commandOnly": "Только команды",
     "toolUseOnly": "Только использование инструментов",
     "messagesOnly": "Только сообщения",
+    "role": "Роль",
+    "contentType": "Тип",
+    "roleUser": "Пользователь",
+    "roleAssistant": "Ассистент",
+    "roleSystem": "Система",
+    "contentText": "Текст",
+    "contentToolUse": "Использование инструмента",
+    "contentToolResult": "Результат инструмента",
+    "contentThinking": "Размышления",
     "showNoise": "Показать шум",
+    "showSubAgent": "Показать суб-агентов",
     "clearFilters": "Очистить",
     "copyRaw": "Копировать JSON",
     "rawCopied": "Необработанное сообщение скопировано",
@@ -703,6 +715,7 @@
     "claude": "Claude",
     "system": "Система",
     "branch": "Ветка",
+    "subAgent": "Суб-агент",
     "reply": "Ответ (глубина: {{depth}})",
     "loadingMessages": "Загрузка сообщений...",
     "noMessages": "Нет сообщений",
@@ -734,7 +747,10 @@
     "selected": "Выбранный проект",
     "contextMenu": {
       "hide": "Скрыть проект",
-      "unhide": "Показать проект"
+      "unhide": "Показать проект",
+      "copyPath": "Копировать путь",
+      "pathCopied": "Путь скопирован в буфер обмена",
+      "copyFailed": "Не удалось скопировать в буфер обмена"
     }
   },
   "projectListControls": {
@@ -763,7 +779,7 @@
     "hideEmptySessions": "Скрыть пустые сеансы",
     "hideAgentSessions": "Скрыть сеансы агентов",
     "showAll": "Показать все",
-    "searchPlaceholder": "Поиск сеансов...",
+    "searchPlaceholder": "Поиск проектов и сеансов...",
     "clearSearch": "Очистить поиск",
     "filterSettings": "Настройки фильтра",
     "searchLoadFailed": "Не удалось загрузить некоторые проекты"
@@ -806,7 +822,11 @@
     "noSessions": "Сеансы не найдены",
     "fix": "Исправить сессию (восстановить возможность продолжения)",
     "contextMenu": {
-      "rename": "Переименовать"
+      "rename": "Переименовать",
+      "copyPath": "Копировать путь",
+      "pathCopied": "Путь скопирован в буфер обмена",
+      "copyFailed": "Не удалось скопировать в буфер обмена",
+      "showFile": "Показать файл JSONL"
     },
     "nativeRename": {
       "title": "Переименовать сеанс",
@@ -1014,6 +1034,8 @@
     "start": "Начало:",
     "end": "Конец:",
     "lessThanMinute": "< 1 мин",
+    "today": "Сегодня",
+    "yesterday": "Вчера",
     "day": "день",
     "days": "дней",
     "hour": "час",

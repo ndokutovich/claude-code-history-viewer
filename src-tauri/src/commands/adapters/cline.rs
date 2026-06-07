@@ -125,7 +125,7 @@ fn is_symlinked(path: &Path) -> bool {
 /// Load the task index for a base directory.
 /// Supports both the Cline (`state/taskHistory.json`) and Roo Code
 /// (`tasks/_index.json` -> `entries`) formats.
-fn load_task_history(base_path: &Path) -> Vec<Value> {
+pub fn load_task_history(base_path: &Path) -> Vec<Value> {
     // Cline: state/taskHistory.json (array of task items)
     let cline_path = base_path.join("state").join("taskHistory.json");
     if cline_path.is_file() {
@@ -149,6 +149,17 @@ fn load_task_history(base_path: &Path) -> Vec<Value> {
     }
 
     Vec::new()
+}
+
+/// Look up the initialization cwd for a task id within a loaded task history.
+/// Pure helper used to derive a real `project_id` on message load.
+pub fn cwd_for_task(task_history: &[Value], task_id: &str) -> Option<String> {
+    task_history
+        .iter()
+        .find(|item| item.get("id").and_then(Value::as_str) == Some(task_id))
+        .and_then(|item| item.get("cwdOnTaskInitialization").and_then(Value::as_str))
+        .filter(|s| !s.is_empty())
+        .map(String::from)
 }
 
 // ============================================================================
@@ -310,6 +321,7 @@ pub fn load_cline_sessions(
                 total_tokens,
                 tool_call_count: 0,
                 error_count: 0,
+                entrypoint: None,
                 metadata,
                 checksum: format!("{}{}{}", base_str, id, ts),
             })
@@ -376,7 +388,7 @@ pub fn load_cline_messages(
 
     let total = converted.len();
     let start = offset.min(total);
-    let end = (offset + limit).min(total);
+    let end = offset.saturating_add(limit).min(total);
     Ok(converted[start..end].to_vec())
 }
 
@@ -850,6 +862,26 @@ mod tests {
         assert!(!is_safe_task_id("../escape"));
         assert!(!is_safe_task_id("a/b"));
         assert!(!is_safe_task_id("a\\b"));
+    }
+
+    #[test]
+    fn test_cwd_for_task() {
+        let history: Vec<Value> = serde_json::from_str(
+            r#"[
+                { "id": "task-a", "cwdOnTaskInitialization": "/home/me/projA" },
+                { "id": "task-b", "cwdOnTaskInitialization": "" },
+                { "id": "task-c" }
+            ]"#,
+        )
+        .unwrap();
+
+        assert_eq!(cwd_for_task(&history, "task-a"), Some("/home/me/projA".to_string()));
+        // Empty cwd is treated as missing.
+        assert_eq!(cwd_for_task(&history, "task-b"), None);
+        // No cwd field at all.
+        assert_eq!(cwd_for_task(&history, "task-c"), None);
+        // Unknown task id.
+        assert_eq!(cwd_for_task(&history, "task-x"), None);
     }
 
     #[test]

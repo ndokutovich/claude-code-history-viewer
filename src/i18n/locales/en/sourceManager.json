@@ -39,5 +39,28 @@
     "alreadyAdded": "This source is already added",
     "failedToAdd": "Failed to add source"
   },
-  "autoDetected": "Auto-detected ({{number}})"
+  "autoDetected": "Auto-detected ({{number}})",
+  "customClaudeDir": {
+    "title": "Custom Claude Directories",
+    "description": "Add alternate Claude config directories (e.g. CLAUDE_CONFIG_DIR) to scan in addition to the default ~/.claude.",
+    "add": "Add Directory",
+    "remove": "Remove",
+    "empty": "No custom Claude directories configured.",
+    "selectFolder": "Select Claude Configuration Directory",
+    "alreadyAdded": "This directory is already added",
+    "invalid": "Not a valid Claude configuration directory (must contain a projects/ folder)",
+    "confirmRemove": "Remove this custom Claude directory?",
+    "autoLabel": "Custom Claude directory"
+  },
+  "wsl": {
+    "title": "Scan WSL distributions",
+    "description": "Detect AI tool history inside Windows Subsystem for Linux",
+    "detecting": "Detecting WSL distributions...",
+    "noDistros": "No WSL distributions found",
+    "default": "default",
+    "noClaude": "No Claude data found",
+    "add": "Add",
+    "added": "Added",
+    "sourceName": "WSL {{distro}} (Claude)"
+  }
 }

@@ -45,7 +45,7 @@ import { initialSearchState } from "./slices/searchSlice";
 import type { AnalyticsSliceState, AnalyticsSliceActions } from "./slices/analyticsSlice";
 import { initialAnalyticsState } from "./slices/analyticsSlice";
 import type { SettingsSliceState, SettingsSliceActions } from "./slices/settingsSlice";
-import { initialSettingsState } from "./slices/settingsSlice";
+import { initialSettingsState, CUSTOM_CLAUDE_DIRS_KEY } from "./slices/settingsSlice";
 import type { CaptureModeSliceState, CaptureModeSliceActions } from "./slices/captureModeSlice";
 import { initialCaptureModeState } from "./slices/captureModeSlice";
 import type { BoardSliceState, BoardSliceActions } from "./slices/boardSlice";
@@ -64,6 +64,9 @@ import type { ProviderSliceState, ProviderSliceActions } from "./slices/provider
 import { initialProviderState } from "./slices/providerSlice";
 import type { WatcherSliceState, WatcherSliceActions } from "./slices/watcherSlice";
 import { initialWatcherState } from "./slices/watcherSlice";
+import { DEFAULT_MESSAGE_FILTERS } from "@/utils/messageFilters";
+import type { SessionPickerSliceState, SessionPickerSliceActions } from "./slices/sessionPickerSlice";
+import { initialSessionPickerState } from "./slices/sessionPickerSlice";
 
 // ============================================================================
 // VIEW MANAGEMENT SYSTEM (v1.5.1+)
@@ -220,6 +223,7 @@ function universalToUISession(session: UniversalSession): UISession {
     git_branch: gitBranch, // Extract git branch from metadata
     git_commit: gitCommit, // Extract git commit from metadata
     storageType, // Storage backend (json | sqlite), surfaced for OpenCode
+    entrypoint: session.entrypoint, // Originating client (Claude Code only)
   };
 }
 
@@ -336,7 +340,9 @@ interface AppStore extends AppState,
   ProviderSliceState,     // defaultProviderId, providerHealthStatus
   ProviderSliceActions,
   WatcherSliceState,      // isWatchingEnabled, watcherError, lastWatcherSyncTime
-  WatcherSliceActions {
+  WatcherSliceActions,
+  SessionPickerSliceState,  // sessionPickerCandidates, sessionPickerHintValue
+  SessionPickerSliceActions {
   // ---- Actions NOT covered by slices ----
 
   // View switching (depends on cross-cutting data loading, kept in main store)
@@ -406,6 +412,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...initialProjectState,      // isLoadingAllSessions, projectsLastRefreshed
   ...initialProviderState,     // defaultProviderId, providerHealthStatus
   ...initialWatcherState,      // isWatchingEnabled, watcherError, lastWatcherSyncTime
+  ...initialSessionPickerState,  // sessionPickerCandidates, sessionPickerHintValue
 
   // ---- Non-slice initial state ----
 
@@ -429,13 +436,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   // Message view preferences
   messageViewMode: "formatted" as MessageViewMode,
-  messageFilters: {
-    showBashOnly: false,
-    showToolUseOnly: false,
-    showMessagesOnly: false,
-    showCommandOnly: false,
-    showNoiseMessages: false,
-  },
+  messageFilters: { ...DEFAULT_MESSAGE_FILTERS },
 
   // Core state
   claudePath: "",
@@ -828,10 +829,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       // Determine whether to exclude sidechains:
       // - Use provided parameter if explicitly set
+      // - Otherwise, the "Show Sub-agent Messages" toggle forces sidechains to load
       // - Otherwise fall back to global store setting
       const shouldExcludeSidechain = excludeSidechain !== undefined
         ? excludeSidechain
-        : get().excludeSidechain;
+        : get().messageFilters.showSubagentMessages
+          ? false
+          : get().excludeSidechain;
 
       // Load messages using adapter
       const shouldIncludeNoise = get().messageFilters.showNoiseMessages;
@@ -1618,14 +1622,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setMessageFilters: (filters: Partial<MessageFilters>) => {
     const prevShowNoise = get().messageFilters.showNoiseMessages;
+    const prevShowSubagent = get().messageFilters.showSubagentMessages;
     set((state) => ({
       messageFilters: {
         ...state.messageFilters,
         ...filters,
       },
     }));
-    // showNoiseMessages is a backend filter — reload session when it changes
-    if (filters.showNoiseMessages !== undefined && filters.showNoiseMessages !== prevShowNoise) {
+    // showNoiseMessages and showSubagentMessages are backend filters —
+    // reload the session when either changes so the data is re-fetched.
+    const noiseChanged =
+      filters.showNoiseMessages !== undefined && filters.showNoiseMessages !== prevShowNoise;
+    const subagentChanged =
+      filters.showSubagentMessages !== undefined && filters.showSubagentMessages !== prevShowSubagent;
+    if (noiseChanged || subagentChanged) {
       const { selectedSession } = get();
       if (selectedSession) {
         get().selectSession(selectedSession);
@@ -1927,6 +1937,55 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setHighContrast: (value: boolean) => set({ highContrast: value }),
 
   // ============================================================
+  // Custom Claude configuration directories
+  // ============================================================
+  loadCustomClaudeDirs: async () => {
+    try {
+      const store = await load("settings.json", { autoSave: false } as StoreOptions);
+      const saved = await store.get<string[]>(CUSTOM_CLAUDE_DIRS_KEY);
+      if (Array.isArray(saved)) {
+        set({ customClaudeDirs: saved.filter((p) => typeof p === "string") });
+      }
+    } catch (error) {
+      console.error("Failed to load custom Claude directories:", error);
+    }
+  },
+
+  addCustomClaudeDir: async (path: string) => {
+    const trimmed = path.trim();
+    if (!trimmed) return;
+    const existing = get().customClaudeDirs;
+    if (existing.includes(trimmed)) return;
+
+    const updated = [...existing, trimmed];
+    // Persist FIRST so a save failure cannot leave in-memory state diverged from
+    // persisted settings. In-memory state is only updated after a successful save.
+    try {
+      const store = await load("settings.json", { autoSave: false } as StoreOptions);
+      await store.set(CUSTOM_CLAUDE_DIRS_KEY, updated);
+      await store.save();
+    } catch (error) {
+      console.error("Failed to persist custom Claude directories:", error);
+      throw error;
+    }
+    set({ customClaudeDirs: updated });
+  },
+
+  removeCustomClaudeDir: async (path: string) => {
+    const updated = get().customClaudeDirs.filter((p) => p !== path);
+    // Persist FIRST; only mutate in-memory state after a successful save.
+    try {
+      const store = await load("settings.json", { autoSave: false } as StoreOptions);
+      await store.set(CUSTOM_CLAUDE_DIRS_KEY, updated);
+      await store.save();
+    } catch (error) {
+      console.error("Failed to persist custom Claude directories:", error);
+      throw error;
+    }
+    set({ customClaudeDirs: updated });
+  },
+
+  // ============================================================
   // In-session search (KakaoTalk-style navigation)
   // ============================================================
   setSessionSearchQuery: (query: string) => {
@@ -2087,4 +2146,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setIsWatchingEnabled: (enabled) => set({ isWatchingEnabled: enabled }),
   setWatcherError: (error) => set({ watcherError: error }),
   setLastWatcherSyncTime: (time) => set({ lastWatcherSyncTime: time }),
+
+  // ============================================================
+  // Session picker slice actions (CLI --session disambiguation)
+  // ============================================================
+  openSessionPicker: (candidates, hintValue) =>
+    set({ sessionPickerCandidates: candidates, sessionPickerHintValue: hintValue }),
+  closeSessionPicker: () =>
+    set({ sessionPickerCandidates: null, sessionPickerHintValue: null }),
 }));

@@ -75,6 +75,7 @@
   "navigator": {
     "title": "消息导航器",
     "toggle": "切换导航面板",
+    "userOnly": "仅显示用户消息",
     "filter": "筛选消息...",
     "noMessages": "没有可显示的消息",
     "noResults": "没有匹配的消息"

@@ -13,6 +13,7 @@ pub mod rename; // Native session renaming
 pub mod resume; // Session resume functionality
 pub mod secure_update;
 pub mod session;
+pub mod session_delete; // Delete session (move JSONL + associated folder to trash)
 pub mod session_writer; // v1.6.0+ - Session creation and writing
 pub mod settings; // Settings presets
 pub mod stats;
@@ -25,4 +26,6 @@ pub mod aider; // v1.9.x - Aider chat history support
 pub mod forgecode; // v1.9.x - ForgeCode support
 pub mod antigravity; // v1.9.x - Antigravity support
 pub mod multi_provider; // v1.9.0 - Unified multi-provider facade
+pub mod search_match; // Shared search primitives: matcher, top-k, cache invalidation
 pub mod watcher; // File watcher for real-time session detection
+pub mod wsl; // WSL distro detection + AI-tool directory resolution (Windows)

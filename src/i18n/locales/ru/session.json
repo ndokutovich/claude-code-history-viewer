@@ -120,6 +120,13 @@
   "session.item.lastModified": "Last Modified",
   "session.item.messageCount": "Message Count",
   "session.item.session": "Session",
+  "session.item.renamed": "Своё название",
+  "session.item.renamedDescription": "Вы переименовали эту сессию",
+  "session.item.entrypoint.label": "Источник: {{source}}",
+  "session.item.entrypoint.cli": "CLI",
+  "session.item.entrypoint.vscode": "VS Code",
+  "session.item.entrypoint.desktop": "Десктоп",
+  "session.item.entrypoint.unknown": "Неизвестно",
   "session.loading": "Loading sessions...",
   "session.refresh": "Refresh Sessions",
   "session.rename": "Rename session",
@@ -157,6 +164,12 @@
   "session.copyFilePath": "Copy File Path",
   "session.copiedSessionId": "Session ID copied",
   "session.copiedResumeCommand": "Resume command copied",
+  "session.copiedResumeCommandNoCwd": "Команда возобновления скопирована (рабочий каталог неизвестен)",
+  "session.resumeCommandUnavailable": "Команда возобновления недоступна",
+  "session.deleteSession": "Удалить сессию",
+  "session.deleteConfirm": "Переместить эту сессию в корзину? Файл будет перемещён в системную корзину.",
+  "session.deleted": "Сессия перемещена в корзину",
+  "session.deleteFailed": "Не удалось удалить сессию",
   "session.copiedFilePath": "File path copied",
   "session.boardNotSupported": "Session Board is only available for Claude sessions",
   "session.filter.searchPlaceholder": "Search sessions...",
@@ -164,5 +177,14 @@
   "session.filter.sortNewestFirst": "Sort by newest first",
   "session.filter.sortOldestFirst": "Sort by oldest first",
   "session.filter.noResults": "No sessions match your search",
-  "session.filter.showingCount": "Showing {{count}} of {{total}} sessions"
+  "session.filter.showingCount": "Showing {{count}} of {{total}} sessions",
+  "cli": {
+    "notFound": "Сессия не найдена: {{value}}",
+    "picker": {
+      "title": "Выберите сессию",
+      "subtitle": "Найдено сессий по запросу «{{value}}»: {{count}}",
+      "messageCount": "Сообщений: {{count}}",
+      "cancelled": "Выбор сессии отменён"
+    }
+  }
 }

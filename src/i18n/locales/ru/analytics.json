@@ -32,6 +32,7 @@
   "analytics.billingTotal": "Итого счёт",
   "analytics.cacheCreation": "Создание кэша",
   "analytics.cacheRead": "Чтение кэша",
+  "analytics.calendarTotal": "Всего: {{count}} сообщений",
   "analytics.calculating": "Вычисление",
   "analytics.clearFilter": "Очистить фильтр",
   "analytics.close": "Закрыть",

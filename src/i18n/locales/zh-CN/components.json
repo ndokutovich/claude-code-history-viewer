@@ -353,6 +353,7 @@
     "pathCopyFailed": "复制路径失败",
     "copied": "已复制",
     "markdownTooltip": "将对话导出为 Markdown 格式",
+    "jsonTooltip": "将对话导出为 JSON 格式",
     "htmlTooltip": "将对话导出为 HTML 格式",
     "docxTooltip": "将对话导出为 Word 文档",
     "resume": "恢复",
@@ -669,6 +670,7 @@
     "count_plural": "{{count}}条消息",
     "countWithTotal": "消息：{{current}}条 / {{total}}条",
     "branch": "分支",
+    "subAgent": "子代理",
     "reply": "回复（深度：{{depth}}）",
     "renderError": "消息渲染错误",
     "checkConsole": "请查看控制台以获取详细错误信息。",
@@ -705,7 +707,17 @@
     "commandOnly": "仅命令",
     "toolUseOnly": "仅工具使用",
     "messagesOnly": "仅消息",
+    "role": "角色",
+    "contentType": "类型",
+    "roleUser": "用户",
+    "roleAssistant": "助手",
+    "roleSystem": "系统",
+    "contentText": "文本",
+    "contentToolUse": "工具使用",
+    "contentToolResult": "工具结果",
+    "contentThinking": "思考",
     "showNoise": "显示噪声",
+    "showSubAgent": "显示子代理",
     "clearFilters": "清除",
     "copyRaw": "复制JSON",
     "rawCopied": "已复制原始消息",
@@ -719,6 +731,7 @@
     "claude": "Claude",
     "system": "系统",
     "branch": "分支",
+    "subAgent": "子代理",
     "reply": "回复 (depth: {{depth}})",
     "loadingMessages": "正在加载消息...",
     "noMessages": "没有消息",
@@ -750,7 +763,10 @@
     "selected": "已选项目",
     "contextMenu": {
       "hide": "隐藏项目",
-      "unhide": "显示项目"
+      "unhide": "显示项目",
+      "copyPath": "复制路径",
+      "pathCopied": "路径已复制到剪贴板",
+      "copyFailed": "复制到剪贴板失败"
     }
   },
   "projectListControls": {
@@ -779,7 +795,7 @@
     "hideEmptySessions": "隐藏空会话",
     "hideAgentSessions": "隐藏代理会话",
     "showAll": "显示全部",
-    "searchPlaceholder": "搜索会话...",
+    "searchPlaceholder": "搜索项目和会话...",
     "clearSearch": "清除搜索",
     "filterSettings": "过滤器设置",
     "searchLoadFailed": "部分项目加载失败"
@@ -822,7 +838,11 @@
     "noSessions": "未找到会话",
     "fix": "修复会话（恢复可继续性）",
     "contextMenu": {
-      "rename": "重命名"
+      "rename": "重命名",
+      "copyPath": "复制路径",
+      "pathCopied": "路径已复制到剪贴板",
+      "copyFailed": "复制到剪贴板失败",
+      "showFile": "显示 JSONL 文件"
     },
     "nativeRename": {
       "title": "重命名会话",
@@ -1030,6 +1050,8 @@
     "start": "开始：",
     "end": "结束：",
     "lessThanMinute": "< 1分钟",
+    "today": "今天",
+    "yesterday": "昨天",
     "day": "天",
     "days": "天",
     "hour": "小时",

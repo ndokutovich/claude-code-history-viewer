@@ -1,7 +1,7 @@
 import React, { useRef, useCallback, useState, useMemo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useTranslation } from "react-i18next";
-import { ListTree, Search, X, PanelRightClose, PanelRight } from "lucide-react";
+import { ListTree, Search, X, PanelRightClose, PanelRight, User } from "lucide-react";
 import { cn } from "@/utils/cn";
 import type { UIMessage } from "../../types";
 import { NavigatorEntry } from "./NavigatorEntry";
@@ -38,20 +38,28 @@ export const MessageNavigator: React.FC<MessageNavigatorProps> = ({
   const { t } = useTranslation("messages");
   const scrollElementRef = useRef<HTMLDivElement>(null);
   const [filterText, setFilterText] = useState("");
+  // Quick "user messages only" toggle (navigator-local, like the text filter)
+  const [userOnly, setUserOnly] = useState(false);
 
   // Transform messages to navigator entries
   const allEntries = useNavigatorEntries(messages);
 
-  // Apply local filter
+  // Apply local filters (role quick-toggle + free-text)
   const entries = useMemo(() => {
-    if (!filterText.trim()) return allEntries;
-    const lower = filterText.toLowerCase();
-    return allEntries.filter(
-      (e) =>
-        e.preview.toLowerCase().includes(lower) ||
-        e.role.toLowerCase().includes(lower)
-    );
-  }, [allEntries, filterText]);
+    let result = allEntries;
+    if (userOnly) {
+      result = result.filter((e) => e.role === "user");
+    }
+    const lower = filterText.trim().toLowerCase();
+    if (lower) {
+      result = result.filter(
+        (e) =>
+          e.preview.toLowerCase().includes(lower) ||
+          e.role.toLowerCase().includes(lower)
+      );
+    }
+    return result;
+  }, [allEntries, filterText, userOnly]);
 
   // Height estimation function for @tanstack/react-virtual
   const estimateSize = useCallback((index: number) => {
@@ -155,6 +163,20 @@ export const MessageNavigator: React.FC<MessageNavigatorProps> = ({
           {entries.length}
         </span>
         <button
+          onClick={() => setUserOnly((prev) => !prev)}
+          aria-pressed={userOnly}
+          className={cn(
+            "p-0.5 rounded transition-colors",
+            userOnly
+              ? "bg-accent/20 text-accent"
+              : "hover:bg-accent/10 text-muted-foreground hover:text-foreground"
+          )}
+          title={t("navigator.userOnly")}
+          aria-label={t("navigator.userOnly")}
+        >
+          <User className="w-3.5 h-3.5" />
+        </button>
+        <button
           onClick={onToggleCollapse}
           className="p-0.5 rounded hover:bg-accent/10 text-muted-foreground hover:text-foreground transition-colors"
           aria-label={t("navigator.toggle")}
@@ -191,7 +213,7 @@ export const MessageNavigator: React.FC<MessageNavigatorProps> = ({
       {entries.length === 0 ? (
         <div className="flex-1 flex items-center justify-center p-4">
           <p className="text-xs text-muted-foreground text-center">
-            {filterText ? t("navigator.noResults") : t("navigator.noMessages")}
+            {filterText || userOnly ? t("navigator.noResults") : t("navigator.noMessages")}
           </p>
         </div>
       ) : (

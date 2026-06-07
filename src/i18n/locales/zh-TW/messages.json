@@ -75,6 +75,7 @@
   "navigator": {
     "title": "訊息導覽器",
     "toggle": "切換導覽面板",
+    "userOnly": "僅顯示使用者訊息",
     "filter": "篩選訊息...",
     "noMessages": "沒有可顯示的訊息",
     "noResults": "沒有符合的訊息"

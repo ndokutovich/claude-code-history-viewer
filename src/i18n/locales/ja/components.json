@@ -323,6 +323,7 @@
     "pathCopyFailed": "パスのコピーに失敗しました",
     "copied": "コピー済み",
     "markdownTooltip": "会話をMarkdown形式でエクスポート",
+    "jsonTooltip": "会話をJSON形式でエクスポート",
     "htmlTooltip": "会話をHTML形式でエクスポート",
     "docxTooltip": "会話をWord文書でエクスポート",
     "resume": "再開",
@@ -531,6 +532,7 @@
     "count_plural": "{{count}}件のメッセージ",
     "countWithTotal": "メッセージ：{{current}}件 / {{total}}件",
     "branch": "ブランチ",
+    "subAgent": "サブエージェント",
     "reply": "返信（深さ：{{depth}}）",
     "renderError": "メッセージレンダリングエラー",
     "checkConsole": "詳細なエラー情報はコンソールで確認してください。",
@@ -567,7 +569,17 @@
     "commandOnly": "コマンドのみ",
     "toolUseOnly": "ツール使用のみ",
     "messagesOnly": "メッセージのみ",
+    "role": "ロール",
+    "contentType": "種類",
+    "roleUser": "ユーザー",
+    "roleAssistant": "アシスタント",
+    "roleSystem": "システム",
+    "contentText": "テキスト",
+    "contentToolUse": "ツール使用",
+    "contentToolResult": "ツール結果",
+    "contentThinking": "思考",
     "showNoise": "ノイズ表示",
+    "showSubAgent": "サブエージェント表示",
     "clearFilters": "クリア",
     "copyRaw": "JSONをコピー",
     "rawCopied": "生メッセージをコピーしました",
@@ -581,6 +593,7 @@
     "claude": "Claude",
     "system": "システム",
     "branch": "ブランチ",
+    "subAgent": "サブエージェント",
     "reply": "返信 (depth: {{depth}})",
     "loadingMessages": "メッセージを読み込み中...",
     "noMessages": "メッセージがありません",
@@ -618,7 +631,10 @@
     "selected": "選択されたプロジェクト",
     "contextMenu": {
       "hide": "プロジェクトを非表示",
-      "unhide": "プロジェクトを表示"
+      "unhide": "プロジェクトを表示",
+      "copyPath": "パスをコピー",
+      "pathCopied": "パスをクリップボードにコピーしました",
+      "copyFailed": "クリップボードへのコピーに失敗しました"
     }
   },
   "projectListControls": {
@@ -647,7 +663,7 @@
     "hideEmptySessions": "空のセッションを非表示",
     "hideAgentSessions": "エージェントセッションを非表示",
     "showAll": "すべて表示",
-    "searchPlaceholder": "セッションを検索...",
+    "searchPlaceholder": "プロジェクトとセッションを検索...",
     "clearSearch": "検索をクリア",
     "filterSettings": "フィルター設定",
     "searchLoadFailed": "一部のプロジェクトの読み込みに失敗しました"
@@ -703,7 +719,11 @@
     "noSessions": "セッションが見つかりません",
     "fix": "セッションを修正（再開可能性を復元）",
     "contextMenu": {
-      "rename": "名前を変更"
+      "rename": "名前を変更",
+      "copyPath": "パスをコピー",
+      "pathCopied": "パスをクリップボードにコピーしました",
+      "copyFailed": "クリップボードへのコピーに失敗しました",
+      "showFile": "JSONLファイルを表示"
     },
     "nativeRename": {
       "title": "セッション名を変更",
@@ -817,6 +837,8 @@
     "start": "開始:",
     "end": "終了:",
     "lessThanMinute": "< 1分",
+    "today": "今日",
+    "yesterday": "昨日",
     "day": "日",
     "days": "日",
     "hour": "時間",

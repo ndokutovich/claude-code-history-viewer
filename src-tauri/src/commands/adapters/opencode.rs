@@ -339,6 +339,7 @@ fn load_sessions_from_db(
             total_tokens: None,
             tool_call_count: 0,
             error_count: 0,
+            entrypoint: None,
             metadata,
             checksum,
         });
@@ -736,6 +737,7 @@ pub fn load_opencode_sessions_impl(
             total_tokens: None,
             tool_call_count: 0,
             error_count: 0,
+            entrypoint: None,
             metadata: {
                 let mut metadata = HashMap::new();
                 metadata.insert("filePath".to_string(), serde_json::Value::String(
@@ -803,7 +805,7 @@ pub fn load_opencode_messages_impl(
     if let Some(all) = load_messages_from_db(base_path, session_id, project_id, source_id) {
         let total = all.len();
         let start = offset.min(total);
-        let end = (offset + limit).min(total);
+        let end = offset.saturating_add(limit).min(total);
         return Ok(all[start..end].to_vec());
     }
 
@@ -833,7 +835,7 @@ pub fn load_opencode_messages_impl(
     // Apply pagination
     let total = message_files.len();
     let start = offset.min(total);
-    let end = (offset + limit).min(total);
+    let end = offset.saturating_add(limit).min(total);
     let page_files = &message_files[start..end];
 
     let mut messages: Vec<UniversalMessage> = Vec::new();

@@ -12,7 +12,31 @@ use crate::commands::adapters::aider::{
     scan_aider_projects as adapter_scan_projects,
 };
 use crate::models::universal::{UniversalMessage, UniversalProject, UniversalSession};
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
+
+/// Reject relative paths and `..` traversal, then canonicalize before any
+/// filesystem access. Mirrors the hardening in `validate_custom_claude_path`.
+fn harden_aider_path(path: &Path) -> Result<PathBuf, String> {
+    if !path.is_absolute() {
+        return Err(format!(
+            "AIDER_SECURITY_ERROR: Path must be absolute: {}",
+            path.display()
+        ));
+    }
+    if path.components().any(|c| c == Component::ParentDir) {
+        return Err(format!(
+            "AIDER_SECURITY_ERROR: Path traversal blocked: {}",
+            path.display()
+        ));
+    }
+    std::fs::canonicalize(path).map_err(|e| {
+        format!(
+            "AIDER_PATH_ERROR: Cannot canonicalize {}: {}",
+            path.display(),
+            e
+        )
+    })
+}
 
 // ============================================================================
 // PATH DETECTION
@@ -34,7 +58,15 @@ pub async fn get_aider_path() -> Result<String, String> {
 /// Accepts a directory containing `.aider.chat.history.md`, or the file itself.
 #[tauri::command]
 pub async fn validate_aider_folder(path: String) -> Result<bool, String> {
-    let p = PathBuf::from(&path);
+    let raw = PathBuf::from(&path);
+    // Reject relative paths and `..` traversal before touching the filesystem.
+    if !raw.is_absolute() || raw.components().any(|c| c == Component::ParentDir) {
+        return Ok(false);
+    }
+    let p = match std::fs::canonicalize(&raw) {
+        Ok(c) => c,
+        Err(_) => return Ok(false),
+    };
     if p.is_file() {
         return Ok(p
             .file_name()
@@ -71,7 +103,7 @@ pub async fn load_aider_sessions(
     project_path: String,
     source_id: String,
 ) -> Result<Vec<UniversalSession>, String> {
-    let dir = parse_scheme_path(&project_path)?;
+    let dir = harden_aider_path(&parse_scheme_path(&project_path)?)?;
     adapter_load_sessions(&dir, &source_id)
 }
 
@@ -84,7 +116,7 @@ pub async fn load_aider_messages(
     offset: usize,
     limit: usize,
 ) -> Result<Vec<UniversalMessage>, String> {
-    let history_path = parse_scheme_path(&session_path)?;
+    let history_path = harden_aider_path(&parse_scheme_path(&session_path)?)?;
     let project_id = history_path
         .parent()
         .map(|p| format!("aider://{}", p.to_string_lossy()))

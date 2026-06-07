@@ -73,23 +73,55 @@ struct ConversationRow {
 /// Resolve the ForgeCode base path.
 ///
 /// Lookup precedence:
-/// 1. `$FORGE_CONFIG`
+/// 1. `$FORGE_CONFIG` (must be an absolute path)
 /// 2. `~/.forge`
+/// 3. Windows only: `%LOCALAPPDATA%/.forge`, then `%APPDATA%/.forge`
+///
+/// The resolved path is always canonicalized (and therefore absolute) so all
+/// downstream filesystem access operates on a normalized location.
 pub fn get_forgecode_base_path() -> Option<PathBuf> {
+    // 1. $FORGE_CONFIG — reject non-absolute values.
     if let Ok(config_dir) = std::env::var("FORGE_CONFIG") {
-        let path = PathBuf::from(&config_dir);
-        if path.exists() {
-            return Some(path);
+        let trimmed = config_dir.trim();
+        if !trimmed.is_empty() {
+            let path = PathBuf::from(trimmed);
+            if path.is_absolute() && path.exists() {
+                if let Ok(canon) = std::fs::canonicalize(&path) {
+                    return Some(canon);
+                }
+            }
         }
     }
 
-    let home = dirs::home_dir()?;
-    let default_path = home.join(".forge");
-    if default_path.exists() {
-        Some(default_path)
-    } else {
-        None
+    // 2. ~/.forge
+    if let Some(home) = dirs::home_dir() {
+        let default_path = home.join(".forge");
+        if default_path.exists() {
+            if let Ok(canon) = std::fs::canonicalize(&default_path) {
+                return Some(canon);
+            }
+        }
     }
+
+    // 3. Windows fallbacks.
+    #[cfg(windows)]
+    {
+        for var in ["LOCALAPPDATA", "APPDATA"] {
+            if let Ok(base) = std::env::var(var) {
+                if base.trim().is_empty() {
+                    continue;
+                }
+                let path = PathBuf::from(base).join(".forge");
+                if path.exists() {
+                    if let Ok(canon) = std::fs::canonicalize(&path) {
+                        return Some(canon);
+                    }
+                }
+            }
+        }
+    }
+
+    None
 }
 
 /// Open the ForgeCode SQLite database read-only.
@@ -389,6 +421,7 @@ pub fn load_forgecode_sessions(
                 total_tokens: None,
                 tool_call_count: 0,
                 error_count: 0,
+                entrypoint: None,
                 metadata,
                 checksum: format!("{}:{}", row.workspace_id, row.conversation_id),
             }

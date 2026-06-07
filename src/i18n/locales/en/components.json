@@ -341,6 +341,7 @@
     "allMessagesLoaded": "All {{count}} messages loaded",
     "failedToLoadAll": "Failed to load all messages",
     "markdownTooltip": "Export conversation to Markdown format",
+    "jsonTooltip": "Export conversation to JSON format",
     "htmlTooltip": "Export conversation to HTML format",
     "docxTooltip": "Export conversation to Word document",
     "fixSession": "Fix Session",
@@ -652,6 +653,7 @@
     "countWithTotal": "Messages: {{current}} / {{total}}",
     "filtered": "filtered",
     "branch": "Branch",
+    "subAgent": "Sub-agent",
     "reply": "Reply (depth: {{depth}})",
     "renderError": "Message rendering error",
     "checkConsole": "Check the console for detailed error information.",
@@ -687,7 +689,17 @@
     "commandOnly": "Command only",
     "toolUseOnly": "Tool use only",
     "messagesOnly": "Messages only",
+    "role": "Role",
+    "contentType": "Type",
+    "roleUser": "User",
+    "roleAssistant": "Assistant",
+    "roleSystem": "System",
+    "contentText": "Text",
+    "contentToolUse": "Tool use",
+    "contentToolResult": "Tool result",
+    "contentThinking": "Thinking",
     "showNoise": "Show noise",
+    "showSubAgent": "Show sub-agent",
     "clearFilters": "Clear",
     "copyRaw": "Copy JSON",
     "rawCopied": "Raw message copied",
@@ -701,6 +713,7 @@
     "claude": "Claude",
     "system": "System",
     "branch": "Branch",
+    "subAgent": "Sub-agent",
     "reply": "Reply (depth: {{depth}})",
     "loadingMessages": "Loading messages...",
     "noMessages": "No messages",
@@ -731,7 +744,10 @@
     "selected": "Selected project",
     "contextMenu": {
       "hide": "Hide project",
-      "unhide": "Show project"
+      "unhide": "Show project",
+      "copyPath": "Copy path",
+      "pathCopied": "Path copied to clipboard",
+      "copyFailed": "Failed to copy to clipboard"
     }
   },
   "projectListControls": {
@@ -760,7 +776,7 @@
     "hideEmptySessions": "Hide Empty Sessions",
     "hideAgentSessions": "Hide Agent Sessions",
     "showAll": "Show All",
-    "searchPlaceholder": "Search sessions...",
+    "searchPlaceholder": "Search projects & sessions...",
     "clearSearch": "Clear search",
     "filterSettings": "Filter Settings",
     "searchLoadFailed": "Failed to load some projects"
@@ -803,7 +819,11 @@
     "noSessions": "No sessions found",
     "fix": "Fix Session (Restore Resumability)",
     "contextMenu": {
-      "rename": "Rename"
+      "rename": "Rename",
+      "copyPath": "Copy path",
+      "pathCopied": "Path copied to clipboard",
+      "copyFailed": "Failed to copy to clipboard",
+      "showFile": "Show JSONL file"
     },
     "nativeRename": {
       "title": "Rename Session",
@@ -1011,6 +1031,8 @@
     "start": "Start:",
     "end": "End:",
     "lessThanMinute": "< 1 min",
+    "today": "Today",
+    "yesterday": "Yesterday",
     "day": "day",
     "days": "days",
     "hour": "hour",

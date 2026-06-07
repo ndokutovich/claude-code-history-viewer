@@ -37,15 +37,25 @@ import {
 } from "../utils";
 import { calculateConversationBreakdownCoverage } from "../../../utils/providers";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
+import { DatePickerHeader } from "../../ui/DatePickerHeader";
+
+interface DateFilter {
+  start: Date | null;
+  end: Date | null;
+}
 
 interface GlobalStatsViewProps {
   globalSummary: GlobalStatsSummary;
   globalConversationSummary: GlobalStatsSummary | null;
+  dateFilter?: DateFilter;
+  setDateFilter?: (filter: DateFilter) => void;
 }
 
 export const GlobalStatsView: React.FC<GlobalStatsViewProps> = ({
   globalSummary,
   globalConversationSummary,
+  dateFilter,
+  setDateFilter,
 }) => {
   const { t } = useTranslation("analytics");
   const totalSessionTime = globalSummary.total_session_duration_minutes;
@@ -102,6 +112,14 @@ export const GlobalStatsView: React.FC<GlobalStatsViewProps> = ({
           "Provider scope follows Project Tree provider tabs."
         )}
       </p>
+
+      {dateFilter && setDateFilter && (
+        <DatePickerHeader
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+          className="bg-card/50 w-fit"
+        />
+      )}
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -237,8 +255,8 @@ export const GlobalStatsView: React.FC<GlobalStatsViewProps> = ({
       {/* Heatmap & Top Projects */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <SectionCard title={t("analytics.activityHeatmapTitle")} icon={Layers} colorVariant="green">
-          {globalSummary.activity_heatmap.length > 0 ? (
-            <ActivityHeatmapComponent data={globalSummary.activity_heatmap} />
+          {globalSummary.daily_stats.length > 0 ? (
+            <ActivityHeatmapComponent data={globalSummary.daily_stats} />
           ) : (
             <div className="text-center py-8 text-muted-foreground text-[12px]">
               {t("analytics.No activity data available")}

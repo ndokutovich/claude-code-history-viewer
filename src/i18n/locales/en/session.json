@@ -120,6 +120,13 @@
   "session.item.lastModified": "Last Modified",
   "session.item.messageCount": "Message Count",
   "session.item.session": "Session",
+  "session.item.renamed": "Custom name",
+  "session.item.renamedDescription": "You renamed this session",
+  "session.item.entrypoint.label": "Source: {{source}}",
+  "session.item.entrypoint.cli": "CLI",
+  "session.item.entrypoint.vscode": "VS Code",
+  "session.item.entrypoint.desktop": "Desktop",
+  "session.item.entrypoint.unknown": "Unknown",
   "session.loading": "Loading sessions...",
   "session.refresh": "Refresh Sessions",
   "session.rename": "Rename session",
@@ -157,6 +164,12 @@
   "session.copyFilePath": "Copy File Path",
   "session.copiedSessionId": "Session ID copied",
   "session.copiedResumeCommand": "Resume command copied",
+  "session.copiedResumeCommandNoCwd": "Resume command copied (working directory unknown)",
+  "session.resumeCommandUnavailable": "Resume command unavailable",
+  "session.deleteSession": "Delete Session",
+  "session.deleteConfirm": "Move this session to the trash? The file will be moved to your system trash.",
+  "session.deleted": "Session moved to trash",
+  "session.deleteFailed": "Failed to delete session",
   "session.copiedFilePath": "File path copied",
   "session.boardNotSupported": "Session Board is only available for Claude sessions",
   "session.filter.searchPlaceholder": "Search sessions...",
@@ -164,5 +177,14 @@
   "session.filter.sortNewestFirst": "Sort by newest first",
   "session.filter.sortOldestFirst": "Sort by oldest first",
   "session.filter.noResults": "No sessions match your search",
-  "session.filter.showingCount": "Showing {{count}} of {{total}} sessions"
+  "session.filter.showingCount": "Showing {{count}} of {{total}} sessions",
+  "cli": {
+    "notFound": "Session not found: {{value}}",
+    "picker": {
+      "title": "Choose a session",
+      "subtitle": "{{count}} sessions match \"{{value}}\"",
+      "messageCount": "{{count}} messages",
+      "cancelled": "Session selection cancelled"
+    }
+  }
 }

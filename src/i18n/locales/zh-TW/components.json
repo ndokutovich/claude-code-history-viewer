@@ -353,6 +353,7 @@
     "pathCopyFailed": "複製路徑失敗",
     "copied": "已複製",
     "markdownTooltip": "將對話匯出為 Markdown 格式",
+    "jsonTooltip": "將對話匯出為 JSON 格式",
     "htmlTooltip": "將對話匯出為 HTML 格式",
     "docxTooltip": "將對話匯出為 Word 文件",
     "resume": "恢復",
@@ -669,6 +670,7 @@
     "count_plural": "{{count}}則訊息",
     "countWithTotal": "訊息：{{current}}則 / {{total}}則",
     "branch": "分支",
+    "subAgent": "子代理",
     "reply": "回覆（深度：{{depth}}）",
     "renderError": "訊息渲染錯誤",
     "checkConsole": "請查看控制台以獲取詳細錯誤資訊。",
@@ -705,7 +707,17 @@
     "commandOnly": "僅命令",
     "toolUseOnly": "僅工具使用",
     "messagesOnly": "僅訊息",
+    "role": "角色",
+    "contentType": "類型",
+    "roleUser": "使用者",
+    "roleAssistant": "助手",
+    "roleSystem": "系統",
+    "contentText": "文字",
+    "contentToolUse": "工具使用",
+    "contentToolResult": "工具結果",
+    "contentThinking": "思考",
     "showNoise": "顯示噪聲",
+    "showSubAgent": "顯示子代理",
     "clearFilters": "清除",
     "copyRaw": "複製JSON",
     "rawCopied": "已複製原始訊息",
@@ -719,6 +731,7 @@
     "claude": "Claude",
     "system": "系統",
     "branch": "分支",
+    "subAgent": "子代理",
     "reply": "回覆 (depth: {{depth}})",
     "loadingMessages": "正在載入訊息...",
     "noMessages": "沒有訊息",
@@ -750,7 +763,10 @@
     "selected": "已選專案",
     "contextMenu": {
       "hide": "隱藏專案",
-      "unhide": "顯示專案"
+      "unhide": "顯示專案",
+      "copyPath": "複製路徑",
+      "pathCopied": "路徑已複製到剪貼簿",
+      "copyFailed": "複製到剪貼簿失敗"
     }
   },
   "projectListControls": {
@@ -779,7 +795,7 @@
     "hideEmptySessions": "隱藏空會話",
     "hideAgentSessions": "隱藏代理會話",
     "showAll": "顯示全部",
-    "searchPlaceholder": "搜尋會話...",
+    "searchPlaceholder": "搜尋專案和會話...",
     "clearSearch": "清除搜尋",
     "filterSettings": "篩選設定",
     "searchLoadFailed": "部分專案載入失敗"
@@ -822,7 +838,11 @@
     "noSessions": "未找到會話",
     "fix": "修復對話（恢復可繼續性）",
     "contextMenu": {
-      "rename": "重新命名"
+      "rename": "重新命名",
+      "copyPath": "複製路徑",
+      "pathCopied": "路徑已複製到剪貼簿",
+      "copyFailed": "複製到剪貼簿失敗",
+      "showFile": "顯示 JSONL 檔案"
     },
     "nativeRename": {
       "title": "重新命名會話",
@@ -1030,6 +1050,8 @@
     "start": "開始：",
     "end": "結束：",
     "lessThanMinute": "< 1分鐘",
+    "today": "今天",
+    "yesterday": "昨天",
     "day": "天",
     "days": "天",
     "hour": "小時",

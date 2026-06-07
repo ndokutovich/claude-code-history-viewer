@@ -3,16 +3,19 @@
 // ============================================================================
 // UI for managing multiple conversation data sources
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { invoke } from '@tauri-apps/api/core';
 import { useSourceStore } from '../store/useSourceStore';
-import type { UniversalSource, HealthStatus } from '../types/universal';
+import { useAppStore } from '../store/useAppStore';
+import type { UniversalSource, HealthStatus, WslDistro } from '../types/universal';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
+import { Switch } from './ui/switch';
 import {
   FolderOpen,
   Plus,
@@ -23,7 +26,8 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Clock
+  Clock,
+  Terminal
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { getProviderColor } from '../constants/providers';
@@ -46,12 +50,43 @@ export const SourceManager: React.FC = () => {
     selectSource,
     validatePath,
     clearErrors,
+    wslEnabled,
+    setWslEnabled,
+    detectWslDistros,
+    addWslSource,
   } = useSourceStore();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newSourcePath, setNewSourcePath] = useState('');
   const [newSourceName, setNewSourceName] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // WSL state
+  const [wslDistros, setWslDistros] = useState<WslDistro[] | null>(null);
+  const [isDetectingWsl, setIsDetectingWsl] = useState(false);
+
+  const handleToggleWsl = useCallback(async (enabled: boolean): Promise<void> => {
+    await setWslEnabled(enabled);
+    if (enabled) {
+      setIsDetectingWsl(true);
+      try {
+        setWslDistros(await detectWslDistros());
+      } finally {
+        setIsDetectingWsl(false);
+      }
+    } else {
+      setWslDistros(null);
+    }
+  }, [setWslEnabled, detectWslDistros]);
+
+  const handleAddWslDistro = useCallback(async (distro: WslDistro): Promise<void> => {
+    if (!distro.claudePath) return;
+    try {
+      await addWslSource(distro.name, distro.claudePath);
+    } catch (err) {
+      console.error('Failed to add WSL source:', err);
+    }
+  }, [addWslSource]);
 
   // Note: Sources are initialized in App.tsx on startup
   // No need to reinitialize here to avoid duplicate calls
@@ -199,6 +234,74 @@ export const SourceManager: React.FC = () => {
         </Alert>
       )}
 
+      {/* WSL Section */}
+      <div className="border rounded-lg p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-start gap-2">
+            <Terminal className="h-4 w-4 mt-0.5 text-muted-foreground" />
+            <div>
+              <h3 className="text-sm font-medium">{t('wsl.title')}</h3>
+              <p className="text-xs text-muted-foreground">{t('wsl.description')}</p>
+            </div>
+          </div>
+          <Switch
+            checked={wslEnabled}
+            onCheckedChange={handleToggleWsl}
+            aria-label={t('wsl.title')}
+          />
+        </div>
+
+        {wslEnabled && (
+          <div className="space-y-2 pl-6">
+            {isDetectingWsl ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <RefreshCw className="h-3 w-3 animate-spin" />
+                <span>{t('wsl.detecting')}</span>
+              </div>
+            ) : wslDistros && wslDistros.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{t('wsl.noDistros')}</p>
+            ) : (
+              (wslDistros ?? []).map((distro) => {
+                const alreadyAdded = !!distro.claudePath && sources.some((s) => s.path === distro.claudePath);
+                return (
+                  <div
+                    key={distro.name}
+                    className="flex items-center justify-between gap-2 text-xs border rounded px-2 py-1.5"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium truncate">{distro.name}</span>
+                        {distro.isDefault && (
+                          <Badge variant="secondary" className="text-[10px]">{t('wsl.default')}</Badge>
+                        )}
+                      </div>
+                      {distro.claudePath ? (
+                        <span className="text-muted-foreground truncate block">{distro.claudePath}</span>
+                      ) : (
+                        <span className="text-muted-foreground">{t('wsl.noClaude')}</span>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!distro.claudePath || alreadyAdded}
+                      onClick={() => handleAddWslDistro(distro)}
+                    >
+                      {alreadyAdded ? (
+                        <CheckCircle2 className="h-3 w-3" />
+                      ) : (
+                        <Plus className="h-3 w-3" />
+                      )}
+                      <span className="ml-1">{alreadyAdded ? t('wsl.added') : t('wsl.add')}</span>
+                    </Button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Source List */}
       <div className="space-y-2">
         {sources.length === 0 ? (
@@ -223,6 +326,9 @@ export const SourceManager: React.FC = () => {
           ))
         )}
       </div>
+
+      {/* Custom Claude Directories */}
+      <CustomClaudeDirsSection />
 
       {/* Add Source Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -307,6 +413,141 @@ export const SourceManager: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+};
+
+// ============================================================================
+// CUSTOM CLAUDE DIRECTORIES SECTION
+// ============================================================================
+
+const CustomClaudeDirsSection: React.FC = () => {
+  const { t } = useTranslation('sourceManager');
+  const customClaudeDirs = useAppStore((s) => s.customClaudeDirs);
+  const loadCustomClaudeDirs = useAppStore((s) => s.loadCustomClaudeDirs);
+  const addCustomClaudeDir = useAppStore((s) => s.addCustomClaudeDir);
+  const removeCustomClaudeDir = useAppStore((s) => s.removeCustomClaudeDir);
+  const { sources, addSource, removeSource } = useSourceStore();
+
+  const [isBusy, setIsBusy] = useState(false);
+  const [sectionError, setSectionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    void loadCustomClaudeDirs();
+  }, [loadCustomClaudeDirs]);
+
+  const handleAddDir = useCallback(async (): Promise<void> => {
+    setSectionError(null);
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: t('customClaudeDir.selectFolder'),
+      });
+
+      if (!selected || typeof selected !== 'string') return;
+
+      if (customClaudeDirs.includes(selected)) {
+        setSectionError(t('customClaudeDir.alreadyAdded'));
+        return;
+      }
+
+      setIsBusy(true);
+
+      const isValid = await invoke<boolean>('validate_custom_claude_dir', { path: selected });
+      if (!isValid) {
+        setSectionError(t('customClaudeDir.invalid'));
+        return;
+      }
+
+      // Persist to settings and register as a scannable source.
+      await addCustomClaudeDir(selected);
+      if (!sources.some((s) => s.path === selected)) {
+        try {
+          await addSource(selected, t('customClaudeDir.autoLabel'));
+        } catch (err) {
+          console.error('Failed to register custom Claude directory as source:', err);
+        }
+      }
+    } catch (err) {
+      setSectionError((err as Error).message);
+    } finally {
+      setIsBusy(false);
+    }
+  }, [customClaudeDirs, addCustomClaudeDir, addSource, sources, t]);
+
+  const handleRemoveDir = useCallback(async (dir: string): Promise<void> => {
+    if (!confirm(t('customClaudeDir.confirmRemove'))) return;
+    setSectionError(null);
+    try {
+      // Remove the registered source first. `removeSource` rejects when this is
+      // the last remaining source; in that case we must keep the custom dir so
+      // settings and in-memory state do not desync.
+      const matching = sources.find((s) => s.path === dir);
+      if (matching) {
+        await removeSource(matching.id);
+      }
+      await removeCustomClaudeDir(dir);
+    } catch (err) {
+      setSectionError((err as Error).message);
+    }
+  }, [removeCustomClaudeDir, removeSource, sources, t]);
+
+  return (
+    <div className="space-y-3 border-t pt-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-semibold">{t('customClaudeDir.title')}</h3>
+          <p className="text-sm text-muted-foreground">
+            {t('customClaudeDir.description')}
+          </p>
+        </div>
+        <Button size="sm" onClick={handleAddDir} disabled={isBusy}>
+          {isBusy ? (
+            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Plus className="h-4 w-4 mr-2" />
+          )}
+          {t('customClaudeDir.add')}
+        </Button>
+      </div>
+
+      {sectionError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{sectionError}</AlertDescription>
+        </Alert>
+      )}
+
+      {customClaudeDirs.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {t('customClaudeDir.empty')}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {customClaudeDirs.map((dir) => (
+            <div
+              key={dir}
+              className="flex items-center justify-between gap-2 p-3 border rounded-lg"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="text-sm truncate" title={dir}>{dir}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleRemoveDir(dir)}
+                title={t('customClaudeDir.remove')}
+                aria-label={t('customClaudeDir.remove')}
+                className="text-destructive hover:text-destructive shrink-0"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

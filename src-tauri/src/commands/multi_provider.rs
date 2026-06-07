@@ -23,10 +23,12 @@ use crate::commands::adapters::antigravity::{
     scan_antigravity_projects as antigravity_scan_projects,
 };
 use crate::commands::adapters::cline::{
-    get_all_cline_base_paths, load_cline_messages as cline_load_messages,
-    load_cline_sessions as cline_load_sessions, parse_scheme_path as cline_parse_scheme_path,
+    cwd_for_task as cline_cwd_for_task, get_all_cline_base_paths,
+    load_cline_messages as cline_load_messages, load_cline_sessions as cline_load_sessions,
+    load_task_history as cline_load_task_history, parse_scheme_path as cline_parse_scheme_path,
     scan_cline_projects as cline_scan_projects,
 };
+use crate::commands::cline::harden_cline_path;
 use crate::commands::adapters::forgecode::{
     get_forgecode_base_path, load_forgecode_messages as forgecode_load_messages,
     load_forgecode_sessions as forgecode_load_sessions, parse_project_path as forgecode_parse_project_path,
@@ -34,11 +36,17 @@ use crate::commands::adapters::forgecode::{
 };
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::adapters::opencode::{get_opencode_base_path, scan_opencode_projects_impl};
+use crate::commands::search_match::{
+    cache_key, current_search_generation, take_matching, top_k_by, QueryMatcher,
+};
 use crate::models::universal::{UniversalMessage, UniversalProject, UniversalSession};
 use crate::models::SearchFilters;
+use lru::LruCache;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
+use std::num::NonZeroUsize;
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 // ============================================================================
 // DETECTED PROVIDER
@@ -70,7 +78,7 @@ pub struct DetectedProvider {
 /// full list with availability flags so the frontend can show a summary.
 #[tauri::command]
 pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
-    let mut providers = Vec::with_capacity(7);
+    let mut providers = Vec::with_capacity(9);
 
     // ---- Claude Code -------------------------------------------------------
     {
@@ -225,6 +233,9 @@ pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
 pub async fn scan_all_projects(
     claude_path: Option<String>,
     active_providers: Option<Vec<String>>,
+    custom_claude_paths: Option<Vec<String>>,
+    wsl_enabled: Option<bool>,
+    wsl_excluded_distros: Option<Vec<String>>,
 ) -> Result<Vec<UniversalProject>, String> {
     // Determine which providers to include
     let wanted: Vec<String> = match active_providers {
@@ -244,22 +255,34 @@ pub async fn scan_all_projects(
 
     // ---- Claude Code -------------------------------------------------------
     if wanted.iter().any(|p| p == "claude-code") {
-        let base = claude_path.clone().or_else(|| {
-            futures_lite_workaround_get_claude_path()
-        });
-        if let Some(base_path) = base {
-            match crate::commands::project::scan_projects(base_path.clone()).await {
-                Ok(claude_projects) => {
-                    // Convert ClaudeProject → UniversalProject
-                    let universal: Vec<UniversalProject> = claude_projects
-                        .into_iter()
-                        .map(|p| claude_project_to_universal(p, &base_path))
-                        .collect();
-                    all_projects.extend(universal);
+        let mut seen_bases = std::collections::HashSet::new();
+
+        // Default (or explicit `claude_path`) base. Scanned unconditionally to
+        // preserve existing behavior (even symlinked ~/.claude setups).
+        if let Some(base_path) = claude_path
+            .clone()
+            .or_else(futures_lite_workaround_get_claude_path)
+        {
+            if seen_bases.insert(base_path.clone()) {
+                scan_claude_base_into(&base_path, &mut all_projects).await;
+            }
+        }
+
+        // User-configured custom Claude directories. Each is validated and
+        // invalid/unsafe entries are skipped gracefully.
+        if let Some(customs) = custom_claude_paths.clone() {
+            for base_path in customs {
+                if !seen_bases.insert(base_path.clone()) {
+                    continue;
                 }
-                Err(e) => {
-                    eprintln!("[multi_provider] Claude scan failed: {}", e);
+                if crate::utils::validate_custom_claude_path(&PathBuf::from(&base_path)).is_err() {
+                    eprintln!(
+                        "[multi_provider] Skipping invalid custom Claude dir: {}",
+                        base_path
+                    );
+                    continue;
                 }
+                scan_claude_base_into(&base_path, &mut all_projects).await;
             }
         }
     }
@@ -359,6 +382,38 @@ pub async fn scan_all_projects(
         }
     }
 
+    // ---- WSL (Claude Code only) -------------------------------------------
+    // Other providers resolve their base path natively (Windows side), so their
+    // WSL data would be visible but not loadable. Mirrors upstream: WSL scan is
+    // currently Claude-only. No-op on non-Windows / no-WSL machines.
+    if wsl_enabled.unwrap_or(false) && wanted.iter().any(|p| p == "claude-code") {
+        let excluded = wsl_excluded_distros.clone().unwrap_or_default();
+        for (distro, claude_unc) in crate::commands::wsl::resolve_active_claude_dirs(&excluded) {
+            match crate::commands::project::scan_projects(claude_unc.clone()).await {
+                Ok(projects) => {
+                    let label = format!("WSL: {}", distro);
+                    let universal: Vec<UniversalProject> = projects
+                        .into_iter()
+                        .map(|p| {
+                            let mut up = claude_project_to_universal(p, &claude_unc);
+                            up.metadata
+                                .insert("wslDistro".to_string(), serde_json::json!(distro));
+                            up.metadata.insert(
+                                "customDirectoryLabel".to_string(),
+                                serde_json::json!(label),
+                            );
+                            up
+                        })
+                        .collect();
+                    all_projects.extend(universal);
+                }
+                Err(e) => {
+                    eprintln!("[multi_provider] WSL Claude scan failed for '{}': {}", distro, e);
+                }
+            }
+        }
+    }
+
     // Cursor IDE provides workspaces, not projects in the same sense; skip
     // in the unified scan (users access Cursor via its dedicated commands).
 
@@ -446,6 +501,7 @@ pub async fn load_provider_sessions(
         "cline" => {
             // project_path is the `cline://<base>|<cwd>` scheme path.
             let (base, cwd) = cline_parse_scheme_path(&project_path)?;
+            let base = harden_cline_path(&base)?;
             cline_load_sessions(&base, &cwd, &source_id)
         }
 
@@ -557,12 +613,20 @@ pub async fn load_provider_messages(
         "cline" => {
             // session_path is the `cline://<base>|<task_id>` scheme path.
             let (base, task_id) = cline_parse_scheme_path(&session_path)?;
+            let base = harden_cline_path(&base)?;
             let source_id = format!("cline:{}", base.display());
+            // Derive a real project_id (`cline://<base>|<cwd>`) from task history,
+            // falling back to the session scheme path when no cwd is found.
+            let history = cline_load_task_history(&base);
+            let project_id = match cline_cwd_for_task(&history, &task_id) {
+                Some(cwd) => format!("cline://{}|{}", base.to_string_lossy(), cwd),
+                None => session_path.clone(),
+            };
             cline_load_messages(
                 &base,
                 &task_id,
                 &session_path,
-                "",
+                &project_id,
                 &source_id,
                 offset,
                 limit,
@@ -629,8 +693,125 @@ pub async fn load_provider_messages(
 }
 
 // ============================================================================
+// RESOLVE SESSION BY ID (CLI `--session <uuid>` support)
+// ============================================================================
+
+/// A concrete session located by [`resolve_session_by_id`], carrying enough
+/// routing information for the frontend to navigate to it (and to render a
+/// disambiguation picker when more than one matches a UUID prefix).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolvedSession {
+    pub provider_id: String,
+    pub source_id: String,
+    pub project_path: String,
+    pub project_name: String,
+    pub session_id: String,
+    pub file_path: String,
+    pub title: String,
+    pub last_message_at: String,
+    pub message_count: usize,
+}
+
+/// Resolve a session UUID (or UUID prefix, or absolute file path) to the
+/// concrete sessions that match it, scanning every available provider.
+///
+/// Behavior on the frontend:
+/// - 0 matches → "session not found" toast.
+/// - 1 match   → navigate directly.
+/// - >1 match  → open the session picker modal to disambiguate.
+///
+/// Matching is delegated to [`crate::cli::session_id_matches`] (exact, or an
+/// 8+ char prefix) against the universal session id, its checksum, and the
+/// session file's stem (covers the common `<uuid>.jsonl` Claude Code layout).
+/// Absolute-path queries additionally match a session by exact `file_path`.
+///
+/// Cursor is intentionally skipped: it is not part of the unified project scan
+/// and is reached through its dedicated commands.
+#[tauri::command]
+pub async fn resolve_session_by_id(
+    session_id: String,
+    claude_path: Option<String>,
+    active_providers: Option<Vec<String>>,
+) -> Result<Vec<ResolvedSession>, String> {
+    let query = session_id.trim().to_string();
+    if query.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let projects = scan_all_projects(claude_path, active_providers, None, None, None).await?;
+    let mut matches: Vec<ResolvedSession> = Vec::new();
+
+    for project in projects {
+        let sessions = match load_provider_sessions(
+            project.provider_id.clone(),
+            project.path.clone(),
+            project.source_id.clone(),
+        )
+        .await
+        {
+            Ok(s) => s,
+            Err(_) => continue, // e.g. Cursor routing error — skip silently
+        };
+
+        for session in sessions {
+            let file_path = session
+                .metadata
+                .get("filePath")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| session.id.clone());
+
+            let stem = PathBuf::from(&file_path)
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string());
+
+            let id_match = crate::cli::session_id_matches(&session.id, &query)
+                || crate::cli::session_id_matches(&session.checksum, &query)
+                || stem
+                    .as_deref()
+                    .map(|s| crate::cli::session_id_matches(s, &query))
+                    .unwrap_or(false)
+                || file_path == query;
+
+            if id_match {
+                matches.push(ResolvedSession {
+                    provider_id: session.provider_id.clone(),
+                    source_id: session.source_id.clone(),
+                    project_path: project.path.clone(),
+                    project_name: project.name.clone(),
+                    session_id: session.id.clone(),
+                    file_path,
+                    title: session.title.clone(),
+                    last_message_at: session.last_message_at.clone(),
+                    message_count: session.message_count,
+                });
+            }
+        }
+    }
+
+    // Most-recently-active first so a single-match navigation and the picker
+    // both surface the freshest session at the top. Empty timestamps sort last.
+    matches.sort_by(|a, b| b.last_message_at.cmp(&a.last_message_at));
+
+    Ok(matches)
+}
+
+// ============================================================================
 // SEARCH ALL PROVIDERS
 // ============================================================================
+
+/// Bounded LRU cache of federated search results, keyed by a hash of
+/// (query, active_providers, limit). Entries carry the search generation they
+/// were produced under; a generation bump (via the file watcher) makes them
+/// stale without an explicit purge.
+const SEARCH_CACHE_CAPACITY: usize = 64;
+
+lazy_static::lazy_static! {
+    static ref SEARCH_CACHE: Mutex<LruCache<u64, (u64, Vec<UniversalMessage>)>> = Mutex::new(
+        LruCache::new(NonZeroUsize::new(SEARCH_CACHE_CAPACITY).expect("non-zero capacity")),
+    );
+}
 
 /// Search messages across all providers (or a subset).
 ///
@@ -642,8 +823,28 @@ pub async fn search_all_providers(
     query: String,
     active_providers: Option<Vec<String>>,
     limit: Option<usize>,
+    custom_claude_paths: Option<Vec<String>>,
+    wsl_enabled: Option<bool>,
+    wsl_excluded_distros: Option<Vec<String>>,
 ) -> Result<Vec<UniversalMessage>, String> {
     let max_results = limit.unwrap_or(100);
+
+    // ---- Result cache (generation-gated) -----------------------------------
+    let generation = current_search_generation();
+    let key = cache_key(&(&query, &active_providers, max_results));
+    if let Ok(mut cache) = SEARCH_CACHE.lock() {
+        if let Some((cached_gen, cached)) = cache.get(&key) {
+            if *cached_gen == generation {
+                return Ok(cached.clone());
+            }
+        }
+    }
+
+    // Multi-term matcher built once and shared across every provider scan.
+    let matcher = QueryMatcher::from_query(&query);
+    if matcher.is_empty() {
+        return Ok(Vec::new());
+    }
 
     let wanted: Vec<String> = match active_providers {
         Some(list) => list,
@@ -661,7 +862,26 @@ pub async fn search_all_providers(
 
     // ---- Claude Code -------------------------------------------------------
     if wanted.iter().any(|p| p == "claude-code") {
-        if let Some(claude_base) = futures_lite_workaround_get_claude_path() {
+        // Union the default base with any user-configured custom dirs.
+        let mut claude_bases: Vec<String> = Vec::new();
+        if let Some(base) = futures_lite_workaround_get_claude_path() {
+            claude_bases.push(base);
+        }
+        if let Some(customs) = custom_claude_paths.clone() {
+            for c in customs {
+                if crate::utils::validate_custom_claude_path(&PathBuf::from(&c)).is_ok() {
+                    claude_bases.push(c);
+                } else {
+                    eprintln!("[multi_provider] Skipping invalid custom Claude dir (search): {}", c);
+                }
+            }
+        }
+
+        let mut seen_bases = std::collections::HashSet::new();
+        for claude_base in claude_bases {
+            if !seen_bases.insert(claude_base.clone()) {
+                continue;
+            }
             let filters = SearchFilters {
                 date_range: None,
                 projects: None,
@@ -672,7 +892,7 @@ pub async fn search_all_providers(
                 has_file_changes: None,
             };
             match crate::commands::session::search_messages(
-                claude_base,
+                claude_base.clone(),
                 query.clone(),
                 filters,
             )
@@ -680,7 +900,7 @@ pub async fn search_all_providers(
             {
                 Ok(results) => all_results.extend(results),
                 Err(e) => {
-                    eprintln!("[multi_provider] Claude search failed: {}", e);
+                    eprintln!("[multi_provider] Claude search failed ({}): {}", claude_base, e);
                 }
             }
         }
@@ -694,7 +914,7 @@ pub async fn search_all_providers(
             if let Ok(projects) =
                 crate::commands::codex::scan_codex_projects(codex_path, source_id.clone()).await
             {
-                for project in projects {
+                'codex_search: for project in projects {
                     if let Ok(sessions) = crate::commands::codex::load_codex_sessions(
                         String::new(),
                         project.path.clone(),
@@ -716,11 +936,13 @@ pub async fn search_all_providers(
                             )
                             .await
                             {
-                                let matching: Vec<UniversalMessage> = msgs
-                                    .into_iter()
-                                    .filter(|m| message_matches_query(m, &query))
-                                    .collect();
+                                let remaining = max_results.saturating_sub(all_results.len());
+                                let matching =
+                                    take_matching(msgs, remaining, |m| message_matches(m, &matcher));
                                 all_results.extend(matching);
+                                if all_results.len() >= max_results {
+                                    break 'codex_search;
+                                }
                             }
                         }
                     }
@@ -734,7 +956,7 @@ pub async fn search_all_providers(
         if let Some(opencode_base) = get_opencode_base_path() {
             let source_id = format!("opencode:{}", opencode_base.display());
             if let Ok(projects) = scan_opencode_projects_impl(&opencode_base, &source_id) {
-                for project in projects {
+                'opencode_search: for project in projects {
                     let opencode_path = opencode_base.to_string_lossy().to_string();
                     if let Ok(sessions) = crate::commands::opencode::load_opencode_sessions(
                         opencode_path.clone(),
@@ -754,11 +976,13 @@ pub async fn search_all_providers(
                             )
                             .await
                             {
-                                let matching: Vec<UniversalMessage> = msgs
-                                    .into_iter()
-                                    .filter(|m| message_matches_query(m, &query))
-                                    .collect();
+                                let remaining = max_results.saturating_sub(all_results.len());
+                                let matching =
+                                    take_matching(msgs, remaining, |m| message_matches(m, &matcher));
                                 all_results.extend(matching);
+                                if all_results.len() >= max_results {
+                                    break 'opencode_search;
+                                }
                             }
                         }
                     }
@@ -796,7 +1020,7 @@ pub async fn search_all_providers(
                             ) {
                                 let matching: Vec<UniversalMessage> = msgs
                                     .into_iter()
-                                    .filter(|m| message_matches_query(m, &query))
+                                    .filter(|m| message_matches(m, &matcher))
                                     .collect();
                                 all_results.extend(matching);
                                 if all_results.len() >= max_results {
@@ -840,7 +1064,7 @@ pub async fn search_all_providers(
                         ) {
                             let matching: Vec<UniversalMessage> = msgs
                                 .into_iter()
-                                .filter(|m| message_matches_query(m, &query))
+                                .filter(|m| message_matches(m, &matcher))
                                 .collect();
                             all_results.extend(matching);
                             if all_results.len() >= max_results {
@@ -888,7 +1112,7 @@ pub async fn search_all_providers(
                             ) {
                                 let matching: Vec<UniversalMessage> = msgs
                                     .into_iter()
-                                    .filter(|m| message_matches_query(m, &query))
+                                    .filter(|m| message_matches(m, &matcher))
                                     .collect();
                                 all_results.extend(matching);
                                 if all_results.len() >= max_results {
@@ -907,7 +1131,7 @@ pub async fn search_all_providers(
         if let Some(root) = get_antigravity_base_path() {
             let source_id = format!("antigravity:{}", root.display());
             if let Ok(sessions) = antigravity_load_sessions(&root, &source_id) {
-                for session in sessions {
+                'antigravity_search: for session in sessions {
                     // session.id == "antigravity://<root>|<session_id>"
                     let session_id = match antigravity_parse_scheme_path(&session.id) {
                         Ok((_, id)) => id,
@@ -924,11 +1148,11 @@ pub async fn search_all_providers(
                     ) {
                         let matching: Vec<UniversalMessage> = msgs
                             .into_iter()
-                            .filter(|m| message_matches_query(m, &query))
+                            .filter(|m| message_matches(m, &matcher))
                             .collect();
                         all_results.extend(matching);
                         if all_results.len() >= max_results {
-                            break;
+                            break 'antigravity_search;
                         }
                     }
                 }
@@ -936,11 +1160,40 @@ pub async fn search_all_providers(
         }
     }
 
-    // Sort by timestamp descending and truncate
-    all_results.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
-    all_results.truncate(max_results);
+    // ---- WSL (Claude Code only) -------------------------------------------
+    if wsl_enabled.unwrap_or(false) && wanted.iter().any(|p| p == "claude-code") {
+        let excluded = wsl_excluded_distros.clone().unwrap_or_default();
+        for (distro, claude_unc) in crate::commands::wsl::resolve_active_claude_dirs(&excluded) {
+            let filters = SearchFilters {
+                date_range: None,
+                projects: None,
+                session_id: None,
+                message_type: None,
+                has_tool_calls: None,
+                has_errors: None,
+                has_file_changes: None,
+            };
+            match crate::commands::session::search_messages(claude_unc, query.clone(), filters).await
+            {
+                Ok(results) => all_results.extend(results),
+                Err(e) => {
+                    eprintln!("[multi_provider] WSL Claude search failed for '{}': {}", distro, e);
+                }
+            }
+        }
+    }
 
-    Ok(all_results)
+    // Top-k by timestamp descending: O(n) partial selection instead of an
+    // O(n log n) full sort when there are more candidates than requested.
+    let results = top_k_by(all_results, max_results, |a, b| b.timestamp.cmp(&a.timestamp));
+
+    // Cache under the generation captured at entry; a concurrent file change
+    // will have advanced the generation, so this entry is simply skipped next time.
+    if let Ok(mut cache) = SEARCH_CACHE.lock() {
+        cache.put(key, (generation, results.clone()));
+    }
+
+    Ok(results)
 }
 
 // ============================================================================
@@ -970,13 +1223,36 @@ fn result_to_probe(result: Result<String, String>) -> (bool, Option<String>, Opt
 
 /// Synchronously resolve the Claude folder path without going through Tauri
 /// command machinery (which requires a running event-loop context).
+///
+/// Honors a valid `CLAUDE_CONFIG_DIR` override first, then falls back to the
+/// default `~/.claude` location.
 fn futures_lite_workaround_get_claude_path() -> Option<String> {
+    if let Some(config_dir) = crate::utils::resolve_claude_config_dir() {
+        return Some(config_dir);
+    }
     let home = dirs::home_dir()?;
     let p = home.join(".claude");
     if p.exists() && std::fs::read_dir(&p).is_ok() {
         Some(p.to_string_lossy().to_string())
     } else {
         None
+    }
+}
+
+/// Scan a single Claude base directory and append its projects (converted to
+/// `UniversalProject`) to `out`. Errors are logged and swallowed.
+async fn scan_claude_base_into(base_path: &str, out: &mut Vec<UniversalProject>) {
+    match crate::commands::project::scan_projects(base_path.to_string()).await {
+        Ok(claude_projects) => {
+            out.extend(
+                claude_projects
+                    .into_iter()
+                    .map(|p| claude_project_to_universal(p, base_path)),
+            );
+        }
+        Err(e) => {
+            eprintln!("[multi_provider] Claude scan failed ({}): {}", base_path, e);
+        }
     }
 }
 
@@ -1058,6 +1334,7 @@ fn claude_session_to_universal(
         total_tokens: None,
         tool_call_count: 0,
         error_count: if s.has_errors { 1 } else { 0 },
+        entrypoint: s.entrypoint,
         metadata,
         checksum: s.session_id,
     }
@@ -1127,13 +1404,15 @@ fn parse_gemini_session_path(path: &str) -> (String, String, String, String) {
     (actual_path, session_id, project_id, source_id)
 }
 
-/// Check whether any content in a UniversalMessage matches the search query
-/// (case-insensitive substring search).
-fn message_matches_query(msg: &UniversalMessage, query: &str) -> bool {
-    let lower_query = query.to_lowercase();
+/// Check whether any content in a UniversalMessage matches the search query.
+///
+/// A message matches when its serialized content contains all query terms
+/// (ASCII case-insensitive, order-independent), as determined by the shared
+/// [`QueryMatcher`]. The matcher is built once per search and reused here.
+fn message_matches(msg: &UniversalMessage, matcher: &QueryMatcher) -> bool {
     for content in &msg.content {
         if let Ok(json) = serde_json::to_string(content) {
-            if json.to_lowercase().contains(&lower_query) {
+            if matcher.is_match(&json) {
                 return true;
             }
         }

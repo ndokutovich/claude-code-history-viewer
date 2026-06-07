@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import { EyeOff, Eye } from "lucide-react";
+import { EyeOff, Eye, Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { cn } from "@/utils/cn";
 import type { UIProject } from "../types";
 
@@ -68,6 +69,18 @@ export const ProjectContextMenu: React.FC<ProjectContextMenuProps> = ({
     }
   }, [position]);
 
+  const handleCopyPath = async () => {
+    const pathToCopy = project.actual_path ?? project.path;
+    try {
+      await navigator.clipboard.writeText(pathToCopy);
+      toast.success(t("project.contextMenu.pathCopied", "Path copied to clipboard"));
+    } catch (err) {
+      console.error("Failed to copy path:", err);
+      toast.error(t("project.contextMenu.copyFailed", "Failed to copy to clipboard"));
+    }
+    onClose();
+  };
+
   const handleHideClick = () => {
     if (isHidden) {
       onUnhide(project.path);
@@ -96,8 +109,24 @@ export const ProjectContextMenu: React.FC<ProjectContextMenuProps> = ({
           {project.name}
         </div>
 
+        {/* Copy path option */}
+        <button
+          type="button"
+          onClick={handleCopyPath}
+          aria-label={t("project.contextMenu.copyPath", "Copy path")}
+          className={cn(
+            "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm",
+            "hover:bg-accent hover:text-accent-foreground",
+            "transition-colors cursor-pointer"
+          )}
+        >
+          <Copy className="w-4 h-4" />
+          <span>{t("project.contextMenu.copyPath", "Copy path")}</span>
+        </button>
+
         {/* Hide/Unhide option */}
         <button
+          type="button"
           onClick={handleHideClick}
           aria-label={isHidden ? t("project.contextMenu.unhide") : t("project.contextMenu.hide")}
           className={cn(

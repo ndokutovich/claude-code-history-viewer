@@ -120,6 +120,13 @@
   "session.item.lastModified": "最後修改",
   "session.item.messageCount": "訊息數",
   "session.item.session": "會話",
+  "session.item.renamed": "自訂名稱",
+  "session.item.renamedDescription": "您重新命名了此工作階段",
+  "session.item.entrypoint.label": "來源：{{source}}",
+  "session.item.entrypoint.cli": "CLI",
+  "session.item.entrypoint.vscode": "VS Code",
+  "session.item.entrypoint.desktop": "桌面",
+  "session.item.entrypoint.unknown": "未知",
   "session.loading": "正在載入會話...",
   "session.refresh": "重新整理會話",
   "session.rename": "重新命名會話",
@@ -157,6 +164,12 @@
   "session.copyFilePath": "複製檔案路徑",
   "session.copiedSessionId": "會話ID已複製",
   "session.copiedResumeCommand": "恢復命令已複製",
+  "session.copiedResumeCommandNoCwd": "恢復命令已複製（工作目錄未知）",
+  "session.resumeCommandUnavailable": "恢復命令無法使用",
+  "session.deleteSession": "刪除工作階段",
+  "session.deleteConfirm": "將此工作階段移至垃圾桶？檔案將被移動到系統垃圾桶。",
+  "session.deleted": "工作階段已移至垃圾桶",
+  "session.deleteFailed": "刪除工作階段失敗",
   "session.copiedFilePath": "檔案路徑已複製",
   "session.boardNotSupported": "Session Board 目前僅支援 Claude 工作階段",
   "session.filter.searchPlaceholder": "搜尋工作階段...",
@@ -164,5 +177,14 @@
   "session.filter.sortNewestFirst": "依最新排序",
   "session.filter.sortOldestFirst": "依最舊排序",
   "session.filter.noResults": "沒有符合的工作階段",
-  "session.filter.showingCount": "顯示 {{count}}/{{total}} 個工作階段"
+  "session.filter.showingCount": "顯示 {{count}}/{{total}} 個工作階段",
+  "cli": {
+    "notFound": "找不到工作階段：{{value}}",
+    "picker": {
+      "title": "選擇工作階段",
+      "subtitle": "{{count}} 個工作階段符合「{{value}}」",
+      "messageCount": "{{count}} 則訊息",
+      "cancelled": "已取消工作階段選擇"
+    }
+  }
 }

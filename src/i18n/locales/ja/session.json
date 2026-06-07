@@ -120,6 +120,13 @@
   "session.item.lastModified": "最終更新",
   "session.item.messageCount": "メッセージ数",
   "session.item.session": "セッション",
+  "session.item.renamed": "カスタム名",
+  "session.item.renamedDescription": "このセッションの名前を変更しました",
+  "session.item.entrypoint.label": "ソース: {{source}}",
+  "session.item.entrypoint.cli": "CLI",
+  "session.item.entrypoint.vscode": "VS Code",
+  "session.item.entrypoint.desktop": "デスクトップ",
+  "session.item.entrypoint.unknown": "不明",
   "session.loading": "セッションを読み込み中...",
   "session.refresh": "セッションを更新",
   "session.rename": "セッション名を変更",
@@ -157,6 +164,12 @@
   "session.copyFilePath": "ファイルパスをコピー",
   "session.copiedSessionId": "セッションIDをコピーしました",
   "session.copiedResumeCommand": "再開コマンドをコピーしました",
+  "session.copiedResumeCommandNoCwd": "再開コマンドをコピーしました（作業ディレクトリ不明）",
+  "session.resumeCommandUnavailable": "再開コマンドを利用できません",
+  "session.deleteSession": "セッションを削除",
+  "session.deleteConfirm": "このセッションをゴミ箱に移動しますか？ファイルはシステムのゴミ箱に移動されます。",
+  "session.deleted": "セッションをゴミ箱に移動しました",
+  "session.deleteFailed": "セッションの削除に失敗しました",
   "session.copiedFilePath": "ファイルパスをコピーしました",
   "session.boardNotSupported": "Session Boardは現在Claudeセッションでのみ使用できます",
   "session.filter.searchPlaceholder": "セッションを検索...",
@@ -164,5 +177,14 @@
   "session.filter.sortNewestFirst": "新しい順に並べ替え",
   "session.filter.sortOldestFirst": "古い順に並べ替え",
   "session.filter.noResults": "検索に一致するセッションがありません",
-  "session.filter.showingCount": "{{total}}件中{{count}}件を表示"
+  "session.filter.showingCount": "{{total}}件中{{count}}件を表示",
+  "cli": {
+    "notFound": "セッションが見つかりません: {{value}}",
+    "picker": {
+      "title": "セッションを選択",
+      "subtitle": "「{{value}}」に一致するセッション {{count}} 件",
+      "messageCount": "{{count}} 件のメッセージ",
+      "cancelled": "セッションの選択をキャンセルしました"
+    }
+  }
 }

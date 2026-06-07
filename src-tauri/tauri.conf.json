@@ -13,6 +13,7 @@
     "windows": [
       {
         "title": "AI Code History Viewer — Claude, Cursor, Gemini, Codex",
+        "titleBarStyle": "Overlay",
         "width": 1280,
         "height": 800,
         "minWidth": 900,

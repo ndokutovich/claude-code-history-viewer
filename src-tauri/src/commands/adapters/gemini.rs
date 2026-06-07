@@ -280,6 +280,7 @@ pub fn gemini_file_to_session(
         total_tokens: None,
         tool_call_count: 0,
         error_count: 0,
+        entrypoint: None,
         metadata,
         checksum: compute_sha256(&content),
     })

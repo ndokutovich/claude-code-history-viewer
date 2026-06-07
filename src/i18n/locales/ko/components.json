@@ -355,6 +355,7 @@
     "pathCopyFailed": "경로 복사 실패",
     "copied": "복사됨",
     "markdownTooltip": "대화를 Markdown 형식으로 내보내기",
+    "jsonTooltip": "대화를 JSON 형식으로 내보내기",
     "htmlTooltip": "대화를 HTML 형식으로 내보내기",
     "docxTooltip": "대화를 Word 문서로 내보내기",
     "resume": "재개",
@@ -671,6 +672,7 @@
     "count_plural": "{{count}}개 메시지",
     "countWithTotal": "메시지: {{current}}개 / {{total}}개",
     "branch": "분기",
+    "subAgent": "서브 에이전트",
     "reply": "답글 (depth: {{depth}})",
     "renderError": "메시지 렌더링 오류",
     "checkConsole": "콘솔에서 자세한 오류 정보를 확인하세요.",
@@ -707,7 +709,17 @@
     "commandOnly": "명령어만",
     "toolUseOnly": "도구 사용만",
     "messagesOnly": "메시지만",
+    "role": "역할",
+    "contentType": "유형",
+    "roleUser": "사용자",
+    "roleAssistant": "어시스턴트",
+    "roleSystem": "시스템",
+    "contentText": "텍스트",
+    "contentToolUse": "도구 사용",
+    "contentToolResult": "도구 결과",
+    "contentThinking": "사고 과정",
     "showNoise": "노이즈 표시",
+    "showSubAgent": "서브 에이전트 표시",
     "clearFilters": "지우기",
     "copyRaw": "JSON 복사",
     "rawCopied": "원시 메시지 복사됨",
@@ -721,6 +733,7 @@
     "claude": "Claude",
     "system": "시스템",
     "branch": "분기",
+    "subAgent": "서브 에이전트",
     "reply": "답글 (depth: {{depth}})",
     "loadingMessages": "메시지를 불러오는 중...",
     "noMessages": "메시지가 없습니다",
@@ -752,7 +765,10 @@
     "selected": "선택된 프로젝트",
     "contextMenu": {
       "hide": "프로젝트 숨기기",
-      "unhide": "프로젝트 표시"
+      "unhide": "프로젝트 표시",
+      "copyPath": "경로 복사",
+      "pathCopied": "경로가 클립보드에 복사되었습니다",
+      "copyFailed": "클립보드 복사 실패"
     }
   },
   "projectListControls": {
@@ -781,7 +797,7 @@
     "hideEmptySessions": "빈 세션 숨기기",
     "hideAgentSessions": "에이전트 세션 숨기기",
     "showAll": "모두 표시",
-    "searchPlaceholder": "세션 검색...",
+    "searchPlaceholder": "프로젝트 및 세션 검색...",
     "clearSearch": "검색 지우기",
     "filterSettings": "필터 설정",
     "searchLoadFailed": "일부 프로젝트 로드 실패"
@@ -819,7 +835,11 @@
     "scanning": "프로젝트 스캔 중...",
     "fix": "세션 수정 (재개 가능성 복원)",
     "contextMenu": {
-      "rename": "이름 변경"
+      "rename": "이름 변경",
+      "copyPath": "경로 복사",
+      "pathCopied": "경로가 클립보드에 복사되었습니다",
+      "copyFailed": "클립보드 복사 실패",
+      "showFile": "JSONL 파일 보기"
     },
     "loading": "세션 로딩 중...",
     "loadingContent": "콘텐츠 로딩 중...",
@@ -1032,6 +1052,8 @@
     "start": "시작:",
     "end": "종료:",
     "lessThanMinute": "< 1분",
+    "today": "오늘",
+    "yesterday": "어제",
     "day": "일",
     "days": "일",
     "hour": "시간",

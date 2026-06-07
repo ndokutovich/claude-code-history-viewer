@@ -32,6 +32,7 @@
   "analytics.billingTotal": "청구 총합",
   "analytics.cacheCreation": "캐시 생성",
   "analytics.cacheRead": "캐시 읽기",
+  "analytics.calendarTotal": "총: {{count}}개 메시지",
   "analytics.calculating": "계산 중",
   "analytics.clearFilter": "필터 초기화",
   "analytics.close": "닫기",

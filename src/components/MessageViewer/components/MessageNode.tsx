@@ -13,13 +13,15 @@ import { SystemMessageRenderer } from "../../messageRenderer/SystemMessageRender
 import { extractUIMessageContent } from "../../../utils/messageUtils";
 import { cn } from "../../../utils/cn";
 import { COLORS } from "../../../constants/colors";
-import { formatTime } from "../../../utils/time";
+import { formatTime, formatTimeShort } from "../../../utils/time";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
+import { Tooltip, TooltipTrigger, TooltipContent } from "../../ui/tooltip";
+import { DateDivider } from "./DateDivider";
 import { MAX_DEPTH_MARGIN } from "../../../constants/layout";
 import type { MessageNodeProps } from "../types";
 
@@ -32,8 +34,10 @@ export const MessageNode = React.memo(({
   onExtractRange,
   isCaptureMode,
   onHideMessage,
+  dateDividerMap,
 }: MessageNodeProps) => {
   const { t } = useTranslation("components");
+  const dateDividerTimestamp = dateDividerMap?.get(message.uuid);
   const [copiedReference, setCopiedReference] = React.useState(false);
 
   const handleCopyReference = async (e: React.MouseEvent) => {
@@ -81,22 +85,34 @@ export const MessageNode = React.memo(({
     [message]
   );
 
-  // Sidechain filtering is now handled at the data loading level (adapter.loadMessages)
-  // This is a defensive check to catch adapter bugs during development
-  if (message.isSidechain && import.meta.env.DEV) {
-    console.warn(
-      '[MessageViewer] Sidechain message not filtered by adapter:',
-      message.uuid,
-      'This indicates an adapter bug - sidechains should be filtered during data loading.'
-    );
+  // Sidechain (sub-agent) messages are filtered at the data loading level
+  // (adapter.loadMessages) unless the "Show Sub-agent Messages" toggle is enabled,
+  // in which case they are loaded intentionally and marked with a sub-agent badge below.
+
+  // Guard against schema drift: never render a content-less row. Metadata-only
+  // entry types that slip past the backend noise filter (new Claude Code types)
+  // would otherwise show as empty rows that bury real messages (the v1.9.8 bug).
+  const hasRenderableContent =
+    !!extractedContent ||
+    (message.type === "system" && !!message.subtype) ||
+    (Array.isArray(message.content) && message.content.length > 0) ||
+    !!message.toolUse ||
+    !!message.toolUseResult ||
+    !!message.provider_metadata;
+
+  if (!hasRenderableContent) {
+    return dateDividerTimestamp ? <DateDivider timestamp={dateDividerTimestamp} /> : null;
   }
 
   // Apply left margin based on depth
   const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, MAX_DEPTH_MARGIN)}` : "";
 
   return (
+    <>
+    {dateDividerTimestamp && <DateDivider timestamp={dateDividerTimestamp} />}
     <div
       id={`message-${message.uuid}`}
+      data-timestamp={message.timestamp}
       className={cn(
         "w-full px-4 py-2",
         leftMargin,
@@ -127,12 +143,22 @@ export const MessageNode = React.memo(({
               ? providerName
               : t("messageViewer.system")}
           </span>
-          <span className="whitespace-nowrap">
-            {formatTime(message.timestamp)}
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="whitespace-nowrap cursor-default"
+              >
+                {formatTimeShort(message.timestamp)}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" sideOffset={4}>
+              {formatTime(message.timestamp)}
+            </TooltipContent>
+          </Tooltip>
           {message.isSidechain && (
             <span className="px-2 py-1 whitespace-nowrap text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 rounded-full">
-              {t("messageViewer.branch")}
+              {t("messageViewer.subAgent")}
             </span>
           )}
           {/* Copy Reference Button */}
@@ -284,5 +310,6 @@ export const MessageNode = React.memo(({
         </div>
       </div>
     </div>
+    </>
   );
 });
