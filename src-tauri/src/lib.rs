@@ -5,7 +5,7 @@ mod utils;
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::{
     aider::*, claude_settings::*, codex::*, cursor::*, edits::*, feedback::*, files::*, gemini::*,
-    cline::*, mcp_presets::*, metadata::*, multi_provider::*, opencode::*, project::*, rename::*,
+    cline::*, forgecode::*, mcp_presets::*, metadata::*, multi_provider::*, opencode::*, project::*, rename::*,
     resume::*, secure_update::*, session::*, session_writer::*, settings::*, stats::*,
     unified_presets::*, update::*, watcher::*,
 };
@@ -98,6 +98,12 @@ pub fn run() {
             scan_aider_projects,
             load_aider_sessions,
             load_aider_messages,
+            // ForgeCode support (v1.9.x)
+            get_forgecode_path,
+            validate_forgecode_folder,
+            scan_forgecode_projects,
+            load_forgecode_sessions,
+            load_forgecode_messages,
             // Global stats (upstream-enhanced)
             get_global_stats_summary,
             // Git log for Session Board

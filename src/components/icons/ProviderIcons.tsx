@@ -1,5 +1,5 @@
 import React from "react";
-import { Bot, Braces, Code2, Sparkles, Terminal, Zap } from "lucide-react";
+import { Bot, Braces, Code2, Hammer, Sparkles, Terminal, Zap } from "lucide-react";
 
 interface ProviderIconProps {
   providerId: string;
@@ -98,6 +98,13 @@ export const AiderIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 /**
+ * ForgeCode Icon - Orange color scheme
+ */
+export const ForgeCodeIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <Hammer className={className} />
+);
+
+/**
  * Generic provider icon (fallback)
  */
 export const GenericProviderIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -123,6 +130,8 @@ export const ProviderIcon: React.FC<ProviderIconProps> = ({ providerId, classNam
       return <ClineIcon className={className} />;
     case "aider":
       return <AiderIcon className={className} />;
+    case "forgecode":
+      return <ForgeCodeIcon className={className} />;
     default:
       return <GenericProviderIcon className={className} />;
   }
@@ -147,6 +156,8 @@ export const getProviderColorClass = (providerId?: string): string => {
       return "text-sky-500";
     case "aider":
       return "text-green-600";
+    case "forgecode":
+      return "text-orange-500";
     default:
       return "text-gray-500";
   }

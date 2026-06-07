@@ -10,6 +10,7 @@ import { CodexAdapter } from '../providers/CodexAdapter';       // v1.8.0 - Code
 import { OpenCodeAdapter } from '../providers/OpenCodeAdapter'; // v1.9.0 - OpenCode support
 import { ClineAdapter } from '../providers/ClineAdapter';       // v1.9.x - Cline / Roo Code support
 import { AiderAdapter } from '../providers/AiderAdapter';       // v1.9.x - Aider chat history support
+import { ForgeCodeAdapter } from '../providers/ForgeCodeAdapter'; // v1.9.x - ForgeCode support
 
 // ============================================================================
 // DETECTION RESULT
@@ -92,6 +93,7 @@ export class AdapterRegistry {
       new OpenCodeAdapter(),   // ✅ v1.9.0 - OpenCode support
       new ClineAdapter(),      // ✅ v1.9.x - Cline / Roo Code support
       new AiderAdapter(),      // ✅ v1.9.x - Aider chat history support
+      new ForgeCodeAdapter(),  // ✅ v1.9.x - ForgeCode support
     ];
 
     const failures: Array<{ id: string; error: Error }> = [];

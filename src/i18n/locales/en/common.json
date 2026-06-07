@@ -518,6 +518,7 @@
       "opencode": "OpenCode",
       "cline": "Cline",
       "aider": "Aider",
+      "forgecode": "ForgeCode",
       "cursor": "Cursor IDE",
       "gemini": "Gemini CLI"
     },

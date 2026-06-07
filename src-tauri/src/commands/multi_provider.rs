@@ -21,6 +21,11 @@ use crate::commands::adapters::cline::{
     load_cline_sessions as cline_load_sessions, parse_scheme_path as cline_parse_scheme_path,
     scan_cline_projects as cline_scan_projects,
 };
+use crate::commands::adapters::forgecode::{
+    get_forgecode_base_path, load_forgecode_messages as forgecode_load_messages,
+    load_forgecode_sessions as forgecode_load_sessions, parse_project_path as forgecode_parse_project_path,
+    parse_session_path as forgecode_parse_session_path, scan_forgecode_projects as forgecode_scan_projects,
+};
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::adapters::opencode::{get_opencode_base_path, scan_opencode_projects_impl};
 use crate::models::universal::{UniversalMessage, UniversalProject, UniversalSession};
@@ -161,6 +166,22 @@ pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
         });
     }
 
+    // ---- ForgeCode ---------------------------------------------------------
+    {
+        let result: Result<String, String> = match get_forgecode_base_path() {
+            Some(p) => Ok(p.to_string_lossy().to_string()),
+            None => Err("FORGECODE_FOLDER_NOT_FOUND: No ForgeCode installation found".to_string()),
+        };
+        let (available, path, error) = result_to_probe(result);
+        providers.push(DetectedProvider {
+            id: "forgecode".to_string(),
+            display_name: "ForgeCode".to_string(),
+            base_path: path,
+            is_available: available,
+            error,
+        });
+    }
+
     Ok(providers)
 }
 
@@ -288,6 +309,19 @@ pub async fn scan_all_projects(
         }
     }
 
+    // ---- ForgeCode ---------------------------------------------------------
+    if wanted.iter().any(|p| p == "forgecode") {
+        if let Some(forge_base) = get_forgecode_base_path() {
+            let source_id = format!("forgecode:{}", forge_base.display());
+            match forgecode_scan_projects(&forge_base, &source_id) {
+                Ok(projects) => all_projects.extend(projects),
+                Err(e) => {
+                    eprintln!("[multi_provider] ForgeCode scan failed: {}", e);
+                }
+            }
+        }
+    }
+
     // Cursor IDE provides workspaces, not projects in the same sense; skip
     // in the unified scan (users access Cursor via its dedicated commands).
 
@@ -382,6 +416,14 @@ pub async fn load_provider_sessions(
             // project_path is the `aider://<project_dir>` scheme path.
             let dir = aider_parse_scheme_path(&project_path)?;
             aider_load_sessions(&dir, &source_id)
+        }
+
+        "forgecode" => {
+            // project_path is the `forgecode://<workspace_id>` scheme path.
+            let base = get_forgecode_base_path()
+                .ok_or_else(|| "MULTI_PROVIDER_FORGECODE: ForgeCode base path not found".to_string())?;
+            let workspace_id = forgecode_parse_project_path(&project_path)?;
+            forgecode_load_sessions(&base, &workspace_id, &source_id)
         }
 
         other => Err(format!(
@@ -496,6 +538,25 @@ pub async fn load_provider_messages(
                 &history_path,
                 &session_path,
                 &project_id,
+                &source_id,
+                offset,
+                limit,
+            )
+        }
+
+        "forgecode" => {
+            // session_path is the `forgecode://<workspace_id>/<conversation_id>` scheme path.
+            let base = get_forgecode_base_path()
+                .ok_or_else(|| "MULTI_PROVIDER_FORGECODE: ForgeCode base path not found".to_string())?;
+            let (workspace_id, conversation_id) = forgecode_parse_session_path(&session_path)?;
+            let project_path = format!("forgecode://{}", workspace_id);
+            let source_id = format!("forgecode:{}", base.display());
+            forgecode_load_messages(
+                &base,
+                &workspace_id,
+                &conversation_id,
+                &session_path,
+                &project_path,
                 &source_id,
                 offset,
                 limit,
@@ -726,6 +787,55 @@ pub async fn search_all_providers(
                             all_results.extend(matching);
                             if all_results.len() >= max_results {
                                 break 'aider_search;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ---- ForgeCode ---------------------------------------------------------
+    if wanted.iter().any(|p| p == "forgecode") {
+        'forgecode_search: {
+            let Some(forge_base) = get_forgecode_base_path() else {
+                break 'forgecode_search;
+            };
+            let source_id = format!("forgecode:{}", forge_base.display());
+            if let Ok(projects) = forgecode_scan_projects(&forge_base, &source_id) {
+                for project in projects {
+                    // project.path == "forgecode://<workspace_id>"
+                    let workspace_id = match forgecode_parse_project_path(&project.path) {
+                        Ok(id) => id,
+                        Err(_) => continue,
+                    };
+                    if let Ok(sessions) =
+                        forgecode_load_sessions(&forge_base, &workspace_id, &source_id)
+                    {
+                        for session in sessions {
+                            // session.id == "forgecode://<workspace_id>/<conversation_id>"
+                            let (ws, conv) = match forgecode_parse_session_path(&session.id) {
+                                Ok(pair) => pair,
+                                Err(_) => continue,
+                            };
+                            if let Ok(msgs) = forgecode_load_messages(
+                                &forge_base,
+                                &ws,
+                                &conv,
+                                &session.id,
+                                &project.id,
+                                &source_id,
+                                0,
+                                SEARCH_MAX_MESSAGES_PER_SESSION,
+                            ) {
+                                let matching: Vec<UniversalMessage> = msgs
+                                    .into_iter()
+                                    .filter(|m| message_matches_query(m, &query))
+                                    .collect();
+                                all_results.extend(matching);
+                                if all_results.len() >= max_results {
+                                    break 'forgecode_search;
+                                }
                             }
                         }
                     }
