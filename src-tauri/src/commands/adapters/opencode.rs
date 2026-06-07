@@ -3,20 +3,29 @@
 // ============================================================================
 // Converts OpenCode normalized JSON directory structure to UniversalMessage.
 //
-// OpenCode stores data in:
-//   $OPENCODE_HOME/storage/
-//     project/{id}.json          -> project definitions
-//     session/{project-id}/{id}.json  -> sessions
-//     message/{session-id}/{id}.json  -> messages
-//     part/{message-id}/{name}.json   -> message content parts
+// OpenCode supports TWO coexisting storage backends:
+//   1. JSON directory tree under $OPENCODE_HOME/storage/
+//        project/{id}.json          -> project definitions
+//        session/{project-id}/{id}.json  -> sessions
+//        message/{session-id}/{id}.json  -> messages
+//        part/{message-id}/{name}.json   -> message content parts
+//   2. SQLite database at $OPENCODE_HOME/opencode.db (newer OpenCode versions)
+//        tables: project, session, message(data JSON), part(data JSON)
+//        The `data` columns hold the SAME JSON payloads as the file backend,
+//        so both paths funnel through `opencode_message_to_universal`.
 //
-// PATTERN REFERENCE: Cursor adapter (commands/adapters/cursor.rs)
+// Selection: SQLite is read first (authoritative for projects/sessions it
+// contains); JSON supplements anything the DB does not cover. A `storageType`
+// ("sqlite" | "json") marker is attached to project/session/message metadata.
+//
+// PATTERN REFERENCE: Cursor adapter (commands/cursor.rs) for read-only SQLite.
 // CLEAN CODE: Explicit types, standardized errors, camelCase metadata keys
 
 use crate::models::universal::*;
+use rusqlite::{Connection, OpenFlags};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -47,6 +56,9 @@ pub struct OpenCodeTime {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OpenCodeMessage {
+    // In the JSON file backend `id` is always present; in the SQLite backend the
+    // id is a table column and absent from the `data` payload, so default it.
+    #[serde(default)]
     pub id: String,
     pub role: String,
     #[serde(rename = "modelID")]
@@ -152,6 +164,303 @@ pub fn get_opencode_base_path() -> Option<PathBuf> {
 }
 
 // ============================================================================
+// SQLITE BACKEND (opencode.db)
+// ============================================================================
+
+/// Resolve the SQLite database path for an OpenCode base directory.
+pub fn opencode_db_path(base_path: &Path) -> PathBuf {
+    base_path.join("opencode.db")
+}
+
+/// Open `opencode.db` read-only (lock-safe flags, mirrors cursor.rs).
+/// Returns `None` when the file is absent, is not a regular file, or cannot be opened.
+fn open_opencode_db(base_path: &Path) -> Option<Connection> {
+    let db_path = opencode_db_path(base_path);
+    let meta = fs::symlink_metadata(&db_path).ok()?;
+    if !meta.file_type().is_file() {
+        return None;
+    }
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+    let conn = Connection::open_with_flags(&db_path, flags).ok()?;
+    let _ = conn.busy_timeout(std::time::Duration::from_secs(1));
+    Some(conn)
+}
+
+/// Build a map of project_id -> set of session ids present in the SQLite DB.
+/// Used to exclude DB-backed sessions when supplementing counts from JSON.
+fn build_db_session_map(base_path: &Path) -> Option<HashMap<String, HashSet<String>>> {
+    let conn = open_opencode_db(base_path)?;
+    let mut stmt = conn.prepare("SELECT project_id, id FROM session").ok()?;
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .ok()?;
+
+    let mut map: HashMap<String, HashSet<String>> = HashMap::new();
+    for row in rows.flatten() {
+        map.entry(row.0).or_default().insert(row.1);
+    }
+    Some(map)
+}
+
+/// Scan OpenCode projects from the SQLite `project` table.
+/// Returns `None` when there is no DB or it contains no projects.
+fn scan_projects_from_db(base_path: &Path, source_id: &str) -> Option<Vec<UniversalProject>> {
+    let conn = open_opencode_db(base_path)?;
+    let db_path_str = opencode_db_path(base_path).to_string_lossy().to_string();
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT p.id, p.worktree, p.name, p.time_created, p.time_updated, \
+                    (SELECT COUNT(*) FROM session s WHERE s.project_id = p.id) AS session_count \
+             FROM project p",
+        )
+        .ok()?;
+
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,         // id
+                row.get::<_, String>(1)?,         // worktree
+                row.get::<_, Option<String>>(2)?, // name
+                row.get::<_, i64>(3)?,            // time_created (epoch ms)
+                row.get::<_, i64>(4)?,            // time_updated (epoch ms)
+                row.get::<_, i64>(5)?,            // session_count
+            ))
+        })
+        .ok()?;
+
+    let mut projects: Vec<UniversalProject> = Vec::new();
+
+    for row in rows.flatten() {
+        let (id, worktree, name, time_created, time_updated, session_count) = row;
+
+        let display_name = name.filter(|n| !n.is_empty()).unwrap_or_else(|| {
+            PathBuf::from(&worktree)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or(&id)
+                .to_string()
+        });
+
+        let mut metadata: HashMap<String, Value> = HashMap::new();
+        metadata.insert("projectWorktree".to_string(), json!(worktree));
+        metadata.insert("storageType".to_string(), json!("sqlite"));
+        metadata.insert("storageDbPath".to_string(), json!(db_path_str));
+
+        projects.push(UniversalProject {
+            id: id.clone(),
+            source_id: source_id.to_string(),
+            provider_id: "opencode".to_string(),
+            name: display_name,
+            path: format!("opencode://{}", id),
+            session_count: session_count.max(0) as usize,
+            total_messages: 0,
+            first_activity_at: Some(epoch_ms_to_rfc3339(time_created)),
+            last_activity_at: Some(epoch_ms_to_rfc3339(time_updated.max(time_created))),
+            metadata,
+        });
+    }
+
+    if projects.is_empty() {
+        None
+    } else {
+        Some(projects)
+    }
+}
+
+/// Load sessions for a project from the SQLite `session` table.
+fn load_sessions_from_db(
+    base_path: &Path,
+    project_id: &str,
+    source_id: &str,
+) -> Option<Vec<UniversalSession>> {
+    let conn = open_opencode_db(base_path)?;
+    let db_path_str = opencode_db_path(base_path).to_string_lossy().to_string();
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT s.id, s.title, s.time_created, s.time_updated, \
+                    (SELECT COUNT(*) FROM message m WHERE m.session_id = s.id) AS message_count \
+             FROM session s WHERE s.project_id = ?1",
+        )
+        .ok()?;
+
+    let rows = stmt
+        .query_map([project_id], |row| {
+            Ok((
+                row.get::<_, String>(0)?,         // id
+                row.get::<_, Option<String>>(1)?, // title
+                row.get::<_, i64>(2)?,            // time_created
+                row.get::<_, i64>(3)?,            // time_updated
+                row.get::<_, i64>(4)?,            // message_count
+            ))
+        })
+        .ok()?;
+
+    let mut sessions: Vec<UniversalSession> = Vec::new();
+
+    for row in rows.flatten() {
+        let (id, title, time_created, time_updated, message_count) = row;
+
+        let display_title = title
+            .clone()
+            .filter(|t| !t.is_empty())
+            .unwrap_or_else(|| {
+                let truncated: String = id.chars().take(8).collect();
+                format!("Session {}", truncated)
+            });
+
+        let first_message_at = epoch_ms_to_rfc3339(time_created);
+        let last_message_at = epoch_ms_to_rfc3339(time_updated);
+        let duration = time_updated.saturating_sub(time_created);
+        let checksum = format!("{:x}", id.len() ^ (time_updated as usize));
+
+        let mut metadata: HashMap<String, Value> = HashMap::new();
+        metadata.insert(
+            "filePath".to_string(),
+            Value::String(format!("opencode://{}", id)),
+        );
+        metadata.insert("storageType".to_string(), json!("sqlite"));
+        metadata.insert("storageDbPath".to_string(), json!(db_path_str));
+
+        sessions.push(UniversalSession {
+            id: id.clone(),
+            project_id: project_id.to_string(),
+            source_id: source_id.to_string(),
+            provider_id: "opencode".to_string(),
+            title: display_title,
+            description: title.filter(|t| !t.is_empty()),
+            message_count: message_count.max(0) as usize,
+            first_message_at,
+            last_message_at,
+            duration,
+            total_tokens: None,
+            tool_call_count: 0,
+            error_count: 0,
+            metadata,
+            checksum,
+        });
+    }
+
+    if sessions.is_empty() {
+        None
+    } else {
+        Some(sessions)
+    }
+}
+
+/// Load all messages for a session from the SQLite `message`/`part` tables.
+/// Each `data` column is parsed with the same structs as the JSON backend and
+/// converted via `opencode_message_to_universal`, so output is identical.
+fn load_messages_from_db(
+    base_path: &Path,
+    session_id: &str,
+    project_id: &str,
+    source_id: &str,
+) -> Option<Vec<UniversalMessage>> {
+    let conn = open_opencode_db(base_path)?;
+
+    let mut msg_stmt = conn
+        .prepare("SELECT id, data FROM message WHERE session_id = ?1 ORDER BY time_created, id")
+        .ok()?;
+    let mut part_stmt = conn
+        .prepare("SELECT data FROM part WHERE message_id = ?1 ORDER BY id")
+        .ok()?;
+
+    let msg_rows = msg_stmt
+        .query_map([session_id], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .ok()?;
+
+    let mut messages: Vec<UniversalMessage> = Vec::new();
+
+    for (idx, msg_row) in msg_rows.flatten().enumerate() {
+        let (msg_id, data_json) = msg_row;
+
+        let mut raw_msg: OpenCodeMessage = match serde_json::from_str(&data_json) {
+            Ok(m) => m,
+            Err(_) => continue,
+        };
+        // The table column is the authoritative message id.
+        raw_msg.id = msg_id.clone();
+
+        let parts: Vec<OpenCodePart> = part_stmt
+            .query_map([&msg_id], |row| row.get::<_, String>(0))
+            .map(|rows| {
+                rows.flatten()
+                    .filter_map(|d| serde_json::from_str::<OpenCodePart>(&d).ok())
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let mut universal = opencode_message_to_universal(
+            &raw_msg,
+            parts,
+            session_id,
+            project_id,
+            source_id,
+            idx as i32,
+        );
+        universal
+            .provider_metadata
+            .insert("storageType".to_string(), json!("sqlite"));
+
+        messages.push(universal);
+    }
+
+    if messages.is_empty() {
+        None
+    } else {
+        Some(messages)
+    }
+}
+
+/// Count JSON session files for a project, optionally excluding ids already
+/// covered by the SQLite backend.
+fn count_json_sessions_excluding(
+    base_path: &Path,
+    project_id: &str,
+    exclude_ids: Option<&HashSet<String>>,
+) -> usize {
+    if !is_safe_storage_id(project_id) {
+        return 0;
+    }
+    let session_dir = base_path.join("storage").join("session").join(project_id);
+    if !session_dir.exists() {
+        return 0;
+    }
+    fs::read_dir(&session_dir)
+        .map(|entries| {
+            entries
+                .filter_map(|e| e.ok())
+                .filter(|e| {
+                    let p = e.path();
+                    if !(p.is_file()
+                        && p.extension().and_then(|x| x.to_str()) == Some("json"))
+                    {
+                        return false;
+                    }
+                    match exclude_ids {
+                        Some(ids) => {
+                            let stem = p
+                                .file_stem()
+                                .and_then(|s| s.to_str())
+                                .unwrap_or_default()
+                                .to_string();
+                            !ids.contains(&stem)
+                        }
+                        None => true,
+                    }
+                })
+                .count()
+        })
+        .unwrap_or(0)
+}
+
+// ============================================================================
 // PROJECT SCANNING
 // ============================================================================
 
@@ -160,16 +469,34 @@ pub fn scan_opencode_projects_impl(
     base_path: &Path,
     source_id: &str,
 ) -> Result<Vec<UniversalProject>, String> {
-    let project_dir = base_path.join("storage").join("project");
+    let mut projects: Vec<UniversalProject> = Vec::new();
+    let mut db_ids: HashSet<String> = HashSet::new();
 
+    // 1. SQLite backend first (authoritative, newer source).
+    if let Some(db_projects) = scan_projects_from_db(base_path, source_id) {
+        for p in db_projects {
+            db_ids.insert(p.id.clone());
+            projects.push(p);
+        }
+
+        // Supplement DB project session counts with JSON-only sessions.
+        if let Some(map) = build_db_session_map(base_path) {
+            for p in projects.iter_mut() {
+                let db_set = map.get(&p.id);
+                p.session_count += count_json_sessions_excluding(base_path, &p.id, db_set);
+            }
+        }
+    }
+
+    // 2. JSON backend (fallback / merge), skipping ids already seen in the DB.
+    let project_dir = base_path.join("storage").join("project");
     if !project_dir.exists() {
-        return Ok(Vec::new());
+        projects.sort_by(|a, b| a.id.cmp(&b.id));
+        return Ok(projects);
     }
 
     let entries = fs::read_dir(&project_dir)
         .map_err(|e| format!("OPENCODE_READ_ERROR: Cannot read project directory: {}", e))?;
-
-    let mut projects: Vec<UniversalProject> = Vec::new();
 
     for entry_result in entries {
         let entry = match entry_result {
@@ -218,6 +545,11 @@ pub fn scan_opencode_projects_impl(
             }
         };
 
+        // Skip projects already loaded from the SQLite backend.
+        if db_ids.contains(&project.id) {
+            continue;
+        }
+
         // Count sessions for this project
         let session_count = count_sessions_for_project(base_path, &project.id);
 
@@ -232,6 +564,7 @@ pub fn scan_opencode_projects_impl(
 
         let mut metadata: HashMap<String, Value> = HashMap::new();
         metadata.insert("projectWorktree".to_string(), json!(project.worktree));
+        metadata.insert("storageType".to_string(), json!("json"));
 
         projects.push(UniversalProject {
             id: project.id.clone(),
@@ -295,19 +628,30 @@ pub fn load_opencode_sessions_impl(
         ));
     }
 
+    let mut sessions: Vec<UniversalSession> = Vec::new();
+    let mut seen_ids: HashSet<String> = HashSet::new();
+
+    // 1. SQLite backend first.
+    if let Some(db_sessions) = load_sessions_from_db(base_path, project_id, source_id) {
+        for s in db_sessions {
+            seen_ids.insert(s.id.clone());
+            sessions.push(s);
+        }
+    }
+
+    // 2. JSON backend, skipping sessions already covered by the DB.
     let session_dir = base_path
         .join("storage")
         .join("session")
         .join(project_id);
 
     if !session_dir.exists() {
-        return Ok(Vec::new());
+        sessions.sort_by(|a, b| b.last_message_at.cmp(&a.last_message_at));
+        return Ok(sessions);
     }
 
     let entries = fs::read_dir(&session_dir)
         .map_err(|e| format!("OPENCODE_READ_ERROR: Cannot read session directory: {}", e))?;
-
-    let mut sessions: Vec<UniversalSession> = Vec::new();
 
     for entry_result in entries {
         let entry = match entry_result {
@@ -334,6 +678,11 @@ pub fn load_opencode_sessions_impl(
 
         if !is_safe_storage_id(&file_stem) {
             eprintln!("OPENCODE_WARN: Skipping unsafe session ID: {}", file_stem);
+            continue;
+        }
+
+        // Skip sessions already loaded from the SQLite backend.
+        if seen_ids.contains(&file_stem) {
             continue;
         }
 
@@ -392,6 +741,7 @@ pub fn load_opencode_sessions_impl(
                 metadata.insert("filePath".to_string(), serde_json::Value::String(
                     format!("opencode://{}", session.id)
                 ));
+                metadata.insert("storageType".to_string(), json!("json"));
                 metadata
             },
             checksum,
@@ -448,6 +798,16 @@ pub fn load_opencode_messages_impl(
         ));
     }
 
+    // 1. SQLite backend first. When the session lives in the DB, paginate over
+    //    the in-memory result (DB rows are loaded fully, then sliced).
+    if let Some(all) = load_messages_from_db(base_path, session_id, project_id, source_id) {
+        let total = all.len();
+        let start = offset.min(total);
+        let end = (offset + limit).min(total);
+        return Ok(all[start..end].to_vec());
+    }
+
+    // 2. JSON backend fallback.
     let message_dir = base_path
         .join("storage")
         .join("message")
@@ -508,7 +868,7 @@ pub fn load_opencode_messages_impl(
         let parts = load_parts_for_message(base_path, &raw_msg.id);
 
         // Convert to UniversalMessage
-        let universal = opencode_message_to_universal(
+        let mut universal = opencode_message_to_universal(
             &raw_msg,
             parts,
             session_id,
@@ -516,6 +876,9 @@ pub fn load_opencode_messages_impl(
             source_id,
             (start + idx) as i32,
         );
+        universal
+            .provider_metadata
+            .insert("storageType".to_string(), json!("json"));
 
         messages.push(universal);
     }
@@ -1022,5 +1385,175 @@ mod tests {
     fn test_is_safe_storage_id_too_long() {
         let long_id: String = "a".repeat(257);
         assert!(!is_safe_storage_id(&long_id));
+    }
+
+    // ------------------------------------------------------------------------
+    // SQLITE BACKEND TESTS
+    // ------------------------------------------------------------------------
+
+    /// Create an `opencode.db` matching the real OpenCode SQLite schema and seed
+    /// one project, one session, and two messages with parts. The `data` columns
+    /// hold the same JSON payloads the file backend uses.
+    fn create_seeded_db(dir: &Path) {
+        let db_path = dir.join("opencode.db");
+        let conn = Connection::open(&db_path).expect("create test db");
+        conn.execute_batch(
+            "CREATE TABLE project (
+                id TEXT PRIMARY KEY, worktree TEXT NOT NULL, name TEXT,
+                time_created INTEGER NOT NULL, time_updated INTEGER NOT NULL
+            );
+            CREATE TABLE session (
+                id TEXT PRIMARY KEY, project_id TEXT NOT NULL, title TEXT NOT NULL,
+                time_created INTEGER NOT NULL, time_updated INTEGER NOT NULL
+            );
+            CREATE TABLE message (
+                id TEXT PRIMARY KEY, session_id TEXT NOT NULL,
+                time_created INTEGER NOT NULL, time_updated INTEGER NOT NULL, data TEXT NOT NULL
+            );
+            CREATE TABLE part (
+                id TEXT PRIMARY KEY, message_id TEXT NOT NULL, session_id TEXT NOT NULL,
+                time_created INTEGER NOT NULL, time_updated INTEGER NOT NULL, data TEXT NOT NULL
+            );",
+        )
+        .expect("create tables");
+
+        conn.execute(
+            "INSERT INTO project (id, worktree, name, time_created, time_updated) \
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            rusqlite::params!["proj1", "/tmp/my-project", "my-project", 1_700_000_000_000_i64, 1_700_000_100_000_i64],
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO session (id, project_id, title, time_created, time_updated) \
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            rusqlite::params!["ses_001", "proj1", "Test session", 1_700_000_000_000_i64, 1_700_000_050_000_i64],
+        )
+        .unwrap();
+
+        // User message: note `data` has NO id field (column is authoritative).
+        conn.execute(
+            "INSERT INTO message (id, session_id, time_created, time_updated, data) \
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            rusqlite::params![
+                "msg_001", "ses_001", 1_700_000_010_000_i64, 1_700_000_010_000_i64,
+                r#"{"role":"user","time":{"created":1700000010000}}"#
+            ],
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO message (id, session_id, time_created, time_updated, data) \
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+            rusqlite::params![
+                "msg_002", "ses_001", 1_700_000_020_000_i64, 1_700_000_020_000_i64,
+                r#"{"role":"assistant","time":{"created":1700000020000},"parentID":"msg_001","modelID":"test-model","tokens":{"input":100,"output":50},"cost":0.01}"#
+            ],
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO part (id, message_id, session_id, time_created, time_updated, data) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params![
+                "prt_001", "msg_001", "ses_001", 1_700_000_010_000_i64, 1_700_000_010_000_i64,
+                r#"{"type":"text","text":"Hello from user"}"#
+            ],
+        )
+        .unwrap();
+
+        conn.execute(
+            "INSERT INTO part (id, message_id, session_id, time_created, time_updated, data) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params![
+                "prt_002", "msg_002", "ses_001", 1_700_000_020_000_i64, 1_700_000_020_000_i64,
+                r#"{"type":"text","text":"Hello from assistant"}"#
+            ],
+        )
+        .unwrap();
+    }
+
+    fn storage_type_of(metadata: &HashMap<String, Value>) -> Option<&str> {
+        metadata.get("storageType").and_then(|v| v.as_str())
+    }
+
+    #[test]
+    fn sqlite_scan_projects_reads_from_db() {
+        let tmp = tempfile::tempdir().unwrap();
+        create_seeded_db(tmp.path());
+
+        let projects = scan_opencode_projects_impl(tmp.path(), "src-1").unwrap();
+        assert_eq!(projects.len(), 1);
+        assert_eq!(projects[0].id, "proj1");
+        assert_eq!(projects[0].name, "my-project");
+        assert_eq!(projects[0].path, "opencode://proj1");
+        assert_eq!(projects[0].session_count, 1);
+        assert_eq!(storage_type_of(&projects[0].metadata), Some("sqlite"));
+    }
+
+    #[test]
+    fn sqlite_load_sessions_reads_from_db() {
+        let tmp = tempfile::tempdir().unwrap();
+        create_seeded_db(tmp.path());
+
+        let sessions = load_opencode_sessions_impl(tmp.path(), "proj1", "src-1").unwrap();
+        assert_eq!(sessions.len(), 1);
+        assert_eq!(sessions[0].id, "ses_001");
+        assert_eq!(sessions[0].title, "Test session");
+        assert_eq!(sessions[0].message_count, 2);
+        assert_eq!(storage_type_of(&sessions[0].metadata), Some("sqlite"));
+    }
+
+    #[test]
+    fn sqlite_load_messages_reads_from_db() {
+        let tmp = tempfile::tempdir().unwrap();
+        create_seeded_db(tmp.path());
+
+        let messages =
+            load_opencode_messages_impl(tmp.path(), "ses_001", "proj1", "src-1", 0, 20).unwrap();
+        assert_eq!(messages.len(), 2);
+
+        // First message: user, id from the column, text from the part.
+        assert_eq!(messages[0].id, "msg_001");
+        assert_eq!(messages[0].role, MessageRole::User);
+        assert_eq!(
+            messages[0].provider_metadata.get("storageType").and_then(|v| v.as_str()),
+            Some("sqlite")
+        );
+        let first_text = messages[0].content[0].data.get("text").and_then(|v| v.as_str());
+        assert_eq!(first_text, Some("Hello from user"));
+
+        // Second message: assistant with model, parent, and tokens.
+        assert_eq!(messages[1].id, "msg_002");
+        assert_eq!(messages[1].role, MessageRole::Assistant);
+        assert_eq!(messages[1].model, Some("test-model".to_string()));
+        assert_eq!(messages[1].parent_id, Some("msg_001".to_string()));
+        let tokens = messages[1].tokens.as_ref().expect("tokens present");
+        assert_eq!(tokens.input_tokens, 100);
+        assert_eq!(tokens.output_tokens, 50);
+    }
+
+    #[test]
+    fn sqlite_messages_paginate() {
+        let tmp = tempfile::tempdir().unwrap();
+        create_seeded_db(tmp.path());
+
+        let page = load_opencode_messages_impl(tmp.path(), "ses_001", "proj1", "src-1", 1, 1).unwrap();
+        assert_eq!(page.len(), 1);
+        assert_eq!(page[0].id, "msg_002");
+    }
+
+    #[test]
+    fn sqlite_helpers_return_none_without_db() {
+        let tmp = tempfile::tempdir().unwrap();
+        assert!(open_opencode_db(tmp.path()).is_none());
+        assert!(scan_projects_from_db(tmp.path(), "src-1").is_none());
+        assert!(load_sessions_from_db(tmp.path(), "proj1", "src-1").is_none());
+        assert!(load_messages_from_db(tmp.path(), "ses_001", "proj1", "src-1").is_none());
+
+        // Impls degrade gracefully to empty (no DB, no JSON dirs).
+        assert!(scan_opencode_projects_impl(tmp.path(), "src-1").unwrap().is_empty());
+        assert!(load_opencode_sessions_impl(tmp.path(), "proj1", "src-1").unwrap().is_empty());
+        assert!(load_opencode_messages_impl(tmp.path(), "ses_001", "proj1", "src-1", 0, 20).unwrap().is_empty());
     }
 }
