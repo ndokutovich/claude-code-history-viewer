@@ -1,20 +1,37 @@
 import { useTranslation } from "react-i18next";
-import { MessageSquare, FileCode, Filter } from "lucide-react";
+import { MessageSquare, FileCode, Filter, User, Bot, Settings } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
 import { useAppStore } from "@/store/useAppStore";
+import { DEFAULT_MESSAGE_FILTERS, hasActiveMessageFilters } from "@/utils/messageFilters";
 
 /**
  * Message view controls component
  * Provides:
  * 1. View mode toggle (Formatted / Raw)
  * 2. Message filters (Bash only, Tool use only, Messages only)
+ * 3. Advanced filters (role + content-type visibility toggles)
  */
 export function MessageViewControls() {
   const { t } = useTranslation("components");
   const { messageViewMode, messageFilters, setMessageViewMode, setMessageFilters } = useAppStore();
 
-  const hasActiveFilters = Object.values(messageFilters).some(v => v);
+  const hasActiveFilters = hasActiveMessageFilters(messageFilters);
+
+  // Role visibility toggles (checked = visible).
+  const roleToggles: { key: "roleUser" | "roleAssistant" | "roleSystem"; icon: typeof User; label: string }[] = [
+    { key: "roleUser", icon: User, label: t("messageView.roleUser") },
+    { key: "roleAssistant", icon: Bot, label: t("messageView.roleAssistant") },
+    { key: "roleSystem", icon: Settings, label: t("messageView.roleSystem") },
+  ];
+
+  // Content-type visibility toggles (checked = visible).
+  const contentToggles: { key: "contentText" | "contentToolUse" | "contentToolResult" | "contentThinking"; label: string }[] = [
+    { key: "contentText", label: t("messageView.contentText") },
+    { key: "contentToolUse", label: t("messageView.contentToolUse") },
+    { key: "contentToolResult", label: t("messageView.contentToolResult") },
+    { key: "contentThinking", label: t("messageView.contentThinking") },
+  ];
 
   return (
     <div className="flex items-center gap-4">
@@ -137,6 +154,57 @@ export function MessageViewControls() {
           </span>
         </label>
 
+        {/* Separator before advanced role/content-type filters */}
+        <div className={cn("h-4 w-px", COLORS.ui.border.light)} />
+
+        {/* Role visibility filters (frontend) */}
+        <div className="flex items-center gap-2">
+          <span className={cn("text-xs font-medium", COLORS.ui.text.secondary)}>
+            {t("messageView.role")}:
+          </span>
+          {roleToggles.map(({ key, icon: Icon, label }) => (
+            <label
+              key={key}
+              className="flex items-center gap-1.5 text-sm cursor-pointer hover:opacity-80"
+              title={label}
+            >
+              <input
+                type="checkbox"
+                checked={messageFilters[key]}
+                onChange={(e) => setMessageFilters({ [key]: e.target.checked })}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <Icon className={cn("w-3.5 h-3.5", COLORS.ui.text.secondary)} />
+              <span className={cn(COLORS.ui.text.secondary)}>{label}</span>
+            </label>
+          ))}
+        </div>
+
+        {/* Separator before content-type filters */}
+        <div className={cn("h-4 w-px", COLORS.ui.border.light)} />
+
+        {/* Content-type visibility filters (frontend) */}
+        <div className="flex items-center gap-2">
+          <span className={cn("text-xs font-medium", COLORS.ui.text.secondary)}>
+            {t("messageView.contentType")}:
+          </span>
+          {contentToggles.map(({ key, label }) => (
+            <label
+              key={key}
+              className="flex items-center gap-1.5 text-sm cursor-pointer hover:opacity-80"
+              title={label}
+            >
+              <input
+                type="checkbox"
+                checked={messageFilters[key]}
+                onChange={(e) => setMessageFilters({ [key]: e.target.checked })}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <span className={cn(COLORS.ui.text.secondary)}>{label}</span>
+            </label>
+          ))}
+        </div>
+
         {/* Separator before noise toggle */}
         <div className={cn("h-4 w-px", COLORS.ui.border.light)} />
 
@@ -173,14 +241,7 @@ export function MessageViewControls() {
         {/* Clear filters button */}
         {hasActiveFilters && (
           <button
-            onClick={() => setMessageFilters({
-              showBashOnly: false,
-              showToolUseOnly: false,
-              showMessagesOnly: false,
-              showCommandOnly: false,
-              showNoiseMessages: false,
-              showSubagentMessages: false,
-            })}
+            onClick={() => setMessageFilters({ ...DEFAULT_MESSAGE_FILTERS })}
             className={cn(
               "text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700",
               "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"

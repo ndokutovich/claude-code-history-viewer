@@ -268,6 +268,15 @@ export interface MessageFilters {
   showCommandOnly: boolean; // Show only bash commands (like bash history)
   showNoiseMessages: boolean; // Show progress/file-history-snapshot/queue-operation messages
   showSubagentMessages: boolean; // Show sub-agent (sidechain) messages — backend filter, triggers reload
+  // Advanced role filters (true = role visible). Defaults all true → all roles shown.
+  roleUser: boolean;
+  roleAssistant: boolean;
+  roleSystem: boolean; // covers system, summary and other non user/assistant types
+  // Advanced content-type filters (true = type visible). Defaults all true → all shown.
+  contentText: boolean;
+  contentToolUse: boolean;
+  contentToolResult: boolean;
+  contentThinking: boolean;
 }
 
 export interface AppState {

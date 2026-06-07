@@ -64,6 +64,7 @@ import type { ProviderSliceState, ProviderSliceActions } from "./slices/provider
 import { initialProviderState } from "./slices/providerSlice";
 import type { WatcherSliceState, WatcherSliceActions } from "./slices/watcherSlice";
 import { initialWatcherState } from "./slices/watcherSlice";
+import { DEFAULT_MESSAGE_FILTERS } from "@/utils/messageFilters";
 
 // ============================================================================
 // VIEW MANAGEMENT SYSTEM (v1.5.1+)
@@ -430,14 +431,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   // Message view preferences
   messageViewMode: "formatted" as MessageViewMode,
-  messageFilters: {
-    showBashOnly: false,
-    showToolUseOnly: false,
-    showMessagesOnly: false,
-    showCommandOnly: false,
-    showNoiseMessages: false,
-    showSubagentMessages: false,
-  },
+  messageFilters: { ...DEFAULT_MESSAGE_FILTERS },
 
   // Core state
   claudePath: "",

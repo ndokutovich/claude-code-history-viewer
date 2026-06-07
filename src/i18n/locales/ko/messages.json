@@ -75,6 +75,7 @@
   "navigator": {
     "title": "메시지 네비게이터",
     "toggle": "네비게이터 패널 토글",
+    "userOnly": "사용자 메시지만 표시",
     "filter": "메시지 필터...",
     "noMessages": "표시할 메시지가 없습니다",
     "noResults": "일치하는 메시지가 없습니다"
