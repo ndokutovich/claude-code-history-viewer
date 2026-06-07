@@ -23,10 +23,12 @@ use crate::commands::adapters::antigravity::{
     scan_antigravity_projects as antigravity_scan_projects,
 };
 use crate::commands::adapters::cline::{
-    get_all_cline_base_paths, load_cline_messages as cline_load_messages,
-    load_cline_sessions as cline_load_sessions, parse_scheme_path as cline_parse_scheme_path,
+    cwd_for_task as cline_cwd_for_task, get_all_cline_base_paths,
+    load_cline_messages as cline_load_messages, load_cline_sessions as cline_load_sessions,
+    load_task_history as cline_load_task_history, parse_scheme_path as cline_parse_scheme_path,
     scan_cline_projects as cline_scan_projects,
 };
+use crate::commands::cline::harden_cline_path;
 use crate::commands::adapters::forgecode::{
     get_forgecode_base_path, load_forgecode_messages as forgecode_load_messages,
     load_forgecode_sessions as forgecode_load_sessions, parse_project_path as forgecode_parse_project_path,
@@ -499,6 +501,7 @@ pub async fn load_provider_sessions(
         "cline" => {
             // project_path is the `cline://<base>|<cwd>` scheme path.
             let (base, cwd) = cline_parse_scheme_path(&project_path)?;
+            let base = harden_cline_path(&base)?;
             cline_load_sessions(&base, &cwd, &source_id)
         }
 
@@ -610,12 +613,20 @@ pub async fn load_provider_messages(
         "cline" => {
             // session_path is the `cline://<base>|<task_id>` scheme path.
             let (base, task_id) = cline_parse_scheme_path(&session_path)?;
+            let base = harden_cline_path(&base)?;
             let source_id = format!("cline:{}", base.display());
+            // Derive a real project_id (`cline://<base>|<cwd>`) from task history,
+            // falling back to the session scheme path when no cwd is found.
+            let history = cline_load_task_history(&base);
+            let project_id = match cline_cwd_for_task(&history, &task_id) {
+                Some(cwd) => format!("cline://{}|{}", base.to_string_lossy(), cwd),
+                None => session_path.clone(),
+            };
             cline_load_messages(
                 &base,
                 &task_id,
                 &session_path,
-                "",
+                &project_id,
                 &source_id,
                 offset,
                 limit,
