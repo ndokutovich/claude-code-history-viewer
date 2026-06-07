@@ -8,6 +8,7 @@ import { CursorAdapter } from '../providers/CursorAdapter';
 import { GeminiAdapter } from '../providers/GeminiAdapter';     // v1.7.0 - Gemini CLI support
 import { CodexAdapter } from '../providers/CodexAdapter';       // v1.8.0 - Codex CLI support
 import { OpenCodeAdapter } from '../providers/OpenCodeAdapter'; // v1.9.0 - OpenCode support
+import { ClineAdapter } from '../providers/ClineAdapter';       // v1.9.x - Cline / Roo Code support
 
 // ============================================================================
 // DETECTION RESULT
@@ -88,6 +89,7 @@ export class AdapterRegistry {
       new GeminiAdapter(),     // ✅ v1.7.0 - Gemini CLI support
       new CodexAdapter(),      // ✅ v1.8.0 - Codex CLI support
       new OpenCodeAdapter(),   // ✅ v1.9.0 - OpenCode support
+      new ClineAdapter(),      // ✅ v1.9.x - Cline / Roo Code support
     ];
 
     const failures: Array<{ id: string; error: Error }> = [];

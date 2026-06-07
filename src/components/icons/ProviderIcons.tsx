@@ -1,5 +1,5 @@
 import React from "react";
-import { Braces, Code2, Sparkles, Zap } from "lucide-react";
+import { Braces, Code2, Sparkles, Terminal, Zap } from "lucide-react";
 
 interface ProviderIconProps {
   providerId: string;
@@ -84,6 +84,13 @@ export const OpenCodeIcon: React.FC<{ className?: string }> = ({ className }) =>
 );
 
 /**
+ * Cline / Roo Code Icon - Sky/Blue color scheme
+ */
+export const ClineIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <Terminal className={className} />
+);
+
+/**
  * Generic provider icon (fallback)
  */
 export const GenericProviderIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -105,6 +112,8 @@ export const ProviderIcon: React.FC<ProviderIconProps> = ({ providerId, classNam
       return <CodexIcon className={className} />;
     case "opencode":
       return <OpenCodeIcon className={className} />;
+    case "cline":
+      return <ClineIcon className={className} />;
     default:
       return <GenericProviderIcon className={className} />;
   }
@@ -125,6 +134,8 @@ export const getProviderColorClass = (providerId?: string): string => {
       return "text-orange-500";
     case "opencode":
       return "text-amber-500";
+    case "cline":
+      return "text-sky-500";
     default:
       return "text-gray-500";
   }
