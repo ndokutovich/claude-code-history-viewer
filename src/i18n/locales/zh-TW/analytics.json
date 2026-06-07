@@ -32,6 +32,7 @@
   "analytics.billingTotal": "帳單總計",
   "analytics.cacheCreation": "快取建立",
   "analytics.cacheRead": "快取讀取",
+  "analytics.calendarTotal": "總計: {{count}}則訊息",
   "analytics.calculating": "計算中",
   "analytics.clearFilter": "清除篩選",
   "analytics.close": "關閉",

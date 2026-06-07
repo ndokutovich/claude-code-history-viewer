@@ -70,6 +70,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         <GlobalStatsView
           globalSummary={globalSummary}
           globalConversationSummary={globalConversationSummary}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
         />
       );
     }

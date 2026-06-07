@@ -32,6 +32,7 @@
   "analytics.billingTotal": "Billing Total",
   "analytics.cacheCreation": "Cache Creation",
   "analytics.cacheRead": "Cache Read",
+  "analytics.calendarTotal": "Total: {{count}} messages",
   "analytics.calculating": "Calculating",
   "analytics.clearFilter": "Clear filter",
   "analytics.close": "Close",
