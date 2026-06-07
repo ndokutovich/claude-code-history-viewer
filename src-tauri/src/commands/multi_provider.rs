@@ -76,7 +76,7 @@ pub struct DetectedProvider {
 /// full list with availability flags so the frontend can show a summary.
 #[tauri::command]
 pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
-    let mut providers = Vec::with_capacity(7);
+    let mut providers = Vec::with_capacity(9);
 
     // ---- Claude Code -------------------------------------------------------
     {
@@ -1120,7 +1120,7 @@ pub async fn search_all_providers(
         if let Some(root) = get_antigravity_base_path() {
             let source_id = format!("antigravity:{}", root.display());
             if let Ok(sessions) = antigravity_load_sessions(&root, &source_id) {
-                for session in sessions {
+                'antigravity_search: for session in sessions {
                     // session.id == "antigravity://<root>|<session_id>"
                     let session_id = match antigravity_parse_scheme_path(&session.id) {
                         Ok((_, id)) => id,
@@ -1141,7 +1141,7 @@ pub async fn search_all_providers(
                             .collect();
                         all_results.extend(matching);
                         if all_results.len() >= max_results {
-                            break;
+                            break 'antigravity_search;
                         }
                     }
                 }

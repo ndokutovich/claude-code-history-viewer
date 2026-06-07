@@ -35,19 +35,25 @@ pub async fn get_forgecode_path() -> Result<String, String> {
 }
 
 /// Validate that a path is a ForgeCode base directory.
-/// Accepts dirs containing `.forge.db`, `logs/`, or `.forge_history`.
+///
+/// All data loading is backed by `.forge.db`, so a directory is only valid when
+/// that database exists. Relative paths and `..` traversal are rejected, and the
+/// path is canonicalized before filesystem access.
 #[tauri::command]
 pub async fn validate_forgecode_folder(path: String) -> Result<bool, String> {
     let base = PathBuf::from(&path);
+    if !base.is_absolute() || base.components().any(|c| c == std::path::Component::ParentDir) {
+        return Ok(false);
+    }
+    let base = match std::fs::canonicalize(&base) {
+        Ok(p) => p,
+        Err(_) => return Ok(false),
+    };
     if !base.is_dir() {
         return Ok(false);
     }
 
-    let has_db = base.join(".forge.db").is_file();
-    let has_logs = base.join("logs").is_dir();
-    let has_history = base.join(".forge_history").is_file();
-
-    Ok(has_db || has_logs || has_history)
+    Ok(base.join(".forge.db").is_file())
 }
 
 // ============================================================================

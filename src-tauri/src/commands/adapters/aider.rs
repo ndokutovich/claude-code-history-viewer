@@ -82,10 +82,17 @@ pub fn get_aider_search_dirs() -> Vec<PathBuf> {
 
 /// Return the first available search directory that contains Aider history,
 /// used by the single-source detection flow (`get_aider_path`).
+///
+/// Returns the first search root that actually contains Aider history (so the
+/// reported base reflects where data lives). Falls back to the first existing
+/// root only when none of the roots contain history.
 pub fn get_aider_base_path() -> Option<PathBuf> {
     let dirs = get_aider_search_dirs();
-    if !aider_available_in(&dirs) {
-        return None;
+    if let Some(with_history) = dirs
+        .iter()
+        .find(|d| aider_available_in(std::slice::from_ref(*d)))
+    {
+        return Some(with_history.clone());
     }
     dirs.into_iter().next()
 }
@@ -322,7 +329,7 @@ pub fn load_aider_messages(
 
     let total = converted.len();
     let start = offset.min(total);
-    let end = (offset + limit).min(total);
+    let end = offset.saturating_add(limit).min(total);
     Ok(converted[start..end].to_vec())
 }
 
@@ -791,5 +798,23 @@ Done.\n";
         let t = truncate_chars(&long, 100);
         assert_eq!(t.chars().count(), 103);
         assert!(t.ends_with("..."));
+    }
+
+    #[test]
+    fn test_load_messages_huge_offset_limit_no_overflow() {
+        let dir = tempfile::tempdir().unwrap();
+        let history_path = dir.path().join(HISTORY_FILE);
+        fs::write(&history_path, SAMPLE_HISTORY).unwrap();
+        // offset + limit would overflow usize without saturating arithmetic.
+        let msgs = load_aider_messages(
+            &history_path,
+            "sess",
+            "proj",
+            "src",
+            usize::MAX,
+            usize::MAX,
+        )
+        .unwrap();
+        assert!(msgs.is_empty(), "huge offset returns empty, not a panic");
     }
 }

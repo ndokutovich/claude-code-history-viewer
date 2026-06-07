@@ -377,7 +377,7 @@ pub fn load_cline_messages(
 
     let total = converted.len();
     let start = offset.min(total);
-    let end = (offset + limit).min(total);
+    let end = offset.saturating_add(limit).min(total);
     Ok(converted[start..end].to_vec())
 }
 

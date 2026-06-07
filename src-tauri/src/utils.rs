@@ -284,7 +284,12 @@ pub fn resolve_claude_config_dir_from(raw: Option<String>) -> Option<String> {
     }
 
     match validate_custom_claude_path(&path) {
-        Ok(_) => Some(expanded),
+        // Return the normalized/canonical base path rather than the raw env
+        // string so downstream consumers operate on a resolved path.
+        Ok(_) => std::fs::canonicalize(&path)
+            .ok()
+            .map(|p| p.to_string_lossy().to_string())
+            .or(Some(expanded)),
         Err(_) => None,
     }
 }
@@ -352,7 +357,11 @@ mod custom_claude_dir_tests {
 
         let resolved = resolve_claude_config_dir_from(Some(raw.clone()))
             .expect("valid CLAUDE_CONFIG_DIR override should resolve");
-        assert_eq!(resolved, raw);
+        // The resolver returns the normalized/canonical path, not the raw input.
+        let expected = fs::canonicalize(&base)
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or(raw);
+        assert_eq!(resolved, expected);
 
         // An override that lacks projects/ resolves to None.
         let bad = tmp.join("not-claude");

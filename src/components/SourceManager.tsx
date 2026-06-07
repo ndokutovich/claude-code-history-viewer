@@ -480,15 +480,14 @@ const CustomClaudeDirsSection: React.FC = () => {
     if (!confirm(t('customClaudeDir.confirmRemove'))) return;
     setSectionError(null);
     try {
-      await removeCustomClaudeDir(dir);
+      // Remove the registered source first. `removeSource` rejects when this is
+      // the last remaining source; in that case we must keep the custom dir so
+      // settings and in-memory state do not desync.
       const matching = sources.find((s) => s.path === dir);
       if (matching) {
-        try {
-          await removeSource(matching.id);
-        } catch (err) {
-          console.error('Failed to remove custom Claude directory source:', err);
-        }
+        await removeSource(matching.id);
       }
+      await removeCustomClaudeDir(dir);
     } catch (err) {
       setSectionError((err as Error).message);
     }
@@ -540,6 +539,7 @@ const CustomClaudeDirsSection: React.FC = () => {
                 size="sm"
                 onClick={() => handleRemoveDir(dir)}
                 title={t('customClaudeDir.remove')}
+                aria-label={t('customClaudeDir.remove')}
                 className="text-destructive hover:text-destructive shrink-0"
               >
                 <Trash2 className="h-4 w-4" />

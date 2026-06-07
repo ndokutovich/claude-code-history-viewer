@@ -1958,28 +1958,31 @@ export const useAppStore = create<AppStore>((set, get) => ({
     if (existing.includes(trimmed)) return;
 
     const updated = [...existing, trimmed];
-    set({ customClaudeDirs: updated });
-
+    // Persist FIRST so a save failure cannot leave in-memory state diverged from
+    // persisted settings. In-memory state is only updated after a successful save.
     try {
       const store = await load("settings.json", { autoSave: false } as StoreOptions);
       await store.set(CUSTOM_CLAUDE_DIRS_KEY, updated);
       await store.save();
     } catch (error) {
       console.error("Failed to persist custom Claude directories:", error);
+      throw error;
     }
+    set({ customClaudeDirs: updated });
   },
 
   removeCustomClaudeDir: async (path: string) => {
     const updated = get().customClaudeDirs.filter((p) => p !== path);
-    set({ customClaudeDirs: updated });
-
+    // Persist FIRST; only mutate in-memory state after a successful save.
     try {
       const store = await load("settings.json", { autoSave: false } as StoreOptions);
       await store.set(CUSTOM_CLAUDE_DIRS_KEY, updated);
       await store.save();
     } catch (error) {
       console.error("Failed to persist custom Claude directories:", error);
+      throw error;
     }
+    set({ customClaudeDirs: updated });
   },
 
   // ============================================================

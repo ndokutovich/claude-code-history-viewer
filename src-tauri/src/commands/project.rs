@@ -106,10 +106,12 @@ pub async fn validate_claude_folder(path: String) -> Result<bool, String> {
 
     // Accept any directory that directly contains a `projects/` subfolder. This
     // covers custom Claude configuration directories (e.g. CLAUDE_CONFIG_DIR)
-    // that are not literally named `.claude`.
+    // that are not literally named `.claude`. Apply the same symlink +
+    // canonicalization hardening as custom Claude directories so a symlinked
+    // `projects/` (or base) is rejected.
     let direct_projects = path_buf.join("projects");
     if direct_projects.exists() && direct_projects.is_dir() {
-        return Ok(true);
+        return Ok(crate::utils::validate_custom_claude_path(&path_buf).is_ok());
     }
 
     Ok(false)

@@ -16,7 +16,31 @@ use crate::commands::adapters::antigravity::{
     scan_antigravity_projects as adapter_scan_projects,
 };
 use crate::models::universal::{UniversalMessage, UniversalProject, UniversalSession};
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
+
+/// Reject relative paths and `..` traversal, then canonicalize before any
+/// filesystem access. Mirrors the hardening in `validate_custom_claude_path`.
+fn harden_antigravity_path(path: &Path) -> Result<PathBuf, String> {
+    if !path.is_absolute() {
+        return Err(format!(
+            "ANTIGRAVITY_SECURITY_ERROR: Path must be absolute: {}",
+            path.display()
+        ));
+    }
+    if path.components().any(|c| c == Component::ParentDir) {
+        return Err(format!(
+            "ANTIGRAVITY_SECURITY_ERROR: Path traversal blocked: {}",
+            path.display()
+        ));
+    }
+    std::fs::canonicalize(path).map_err(|e| {
+        format!(
+            "ANTIGRAVITY_PATH_ERROR: Cannot canonicalize {}: {}",
+            path.display(),
+            e
+        )
+    })
+}
 
 // ============================================================================
 // PATH DETECTION
@@ -37,7 +61,15 @@ pub async fn get_antigravity_path() -> Result<String, String> {
 /// Accepts dirs containing `brain/`, `conversations/`, or `monitor-state.json`.
 #[tauri::command]
 pub async fn validate_antigravity_folder(path: String) -> Result<bool, String> {
-    let root = PathBuf::from(&path);
+    let raw = PathBuf::from(&path);
+    // Reject relative paths and `..` traversal before touching the filesystem.
+    if !raw.is_absolute() || raw.components().any(|c| c == Component::ParentDir) {
+        return Ok(false);
+    }
+    let root = match std::fs::canonicalize(&raw) {
+        Ok(c) => c,
+        Err(_) => return Ok(false),
+    };
     if !root.is_dir() {
         return Ok(false);
     }
@@ -76,6 +108,7 @@ pub async fn load_antigravity_sessions(
     source_id: String,
 ) -> Result<Vec<UniversalSession>, String> {
     let (root, _) = parse_scheme_path(&project_path)?;
+    let root = harden_antigravity_path(&root)?;
     adapter_load_sessions(&root, &source_id)
 }
 
@@ -89,12 +122,14 @@ pub async fn load_antigravity_messages(
     limit: usize,
 ) -> Result<Vec<UniversalMessage>, String> {
     let (root, session_id) = parse_scheme_path(&session_path)?;
+    let root = harden_antigravity_path(&root)?;
     let source_id = format!("antigravity:{}", root.display());
+    let project_id = format!("antigravity://{}", root.display());
     adapter_load_messages(
         &root,
         &session_id,
         &session_path,
-        "",
+        &project_id,
         &source_id,
         offset,
         limit,
