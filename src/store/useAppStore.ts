@@ -220,6 +220,7 @@ function universalToUISession(session: UniversalSession): UISession {
     git_branch: gitBranch, // Extract git branch from metadata
     git_commit: gitCommit, // Extract git commit from metadata
     storageType, // Storage backend (json | sqlite), surfaced for OpenCode
+    entrypoint: session.entrypoint, // Originating client (Claude Code only)
   };
 }
 

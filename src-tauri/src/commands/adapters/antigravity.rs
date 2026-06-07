@@ -448,6 +448,7 @@ fn build_session(
         total_tokens,
         tool_call_count: 0,
         error_count: 0,
+        entrypoint: None,
         metadata,
         checksum: format!("{}:{}", entry.id, summary.call_count),
     }

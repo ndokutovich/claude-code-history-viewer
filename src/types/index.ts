@@ -175,6 +175,8 @@ export interface UISession {
   git_commit?: string; // Git commit hash (short, 8 chars)
   // Storage backend ("json" | "sqlite"), currently surfaced for OpenCode
   storageType?: "json" | "sqlite";
+  // Originating client for Claude Code sessions ("cli" / "claude-vscode" / "claude-desktop")
+  entrypoint?: string;
 }
 
 export interface SearchFilters {

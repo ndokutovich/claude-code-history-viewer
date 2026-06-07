@@ -16,11 +16,19 @@ import {
   FileText,
   Play,
   Archive,
+  Code2,
+  Monitor,
+  Tag,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { ClaudeSession } from "../types";
 import { cn } from "@/utils/cn";
+import {
+  getEntrypointDescriptor,
+  hasKnownEntrypoint,
+  type EntrypointCategory,
+} from "@/utils/entrypoint";
 import {
   useSessionDisplayName,
   useSessionMetadata,
@@ -39,6 +47,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { NativeRenameDialog } from "@/components/NativeRenameDialog";
+
+/** Icon per entrypoint category for the session source badge. */
+const ENTRYPOINT_ICONS: Record<
+  EntrypointCategory,
+  React.ComponentType<{ className?: string }>
+> = {
+  cli: Terminal,
+  vscode: Code2,
+  desktop: Monitor,
+  unknown: Terminal,
+};
 
 interface SessionItemProps {
   session: ClaudeSession;
@@ -89,6 +108,16 @@ export const SessionItem: React.FC<SessionItemProps> = ({
   const hasClaudeCodeNamePattern = /^\[.+?\]\s/.test(localSummary ?? "");
   const hasClaudeCodeName =
     providerId === "claude" && (hasClaudeCodeNameMeta || hasClaudeCodeNamePattern);
+
+  // A session is "renamed" when the user has set an explicit name: either a
+  // metadata custom name, or a Claude Code native /rename. Reuses existing
+  // metadata (customName / hasClaudeCodeName) — no new persisted state.
+  const isUserRenamed = hasCustomName || hasClaudeCodeName;
+
+  // Entrypoint (originating client) badge — Claude Code sessions only.
+  const showEntrypoint = hasKnownEntrypoint(session.entrypoint);
+  const entrypoint = getEntrypointDescriptor(session.entrypoint);
+  const EntrypointIcon = ENTRYPOINT_ICONS[entrypoint.category];
 
   // Start editing mode
   const startEditing = useCallback(() => {
@@ -399,7 +428,30 @@ export const SessionItem: React.FC<SessionItemProps> = ({
                     </TooltipContent>
                   </Tooltip>
                 )}
-                <span className="flex-1">
+                {hasCustomName && !hasClaudeCodeName && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        className="inline-flex items-center justify-center shrink-0 mt-0.5 text-accent cursor-help"
+                        aria-label={t("session.item.renamed", "Custom name")}
+                      >
+                        <Tag className="w-2.5 h-2.5" aria-hidden="true" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs">
+                      <p className="font-medium">{t("session.item.renamed", "Custom name")}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t("session.item.renamedDescription", "You renamed this session")}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                <span
+                  className={cn(
+                    "flex-1",
+                    isUserRenamed ? "font-medium" : "italic opacity-90"
+                  )}
+                >
                   {displayName || t("session.summaryNotFound", "No summary")}
                 </span>
               </span>
@@ -513,6 +565,20 @@ export const SessionItem: React.FC<SessionItemProps> = ({
             {session.storageType === "sqlite"
               ? t("session.storageType.sqlite", "SQLite")
               : t("session.storageType.json", "JSON")}
+          </span>
+        )}
+        {showEntrypoint && (
+          <span
+            className={cn(
+              "inline-flex items-center gap-0.5 px-1 rounded text-[9px] font-mono uppercase tracking-wide border",
+              entrypoint.badgeClassName
+            )}
+            title={t("session.item.entrypoint.label", "Source: {{source}}", {
+              source: t(entrypoint.labelKey, entrypoint.fallbackLabel),
+            })}
+          >
+            <EntrypointIcon className="w-2.5 h-2.5" />
+            {t(entrypoint.labelKey, entrypoint.fallbackLabel)}
           </span>
         )}
       </div>

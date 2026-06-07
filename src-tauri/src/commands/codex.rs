@@ -303,6 +303,7 @@ pub async fn load_codex_sessions(
         total_tokens: None,
         tool_call_count: 0,
         error_count: 0,
+        entrypoint: None,
         metadata,
         checksum: format!("{:x}", session_id.len()), // Simple checksum placeholder
     };

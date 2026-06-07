@@ -389,6 +389,7 @@ pub fn load_forgecode_sessions(
                 total_tokens: None,
                 tool_call_count: 0,
                 error_count: 0,
+                entrypoint: None,
                 metadata,
                 checksum: format!("{}:{}", row.workspace_id, row.conversation_id),
             }

@@ -310,6 +310,7 @@ pub fn load_cline_sessions(
                 total_tokens,
                 tool_call_count: 0,
                 error_count: 0,
+                entrypoint: None,
                 metadata,
                 checksum: format!("{}{}{}", base_str, id, ts),
             })

@@ -105,6 +105,9 @@ pub struct SessionScanEntry {
     pub summary: Option<String>,
     #[serde(rename = "isSidechain")]
     pub is_sidechain: Option<bool>,
+    /// Top-level originating client field written by Claude Code on each line
+    /// (e.g. "cli", "claude-vscode", "claude-desktop"). Absent on older logs.
+    pub entrypoint: Option<String>,
     /// Lightweight message — only role, content as RawValue, and assistant metadata.
     pub message: Option<SessionScanMessage>,
     /// RawValue: skip deep parsing — just check presence for has_tool_use.
@@ -220,6 +223,10 @@ pub struct ClaudeSession {
     pub summary: Option<String>,
     pub git_branch: Option<String>, // Git branch name
     pub git_commit: Option<String>, // Git commit hash (short, 8 chars)
+    /// Originating client for Claude Code sessions: "cli" / "claude-vscode" / "claude-desktop".
+    /// `None` for non-Claude providers or sessions predating the entrypoint field.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub entrypoint: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -339,6 +339,7 @@ fn load_sessions_from_db(
             total_tokens: None,
             tool_call_count: 0,
             error_count: 0,
+            entrypoint: None,
             metadata,
             checksum,
         });
@@ -736,6 +737,7 @@ pub fn load_opencode_sessions_impl(
             total_tokens: None,
             tool_call_count: 0,
             error_count: 0,
+            entrypoint: None,
             metadata: {
                 let mut metadata = HashMap::new();
                 metadata.insert("filePath".to_string(), serde_json::Value::String(

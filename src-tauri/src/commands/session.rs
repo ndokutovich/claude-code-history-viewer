@@ -137,6 +137,8 @@ fn process_session_file(
     let mut last_message_time: Option<String> = None;
     let mut has_tool_use = false;
     let mut has_errors = false;
+    // Originating client (entrypoint): lock in the first non-empty value seen.
+    let mut entrypoint: Option<String> = None;
 
     // Track the last non-sidechain entry for is_problematic check
     let mut last_non_sidechain_type: Option<String> = None;
@@ -182,6 +184,16 @@ fn process_session_file(
         if git_commit.is_none() {
             if let Some(ref commit) = scan_entry.git_commit {
                 git_commit = Some(commit.clone());
+            }
+        }
+
+        // Capture originating client from the first line that carries a non-empty
+        // `entrypoint` (e.g. "cli", "claude-vscode", "claude-desktop").
+        if entrypoint.is_none() {
+            if let Some(ref ep) = scan_entry.entrypoint {
+                if !ep.trim().is_empty() {
+                    entrypoint = Some(ep.clone());
+                }
             }
         }
 
@@ -368,6 +380,7 @@ fn process_session_file(
         summary: final_summary,
         git_branch: final_git_branch,
         git_commit: final_git_commit,
+        entrypoint,
     })
 }
 
@@ -1453,5 +1466,57 @@ mod tests {
                 "`{ty}` must never be classified as noise",
             );
         }
+    }
+
+    // ── Feature: distinguish session source by `entrypoint` ────────────────
+    // The Claude Code JSONL carries a top-level `entrypoint` field on (some)
+    // lines. `process_session_file` extracts it via the lightweight
+    // `SessionScanEntry`, locking in the first non-empty value.
+
+    #[test]
+    fn test_entrypoint_extracted_from_jsonl_line() {
+        let line = r#"{"type":"user","sessionId":"s1","timestamp":"2025-06-01T10:00:00Z","entrypoint":"cli","message":{"role":"user","content":"hi"}}"#;
+        let scan: SessionScanEntry =
+            serde_json::from_str(line).expect("line should parse");
+        assert_eq!(scan.entrypoint.as_deref(), Some("cli"));
+    }
+
+    #[test]
+    fn test_entrypoint_vscode_value() {
+        let line = r#"{"type":"user","sessionId":"s1","timestamp":"t","entrypoint":"claude-vscode","message":{"role":"user","content":"hi"}}"#;
+        let scan: SessionScanEntry =
+            serde_json::from_str(line).expect("line should parse");
+        assert_eq!(scan.entrypoint.as_deref(), Some("claude-vscode"));
+    }
+
+    #[test]
+    fn test_entrypoint_absent_is_none() {
+        let line = r#"{"type":"user","sessionId":"s1","timestamp":"t","message":{"role":"user","content":"hi"}}"#;
+        let scan: SessionScanEntry =
+            serde_json::from_str(line).expect("line should parse");
+        assert_eq!(scan.entrypoint, None);
+    }
+
+    #[test]
+    fn test_entrypoint_first_non_empty_wins() {
+        // Mirrors the lock-in semantics used in `process_session_file`:
+        // skip empty/missing values and keep the first concrete one.
+        let lines = [
+            r#"{"type":"system","sessionId":"s1","timestamp":"t","entrypoint":""}"#,
+            r#"{"type":"user","sessionId":"s1","timestamp":"t","entrypoint":"claude-desktop","message":{"role":"user","content":"x"}}"#,
+            r#"{"type":"user","sessionId":"s1","timestamp":"t","entrypoint":"cli","message":{"role":"user","content":"y"}}"#,
+        ];
+        let mut entrypoint: Option<String> = None;
+        for line in lines {
+            let scan: SessionScanEntry = serde_json::from_str(line).unwrap();
+            if entrypoint.is_none() {
+                if let Some(ref ep) = scan.entrypoint {
+                    if !ep.trim().is_empty() {
+                        entrypoint = Some(ep.clone());
+                    }
+                }
+            }
+        }
+        assert_eq!(entrypoint.as_deref(), Some("claude-desktop"));
     }
 }

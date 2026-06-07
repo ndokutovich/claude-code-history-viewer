@@ -82,6 +82,9 @@ export interface UniversalSession {
   toolCallCount: number;
   errorCount: number;
 
+  /** Originating client for Claude Code sessions ("cli" / "claude-vscode" / "claude-desktop"). */
+  entrypoint?: string;
+
   // Metadata
   metadata: Record<string, unknown>;
   checksum: string; // For change detection

@@ -1058,6 +1058,7 @@ fn claude_session_to_universal(
         total_tokens: None,
         tool_call_count: 0,
         error_count: if s.has_errors { 1 } else { 0 },
+        entrypoint: s.entrypoint,
         metadata,
         checksum: s.session_id,
     }

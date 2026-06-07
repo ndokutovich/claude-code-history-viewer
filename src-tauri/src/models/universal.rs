@@ -150,6 +150,11 @@ pub struct UniversalSession {
     #[serde(rename = "errorCount")]
     pub error_count: usize,
 
+    /// Originating client for Claude Code sessions ("cli" / "claude-vscode" /
+    /// "claude-desktop"). `None` for other providers.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub entrypoint: Option<String>,
+
     pub metadata: HashMap<String, serde_json::Value>,
     pub checksum: String,
 }

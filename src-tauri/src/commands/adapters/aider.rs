@@ -283,6 +283,7 @@ pub fn load_aider_sessions(
         total_tokens: None,
         tool_call_count,
         error_count: 0,
+        entrypoint: None,
         metadata,
         checksum: session_path,
     };
