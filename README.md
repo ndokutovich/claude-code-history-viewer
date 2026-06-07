@@ -18,17 +18,17 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 </tr>
 <tr>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.7_x64-setup.exe">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.8_x64-setup.exe">
 <img src="https://img.shields.io/badge/Download-.exe-blue?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.7_universal.dmg">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.8_universal.dmg">
 <img src="https://img.shields.io/badge/Download-.dmg-black?style=for-the-badge&logo=apple&logoColor=white" alt="macOS Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.7_amd64.AppImage">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.8_amd64.AppImage">
 <img src="https://img.shields.io/badge/Download-.AppImage-orange?style=for-the-badge&logo=linux&logoColor=white" alt="Linux Download"/>
 </a>
 </td>
@@ -69,6 +69,15 @@ Per-project token usage breakdown and session-level analysis
 ### Demo
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## What's New in v1.9.8
+
+**Fix: Empty Message Rows from New Claude Code Schema** — recent Claude Code versions write content-less metadata entries (`attachment`, `last-prompt`, `ai-title`, `mode`, `permission-mode`) into session JSONL files. These slipped past the noise filter and rendered as empty rows with identical timestamps, burying real messages:
+- Added the new metadata types to noise classification — hidden by default, viewable via the existing "Show noise" toggle
+- In affected sessions this removed the bulk of displayable rows (one 322-line session dropped from ~296 to 249 rows, with real messages restored)
+- Regression tests cover new noise types, existing noise types, and real message types
+
+---
 
 ## What's New in v1.9.7
 
