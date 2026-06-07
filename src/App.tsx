@@ -194,7 +194,7 @@ function App() {
             stage: 'detecting-sources',
             message: i18nInstance.t(`splash:status.${messageKey}`, phase),
             progress,
-            details: !['initAdapters', 'loadingSaved', 'detectingProviders', 'done'].includes(phase)
+            details: !['initAdapters', 'loadingSaved', 'detectingProviders', 'customClaudeDirs', 'done'].includes(phase)
               ? phase  // provider name like "Claude Code", "Cursor IDE" etc.
               : undefined,
           });

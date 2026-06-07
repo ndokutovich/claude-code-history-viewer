@@ -225,6 +225,7 @@ pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
 pub async fn scan_all_projects(
     claude_path: Option<String>,
     active_providers: Option<Vec<String>>,
+    custom_claude_paths: Option<Vec<String>>,
 ) -> Result<Vec<UniversalProject>, String> {
     // Determine which providers to include
     let wanted: Vec<String> = match active_providers {
@@ -244,22 +245,34 @@ pub async fn scan_all_projects(
 
     // ---- Claude Code -------------------------------------------------------
     if wanted.iter().any(|p| p == "claude-code") {
-        let base = claude_path.clone().or_else(|| {
-            futures_lite_workaround_get_claude_path()
-        });
-        if let Some(base_path) = base {
-            match crate::commands::project::scan_projects(base_path.clone()).await {
-                Ok(claude_projects) => {
-                    // Convert ClaudeProject → UniversalProject
-                    let universal: Vec<UniversalProject> = claude_projects
-                        .into_iter()
-                        .map(|p| claude_project_to_universal(p, &base_path))
-                        .collect();
-                    all_projects.extend(universal);
+        let mut seen_bases = std::collections::HashSet::new();
+
+        // Default (or explicit `claude_path`) base. Scanned unconditionally to
+        // preserve existing behavior (even symlinked ~/.claude setups).
+        if let Some(base_path) = claude_path
+            .clone()
+            .or_else(futures_lite_workaround_get_claude_path)
+        {
+            if seen_bases.insert(base_path.clone()) {
+                scan_claude_base_into(&base_path, &mut all_projects).await;
+            }
+        }
+
+        // User-configured custom Claude directories. Each is validated and
+        // invalid/unsafe entries are skipped gracefully.
+        if let Some(customs) = custom_claude_paths.clone() {
+            for base_path in customs {
+                if !seen_bases.insert(base_path.clone()) {
+                    continue;
                 }
-                Err(e) => {
-                    eprintln!("[multi_provider] Claude scan failed: {}", e);
+                if crate::utils::validate_custom_claude_path(&PathBuf::from(&base_path)).is_err() {
+                    eprintln!(
+                        "[multi_provider] Skipping invalid custom Claude dir: {}",
+                        base_path
+                    );
+                    continue;
                 }
+                scan_claude_base_into(&base_path, &mut all_projects).await;
             }
         }
     }
@@ -642,6 +655,7 @@ pub async fn search_all_providers(
     query: String,
     active_providers: Option<Vec<String>>,
     limit: Option<usize>,
+    custom_claude_paths: Option<Vec<String>>,
 ) -> Result<Vec<UniversalMessage>, String> {
     let max_results = limit.unwrap_or(100);
 
@@ -661,7 +675,26 @@ pub async fn search_all_providers(
 
     // ---- Claude Code -------------------------------------------------------
     if wanted.iter().any(|p| p == "claude-code") {
-        if let Some(claude_base) = futures_lite_workaround_get_claude_path() {
+        // Union the default base with any user-configured custom dirs.
+        let mut claude_bases: Vec<String> = Vec::new();
+        if let Some(base) = futures_lite_workaround_get_claude_path() {
+            claude_bases.push(base);
+        }
+        if let Some(customs) = custom_claude_paths.clone() {
+            for c in customs {
+                if crate::utils::validate_custom_claude_path(&PathBuf::from(&c)).is_ok() {
+                    claude_bases.push(c);
+                } else {
+                    eprintln!("[multi_provider] Skipping invalid custom Claude dir (search): {}", c);
+                }
+            }
+        }
+
+        let mut seen_bases = std::collections::HashSet::new();
+        for claude_base in claude_bases {
+            if !seen_bases.insert(claude_base.clone()) {
+                continue;
+            }
             let filters = SearchFilters {
                 date_range: None,
                 projects: None,
@@ -672,7 +705,7 @@ pub async fn search_all_providers(
                 has_file_changes: None,
             };
             match crate::commands::session::search_messages(
-                claude_base,
+                claude_base.clone(),
                 query.clone(),
                 filters,
             )
@@ -680,7 +713,7 @@ pub async fn search_all_providers(
             {
                 Ok(results) => all_results.extend(results),
                 Err(e) => {
-                    eprintln!("[multi_provider] Claude search failed: {}", e);
+                    eprintln!("[multi_provider] Claude search failed ({}): {}", claude_base, e);
                 }
             }
         }
@@ -970,13 +1003,36 @@ fn result_to_probe(result: Result<String, String>) -> (bool, Option<String>, Opt
 
 /// Synchronously resolve the Claude folder path without going through Tauri
 /// command machinery (which requires a running event-loop context).
+///
+/// Honors a valid `CLAUDE_CONFIG_DIR` override first, then falls back to the
+/// default `~/.claude` location.
 fn futures_lite_workaround_get_claude_path() -> Option<String> {
+    if let Some(config_dir) = crate::utils::resolve_claude_config_dir() {
+        return Some(config_dir);
+    }
     let home = dirs::home_dir()?;
     let p = home.join(".claude");
     if p.exists() && std::fs::read_dir(&p).is_ok() {
         Some(p.to_string_lossy().to_string())
     } else {
         None
+    }
+}
+
+/// Scan a single Claude base directory and append its projects (converted to
+/// `UniversalProject`) to `out`. Errors are logged and swallowed.
+async fn scan_claude_base_into(base_path: &str, out: &mut Vec<UniversalProject>) {
+    match crate::commands::project::scan_projects(base_path.to_string()).await {
+        Ok(claude_projects) => {
+            out.extend(
+                claude_projects
+                    .into_iter()
+                    .map(|p| claude_project_to_universal(p, base_path)),
+            );
+        }
+        Err(e) => {
+            eprintln!("[multi_provider] Claude scan failed ({}): {}", base_path, e);
+        }
     }
 }
 

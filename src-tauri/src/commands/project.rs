@@ -58,6 +58,13 @@ pub async fn get_git_log(actual_path: String, limit: usize) -> Result<Vec<GitCom
 
 #[tauri::command]
 pub async fn get_claude_folder_path() -> Result<String, String> {
+    // A valid CLAUDE_CONFIG_DIR override takes precedence over the default
+    // ~/.claude location. When the variable is unset or invalid we fall back
+    // to the default, keeping existing behavior unchanged.
+    if let Some(config_dir) = crate::utils::resolve_claude_config_dir() {
+        return Ok(config_dir);
+    }
+
     let home_dir =
         dirs::home_dir().ok_or("HOME_DIRECTORY_NOT_FOUND: Could not determine home directory")?;
     let claude_path = home_dir.join(".claude");
@@ -97,7 +104,38 @@ pub async fn validate_claude_folder(path: String) -> Result<bool, String> {
         return Ok(projects_path.exists() && projects_path.is_dir());
     }
 
+    // Accept any directory that directly contains a `projects/` subfolder. This
+    // covers custom Claude configuration directories (e.g. CLAUDE_CONFIG_DIR)
+    // that are not literally named `.claude`.
+    let direct_projects = path_buf.join("projects");
+    if direct_projects.exists() && direct_projects.is_dir() {
+        return Ok(true);
+    }
+
     Ok(false)
+}
+
+/// Validate a custom (user-added) Claude configuration directory.
+///
+/// Unlike [`validate_claude_folder`], the path is treated as the Claude config
+/// root itself (it must directly contain a `projects/` subfolder) and symlink
+/// safety checks are applied. Returns `Ok(true)` when valid, `Ok(false)`
+/// otherwise so the frontend can skip invalid entries gracefully.
+#[tauri::command]
+pub async fn validate_custom_claude_dir(path: String) -> Result<bool, String> {
+    let path_buf = PathBuf::from(&path);
+    Ok(crate::utils::validate_custom_claude_path(&path_buf).is_ok())
+}
+
+/// Resolve the Claude configuration directory from the `CLAUDE_CONFIG_DIR`
+/// environment variable.
+///
+/// Returns `Some(path)` when the variable is set and points to a valid Claude
+/// configuration directory; `None` otherwise. Lets the frontend include the
+/// override as an additional scannable source on startup.
+#[tauri::command]
+pub async fn detect_claude_config_dir() -> Result<Option<String>, String> {
+    Ok(crate::utils::resolve_claude_config_dir())
 }
 
 #[tauri::command]

@@ -31,6 +31,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_claude_folder_path,
             validate_claude_folder,
+            validate_custom_claude_dir,
+            detect_claude_config_dir,
             scan_projects,
             load_project_sessions,
             load_session_messages,

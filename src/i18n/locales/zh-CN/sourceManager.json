@@ -39,5 +39,17 @@
     "alreadyAdded": "此源已被添加",
     "failedToAdd": "添加源失败"
   },
-  "autoDetected": "自动检测 ({{number}})"
+  "autoDetected": "自动检测 ({{number}})",
+  "customClaudeDir": {
+    "title": "自定义 Claude 目录",
+    "description": "添加备用 Claude 配置目录（例如 CLAUDE_CONFIG_DIR），在默认 ~/.claude 之外一并扫描。",
+    "add": "添加目录",
+    "remove": "移除",
+    "empty": "尚未配置自定义 Claude 目录。",
+    "selectFolder": "选择 Claude 配置目录",
+    "alreadyAdded": "该目录已添加",
+    "invalid": "不是有效的 Claude 配置目录（必须包含 projects/ 文件夹）",
+    "confirmRemove": "移除此自定义 Claude 目录？",
+    "autoLabel": "自定义 Claude 目录"
+  }
 }

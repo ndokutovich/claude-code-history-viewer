@@ -38,6 +38,78 @@ function generateDeterministicId(path: string): string {
 }
 
 // ============================================================================
+// CUSTOM CLAUDE DIRECTORIES RECONCILIATION
+// ============================================================================
+
+const SETTINGS_STORE = 'settings.json';
+const CUSTOM_CLAUDE_DIRS_KEY = 'customClaudeDirs';
+
+/**
+ * Reconcile custom Claude configuration directories into the live source list.
+ *
+ * Reads the persisted `customClaudeDirs` list (settings.json) and the
+ * `CLAUDE_CONFIG_DIR` environment override, validates each, registers any
+ * missing ones as scannable sources, and persists the merged list back so the
+ * settings UI reflects auto-detected entries (e.g. CLAUDE_CONFIG_DIR).
+ *
+ * Reads/writes settings.json directly rather than importing useAppStore to
+ * avoid a circular store dependency.
+ */
+async function reconcileCustomClaudeDirs(
+  get: () => SourceStoreState
+): Promise<void> {
+  const settings = await load(SETTINGS_STORE, { autoSave: false } as StoreOptions);
+  const persisted = (await settings.get<string[]>(CUSTOM_CLAUDE_DIRS_KEY)) ?? [];
+
+  const candidates = new Set<string>(
+    Array.isArray(persisted) ? persisted.filter((p) => typeof p === 'string') : []
+  );
+
+  // Include CLAUDE_CONFIG_DIR override if present and valid.
+  try {
+    const envDir = await invoke<string | null>('detect_claude_config_dir');
+    if (envDir) candidates.add(envDir);
+  } catch (err) {
+    console.warn('detect_claude_config_dir failed:', err);
+  }
+
+  if (candidates.size === 0) return;
+
+  const valid: string[] = [];
+  for (const dir of candidates) {
+    let isValid = false;
+    try {
+      isValid = await invoke<boolean>('validate_custom_claude_dir', { path: dir });
+    } catch (err) {
+      console.warn(`validate_custom_claude_dir failed for ${dir}:`, err);
+    }
+    if (!isValid) {
+      console.warn(`Skipping invalid custom Claude directory: ${dir}`);
+      continue;
+    }
+    valid.push(dir);
+
+    // Register as a source if not already present (so it gets scanned/aggregated).
+    if (!get().sources.some((s) => s.path === dir)) {
+      try {
+        await get().addSource(dir, i18n.t('sourceManager:customClaudeDir.autoLabel'));
+        console.log(`  ✓ Registered custom Claude directory: ${dir}`);
+      } catch (err) {
+        console.error(`  ✗ Failed to register custom Claude directory ${dir}:`, err);
+      }
+    }
+  }
+
+  // Persist the merged, validated list so the settings UI stays in sync.
+  try {
+    await settings.set(CUSTOM_CLAUDE_DIRS_KEY, valid);
+    await settings.save();
+  } catch (err) {
+    console.error('Failed to persist custom Claude directories:', err);
+  }
+}
+
+// ============================================================================
 // SOURCE STORE STATE
 // ============================================================================
 
@@ -148,6 +220,15 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
         console.log('No saved sources found, attempting auto-detection...');
         onProgress?.('detectingProviders', 35);
         await get().autoDetectDefaultSource();
+      }
+
+      // Reconcile custom Claude configuration directories (CLAUDE_CONFIG_DIR +
+      // user-added paths persisted in settings) into the live source list.
+      try {
+        onProgress?.('customClaudeDirs', 95);
+        await reconcileCustomClaudeDirs(get);
+      } catch (err) {
+        console.error('Failed to reconcile custom Claude directories:', err);
       }
 
       onProgress?.('done', 100);

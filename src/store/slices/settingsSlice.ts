@@ -19,6 +19,12 @@ export interface SettingsSliceState {
   fontScale: number;
   /** Whether high-contrast accessibility mode is enabled */
   highContrast: boolean;
+  /**
+   * Absolute paths to additional/alternate Claude configuration directories
+   * (in addition to the default ~/.claude). Persisted in settings storage and
+   * included in project scanning/aggregation.
+   */
+  customClaudeDirs: string[];
 }
 
 export interface SettingsSliceActions {
@@ -26,6 +32,12 @@ export interface SettingsSliceActions {
   setFontScale: (scale: number) => void;
   /** Toggle high-contrast mode and persist to storage */
   setHighContrast: (value: boolean) => void;
+  /** Load persisted custom Claude directories from storage into state */
+  loadCustomClaudeDirs: () => Promise<void>;
+  /** Add a custom Claude configuration directory (deduplicated) and persist */
+  addCustomClaudeDir: (path: string) => Promise<void>;
+  /** Remove a custom Claude configuration directory and persist */
+  removeCustomClaudeDir: (path: string) => Promise<void>;
 }
 
 export type SettingsSlice = SettingsSliceState & SettingsSliceActions;
@@ -37,4 +49,8 @@ export type SettingsSlice = SettingsSliceState & SettingsSliceActions;
 export const initialSettingsState: SettingsSliceState = {
   fontScale: 100,
   highContrast: false,
+  customClaudeDirs: [],
 };
+
+/** Storage key (settings.json) for persisted custom Claude directories. */
+export const CUSTOM_CLAUDE_DIRS_KEY = "customClaudeDirs";
