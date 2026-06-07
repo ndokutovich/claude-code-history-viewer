@@ -11,6 +11,11 @@
 // - load_provider_messages()  → route message load by provider id
 // - search_all_providers()    → federated search across all providers
 
+use crate::commands::adapters::aider::{
+    aider_available, get_aider_base_path, load_aider_messages as aider_load_messages,
+    load_aider_sessions as aider_load_sessions, parse_scheme_path as aider_parse_scheme_path,
+    scan_aider_projects as aider_scan_projects,
+};
 use crate::commands::adapters::cline::{
     get_all_cline_base_paths, load_cline_messages as cline_load_messages,
     load_cline_sessions as cline_load_sessions, parse_scheme_path as cline_parse_scheme_path,
@@ -140,6 +145,22 @@ pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
         });
     }
 
+    // ---- Aider -------------------------------------------------------------
+    {
+        let result: Result<String, String> = match (aider_available(), get_aider_base_path()) {
+            (true, Some(p)) => Ok(p.to_string_lossy().to_string()),
+            _ => Err("AIDER_FOLDER_NOT_FOUND: No Aider chat history found".to_string()),
+        };
+        let (available, path, error) = result_to_probe(result);
+        providers.push(DetectedProvider {
+            id: "aider".to_string(),
+            display_name: "Aider".to_string(),
+            base_path: path,
+            is_available: available,
+            error,
+        });
+    }
+
     Ok(providers)
 }
 
@@ -253,6 +274,20 @@ pub async fn scan_all_projects(
         }
     }
 
+    // ---- Aider -------------------------------------------------------------
+    if wanted.iter().any(|p| p == "aider") {
+        let base = get_aider_base_path()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let source_id = format!("aider:{}", base);
+        match aider_scan_projects(&source_id) {
+            Ok(projects) => all_projects.extend(projects),
+            Err(e) => {
+                eprintln!("[multi_provider] Aider scan failed: {}", e);
+            }
+        }
+    }
+
     // Cursor IDE provides workspaces, not projects in the same sense; skip
     // in the unified scan (users access Cursor via its dedicated commands).
 
@@ -341,6 +376,12 @@ pub async fn load_provider_sessions(
             // project_path is the `cline://<base>|<cwd>` scheme path.
             let (base, cwd) = cline_parse_scheme_path(&project_path)?;
             cline_load_sessions(&base, &cwd, &source_id)
+        }
+
+        "aider" => {
+            // project_path is the `aider://<project_dir>` scheme path.
+            let dir = aider_parse_scheme_path(&project_path)?;
+            aider_load_sessions(&dir, &source_id)
         }
 
         other => Err(format!(
@@ -437,6 +478,24 @@ pub async fn load_provider_messages(
                 &task_id,
                 &session_path,
                 "",
+                &source_id,
+                offset,
+                limit,
+            )
+        }
+
+        "aider" => {
+            // session_path is the `aider://<history_file>` scheme path.
+            let history_path = aider_parse_scheme_path(&session_path)?;
+            let project_id = history_path
+                .parent()
+                .map(|p| format!("aider://{}", p.to_string_lossy()))
+                .unwrap_or_default();
+            let source_id = format!("aider:{}", history_path.display());
+            aider_load_messages(
+                &history_path,
+                &session_path,
+                &project_id,
                 &source_id,
                 offset,
                 limit,
@@ -624,6 +683,49 @@ pub async fn search_all_providers(
                                 if all_results.len() >= max_results {
                                     break 'cline_search;
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ---- Aider -------------------------------------------------------------
+    if wanted.iter().any(|p| p == "aider") {
+        let base = get_aider_base_path()
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let source_id = format!("aider:{}", base);
+        if let Ok(projects) = aider_scan_projects(&source_id) {
+            'aider_search: for project in projects {
+                // project.path == "aider://<project_dir>"
+                let dir = match aider_parse_scheme_path(&project.path) {
+                    Ok(d) => d,
+                    Err(_) => continue,
+                };
+                if let Ok(sessions) = aider_load_sessions(&dir, &source_id) {
+                    for session in sessions {
+                        // session.id == "aider://<history_file>"
+                        let history_path = match aider_parse_scheme_path(&session.id) {
+                            Ok(p) => p,
+                            Err(_) => continue,
+                        };
+                        if let Ok(msgs) = aider_load_messages(
+                            &history_path,
+                            &session.id,
+                            &project.id,
+                            &source_id,
+                            0,
+                            SEARCH_MAX_MESSAGES_PER_SESSION,
+                        ) {
+                            let matching: Vec<UniversalMessage> = msgs
+                                .into_iter()
+                                .filter(|m| message_matches_query(m, &query))
+                                .collect();
+                            all_results.extend(matching);
+                            if all_results.len() >= max_results {
+                                break 'aider_search;
                             }
                         }
                     }

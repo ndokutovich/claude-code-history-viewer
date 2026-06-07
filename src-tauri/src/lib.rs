@@ -4,7 +4,7 @@ mod utils;
 
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::{
-    claude_settings::*, codex::*, cursor::*, edits::*, feedback::*, files::*, gemini::*,
+    aider::*, claude_settings::*, codex::*, cursor::*, edits::*, feedback::*, files::*, gemini::*,
     cline::*, mcp_presets::*, metadata::*, multi_provider::*, opencode::*, project::*, rename::*,
     resume::*, secure_update::*, session::*, session_writer::*, settings::*, stats::*,
     unified_presets::*, update::*, watcher::*,
@@ -92,6 +92,12 @@ pub fn run() {
             scan_cline_projects,
             load_cline_sessions,
             load_cline_messages,
+            // Aider support (v1.9.x)
+            get_aider_path,
+            validate_aider_folder,
+            scan_aider_projects,
+            load_aider_sessions,
+            load_aider_messages,
             // Global stats (upstream-enhanced)
             get_global_stats_summary,
             // Git log for Session Board

@@ -21,5 +21,6 @@ pub mod update;
 pub mod metadata; // v1.9.0 - Session/project metadata persistence
 pub mod opencode; // v1.9.0 - OpenCode support
 pub mod cline; // v1.9.x - Cline / Roo Code support
+pub mod aider; // v1.9.x - Aider chat history support
 pub mod multi_provider; // v1.9.0 - Unified multi-provider facade
 pub mod watcher; // File watcher for real-time session detection
