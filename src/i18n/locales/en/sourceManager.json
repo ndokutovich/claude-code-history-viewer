@@ -51,5 +51,16 @@
     "invalid": "Not a valid Claude configuration directory (must contain a projects/ folder)",
     "confirmRemove": "Remove this custom Claude directory?",
     "autoLabel": "Custom Claude directory"
+  },
+  "wsl": {
+    "title": "Scan WSL distributions",
+    "description": "Detect AI tool history inside Windows Subsystem for Linux",
+    "detecting": "Detecting WSL distributions...",
+    "noDistros": "No WSL distributions found",
+    "default": "default",
+    "noClaude": "No Claude data found",
+    "add": "Add",
+    "added": "Added",
+    "sourceName": "WSL {{distro}} (Claude)"
   }
 }

@@ -232,6 +232,8 @@ pub async fn scan_all_projects(
     claude_path: Option<String>,
     active_providers: Option<Vec<String>>,
     custom_claude_paths: Option<Vec<String>>,
+    wsl_enabled: Option<bool>,
+    wsl_excluded_distros: Option<Vec<String>>,
 ) -> Result<Vec<UniversalProject>, String> {
     // Determine which providers to include
     let wanted: Vec<String> = match active_providers {
@@ -373,6 +375,38 @@ pub async fn scan_all_projects(
                 Ok(projects) => all_projects.extend(projects),
                 Err(e) => {
                     eprintln!("[multi_provider] Antigravity scan failed: {}", e);
+                }
+            }
+        }
+    }
+
+    // ---- WSL (Claude Code only) -------------------------------------------
+    // Other providers resolve their base path natively (Windows side), so their
+    // WSL data would be visible but not loadable. Mirrors upstream: WSL scan is
+    // currently Claude-only. No-op on non-Windows / no-WSL machines.
+    if wsl_enabled.unwrap_or(false) && wanted.iter().any(|p| p == "claude-code") {
+        let excluded = wsl_excluded_distros.clone().unwrap_or_default();
+        for (distro, claude_unc) in crate::commands::wsl::resolve_active_claude_dirs(&excluded) {
+            match crate::commands::project::scan_projects(claude_unc.clone()).await {
+                Ok(projects) => {
+                    let label = format!("WSL: {}", distro);
+                    let universal: Vec<UniversalProject> = projects
+                        .into_iter()
+                        .map(|p| {
+                            let mut up = claude_project_to_universal(p, &claude_unc);
+                            up.metadata
+                                .insert("wslDistro".to_string(), serde_json::json!(distro));
+                            up.metadata.insert(
+                                "customDirectoryLabel".to_string(),
+                                serde_json::json!(label),
+                            );
+                            up
+                        })
+                        .collect();
+                    all_projects.extend(universal);
+                }
+                Err(e) => {
+                    eprintln!("[multi_provider] WSL Claude scan failed for '{}': {}", distro, e);
                 }
             }
         }
@@ -674,6 +708,8 @@ pub async fn search_all_providers(
     active_providers: Option<Vec<String>>,
     limit: Option<usize>,
     custom_claude_paths: Option<Vec<String>>,
+    wsl_enabled: Option<bool>,
+    wsl_excluded_distros: Option<Vec<String>>,
 ) -> Result<Vec<UniversalMessage>, String> {
     let max_results = limit.unwrap_or(100);
 
@@ -1003,6 +1039,29 @@ pub async fn search_all_providers(
                             break;
                         }
                     }
+                }
+            }
+        }
+    }
+
+    // ---- WSL (Claude Code only) -------------------------------------------
+    if wsl_enabled.unwrap_or(false) && wanted.iter().any(|p| p == "claude-code") {
+        let excluded = wsl_excluded_distros.clone().unwrap_or_default();
+        for (distro, claude_unc) in crate::commands::wsl::resolve_active_claude_dirs(&excluded) {
+            let filters = SearchFilters {
+                date_range: None,
+                projects: None,
+                session_id: None,
+                message_type: None,
+                has_tool_calls: None,
+                has_errors: None,
+                has_file_changes: None,
+            };
+            match crate::commands::session::search_messages(claude_unc, query.clone(), filters).await
+            {
+                Ok(results) => all_results.extend(results),
+                Err(e) => {
+                    eprintln!("[multi_provider] WSL Claude search failed for '{}': {}", distro, e);
                 }
             }
         }

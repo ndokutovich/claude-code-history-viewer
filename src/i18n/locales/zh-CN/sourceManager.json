@@ -51,5 +51,16 @@
     "invalid": "不是有效的 Claude 配置目录（必须包含 projects/ 文件夹）",
     "confirmRemove": "移除此自定义 Claude 目录？",
     "autoLabel": "自定义 Claude 目录"
+  },
+  "wsl": {
+    "title": "扫描 WSL 发行版",
+    "description": "检测 Windows Subsystem for Linux 中的 AI 工具历史记录",
+    "detecting": "正在检测 WSL 发行版...",
+    "noDistros": "未找到 WSL 发行版",
+    "default": "默认",
+    "noClaude": "未找到 Claude 数据",
+    "add": "添加",
+    "added": "已添加",
+    "sourceName": "WSL {{distro}} (Claude)"
   }
 }

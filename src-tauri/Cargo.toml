@@ -60,4 +60,8 @@ tempfile = "3.10.1"
 aho-corasick = "1.1"
 lru = "0.12"
 
+# Windows-only: read the WSL Lxss registry key for distro detection
+[target.'cfg(windows)'.dependencies]
+winreg = "0.55"
+
 [dev-dependencies]

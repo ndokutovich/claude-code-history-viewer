@@ -51,5 +51,16 @@
     "invalid": "유효한 Claude 구성 디렉터리가 아닙니다 (projects/ 폴더가 있어야 함)",
     "confirmRemove": "이 사용자 지정 Claude 디렉터리를 제거하시겠습니까?",
     "autoLabel": "사용자 지정 Claude 디렉터리"
+  },
+  "wsl": {
+    "title": "WSL 배포판 검색",
+    "description": "Windows Subsystem for Linux 내부의 AI 도구 기록을 감지합니다",
+    "detecting": "WSL 배포판을 감지하는 중...",
+    "noDistros": "WSL 배포판을 찾을 수 없습니다",
+    "default": "기본",
+    "noClaude": "Claude 데이터를 찾을 수 없습니다",
+    "add": "추가",
+    "added": "추가됨",
+    "sourceName": "WSL {{distro}} (Claude)"
   }
 }

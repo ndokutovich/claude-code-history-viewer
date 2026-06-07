@@ -221,6 +221,32 @@ export interface SearchFilters {
 }
 
 // ============================================================================
+// WSL (Windows Subsystem for Linux)
+// ============================================================================
+
+/** An AI-tool data directory discovered inside a WSL distribution. */
+export interface WslToolDir {
+  /** Provider id matching the frontend adapters (e.g. "claude-code"). */
+  providerId: string;
+  /** UNC path to the data directory inside the distro. */
+  path: string;
+}
+
+/** A detected WSL distribution with resolved AI-tool data directories. */
+export interface WslDistro {
+  /** Distribution name as registered with WSL (e.g. "Ubuntu"). */
+  name: string;
+  /** Whether this is the default WSL distribution. */
+  isDefault: boolean;
+  /** Resolved Linux home directory, when discoverable. */
+  homePath?: string;
+  /** UNC path to the distro's ~/.claude directory, present only when it exists. */
+  claudePath?: string;
+  /** Every detected AI-tool data directory inside the distro. */
+  tools: WslToolDir[];
+}
+
+// ============================================================================
 // RE-EXPORTS (for convenience)
 // ============================================================================
 

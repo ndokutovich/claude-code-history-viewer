@@ -27,3 +27,4 @@ pub mod antigravity; // v1.9.x - Antigravity support
 pub mod multi_provider; // v1.9.0 - Unified multi-provider facade
 pub mod search_match; // Shared search primitives: matcher, top-k, cache invalidation
 pub mod watcher; // File watcher for real-time session detection
+pub mod wsl; // WSL distro detection + AI-tool directory resolution (Windows)

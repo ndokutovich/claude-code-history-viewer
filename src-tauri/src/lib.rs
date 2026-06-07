@@ -8,7 +8,7 @@ use crate::commands::{
     gemini::*, cline::*, forgecode::*, mcp_presets::*, metadata::*, multi_provider::*, opencode::*,
     project::*, rename::*,
     resume::*, secure_update::*, session::*, session_writer::*, settings::*, stats::*,
-    unified_presets::*, update::*, watcher::*,
+    unified_presets::*, update::*, watcher::*, wsl::*,
 };
 use std::sync::Mutex;
 
@@ -162,6 +162,9 @@ pub fn run() {
             load_provider_sessions,
             load_provider_messages,
             search_all_providers,
+            // WSL support (Windows) — distro detection + AI-tool dirs
+            detect_wsl_distros,
+            is_wsl_available_cmd,
             // Metadata persistence (v1.9.0)
             get_session_metadata,
             set_session_custom_name,

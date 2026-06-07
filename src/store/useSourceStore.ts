@@ -7,7 +7,7 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { load, type StoreOptions } from '@tauri-apps/plugin-store';
-import type { UniversalSource } from '../types/universal';
+import type { UniversalSource, WslDistro } from '../types/universal';
 import { adapterRegistry } from '../adapters';
 import i18n from '../i18n.config';
 
@@ -121,6 +121,12 @@ interface SourceStoreState {
   isAddingSource: boolean;
   isValidatingSource: boolean;
 
+  // WSL scanning (Windows only)
+  /** Whether WSL distros should be scanned for AI-tool history. */
+  wslEnabled: boolean;
+  /** Distro names excluded from WSL scanning. */
+  wslExcludedDistros: string[];
+
   // Errors
   error: string | null;
   validationError: string | null;
@@ -146,6 +152,14 @@ interface SourceStoreState {
   // Actions - Validation
   validatePath: (path: string) => Promise<{ isValid: boolean; providerId?: string; error?: string }>;
 
+  // Actions - WSL
+  /** Enable/disable WSL scanning preference (persisted). */
+  setWslEnabled: (enabled: boolean) => Promise<void>;
+  /** Detect installed WSL distros and their AI-tool data directories. */
+  detectWslDistros: () => Promise<WslDistro[]>;
+  /** Add a WSL-resolved AI-tool directory (UNC path) as a source. */
+  addWslSource: (distroName: string, path: string) => Promise<UniversalSource>;
+
   // Actions - Error handling
   setError: (error: string | null) => void;
   clearErrors: () => void;
@@ -160,6 +174,8 @@ interface SourceStoreState {
 
 const SOURCES_STORAGE_KEY = 'sources';
 const SELECTED_SOURCE_KEY = 'selectedSourceId';
+const WSL_ENABLED_KEY = 'wslEnabled';
+const WSL_EXCLUDED_KEY = 'wslExcludedDistros';
 
 // ============================================================================
 // SOURCE STORE
@@ -172,6 +188,8 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
   isLoadingSources: false,
   isAddingSource: false,
   isValidatingSource: false,
+  wslEnabled: false,
+  wslExcludedDistros: [],
   error: null,
   validationError: null,
 
@@ -192,6 +210,14 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       const store = await load('sources.json', { autoSave: false } as StoreOptions);
       const savedSources = await store.get<UniversalSource[]>(SOURCES_STORAGE_KEY);
       const savedSelectedId = await store.get<string>(SELECTED_SOURCE_KEY);
+
+      // Restore WSL preference
+      const savedWslEnabled = await store.get<boolean>(WSL_ENABLED_KEY);
+      const savedWslExcluded = await store.get<string[]>(WSL_EXCLUDED_KEY);
+      set({
+        wslEnabled: savedWslEnabled === true,
+        wslExcludedDistros: Array.isArray(savedWslExcluded) ? savedWslExcluded : [],
+      });
 
       if (savedSources && Array.isArray(savedSources) && savedSources.length > 0) {
         set({ sources: savedSources, selectedSourceId: savedSelectedId || null });
@@ -674,6 +700,35 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
     } finally {
       set({ isValidatingSource: false });
     }
+  },
+
+  // ------------------------------------------------------------------------
+  // WSL
+  // ------------------------------------------------------------------------
+
+  setWslEnabled: async (enabled: boolean) => {
+    set({ wslEnabled: enabled });
+    try {
+      const store = await load('sources.json', { autoSave: false } as StoreOptions);
+      await store.set(WSL_ENABLED_KEY, enabled);
+      await store.save();
+    } catch (error) {
+      console.error('Failed to persist WSL preference:', error);
+    }
+  },
+
+  detectWslDistros: async (): Promise<WslDistro[]> => {
+    try {
+      return await invoke<WslDistro[]>('detect_wsl_distros');
+    } catch (error) {
+      console.error('Failed to detect WSL distros:', error);
+      return [];
+    }
+  },
+
+  addWslSource: async (distroName: string, path: string) => {
+    // Reuse the standard add flow; the path is a UNC dir the adapter validates.
+    return get().addSource(path, i18n.t('sourceManager:wsl.sourceName', { distro: distroName }));
   },
 
   // ------------------------------------------------------------------------

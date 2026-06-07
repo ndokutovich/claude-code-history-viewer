@@ -8,13 +8,14 @@ import { useTranslation } from 'react-i18next';
 import { invoke } from '@tauri-apps/api/core';
 import { useSourceStore } from '../store/useSourceStore';
 import { useAppStore } from '../store/useAppStore';
-import type { UniversalSource, HealthStatus } from '../types/universal';
+import type { UniversalSource, HealthStatus, WslDistro } from '../types/universal';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
+import { Switch } from './ui/switch';
 import {
   FolderOpen,
   Plus,
@@ -25,7 +26,8 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Clock
+  Clock,
+  Terminal
 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { getProviderColor } from '../constants/providers';
@@ -48,12 +50,43 @@ export const SourceManager: React.FC = () => {
     selectSource,
     validatePath,
     clearErrors,
+    wslEnabled,
+    setWslEnabled,
+    detectWslDistros,
+    addWslSource,
   } = useSourceStore();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newSourcePath, setNewSourcePath] = useState('');
   const [newSourceName, setNewSourceName] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  // WSL state
+  const [wslDistros, setWslDistros] = useState<WslDistro[] | null>(null);
+  const [isDetectingWsl, setIsDetectingWsl] = useState(false);
+
+  const handleToggleWsl = useCallback(async (enabled: boolean): Promise<void> => {
+    await setWslEnabled(enabled);
+    if (enabled) {
+      setIsDetectingWsl(true);
+      try {
+        setWslDistros(await detectWslDistros());
+      } finally {
+        setIsDetectingWsl(false);
+      }
+    } else {
+      setWslDistros(null);
+    }
+  }, [setWslEnabled, detectWslDistros]);
+
+  const handleAddWslDistro = useCallback(async (distro: WslDistro): Promise<void> => {
+    if (!distro.claudePath) return;
+    try {
+      await addWslSource(distro.name, distro.claudePath);
+    } catch (err) {
+      console.error('Failed to add WSL source:', err);
+    }
+  }, [addWslSource]);
 
   // Note: Sources are initialized in App.tsx on startup
   // No need to reinitialize here to avoid duplicate calls
@@ -200,6 +233,74 @@ export const SourceManager: React.FC = () => {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+
+      {/* WSL Section */}
+      <div className="border rounded-lg p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-start gap-2">
+            <Terminal className="h-4 w-4 mt-0.5 text-muted-foreground" />
+            <div>
+              <h3 className="text-sm font-medium">{t('wsl.title')}</h3>
+              <p className="text-xs text-muted-foreground">{t('wsl.description')}</p>
+            </div>
+          </div>
+          <Switch
+            checked={wslEnabled}
+            onCheckedChange={handleToggleWsl}
+            aria-label={t('wsl.title')}
+          />
+        </div>
+
+        {wslEnabled && (
+          <div className="space-y-2 pl-6">
+            {isDetectingWsl ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <RefreshCw className="h-3 w-3 animate-spin" />
+                <span>{t('wsl.detecting')}</span>
+              </div>
+            ) : wslDistros && wslDistros.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{t('wsl.noDistros')}</p>
+            ) : (
+              (wslDistros ?? []).map((distro) => {
+                const alreadyAdded = !!distro.claudePath && sources.some((s) => s.path === distro.claudePath);
+                return (
+                  <div
+                    key={distro.name}
+                    className="flex items-center justify-between gap-2 text-xs border rounded px-2 py-1.5"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium truncate">{distro.name}</span>
+                        {distro.isDefault && (
+                          <Badge variant="secondary" className="text-[10px]">{t('wsl.default')}</Badge>
+                        )}
+                      </div>
+                      {distro.claudePath ? (
+                        <span className="text-muted-foreground truncate block">{distro.claudePath}</span>
+                      ) : (
+                        <span className="text-muted-foreground">{t('wsl.noClaude')}</span>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!distro.claudePath || alreadyAdded}
+                      onClick={() => handleAddWslDistro(distro)}
+                    >
+                      {alreadyAdded ? (
+                        <CheckCircle2 className="h-3 w-3" />
+                      ) : (
+                        <Plus className="h-3 w-3" />
+                      )}
+                      <span className="ml-1">{alreadyAdded ? t('wsl.added') : t('wsl.add')}</span>
+                    </Button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Source List */}
       <div className="space-y-2">
