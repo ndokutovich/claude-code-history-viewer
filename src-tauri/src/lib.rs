@@ -1,7 +1,9 @@
+mod cli;
 mod commands;
 mod models;
 mod utils;
 
+use crate::cli::{get_startup_session_hint, parse_session_hint, StartupSessionHint};
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::{
     aider::*, antigravity::*, claude_settings::*, codex::*, cursor::*, edits::*, feedback::*, files::*,
@@ -14,10 +16,38 @@ use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    use tauri::{Emitter, Manager};
+
+    // Parse CLI args once for a session preload hint (e.g. `--session <uuid>`).
+    // A missing or unrecognized value yields None and the GUI runs as usual.
+    let startup_session_hint =
+        StartupSessionHint(parse_session_hint(&std::env::args().collect::<Vec<_>>()));
+
     tauri::Builder::default()
+        // Single-instance MUST be the first plugin so a second launch is
+        // intercepted before any other plugin does work. The callback runs in
+        // the ALREADY-running process and receives the second process's argv;
+        // we re-focus the window and forward any `--session` hint as an event.
+        // A panic in the callback is caught so a malformed argv cannot freeze
+        // the live window.
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.unminimize();
+                    let _ = window.set_focus();
+                }
+                if let Some(hint) = parse_session_hint(&argv) {
+                    let _ = app.emit("cli-session-hint", hint);
+                }
+            }));
+            if outcome.is_err() {
+                log::error!("single_instance callback panicked; argv dropped");
+            }
+        }))
         .manage(GeminiResolverState(Mutex::new(GeminiHashResolver::new())))
         .manage(WatcherMap::default())
         .manage(MetadataState::default())
+        .manage(startup_session_hint)
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::default().build())
@@ -29,6 +59,9 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_os::init())
         .invoke_handler(tauri::generate_handler![
+            // CLI session launch (--session <uuid>)
+            get_startup_session_hint,
+            resolve_session_by_id,
             get_claude_folder_path,
             validate_claude_folder,
             validate_custom_claude_dir,
@@ -180,6 +213,34 @@ pub fn run() {
             clear_all_metadata,
             load_user_metadata
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            // macOS-only: Spotlight / Dock / Finder launches don't re-exec
+            // argv, so the single-instance plugin can't see them. The OS
+            // instead delivers the target as an Apple Event surfaced as
+            // `RunEvent::Opened { urls }`. We translate the first resolvable
+            // URL into a SessionHint and reuse the same `cli-session-hint`
+            // event the single-instance callback emits, so the frontend has a
+            // single unified listener. Best-effort: custom-scheme registration
+            // is a follow-up (see report); `file://` works without it.
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Opened { urls } = &event {
+                for url in urls {
+                    if let Some(hint) = crate::cli::parse_session_hint_from_url(url) {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                        }
+                        let _ = app.emit("cli-session-hint", hint);
+                        break;
+                    }
+                }
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                let _ = app;
+                let _ = event;
+            }
+        });
 }

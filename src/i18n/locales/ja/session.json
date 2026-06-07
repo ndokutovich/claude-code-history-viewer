@@ -171,5 +171,14 @@
   "session.filter.sortNewestFirst": "新しい順に並べ替え",
   "session.filter.sortOldestFirst": "古い順に並べ替え",
   "session.filter.noResults": "検索に一致するセッションがありません",
-  "session.filter.showingCount": "{{total}}件中{{count}}件を表示"
+  "session.filter.showingCount": "{{total}}件中{{count}}件を表示",
+  "cli": {
+    "notFound": "セッションが見つかりません: {{value}}",
+    "picker": {
+      "title": "セッションを選択",
+      "subtitle": "「{{value}}」に一致するセッション {{count}} 件",
+      "messageCount": "{{count}} 件のメッセージ",
+      "cancelled": "セッションの選択をキャンセルしました"
+    }
+  }
 }

@@ -171,5 +171,14 @@
   "session.filter.sortNewestFirst": "依最新排序",
   "session.filter.sortOldestFirst": "依最舊排序",
   "session.filter.noResults": "沒有符合的工作階段",
-  "session.filter.showingCount": "顯示 {{count}}/{{total}} 個工作階段"
+  "session.filter.showingCount": "顯示 {{count}}/{{total}} 個工作階段",
+  "cli": {
+    "notFound": "找不到工作階段：{{value}}",
+    "picker": {
+      "title": "選擇工作階段",
+      "subtitle": "{{count}} 個工作階段符合「{{value}}」",
+      "messageCount": "{{count}} 則訊息",
+      "cancelled": "已取消工作階段選擇"
+    }
+  }
 }

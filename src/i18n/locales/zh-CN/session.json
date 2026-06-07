@@ -171,5 +171,14 @@
   "session.filter.sortNewestFirst": "按最新排序",
   "session.filter.sortOldestFirst": "按最旧排序",
   "session.filter.noResults": "没有匹配的会话",
-  "session.filter.showingCount": "显示 {{count}}/{{total}} 个会话"
+  "session.filter.showingCount": "显示 {{count}}/{{total}} 个会话",
+  "cli": {
+    "notFound": "未找到会话：{{value}}",
+    "picker": {
+      "title": "选择会话",
+      "subtitle": "{{count}} 个会话匹配“{{value}}”",
+      "messageCount": "{{count}} 条消息",
+      "cancelled": "已取消会话选择"
+    }
+  }
 }

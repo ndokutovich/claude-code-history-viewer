@@ -171,5 +171,14 @@
   "session.filter.sortNewestFirst": "Sort by newest first",
   "session.filter.sortOldestFirst": "Sort by oldest first",
   "session.filter.noResults": "No sessions match your search",
-  "session.filter.showingCount": "Showing {{count}} of {{total}} sessions"
+  "session.filter.showingCount": "Showing {{count}} of {{total}} sessions",
+  "cli": {
+    "notFound": "Session not found: {{value}}",
+    "picker": {
+      "title": "Choose a session",
+      "subtitle": "{{count}} sessions match \"{{value}}\"",
+      "messageCount": "{{count}} messages",
+      "cancelled": "Session selection cancelled"
+    }
+  }
 }

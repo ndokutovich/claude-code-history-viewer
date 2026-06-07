@@ -682,6 +682,111 @@ pub async fn load_provider_messages(
 }
 
 // ============================================================================
+// RESOLVE SESSION BY ID (CLI `--session <uuid>` support)
+// ============================================================================
+
+/// A concrete session located by [`resolve_session_by_id`], carrying enough
+/// routing information for the frontend to navigate to it (and to render a
+/// disambiguation picker when more than one matches a UUID prefix).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolvedSession {
+    pub provider_id: String,
+    pub source_id: String,
+    pub project_path: String,
+    pub project_name: String,
+    pub session_id: String,
+    pub file_path: String,
+    pub title: String,
+    pub last_message_at: String,
+    pub message_count: usize,
+}
+
+/// Resolve a session UUID (or UUID prefix, or absolute file path) to the
+/// concrete sessions that match it, scanning every available provider.
+///
+/// Behavior on the frontend:
+/// - 0 matches → "session not found" toast.
+/// - 1 match   → navigate directly.
+/// - >1 match  → open the session picker modal to disambiguate.
+///
+/// Matching is delegated to [`crate::cli::session_id_matches`] (exact, or an
+/// 8+ char prefix) against the universal session id, its checksum, and the
+/// session file's stem (covers the common `<uuid>.jsonl` Claude Code layout).
+/// Absolute-path queries additionally match a session by exact `file_path`.
+///
+/// Cursor is intentionally skipped: it is not part of the unified project scan
+/// and is reached through its dedicated commands.
+#[tauri::command]
+pub async fn resolve_session_by_id(
+    session_id: String,
+    claude_path: Option<String>,
+    active_providers: Option<Vec<String>>,
+) -> Result<Vec<ResolvedSession>, String> {
+    let query = session_id.trim().to_string();
+    if query.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let projects = scan_all_projects(claude_path, active_providers, None, None, None).await?;
+    let mut matches: Vec<ResolvedSession> = Vec::new();
+
+    for project in projects {
+        let sessions = match load_provider_sessions(
+            project.provider_id.clone(),
+            project.path.clone(),
+            project.source_id.clone(),
+        )
+        .await
+        {
+            Ok(s) => s,
+            Err(_) => continue, // e.g. Cursor routing error — skip silently
+        };
+
+        for session in sessions {
+            let file_path = session
+                .metadata
+                .get("filePath")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| session.id.clone());
+
+            let stem = PathBuf::from(&file_path)
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string());
+
+            let id_match = crate::cli::session_id_matches(&session.id, &query)
+                || crate::cli::session_id_matches(&session.checksum, &query)
+                || stem
+                    .as_deref()
+                    .map(|s| crate::cli::session_id_matches(s, &query))
+                    .unwrap_or(false)
+                || file_path == query;
+
+            if id_match {
+                matches.push(ResolvedSession {
+                    provider_id: session.provider_id.clone(),
+                    source_id: session.source_id.clone(),
+                    project_path: project.path.clone(),
+                    project_name: project.name.clone(),
+                    session_id: session.id.clone(),
+                    file_path,
+                    title: session.title.clone(),
+                    last_message_at: session.last_message_at.clone(),
+                    message_count: session.message_count,
+                });
+            }
+        }
+    }
+
+    // Most-recently-active first so a single-match navigation and the picker
+    // both surface the freshest session at the top. Empty timestamps sort last.
+    matches.sort_by(|a, b| b.last_message_at.cmp(&a.last_message_at));
+
+    Ok(matches)
+}
+
+// ============================================================================
 // SEARCH ALL PROVIDERS
 // ============================================================================
 

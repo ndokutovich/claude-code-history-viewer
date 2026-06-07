@@ -171,5 +171,14 @@
   "session.filter.sortNewestFirst": "최신순 정렬",
   "session.filter.sortOldestFirst": "오래된 순 정렬",
   "session.filter.noResults": "검색 결과가 없습니다",
-  "session.filter.showingCount": "{{total}}개 중 {{count}}개 표시"
+  "session.filter.showingCount": "{{total}}개 중 {{count}}개 표시",
+  "cli": {
+    "notFound": "세션을 찾을 수 없습니다: {{value}}",
+    "picker": {
+      "title": "세션 선택",
+      "subtitle": "\"{{value}}\"와(과) 일치하는 세션 {{count}}개",
+      "messageCount": "메시지 {{count}}개",
+      "cancelled": "세션 선택이 취소되었습니다"
+    }
+  }
 }

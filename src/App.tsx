@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { toast } from "sonner";
+import { preloadSessionFromHint, type SessionHint } from "./lib/preloadSession";
+import type { ResolvedSessionMatch } from "./store/slices/sessionPickerSlice";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
 import { RawMessageView } from "./components/RawMessageView";
@@ -259,6 +264,68 @@ function App() {
     window.addEventListener("keydown", handleGlobalSearch);
     return () => window.removeEventListener("keydown", handleGlobalSearch);
   }, []);
+
+  // ── CLI session launch (--session <uuid>) ──────────────────────────────
+  // Resolve a hint to a session and navigate, opening the picker for
+  // ambiguous (multi-match) prefixes. All store access is read fresh via
+  // getState() so this callback stays stable.
+  const handleSessionHint = useCallback(
+    async (hint: SessionHint | null | undefined) => {
+      await preloadSessionFromHint(hint, {
+        resolve: (value) =>
+          invoke<ResolvedSessionMatch[]>("resolve_session_by_id", {
+            sessionId: value,
+            claudePath: useAppStore.getState().claudePath || null,
+          }),
+        getProjects: () => useAppStore.getState().projects,
+        loadProjectSessions: (path) =>
+          useAppStore.getState().loadProjectSessions(path),
+        selectProject: (project) =>
+          useAppStore.getState().selectProject(project),
+        selectSession: (session) =>
+          useAppStore.getState().selectSession(session),
+        openSessionPicker: (candidates, hintValue) =>
+          useAppStore.getState().openSessionPicker(candidates, hintValue),
+        notFound: (value) =>
+          toast.error(
+            i18nInstance.t("session:cli.notFound", {
+              defaultValue: "Session not found: {{value}}",
+              value,
+            })
+          ),
+      });
+    },
+    [i18nInstance]
+  );
+
+  // One-shot: consume the startup `--session` hint once initialization
+  // finishes (projects loaded). Guarded so it fires a single time.
+  const startupHintHandled = useRef(false);
+  useEffect(() => {
+    if (loadingProgress || startupHintHandled.current) return;
+    startupHintHandled.current = true;
+    (async () => {
+      try {
+        const hint = await invoke<SessionHint | null>(
+          "get_startup_session_hint"
+        );
+        if (hint) await handleSessionHint(hint);
+      } catch (err) {
+        console.error("Failed to read startup session hint:", err);
+      }
+    })();
+  }, [loadingProgress, handleSessionHint]);
+
+  // Single-instance re-invocation: a second `--session` launch focuses this
+  // window and forwards the hint over the `cli-session-hint` event.
+  useEffect(() => {
+    const unlistenPromise = listen<SessionHint>("cli-session-hint", (event) => {
+      void handleSessionHint(event.payload);
+    });
+    return () => {
+      void unlistenPromise.then((unlisten) => unlisten());
+    };
+  }, [handleSessionHint]);
 
   // Cmd+F keyboard shortcut
   useEffect(() => {

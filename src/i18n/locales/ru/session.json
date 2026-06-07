@@ -171,5 +171,14 @@
   "session.filter.sortNewestFirst": "Sort by newest first",
   "session.filter.sortOldestFirst": "Sort by oldest first",
   "session.filter.noResults": "No sessions match your search",
-  "session.filter.showingCount": "Showing {{count}} of {{total}} sessions"
+  "session.filter.showingCount": "Showing {{count}} of {{total}} sessions",
+  "cli": {
+    "notFound": "Сессия не найдена: {{value}}",
+    "picker": {
+      "title": "Выберите сессию",
+      "subtitle": "Найдено сессий по запросу «{{value}}»: {{count}}",
+      "messageCount": "Сообщений: {{count}}",
+      "cancelled": "Выбор сессии отменён"
+    }
+  }
 }

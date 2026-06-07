@@ -65,6 +65,8 @@ import { initialProviderState } from "./slices/providerSlice";
 import type { WatcherSliceState, WatcherSliceActions } from "./slices/watcherSlice";
 import { initialWatcherState } from "./slices/watcherSlice";
 import { DEFAULT_MESSAGE_FILTERS } from "@/utils/messageFilters";
+import type { SessionPickerSliceState, SessionPickerSliceActions } from "./slices/sessionPickerSlice";
+import { initialSessionPickerState } from "./slices/sessionPickerSlice";
 
 // ============================================================================
 // VIEW MANAGEMENT SYSTEM (v1.5.1+)
@@ -338,7 +340,9 @@ interface AppStore extends AppState,
   ProviderSliceState,     // defaultProviderId, providerHealthStatus
   ProviderSliceActions,
   WatcherSliceState,      // isWatchingEnabled, watcherError, lastWatcherSyncTime
-  WatcherSliceActions {
+  WatcherSliceActions,
+  SessionPickerSliceState,  // sessionPickerCandidates, sessionPickerHintValue
+  SessionPickerSliceActions {
   // ---- Actions NOT covered by slices ----
 
   // View switching (depends on cross-cutting data loading, kept in main store)
@@ -408,6 +412,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...initialProjectState,      // isLoadingAllSessions, projectsLastRefreshed
   ...initialProviderState,     // defaultProviderId, providerHealthStatus
   ...initialWatcherState,      // isWatchingEnabled, watcherError, lastWatcherSyncTime
+  ...initialSessionPickerState,  // sessionPickerCandidates, sessionPickerHintValue
 
   // ---- Non-slice initial state ----
 
@@ -2138,4 +2143,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setIsWatchingEnabled: (enabled) => set({ isWatchingEnabled: enabled }),
   setWatcherError: (error) => set({ watcherError: error }),
   setLastWatcherSyncTime: (time) => set({ lastWatcherSyncTime: time }),
+
+  // ============================================================
+  // Session picker slice actions (CLI --session disambiguation)
+  // ============================================================
+  openSessionPicker: (candidates, hintValue) =>
+    set({ sessionPickerCandidates: candidates, sessionPickerHintValue: hintValue }),
+  closeSessionPicker: () =>
+    set({ sessionPickerCandidates: null, sessionPickerHintValue: null }),
 }));
