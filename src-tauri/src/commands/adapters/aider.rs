@@ -511,7 +511,7 @@ fn count_messages(content: &str) -> usize {
     let mut current_role: Option<Role> = None;
     let mut has_text = false;
 
-    let mut close = |role: &mut Option<Role>, has_text: &mut bool, count: &mut usize| {
+    let close = |role: &mut Option<Role>, has_text: &mut bool, count: &mut usize| {
         if role.is_some() && *has_text {
             *count += 1;
         }

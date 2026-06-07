@@ -59,6 +59,8 @@ struct ConversationRow {
     workspace_id: String,
     title: Option<String>,
     context_json: String,
+    /// Reserved for future token-metric extraction; parsed but not yet surfaced.
+    #[allow(dead_code)]
     metrics_json: Option<String>,
     created_at: String,
     updated_at: String,
