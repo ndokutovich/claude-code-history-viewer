@@ -18,17 +18,17 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 </tr>
 <tr>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.8_x64-setup.exe">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.0_x64-setup.exe">
 <img src="https://img.shields.io/badge/Download-.exe-blue?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.8_universal.dmg">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.0_universal.dmg">
 <img src="https://img.shields.io/badge/Download-.dmg-black?style=for-the-badge&logo=apple&logoColor=white" alt="macOS Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.9.8_amd64.AppImage">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.0_amd64.AppImage">
 <img src="https://img.shields.io/badge/Download-.AppImage-orange?style=for-the-badge&logo=linux&logoColor=white" alt="Linux Download"/>
 </a>
 </td>
@@ -69,6 +69,22 @@ Per-project token usage breakdown and session-level analysis
 ### Demo
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## What's New in v1.10.0
+
+Large upstream-migration release — extends the multi-provider system and ports a wide set of upstream features into this fork's architecture.
+
+**New providers:** Cline / Roo Code, Aider, ForgeCode, Antigravity, plus Gemini CLI format parity and OpenCode SQLite storage.
+
+**Session intelligence:** session source badge by entrypoint (CLI / VS Code / Desktop), sub-agent (sidechain) conversation viewing with a header toggle, `/rename` name display, and custom Claude config directories (`CLAUDE_CONFIG_DIR` + user-added dirs).
+
+**UX:** date dividers + floating date overlay on messages, advanced message filtering (role + content-type), monthly calendar activity heatmap, project-panel search and richer context menus.
+
+**Platform:** WSL distro detection and scanning, CLI session launch (`--session <uuid>`) with single-instance, macOS overlay title bar, and faster search (aho-corasick + LRU cache).
+
+**Fixes:** filtered the new `pr-link` metadata type (and a frontend guard so content-less entries never render as empty rows — the v1.9.8 follow-up), pagination overflow guards, and path-hardening across all providers.
+
+---
 
 ## What's New in v1.9.8
 
