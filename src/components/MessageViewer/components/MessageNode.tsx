@@ -89,6 +89,21 @@ export const MessageNode = React.memo(({
   // (adapter.loadMessages) unless the "Show Sub-agent Messages" toggle is enabled,
   // in which case they are loaded intentionally and marked with a sub-agent badge below.
 
+  // Guard against schema drift: never render a content-less row. Metadata-only
+  // entry types that slip past the backend noise filter (new Claude Code types)
+  // would otherwise show as empty rows that bury real messages (the v1.9.8 bug).
+  const hasRenderableContent =
+    !!extractedContent ||
+    (message.type === "system" && !!message.subtype) ||
+    (Array.isArray(message.content) && message.content.length > 0) ||
+    !!message.toolUse ||
+    !!message.toolUseResult ||
+    !!message.provider_metadata;
+
+  if (!hasRenderableContent) {
+    return dateDividerTimestamp ? <DateDivider timestamp={dateDividerTimestamp} /> : null;
+  }
+
   // Apply left margin based on depth
   const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, MAX_DEPTH_MARGIN)}` : "";
 
