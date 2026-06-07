@@ -109,17 +109,17 @@ export const FlatSessionsList: React.FC<FlatSessionsListProps> = ({
               />
 
               {/* Session Info */}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1">
                 {/* Session Title */}
                 <div className="flex items-center space-x-1">
                   <MessageCircle className="w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                  <p className="text-sm text-gray-800 dark:text-gray-200 truncate font-medium">
+                  <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-nowrap font-medium">
                     {getSessionTitle(session)}
                   </p>
                 </div>
 
                 {/* Project Name (subdued) */}
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                <p className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap mt-0.5">
                   {session.projectName}
                 </p>
 

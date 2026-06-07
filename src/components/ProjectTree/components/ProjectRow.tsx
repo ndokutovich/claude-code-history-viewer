@@ -111,9 +111,9 @@ export const ProjectRow: React.FC<ProjectRowProps> = ({
           providerId={project.providerId || ""}
           className={cn("w-4 h-4", getProviderColorClass(project.providerId))}
         />
-        <div className="min-w-0 flex-1 flex items-center">
+        <div className="flex-1 flex items-center">
           <p
-            className="font-medium text-gray-800 dark:text-gray-200 truncate text-sm"
+            className="font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap text-sm"
             title={project.name}
           >
             {project.name}

@@ -4,12 +4,16 @@ import {
   Folder,
   X,
   Pencil,
+  Copy,
+  FolderOpen,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { UIProject, UISession } from "../../types";
 import { cn } from "../../utils/cn";
 import { getLocale } from "../../utils/time";
 import { getSessionTitle } from "../../utils/sessionUtils";
+import { openFolder } from "../../utils/fileActions";
 import { ProjectListControls } from "../ProjectListControls";
 import { ProjectContextMenu } from "../ProjectContextMenu";
 import { NativeRenameDialog } from "../NativeRenameDialog";
@@ -117,8 +121,31 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     return () => clearTimeout(debounceTimer);
   }, [projectListPreferences.sessionSearchQuery, projects, sessionsByProject, loadProjectSessions, t, isLoadingAllSessions, setExpandedProjects, setIsLoadingAllSessions]);
 
+  // Normalized search query (shared by project-name and session filters)
+  const normalizedSearchQuery = useMemo(
+    () => projectListPreferences.sessionSearchQuery.trim().toLowerCase(),
+    [projectListPreferences.sessionSearchQuery]
+  );
+
+  // Whether a project itself matches the search query (by name or path)
+  const projectMatchesQuery = useCallback(
+    (project: UIProject): boolean => {
+      if (!normalizedSearchQuery) return false;
+      const name = project.name.toLowerCase();
+      const path = (project.actual_path ?? project.path).toLowerCase();
+      return name.includes(normalizedSearchQuery) || path.includes(normalizedSearchQuery);
+    },
+    [normalizedSearchQuery]
+  );
+
   // Helper to check if a project has any visible sessions after filtering
   const hasVisibleSessions = useCallback((project: UIProject): boolean => {
+    // If the project name/path matches the query, keep it visible regardless
+    // of whether its individual sessions match.
+    if (projectMatchesQuery(project)) {
+      return true;
+    }
+
     const projectSessions = sessionsByProject[project.path] || [];
 
     // If sessions haven't been loaded yet for this project, show it (we don't know yet)
@@ -164,7 +191,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     }
 
     return visibleSessions.length > 0;
-  }, [sessionsByProject, selectedProject, sessions, projectListPreferences]);
+  }, [sessionsByProject, selectedProject, sessions, projectListPreferences, projectMatchesQuery]);
 
   // Apply filtering and sorting to projects
   const filteredAndSortedProjects = useMemo(() => {
@@ -238,15 +265,23 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       });
     }
 
-    // Filter: Search query
-    if (projectListPreferences.sessionSearchQuery.trim()) {
-      const query = projectListPreferences.sessionSearchQuery.toLowerCase();
-      result = result.filter((session) => {
-        const title = getSessionTitle(session).toLowerCase();
-        const sessionId = session.session_id.toLowerCase();
-        const actualSessionId = session.actual_session_id?.toLowerCase() || '';
-        return title.includes(query) || sessionId.includes(query) || actualSessionId.includes(query);
-      });
+    // Filter: Search query.
+    // If the project itself matches the query (by name/path), show ALL of its
+    // sessions; otherwise filter sessions by the query.
+    if (normalizedSearchQuery) {
+      const project = projects.find((p) => p.path === projectPath);
+      if (!project || !projectMatchesQuery(project)) {
+        result = result.filter((session) => {
+          const title = getSessionTitle(session).toLowerCase();
+          const sessionId = session.session_id.toLowerCase();
+          const actualSessionId = session.actual_session_id?.toLowerCase() || '';
+          return (
+            title.includes(normalizedSearchQuery) ||
+            sessionId.includes(normalizedSearchQuery) ||
+            actualSessionId.includes(normalizedSearchQuery)
+          );
+        });
+      }
     }
 
     return result;
@@ -433,6 +468,32 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
       });
     },
     [setSessionContextMenu, setRenameTarget]
+  );
+
+  const handleCopySessionPath = useCallback(
+    async (session: UISession) => {
+      setSessionContextMenu(null);
+      try {
+        await navigator.clipboard.writeText(session.file_path);
+        toast.success(t("session.contextMenu.pathCopied", "Path copied to clipboard"));
+      } catch (err) {
+        console.error("Failed to copy session path:", err);
+        toast.error(t("session.contextMenu.copyFailed", "Failed to copy to clipboard"));
+      }
+    },
+    [setSessionContextMenu, t]
+  );
+
+  const handleShowSessionFile = useCallback(
+    async (session: UISession) => {
+      setSessionContextMenu(null);
+      try {
+        await openFolder(session.file_path, { t });
+      } catch {
+        // openFolder surfaces its own error toast
+      }
+    },
+    [setSessionContextMenu, t]
   );
 
   // --- Keyboard navigation (ARIA tree) ---
@@ -684,7 +745,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
             announceTree(describeTreeItem(treeItem));
           }
         }}
-        className="flex-1 overflow-y-auto scrollbar-thin"
+        className="flex-1 overflow-y-auto overflow-x-auto scrollbar-thin"
       >
         {/* Screen-reader live region for keyboard navigation announcements */}
         <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
@@ -793,6 +854,7 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
 
             {/* Rename option */}
             <button
+              type="button"
               onClick={() => handleRenameSession(sessionContextMenu.session)}
               aria-label={t("session.contextMenu.rename", "Rename session")}
               className={cn(
@@ -803,6 +865,36 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
             >
               <Pencil className="w-4 h-4" />
               <span>{t("session.contextMenu.rename", "Rename")}</span>
+            </button>
+
+            {/* Copy path option */}
+            <button
+              type="button"
+              onClick={() => handleCopySessionPath(sessionContextMenu.session)}
+              aria-label={t("session.contextMenu.copyPath", "Copy path")}
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm",
+                "hover:bg-accent hover:text-accent-foreground",
+                "transition-colors cursor-pointer"
+              )}
+            >
+              <Copy className="w-4 h-4" />
+              <span>{t("session.contextMenu.copyPath", "Copy path")}</span>
+            </button>
+
+            {/* Show JSONL file option */}
+            <button
+              type="button"
+              onClick={() => handleShowSessionFile(sessionContextMenu.session)}
+              aria-label={t("session.contextMenu.showFile", "Show JSONL file")}
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm",
+                "hover:bg-accent hover:text-accent-foreground",
+                "transition-colors cursor-pointer"
+              )}
+            >
+              <FolderOpen className="w-4 h-4" />
+              <span>{t("session.contextMenu.showFile", "Show JSONL file")}</span>
             </button>
           </div>
         </div>

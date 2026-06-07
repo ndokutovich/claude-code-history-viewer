@@ -753,7 +753,10 @@
     "selected": "已选项目",
     "contextMenu": {
       "hide": "隐藏项目",
-      "unhide": "显示项目"
+      "unhide": "显示项目",
+      "copyPath": "复制路径",
+      "pathCopied": "路径已复制到剪贴板",
+      "copyFailed": "复制到剪贴板失败"
     }
   },
   "projectListControls": {
@@ -782,7 +785,7 @@
     "hideEmptySessions": "隐藏空会话",
     "hideAgentSessions": "隐藏代理会话",
     "showAll": "显示全部",
-    "searchPlaceholder": "搜索会话...",
+    "searchPlaceholder": "搜索项目和会话...",
     "clearSearch": "清除搜索",
     "filterSettings": "过滤器设置",
     "searchLoadFailed": "部分项目加载失败"
@@ -825,7 +828,11 @@
     "noSessions": "未找到会话",
     "fix": "修复会话（恢复可继续性）",
     "contextMenu": {
-      "rename": "重命名"
+      "rename": "重命名",
+      "copyPath": "复制路径",
+      "pathCopied": "路径已复制到剪贴板",
+      "copyFailed": "复制到剪贴板失败",
+      "showFile": "显示 JSONL 文件"
     },
     "nativeRename": {
       "title": "重命名会话",

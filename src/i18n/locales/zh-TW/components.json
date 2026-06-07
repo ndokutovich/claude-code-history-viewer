@@ -753,7 +753,10 @@
     "selected": "已選專案",
     "contextMenu": {
       "hide": "隱藏專案",
-      "unhide": "顯示專案"
+      "unhide": "顯示專案",
+      "copyPath": "複製路徑",
+      "pathCopied": "路徑已複製到剪貼簿",
+      "copyFailed": "複製到剪貼簿失敗"
     }
   },
   "projectListControls": {
@@ -782,7 +785,7 @@
     "hideEmptySessions": "隱藏空會話",
     "hideAgentSessions": "隱藏代理會話",
     "showAll": "顯示全部",
-    "searchPlaceholder": "搜尋會話...",
+    "searchPlaceholder": "搜尋專案和會話...",
     "clearSearch": "清除搜尋",
     "filterSettings": "篩選設定",
     "searchLoadFailed": "部分專案載入失敗"
@@ -825,7 +828,11 @@
     "noSessions": "未找到會話",
     "fix": "修復對話（恢復可繼續性）",
     "contextMenu": {
-      "rename": "重新命名"
+      "rename": "重新命名",
+      "copyPath": "複製路徑",
+      "pathCopied": "路徑已複製到剪貼簿",
+      "copyFailed": "複製到剪貼簿失敗",
+      "showFile": "顯示 JSONL 檔案"
     },
     "nativeRename": {
       "title": "重新命名會話",

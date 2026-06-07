@@ -68,7 +68,7 @@ export const SessionRow: React.FC<SessionRowProps> = ({
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <h3
-              className="font-medium text-gray-800 dark:text-gray-200 text-xs truncate flex-1 min-w-0"
+              className="font-medium text-gray-800 dark:text-gray-200 text-xs whitespace-nowrap flex-1"
               title={title}
             >
               {title}

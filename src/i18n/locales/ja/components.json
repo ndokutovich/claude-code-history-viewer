@@ -621,7 +621,10 @@
     "selected": "選択されたプロジェクト",
     "contextMenu": {
       "hide": "プロジェクトを非表示",
-      "unhide": "プロジェクトを表示"
+      "unhide": "プロジェクトを表示",
+      "copyPath": "パスをコピー",
+      "pathCopied": "パスをクリップボードにコピーしました",
+      "copyFailed": "クリップボードへのコピーに失敗しました"
     }
   },
   "projectListControls": {
@@ -650,7 +653,7 @@
     "hideEmptySessions": "空のセッションを非表示",
     "hideAgentSessions": "エージェントセッションを非表示",
     "showAll": "すべて表示",
-    "searchPlaceholder": "セッションを検索...",
+    "searchPlaceholder": "プロジェクトとセッションを検索...",
     "clearSearch": "検索をクリア",
     "filterSettings": "フィルター設定",
     "searchLoadFailed": "一部のプロジェクトの読み込みに失敗しました"
@@ -706,7 +709,11 @@
     "noSessions": "セッションが見つかりません",
     "fix": "セッションを修正（再開可能性を復元）",
     "contextMenu": {
-      "rename": "名前を変更"
+      "rename": "名前を変更",
+      "copyPath": "パスをコピー",
+      "pathCopied": "パスをクリップボードにコピーしました",
+      "copyFailed": "クリップボードへのコピーに失敗しました",
+      "showFile": "JSONLファイルを表示"
     },
     "nativeRename": {
       "title": "セッション名を変更",
