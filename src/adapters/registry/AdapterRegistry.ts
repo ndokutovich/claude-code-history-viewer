@@ -9,6 +9,9 @@ import { GeminiAdapter } from '../providers/GeminiAdapter';     // v1.7.0 - Gemi
 import { CodexAdapter } from '../providers/CodexAdapter';       // v1.8.0 - Codex CLI support
 import { OpenCodeAdapter } from '../providers/OpenCodeAdapter'; // v1.9.0 - OpenCode support
 import { ClineAdapter } from '../providers/ClineAdapter';       // v1.9.x - Cline / Roo Code support
+import { AiderAdapter } from '../providers/AiderAdapter';       // v1.9.x - Aider chat history support
+import { ForgeCodeAdapter } from '../providers/ForgeCodeAdapter'; // v1.9.x - ForgeCode support
+import { AntigravityAdapter } from '../providers/AntigravityAdapter'; // v1.9.x - Antigravity support
 
 // ============================================================================
 // DETECTION RESULT
@@ -90,6 +93,9 @@ export class AdapterRegistry {
       new CodexAdapter(),      // ✅ v1.8.0 - Codex CLI support
       new OpenCodeAdapter(),   // ✅ v1.9.0 - OpenCode support
       new ClineAdapter(),      // ✅ v1.9.x - Cline / Roo Code support
+      new AiderAdapter(),      // ✅ v1.9.x - Aider chat history support
+      new ForgeCodeAdapter(),  // ✅ v1.9.x - ForgeCode support
+      new AntigravityAdapter(), // ✅ v1.9.x - Antigravity support
     ];
 
     const failures: Array<{ id: string; error: Error }> = [];

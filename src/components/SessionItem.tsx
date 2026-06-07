@@ -500,6 +500,21 @@ export const SessionItem: React.FC<SessionItemProps> = ({
         {session.has_errors && (
           <span title={t("session.item.containsErrors")}><AlertTriangle className="w-3 h-3 text-destructive" /></span>
         )}
+        {session.storageType && (
+          <span
+            className={cn(
+              "px-1 rounded text-[9px] font-mono uppercase tracking-wide border",
+              isSelected
+                ? "border-accent/40 text-accent/80"
+                : "border-muted-foreground/30 text-muted-foreground"
+            )}
+            title={t("session.storageType.label", "Storage")}
+          >
+            {session.storageType === "sqlite"
+              ? t("session.storageType.sqlite", "SQLite")
+              : t("session.storageType.json", "JSON")}
+          </span>
+        )}
       </div>
 
       {/* Native Rename Dialog */}

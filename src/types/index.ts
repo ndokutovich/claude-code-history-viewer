@@ -173,6 +173,8 @@ export interface UISession {
   // Git information
   git_branch?: string; // Git branch name
   git_commit?: string; // Git commit hash (short, 8 chars)
+  // Storage backend ("json" | "sqlite"), currently surfaced for OpenCode
+  storageType?: "json" | "sqlite";
 }
 
 export interface SearchFilters {

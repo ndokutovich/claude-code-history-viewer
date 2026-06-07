@@ -1,5 +1,5 @@
 import React from "react";
-import { Braces, Code2, Sparkles, Terminal, Zap } from "lucide-react";
+import { Bot, Braces, Code2, Hammer, Orbit, Sparkles, Terminal, Zap } from "lucide-react";
 
 interface ProviderIconProps {
   providerId: string;
@@ -91,6 +91,27 @@ export const ClineIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 /**
+ * Aider Icon - Green color scheme
+ */
+export const AiderIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <Bot className={className} />
+);
+
+/**
+ * ForgeCode Icon - Orange color scheme
+ */
+export const ForgeCodeIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <Hammer className={className} />
+);
+
+/**
+ * Antigravity Icon - Violet color scheme
+ */
+export const AntigravityIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <Orbit className={className} />
+);
+
+/**
  * Generic provider icon (fallback)
  */
 export const GenericProviderIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -114,6 +135,12 @@ export const ProviderIcon: React.FC<ProviderIconProps> = ({ providerId, classNam
       return <OpenCodeIcon className={className} />;
     case "cline":
       return <ClineIcon className={className} />;
+    case "aider":
+      return <AiderIcon className={className} />;
+    case "forgecode":
+      return <ForgeCodeIcon className={className} />;
+    case "antigravity":
+      return <AntigravityIcon className={className} />;
     default:
       return <GenericProviderIcon className={className} />;
   }
@@ -136,6 +163,12 @@ export const getProviderColorClass = (providerId?: string): string => {
       return "text-amber-500";
     case "cline":
       return "text-sky-500";
+    case "aider":
+      return "text-green-600";
+    case "forgecode":
+      return "text-orange-500";
+    case "antigravity":
+      return "text-violet-500";
     default:
       return "text-gray-500";
   }

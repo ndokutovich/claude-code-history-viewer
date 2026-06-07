@@ -113,7 +113,9 @@ export enum ProviderID {
   OPENCODE = 'opencode', // v1.9.0 - OpenCode support
   COPILOT = 'copilot',
   CLINE = 'cline',
+  FORGECODE = 'forgecode', // v1.9.x - ForgeCode support
   AIDER = 'aider',
+  ANTIGRAVITY = 'antigravity', // v1.9.x - Antigravity support
 }
 
 export enum MessageRole {

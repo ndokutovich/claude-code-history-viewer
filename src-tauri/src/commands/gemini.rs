@@ -11,13 +11,24 @@ pub struct GeminiResolverState(pub Mutex<GeminiHashResolver>);
 // PATH DETECTION COMMANDS
 // ============================================================================
 
-#[tauri::command]
-pub async fn get_gemini_path() -> Result<String, String> {
+/// Resolve the Gemini base directory, honoring the `GEMINI_HOME` override
+/// (matches the Gemini CLI) before falling back to `~/.gemini`.
+fn resolve_gemini_base() -> Result<PathBuf, String> {
+    if let Ok(val) = std::env::var("GEMINI_HOME") {
+        let p = PathBuf::from(&val);
+        if p.is_dir() {
+            return Ok(p);
+        }
+    }
     let home_dir =
         dirs::home_dir().ok_or("HOME_DIRECTORY_NOT_FOUND: Could not determine home directory")?;
+    Ok(home_dir.join(".gemini"))
+}
 
-    // Gemini CLI stores sessions at ~/.gemini/tmp
-    let gemini_path = home_dir.join(".gemini");
+#[tauri::command]
+pub async fn get_gemini_path() -> Result<String, String> {
+    // Gemini CLI stores sessions at <base>/tmp (base = $GEMINI_HOME or ~/.gemini)
+    let gemini_path = resolve_gemini_base()?;
 
     if !gemini_path.exists() {
         return Err(format!(

@@ -193,6 +193,10 @@ function universalToUISession(session: UniversalSession): UISession {
   const isProblematic = session.metadata.isProblematic as boolean | undefined;
   const gitBranch = session.metadata.gitBranch as string | undefined;
   const gitCommit = session.metadata.gitCommit as string | undefined;
+  const storageType = session.metadata.storageType as
+    | "json"
+    | "sqlite"
+    | undefined;
 
   // Get provider name from adapter registry
   const adapter = adapterRegistry.tryGet(session.providerId);
@@ -215,6 +219,7 @@ function universalToUISession(session: UniversalSession): UISession {
     providerName,
     git_branch: gitBranch, // Extract git branch from metadata
     git_commit: gitCommit, // Extract git commit from metadata
+    storageType, // Storage backend (json | sqlite), surfaced for OpenCode
   };
 }
 
