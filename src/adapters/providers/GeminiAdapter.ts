@@ -46,14 +46,14 @@ export class GeminiAdapter implements IConversationAdapter {
     author: 'Google',
     description: 'Google Gemini CLI conversation history',
     capabilities: {
-      supportsThinking: false, // Gemini doesn't expose thinking blocks
+      supportsThinking: true, // thoughts[] and Part `thought` flag -> thinking blocks
       supportsToolCalls: true,
       supportsBranching: false,
       supportsStreaming: false,
-      supportsImages: false,
+      supportsImages: true, // inlineData image parts -> image content
       supportsFiles: true,
       supportsFullTextSearch: false, // Not yet implemented
-      supportsTokenCounting: false, // Gemini doesn't expose token counts in session files
+      supportsTokenCounting: true, // tokens{input,output,cached} parsed into TokenUsage
       supportsModelInfo: true,
       requiresAuth: false,
       requiresNetwork: false,

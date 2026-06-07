@@ -148,12 +148,9 @@ pub fn gemini_sessions_to_projects(
     let mut projects: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
     for file in session_files {
-        if let Some(parent) = file.parent() {
-            let parent_str = parent.to_string_lossy().to_string();
-            projects
-                .entry(parent_str.clone())
-                .or_insert_with(Vec::new)
-                .push(file);
+        if let Some(project_dir) = gemini_project_dir(&file) {
+            let key = project_dir.to_string_lossy().to_string();
+            projects.entry(key).or_insert_with(Vec::new).push(file);
         }
     }
 
@@ -191,6 +188,11 @@ pub fn gemini_sessions_to_projects(
                 let mut meta = HashMap::new();
                 if let Some(hash) = project_hash {
                     meta.insert("project_hash".to_string(), json!(hash));
+                }
+                // Gemini CLI may record the real working directory in `.project_root`
+                if let Some(root) = read_gemini_project_root(Path::new(&project_path)) {
+                    meta.insert("project_root".to_string(), json!(root));
+                    meta.insert("cwd".to_string(), json!(root));
                 }
                 meta
             },
@@ -300,11 +302,14 @@ pub fn gemini_message_to_universal(
     // Determine message type
     let message_type = determine_gemini_type(&msg);
 
-    // Convert content
-    let content = convert_gemini_content(&msg);
+    // Convert content (text, thinking, and multi-part: image/file/code/tool_result)
+    let content = convert_gemini_content(&msg, msg_value);
 
-    // Convert tool calls
-    let tool_calls = convert_gemini_tool_calls(&msg);
+    // Convert tool calls (native toolCalls[] + Part-level functionCall + legacy)
+    let tool_calls = convert_gemini_tool_calls(&msg, msg_value);
+
+    // Convert token usage (Gemini exposes tokens on assistant messages)
+    let tokens = convert_gemini_tokens(msg_value);
 
     // Build provider_metadata
     let mut provider_metadata = HashMap::new();
@@ -331,9 +336,9 @@ pub fn gemini_message_to_universal(
         depth: None,
         branch_id: None,
         model: msg.model,
-        tokens: None, // Gemini doesn't expose token counts in session files
+        tokens,
         tool_calls,
-        thinking: None, // Gemini doesn't have thinking blocks
+        thinking: None, // Reasoning is emitted as Thinking content blocks (see convert_gemini_content)
         attachments: None,
         errors: None,
         original_format: "gemini_json".to_string(),
@@ -344,6 +349,36 @@ pub fn gemini_message_to_universal(
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+/// Resolve the project directory for a Gemini session file.
+///
+/// Gemini CLI stores sessions at `tmp/<projectHash>/chats/session-*.json`, so
+/// the project directory is the parent of the `chats` folder. Flat layouts
+/// (`tmp/<projectHash>/session-*.json`) fall back to the immediate parent.
+fn gemini_project_dir(file: &Path) -> Option<PathBuf> {
+    let parent = file.parent()?;
+    if parent.file_name().and_then(|n| n.to_str()) == Some("chats") {
+        Some(parent.parent().unwrap_or(parent).to_path_buf())
+    } else {
+        Some(parent.to_path_buf())
+    }
+}
+
+/// Read the optional `.project_root` file written by Gemini CLI, which records
+/// the real working directory for a project. Symlinks are rejected.
+fn read_gemini_project_root(project_dir: &Path) -> Option<String> {
+    let root_file = project_dir.join(".project_root");
+    if fs::symlink_metadata(&root_file)
+        .map(|m| m.file_type().is_symlink())
+        .unwrap_or(false)
+    {
+        return None;
+    }
+    fs::read_to_string(root_file)
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
 
 fn find_gemini_sessions(root: &Path) -> Result<Vec<PathBuf>, String> {
     let mut sessions = Vec::new();
@@ -415,7 +450,7 @@ fn determine_gemini_role(msg: &GeminiMessage) -> MessageRole {
     match role_str {
         "user" | "human" => MessageRole::User,
         "gemini" | "model" | "assistant" => MessageRole::Assistant,
-        "system" => MessageRole::System,
+        "system" | "info" | "warning" | "error" => MessageRole::System,
         "tool" | "tool_result" => MessageRole::Function,
         _ => MessageRole::Assistant,
     }
@@ -431,48 +466,618 @@ fn determine_gemini_type(msg: &GeminiMessage) -> MessageType {
     }
 }
 
-fn convert_gemini_content(msg: &GeminiMessage) -> Vec<UniversalContent> {
+fn text_content(text: String) -> UniversalContent {
+    let size = text.len();
+    UniversalContent {
+        content_type: ContentType::Text,
+        data: json!({ "text": text }),
+        encoding: None,
+        mime_type: None,
+        size: Some(size),
+        hash: None,
+    }
+}
+
+fn thinking_content(text: String) -> UniversalContent {
+    let size = text.len();
+    UniversalContent {
+        content_type: ContentType::Thinking,
+        data: json!({ "text": text }),
+        encoding: None,
+        mime_type: None,
+        size: Some(size),
+        hash: None,
+    }
+}
+
+/// Convert a Gemini message's content into UniversalContent blocks.
+///
+/// Handles the native Gemini CLI shapes: top-level `thoughts[]` (reasoning),
+/// string content, and `Part[]` arrays (text/thought, inlineData image+file,
+/// fileData, executableCode, codeExecutionResult, functionResponse). Plain
+/// string and `{ text }` content remain supported for backwards compatibility.
+fn convert_gemini_content(msg: &GeminiMessage, raw: &Value) -> Vec<UniversalContent> {
     let mut items = Vec::new();
 
-    if let Some(ref content) = msg.content {
-        if let Some(text) = extract_text_from_content(content) {
-            items.push(UniversalContent {
-                content_type: ContentType::Text,
-                data: json!({"text": text}),
-                encoding: None,
-                mime_type: None,
-                size: Some(text.len()),
-                hash: None,
-            });
+    // Gemini assistant reasoning lives in a top-level `thoughts` array
+    if let Some(thoughts) = raw.get("thoughts").and_then(Value::as_array) {
+        for thought in thoughts {
+            let subject = thought.get("subject").and_then(Value::as_str).unwrap_or("");
+            let description = thought
+                .get("description")
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            let text = match (subject.is_empty(), description.is_empty()) {
+                (true, true) => continue,
+                (true, false) => description.to_string(),
+                (false, true) => subject.to_string(),
+                (false, false) => format!("**{subject}**\n{description}"),
+            };
+            items.push(thinking_content(text));
         }
+    }
+
+    // Message content: string | Part[] | { text }
+    match msg.content.as_ref() {
+        Some(Value::String(s)) => {
+            if !s.is_empty() {
+                items.push(text_content(s.clone()));
+            }
+        }
+        Some(Value::Array(parts)) => {
+            for part in parts {
+                push_part_content(part, &mut items);
+            }
+        }
+        Some(other @ Value::Object(_)) => {
+            if let Some(text) = extract_text_from_content(other) {
+                if !text.is_empty() {
+                    items.push(text_content(text));
+                }
+            }
+        }
+        _ => {}
     }
 
     items
 }
 
-fn convert_gemini_tool_calls(msg: &GeminiMessage) -> Option<Vec<ToolCall>> {
-    if msg.message_type.as_deref() == Some("tool_use")
-        || msg.message_type.as_deref() == Some("tool_call")
-    {
-        let name = msg.name.clone().or(msg.tool.clone())?;
-        let input_value = msg.input.clone().unwrap_or(json!({}));
+/// Convert a single Gemini `Part` into 0..n content blocks.
+/// `functionCall` parts are intentionally skipped here; they are surfaced via
+/// `convert_gemini_tool_calls` instead.
+fn push_part_content(part: &Value, items: &mut Vec<UniversalContent>) {
+    // text (optionally flagged as a `thought`)
+    if let Some(text) = part.get("text").and_then(Value::as_str) {
+        if part.get("thought").and_then(Value::as_bool).unwrap_or(false) {
+            items.push(thinking_content(text.to_string()));
+        } else if !text.is_empty() {
+            items.push(text_content(text.to_string()));
+        }
+        return;
+    }
 
-        // Convert Value to HashMap
-        let input = if let Some(obj) = input_value.as_object() {
-            obj.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+    // inlineData (base64 image or other document)
+    if let Some(inline) = part.get("inlineData") {
+        let mime = inline.get("mimeType").and_then(Value::as_str).unwrap_or("");
+        let data = inline.get("data").and_then(Value::as_str).unwrap_or("");
+        let content_type = if mime.starts_with("image/") {
+            ContentType::Image
         } else {
-            HashMap::new()
+            ContentType::File
         };
+        items.push(UniversalContent {
+            content_type,
+            data: json!({ "data": data, "mimeType": mime }),
+            encoding: Some("base64".to_string()),
+            mime_type: (!mime.is_empty()).then(|| mime.to_string()),
+            size: None,
+            hash: None,
+        });
+        return;
+    }
 
-        Some(vec![ToolCall {
-            id: format!("tool-{}", uuid::Uuid::new_v4()),
-            name,
-            input,
-            output: None,
-            error: None,
-            status: ToolCallStatus::Success, // Assume success for Gemini
-        }])
-    } else {
+    // fileData (URI-based file reference)
+    if let Some(file_data) = part.get("fileData") {
+        let uri = file_data
+            .get("fileUri")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        let mime = file_data
+            .get("mimeType")
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        items.push(UniversalContent {
+            content_type: ContentType::File,
+            data: json!({ "url": uri, "mimeType": mime }),
+            encoding: None,
+            mime_type: (!mime.is_empty()).then(|| mime.to_string()),
+            size: None,
+            hash: None,
+        });
+        return;
+    }
+
+    // executableCode (model-generated code)
+    if let Some(ec) = part.get("executableCode") {
+        let code = ec.get("code").and_then(Value::as_str).unwrap_or("");
+        let language = ec
+            .get("language")
+            .and_then(Value::as_str)
+            .unwrap_or("python");
+        items.push(UniversalContent {
+            content_type: ContentType::Code,
+            data: json!({ "code": code, "language": language }),
+            encoding: None,
+            mime_type: None,
+            size: Some(code.len()),
+            hash: None,
+        });
+        return;
+    }
+
+    // codeExecutionResult
+    if let Some(cer) = part.get("codeExecutionResult") {
+        let outcome = cer
+            .get("outcome")
+            .and_then(Value::as_str)
+            .unwrap_or("UNKNOWN");
+        let output = cer.get("output").and_then(Value::as_str).unwrap_or("");
+        items.push(text_content(format!("[Code Execution: {outcome}]\n{output}")));
+        return;
+    }
+
+    // functionResponse (Part-level tool result)
+    if let Some(fr) = part.get("functionResponse") {
+        let name = fr.get("name").and_then(Value::as_str).unwrap_or("unknown");
+        let call_id = fr
+            .get("id")
+            .and_then(Value::as_str)
+            .map(String::from)
+            .unwrap_or_else(|| format!("fc_{name}"));
+        let response_text = fr
+            .get("response")
+            .and_then(|r| r.get("output"))
+            .and_then(Value::as_str)
+            .unwrap_or("");
+        items.push(UniversalContent {
+            content_type: ContentType::ToolResult,
+            data: json!({ "tool_use_id": call_id, "name": name, "content": response_text }),
+            encoding: None,
+            mime_type: None,
+            size: None,
+            hash: None,
+        });
+        return;
+    }
+
+    // functionCall parts are surfaced via convert_gemini_tool_calls
+    if part.get("functionCall").is_some() {
+        return;
+    }
+
+    // Plain string part (PartUnion = Part | string)
+    if let Value::String(s) = part {
+        if !s.is_empty() {
+            items.push(text_content(s.clone()));
+        }
+    }
+}
+
+fn value_to_map(value: Option<&Value>) -> HashMap<String, Value> {
+    value
+        .and_then(Value::as_object)
+        .map(|obj| obj.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+        .unwrap_or_default()
+}
+
+/// Extract a human-readable string from a Gemini tool `result` value.
+fn extract_tool_result_text(result: &Value) -> String {
+    if let Some(arr) = result.as_array() {
+        let texts: Vec<String> = arr
+            .iter()
+            .filter_map(|item| {
+                item.get("functionResponse")
+                    .and_then(|fr| fr.get("response"))
+                    .and_then(|r| r.get("output"))
+                    .and_then(Value::as_str)
+                    .map(String::from)
+            })
+            .collect();
+        if !texts.is_empty() {
+            return texts.join("\n");
+        }
+    }
+    match result {
+        Value::String(s) => s.clone(),
+        _ => serde_json::to_string(result).unwrap_or_default(),
+    }
+}
+
+/// Convert Gemini tool invocations into `ToolCall`s.
+///
+/// Sources, in order: the native `toolCalls[]` array on assistant messages
+/// (with `args`/`result`/`status`), Part-level `functionCall` entries inside
+/// content arrays, and finally the legacy single `tool_use`/`tool_call`
+/// message shape (preserved for backwards compatibility).
+fn convert_gemini_tool_calls(msg: &GeminiMessage, raw: &Value) -> Option<Vec<ToolCall>> {
+    let mut calls = Vec::new();
+
+    // A. Native Gemini format: `toolCalls` array on assistant (gemini) messages
+    if let Some(arr) = raw.get("toolCalls").and_then(Value::as_array) {
+        for tc in arr {
+            let name = tc.get("name").and_then(Value::as_str).unwrap_or("unknown");
+            let id = tc
+                .get("id")
+                .and_then(Value::as_str)
+                .map(String::from)
+                .unwrap_or_else(|| format!("tool-{}", uuid::Uuid::new_v4()));
+            let status = match tc.get("status").and_then(Value::as_str) {
+                Some("error") => ToolCallStatus::Error,
+                Some("pending") | Some("running") | Some("executing") => ToolCallStatus::Pending,
+                _ => ToolCallStatus::Success,
+            };
+            let result_text = tc.get("result").map(extract_tool_result_text);
+            let output = result_text.as_ref().map(|t| {
+                let mut m = HashMap::new();
+                m.insert("content".to_string(), json!(t));
+                m
+            });
+            let error = if matches!(status, ToolCallStatus::Error) {
+                result_text
+            } else {
+                None
+            };
+            calls.push(ToolCall {
+                id,
+                name: map_gemini_tool_name(name).to_string(),
+                input: value_to_map(tc.get("args")),
+                output,
+                error,
+                status,
+            });
+        }
+    }
+
+    // B. Part-level functionCall entries inside content arrays
+    if let Some(Value::Array(parts)) = msg.content.as_ref() {
+        for part in parts {
+            if let Some(fc) = part.get("functionCall") {
+                let name = fc.get("name").and_then(Value::as_str).unwrap_or("unknown");
+                let id = fc
+                    .get("id")
+                    .and_then(Value::as_str)
+                    .map(String::from)
+                    .unwrap_or_else(|| format!("fc-{}", uuid::Uuid::new_v4()));
+                calls.push(ToolCall {
+                    id,
+                    name: map_gemini_tool_name(name).to_string(),
+                    input: value_to_map(fc.get("args")),
+                    output: None,
+                    error: None,
+                    status: ToolCallStatus::Success,
+                });
+            }
+        }
+    }
+
+    // C. Legacy single tool_use/tool_call message (preserve prior behavior)
+    if calls.is_empty()
+        && matches!(
+            msg.message_type.as_deref(),
+            Some("tool_use") | Some("tool_call")
+        )
+    {
+        if let Some(name) = msg.name.clone().or_else(|| msg.tool.clone()) {
+            calls.push(ToolCall {
+                id: format!("tool-{}", uuid::Uuid::new_v4()),
+                name: map_gemini_tool_name(&name).to_string(),
+                input: value_to_map(msg.input.as_ref()),
+                output: None,
+                error: None,
+                status: ToolCallStatus::Success,
+            });
+        }
+    }
+
+    if calls.is_empty() {
         None
+    } else {
+        Some(calls)
+    }
+}
+
+/// Parse Gemini `tokens` usage into the universal `TokenUsage`.
+fn convert_gemini_tokens(raw: &Value) -> Option<TokenUsage> {
+    let t = raw.get("tokens")?;
+    if !t.is_object() {
+        return None;
+    }
+    let input = t.get("input").and_then(Value::as_i64).unwrap_or(0) as i32;
+    let output = t.get("output").and_then(Value::as_i64).unwrap_or(0) as i32;
+    let total = t
+        .get("total")
+        .and_then(Value::as_i64)
+        .map(|v| v as i32)
+        .unwrap_or(input + output);
+    let cache_read = t.get("cached").and_then(Value::as_i64).map(|v| v as i32);
+    Some(TokenUsage {
+        input_tokens: input,
+        output_tokens: output,
+        total_tokens: total,
+        cache_creation_tokens: None,
+        cache_read_tokens: cache_read,
+        service_tier: None,
+    })
+}
+
+/// Map Gemini CLI tool names to the viewer's canonical tool names.
+fn map_gemini_tool_name(name: &str) -> &str {
+    match name {
+        "read_file" | "ReadFile" => "Read",
+        "write_file" | "WriteFile" | "create_file" => "Write",
+        "edit_file" | "EditFile" => "Edit",
+        "shell" | "run_command" | "execute_command" => "Bash",
+        "list_directory" | "list_dir" => "Glob",
+        "search_files" | "grep" => "Grep",
+        "web_search" => "WebSearch",
+        "web_fetch" => "WebFetch",
+        _ => name,
+    }
+}
+
+// ============================================================================
+// TESTS
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn to_msg(raw: Value) -> UniversalMessage {
+        gemini_message_to_universal(
+            &raw,
+            "session-1".to_string(),
+            "project-1".to_string(),
+            "source-1".to_string(),
+            0,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn test_string_content_preserved() {
+        let msg = to_msg(json!({
+            "type": "user",
+            "content": "Hello world",
+            "timestamp": "2026-03-24T12:00:00Z"
+        }));
+        assert_eq!(msg.role, MessageRole::User);
+        assert_eq!(msg.content.len(), 1);
+        assert_eq!(msg.content[0].content_type, ContentType::Text);
+        assert_eq!(msg.content[0].data["text"], "Hello world");
+    }
+
+    #[test]
+    fn test_thoughts_become_thinking() {
+        let msg = to_msg(json!({
+            "type": "gemini",
+            "content": "Done.",
+            "thoughts": [{"subject": "Planning", "description": "Read the file first"}]
+        }));
+        assert_eq!(msg.role, MessageRole::Assistant);
+        assert_eq!(msg.content[0].content_type, ContentType::Thinking);
+        assert!(msg.content[0].data["text"]
+            .as_str()
+            .unwrap()
+            .contains("Planning"));
+        assert_eq!(msg.content[1].content_type, ContentType::Text);
+    }
+
+    #[test]
+    fn test_tool_calls_array_parsed_and_mapped() {
+        let msg = to_msg(json!({
+            "type": "gemini",
+            "content": "Let me check.",
+            "toolCalls": [{
+                "id": "tool-1",
+                "name": "read_file",
+                "args": {"file_path": "/test.txt"},
+                "result": [{"functionResponse": {"name": "read_file", "response": {"output": "file content"}}}],
+                "status": "success"
+            }]
+        }));
+        let calls = msg.tool_calls.unwrap();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].name, "Read"); // mapped from read_file
+        assert_eq!(calls[0].input["file_path"], "/test.txt");
+        assert!(matches!(calls[0].status, ToolCallStatus::Success));
+        let output = calls[0].output.as_ref().unwrap();
+        assert_eq!(output["content"], "file content");
+    }
+
+    #[test]
+    fn test_tool_call_error_status() {
+        let msg = to_msg(json!({
+            "type": "gemini",
+            "content": "",
+            "toolCalls": [{
+                "id": "tool-err",
+                "name": "shell",
+                "args": {"command": "exit 1"},
+                "result": [{"functionResponse": {"response": {"output": "command failed"}}}],
+                "status": "error"
+            }]
+        }));
+        let calls = msg.tool_calls.unwrap();
+        assert_eq!(calls[0].name, "Bash");
+        assert!(matches!(calls[0].status, ToolCallStatus::Error));
+        assert_eq!(calls[0].error.as_deref(), Some("command failed"));
+    }
+
+    #[test]
+    fn test_tokens_parsed() {
+        let msg = to_msg(json!({
+            "type": "gemini",
+            "content": "ok",
+            "tokens": {"input": 100, "output": 50, "cached": 5, "total": 155}
+        }));
+        let tokens = msg.tokens.unwrap();
+        assert_eq!(tokens.input_tokens, 100);
+        assert_eq!(tokens.output_tokens, 50);
+        assert_eq!(tokens.total_tokens, 155);
+        assert_eq!(tokens.cache_read_tokens, Some(5));
+    }
+
+    #[test]
+    fn test_tokens_total_defaults_to_input_plus_output() {
+        let msg = to_msg(json!({
+            "type": "gemini",
+            "content": "ok",
+            "tokens": {"input": 10, "output": 20}
+        }));
+        let tokens = msg.tokens.unwrap();
+        assert_eq!(tokens.total_tokens, 30);
+    }
+
+    #[test]
+    fn test_part_inline_image_and_document() {
+        let msg = to_msg(json!({
+            "type": "user",
+            "content": [
+                {"inlineData": {"mimeType": "image/png", "data": "abc"}},
+                {"inlineData": {"mimeType": "application/pdf", "data": "def"}}
+            ]
+        }));
+        assert_eq!(msg.content[0].content_type, ContentType::Image);
+        assert_eq!(msg.content[0].mime_type.as_deref(), Some("image/png"));
+        assert_eq!(msg.content[1].content_type, ContentType::File);
+        assert_eq!(msg.content[1].mime_type.as_deref(), Some("application/pdf"));
+    }
+
+    #[test]
+    fn test_part_file_data() {
+        let msg = to_msg(json!({
+            "type": "user",
+            "content": [{"fileData": {"fileUri": "gs://bucket/f.pdf", "mimeType": "application/pdf"}}]
+        }));
+        assert_eq!(msg.content[0].content_type, ContentType::File);
+        assert_eq!(msg.content[0].data["url"], "gs://bucket/f.pdf");
+    }
+
+    #[test]
+    fn test_part_executable_code() {
+        let msg = to_msg(json!({
+            "type": "gemini",
+            "content": [{"executableCode": {"code": "print('hi')", "language": "python"}}]
+        }));
+        assert_eq!(msg.content[0].content_type, ContentType::Code);
+        assert_eq!(msg.content[0].data["language"], "python");
+        assert_eq!(msg.content[0].data["code"], "print('hi')");
+    }
+
+    #[test]
+    fn test_part_code_execution_result() {
+        let msg = to_msg(json!({
+            "type": "gemini",
+            "content": [{"codeExecutionResult": {"outcome": "OUTCOME_OK", "output": "hello"}}]
+        }));
+        assert_eq!(msg.content[0].content_type, ContentType::Text);
+        let text = msg.content[0].data["text"].as_str().unwrap();
+        assert!(text.contains("OUTCOME_OK"));
+        assert!(text.contains("hello"));
+    }
+
+    #[test]
+    fn test_part_function_call_and_response() {
+        let msg = to_msg(json!({
+            "type": "gemini",
+            "content": [
+                {"functionCall": {"id": "call_1", "name": "shell", "args": {"command": "ls"}}},
+                {"functionResponse": {"id": "call_1", "name": "shell", "response": {"output": "file.txt"}}}
+            ]
+        }));
+        // functionCall -> tool_calls (mapped name, explicit id preserved)
+        let calls = msg.tool_calls.unwrap();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].id, "call_1");
+        assert_eq!(calls[0].name, "Bash");
+        assert_eq!(calls[0].input["command"], "ls");
+        // functionResponse -> tool_result content block
+        let tr = msg
+            .content
+            .iter()
+            .find(|c| c.content_type == ContentType::ToolResult)
+            .unwrap();
+        assert_eq!(tr.data["content"], "file.txt");
+        assert_eq!(tr.data["tool_use_id"], "call_1");
+    }
+
+    #[test]
+    fn test_part_thought_flag() {
+        let msg = to_msg(json!({
+            "type": "gemini",
+            "content": [
+                {"text": "thinking...", "thought": true},
+                {"text": "answer"}
+            ]
+        }));
+        assert_eq!(msg.content[0].content_type, ContentType::Thinking);
+        assert_eq!(msg.content[1].content_type, ContentType::Text);
+        assert_eq!(msg.content[1].data["text"], "answer");
+    }
+
+    #[test]
+    fn test_info_message_is_system() {
+        let msg = to_msg(json!({
+            "type": "info",
+            "content": "heads up"
+        }));
+        assert_eq!(msg.role, MessageRole::System);
+    }
+
+    #[test]
+    fn test_error_message_is_system_error_type() {
+        let msg = to_msg(json!({
+            "type": "error",
+            "content": "boom"
+        }));
+        assert_eq!(msg.role, MessageRole::System);
+        assert_eq!(msg.message_type, MessageType::Error);
+    }
+
+    #[test]
+    fn test_legacy_tool_use_preserved() {
+        let msg = to_msg(json!({
+            "type": "tool_use",
+            "name": "custom_tool",
+            "input": {"a": 1}
+        }));
+        let calls = msg.tool_calls.unwrap();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(calls[0].name, "custom_tool");
+        assert_eq!(calls[0].input["a"], 1);
+    }
+
+    #[test]
+    fn test_gemini_project_dir_chats_aware() {
+        let flat = Path::new("/home/u/.gemini/tmp/hash/session-1.json");
+        assert_eq!(
+            gemini_project_dir(flat).unwrap(),
+            PathBuf::from("/home/u/.gemini/tmp/hash")
+        );
+        let nested = Path::new("/home/u/.gemini/tmp/hash/chats/session-1.json");
+        assert_eq!(
+            gemini_project_dir(nested).unwrap(),
+            PathBuf::from("/home/u/.gemini/tmp/hash")
+        );
+    }
+
+    #[test]
+    fn test_map_gemini_tool_name() {
+        assert_eq!(map_gemini_tool_name("write_file"), "Write");
+        assert_eq!(map_gemini_tool_name("execute_command"), "Bash");
+        assert_eq!(map_gemini_tool_name("search_files"), "Grep");
+        assert_eq!(map_gemini_tool_name("unknown_tool"), "unknown_tool");
     }
 }
