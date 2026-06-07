@@ -13,6 +13,7 @@ pub mod rename; // Native session renaming
 pub mod resume; // Session resume functionality
 pub mod secure_update;
 pub mod session;
+pub mod session_delete; // Delete session (move JSONL + associated folder to trash)
 pub mod session_writer; // v1.6.0+ - Session creation and writing
 pub mod settings; // Settings presets
 pub mod stats;

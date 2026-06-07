@@ -19,6 +19,7 @@ import {
   Code2,
   Monitor,
   Tag,
+  Trash2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -34,6 +35,11 @@ import {
   useSessionMetadata,
 } from "@/hooks/useSessionMetadata";
 import { useAppStore } from "@/store/useAppStore";
+import {
+  getProviderId,
+  getResumeCommand,
+  supportsResumeCommand,
+} from "@/utils/providers";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -229,16 +235,79 @@ export const SessionItem: React.FC<SessionItemProps> = ({
     [handleCopyToClipboard, session.actual_session_id, t]
   );
 
+  // Resolve the project's working directory so the resume command can `cd`
+  // into it before resuming (falls back to a plain command when unknown).
+  const projectCwd = useAppStore(
+    (state) =>
+      state.projects.find((p) => p.name === session.project_name)?.actual_path
+  );
+
   const handleCopyResumeCommand = useCallback(
-    (e: React.MouseEvent) =>
-      handleCopyToClipboard(e, `claude --resume ${session.actual_session_id}`, t('session.copiedResumeCommand', 'Resume command copied')),
-    [handleCopyToClipboard, session.actual_session_id, t]
+    (e: React.MouseEvent) => {
+      const resumeCommand = getResumeCommand(
+        getProviderId(providerId),
+        session.actual_session_id,
+        projectCwd
+      );
+      if (!resumeCommand) {
+        e.stopPropagation();
+        setIsContextMenuOpen(false);
+        toast.error(t("session.resumeCommandUnavailable", "Resume command unavailable"));
+        return;
+      }
+      return handleCopyToClipboard(
+        e,
+        resumeCommand,
+        projectCwd
+          ? t("session.copiedResumeCommand", "Resume command copied")
+          : t(
+              "session.copiedResumeCommandNoCwd",
+              "Resume command copied (working directory unknown)"
+            )
+      );
+    },
+    [handleCopyToClipboard, projectCwd, providerId, session.actual_session_id, t]
   );
 
   const handleCopyFilePath = useCallback(
     (e: React.MouseEvent) =>
       handleCopyToClipboard(e, session.file_path, t('session.copiedFilePath', 'File path copied')),
     [handleCopyToClipboard, session.file_path, t]
+  );
+
+  // Move the session's JSONL file (and its associated folder) to the system trash.
+  const handleDeleteSession = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setIsContextMenuOpen(false);
+      const confirmed = window.confirm(
+        t(
+          "session.deleteConfirm",
+          "Move this session to the trash? The file will be moved to your system trash."
+        )
+      );
+      if (!confirmed) return;
+      try {
+        const { invoke } = await import("@tauri-apps/api/core");
+        await invoke("delete_session", { filePath: session.file_path });
+
+        // Drop the session from the store and clear selection if it was active.
+        const state = useAppStore.getState();
+        useAppStore.setState({
+          sessions: state.sessions.filter(
+            (s) => s.session_id !== session.session_id
+          ),
+        });
+        if (state.selectedSession?.session_id === session.session_id) {
+          await state.selectSession(null);
+        }
+        toast.success(t("session.deleted", "Session moved to trash"));
+      } catch (error) {
+        console.error("Failed to delete session:", error);
+        toast.error(t("session.deleteFailed", "Failed to delete session"));
+      }
+    },
+    [session.file_path, session.session_id, t]
   );
 
   // Handle native rename action
@@ -502,7 +571,7 @@ export const SessionItem: React.FC<SessionItemProps> = ({
                     <Copy className="w-3 h-3 mr-2" />
                     {t("session.copySessionId", "Copy Session ID")}
                   </DropdownMenuItem>
-                  {providerId === "claude" && (
+                  {supportsResumeCommand(getProviderId(providerId)) && (
                     <DropdownMenuItem onClick={handleCopyResumeCommand}>
                       <Play className="w-3 h-3 mr-2" />
                       {t("session.copyResumeCommand", "Copy Resume Command")}
@@ -512,6 +581,18 @@ export const SessionItem: React.FC<SessionItemProps> = ({
                     <FileText className="w-3 h-3 mr-2" />
                     {t("session.copyFilePath", "Copy File Path")}
                   </DropdownMenuItem>
+                  {providerId === "claude" && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={handleDeleteSession}
+                        className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+                      >
+                        <Trash2 className="w-3 h-3 mr-2" />
+                        {t("session.deleteSession", "Delete Session")}
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </>

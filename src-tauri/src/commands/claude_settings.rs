@@ -558,42 +558,49 @@ pub async fn get_claude_json_config(
     .map_err(|e| format!("Task join error: {e}"))?
 }
 
-/// Validate that a path is within allowed directories
+/// Validate a path chosen by the user via a native file dialog.
 ///
 /// # Security
-/// Prevents unauthorized file system access by restricting operations to safe directories.
+/// Tauri dialog-initiated file operations rely on the OS file picker to
+/// establish user intent, so the path is not restricted to a fixed allowlist.
+/// Instead it is validated for basic hygiene: must be absolute, contain no
+/// `..` traversal components, and have an existing, non-symlinked parent
+/// directory.
 ///
 /// # Arguments
 /// * `path` - Path to validate
 ///
 /// # Returns
-/// Ok(()) if path is safe, error message if not
-fn is_safe_path(path: &Path) -> Result<(), String> {
-    let home = dirs::home_dir().ok_or("Could not find home directory")?;
-    let allowed_dirs = [
-        home.join(".claude-history-viewer").join("exports"),
-        home.join("Downloads"),
-        home.join("Documents"),
-    ];
-
-    // For non-existing paths, canonicalize parent
-    let canonical = if path.exists() {
-        path.canonicalize()
-            .map_err(|e| format!("Path canonicalization error: {e}"))?
-    } else {
-        path.parent()
-            .and_then(|p| p.canonicalize().ok())
-            .map(|p| p.join(path.file_name().unwrap_or_default()))
-            .ok_or_else(|| "Invalid path".to_string())?
-    };
-
-    if allowed_dirs.iter().any(|d| canonical.starts_with(d)) {
-        Ok(())
-    } else {
-        Err(format!(
-            "Path not in allowed directories. Allowed: {allowed_dirs:?}"
-        ))
+/// `Ok(())` if the path is safe, error message if not
+fn validate_dialog_path(path: &Path) -> Result<(), String> {
+    if !path.is_absolute() {
+        return Err("Path must be absolute".to_string());
     }
+    if path
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return Err("Path cannot contain '..' components".to_string());
+    }
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            return Err(format!(
+                "Parent directory does not exist: {}",
+                parent.display()
+            ));
+        }
+        let metadata = parent.symlink_metadata().map_err(|e| {
+            format!(
+                "Failed to read metadata for parent directory {}: {}",
+                parent.display(),
+                e
+            )
+        })?;
+        if metadata.file_type().is_symlink() {
+            return Err("Symlink parent directories are not allowed".to_string());
+        }
+    }
+    Ok(())
 }
 
 /// Write text content to a file
@@ -609,8 +616,8 @@ pub async fn write_text_file(path: String, content: String) -> Result<(), String
     tauri::async_runtime::spawn_blocking(move || {
         let path = PathBuf::from(path);
 
-        // Validate path is in allowed directories
-        is_safe_path(&path)?;
+        // Validate the dialog-chosen path before writing
+        validate_dialog_path(&path)?;
 
         // Atomic write: write to temp file then rename
         let temp_path = path.with_extension("tmp");
@@ -644,8 +651,8 @@ pub async fn read_text_file(path: String) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let path = PathBuf::from(path);
 
-        // Validate path is in allowed directories
-        is_safe_path(&path)?;
+        // Validate the dialog-chosen path before reading
+        validate_dialog_path(&path)?;
 
         fs::read_to_string(&path)
             .map_err(|e| format!("Failed to read file {}: {}", path.display(), e))
@@ -891,6 +898,62 @@ mod tests {
         assert_eq!(parsed["theme"], "dark");
         assert_eq!(parsed["fontSize"], 14);
 
+        drop(temp);
+    }
+
+    #[test]
+    fn test_validate_dialog_path_absolute_accepted() {
+        let temp = setup_test_env();
+        let path = temp.path().join("test.txt");
+        assert!(validate_dialog_path(&path).is_ok());
+        drop(temp);
+    }
+
+    #[test]
+    fn test_validate_dialog_path_relative_rejected() {
+        let path = Path::new("relative/path.txt");
+        let result = validate_dialog_path(path);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("absolute"));
+    }
+
+    #[test]
+    fn test_validate_dialog_path_parent_dir_rejected() {
+        let path = if cfg!(windows) {
+            Path::new(r"C:\some\path\..\escape.txt")
+        } else {
+            Path::new("/some/path/../escape.txt")
+        };
+        let result = validate_dialog_path(path);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("'..'"));
+    }
+
+    #[test]
+    fn test_validate_dialog_path_nonexistent_parent_rejected() {
+        let path = if cfg!(windows) {
+            Path::new(r"C:\nonexistent_dir_abc123\file.txt")
+        } else {
+            Path::new("/nonexistent_dir_abc123/file.txt")
+        };
+        let result = validate_dialog_path(path);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("does not exist"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_validate_dialog_path_symlink_parent_rejected() {
+        use std::os::unix::fs::symlink;
+        let temp = TempDir::new().unwrap();
+        let real_dir = temp.path().join("real");
+        fs::create_dir(&real_dir).unwrap();
+        let link_dir = temp.path().join("link");
+        symlink(&real_dir, &link_dir).unwrap();
+        let file_path = link_dir.join("file.txt");
+        let result = validate_dialog_path(&file_path);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Symlink"));
         drop(temp);
     }
 }

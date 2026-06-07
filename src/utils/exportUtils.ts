@@ -245,6 +245,56 @@ export async function exportToMarkdown(
 }
 
 /**
+ * Export conversation to JSON format.
+ *
+ * Produces a structured document with session metadata (title, generation
+ * time, message count, date range) and the full message list so the export is
+ * machine-readable and round-trippable, unlike the JSON code blocks embedded
+ * in the Markdown/HTML exports.
+ */
+export async function exportToJson(
+  messages: UIMessage[],
+  sessionTitle: string,
+  includeAttachments: boolean = false,
+  _mode: ExportMode = "formatted", // Unused but kept for API consistency
+  _theme: ExportTheme = "light", // Unused but kept for API consistency
+  _filters?: MessageFilters // Unused: caller passes already-filtered messages
+): Promise<string> {
+  const timestamps = messages
+    .map((m) => new Date(m.timestamp).getTime())
+    .filter((t) => Number.isFinite(t));
+  const dateRange =
+    timestamps.length > 0
+      ? {
+          start: new Date(Math.min(...timestamps)).toISOString(),
+          end: new Date(Math.max(...timestamps)).toISOString(),
+        }
+      : null;
+
+  const document: Record<string, unknown> = {
+    title: sessionTitle,
+    generatedAt: new Date().toISOString(),
+    messageCount: messages.length,
+    dateRange,
+    messages,
+  };
+
+  if (includeAttachments) {
+    const files = extractFileAttachments(messages);
+    if (files.size > 0) {
+      document.attachments = Object.fromEntries(files);
+    }
+  }
+
+  const blob = new Blob([JSON.stringify(document, null, 2)], {
+    type: "application/json;charset=utf-8",
+  });
+  const filename = `${sanitizeFilename(sessionTitle)}.json`;
+  saveAs(blob, filename);
+  return filename;
+}
+
+/**
  * Export conversation to HTML format
  */
 export async function exportToHTML(

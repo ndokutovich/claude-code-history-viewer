@@ -323,6 +323,7 @@
     "pathCopyFailed": "パスのコピーに失敗しました",
     "copied": "コピー済み",
     "markdownTooltip": "会話をMarkdown形式でエクスポート",
+    "jsonTooltip": "会話をJSON形式でエクスポート",
     "htmlTooltip": "会話をHTML形式でエクスポート",
     "docxTooltip": "会話をWord文書でエクスポート",
     "resume": "再開",

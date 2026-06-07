@@ -355,6 +355,7 @@
     "pathCopyFailed": "경로 복사 실패",
     "copied": "복사됨",
     "markdownTooltip": "대화를 Markdown 형식으로 내보내기",
+    "jsonTooltip": "대화를 JSON 형식으로 내보내기",
     "htmlTooltip": "대화를 HTML 형식으로 내보내기",
     "docxTooltip": "대화를 Word 문서로 내보내기",
     "resume": "재개",

@@ -9,7 +9,7 @@ use crate::commands::{
     aider::*, antigravity::*, claude_settings::*, codex::*, cursor::*, edits::*, feedback::*, files::*,
     gemini::*, cline::*, forgecode::*, mcp_presets::*, metadata::*, multi_provider::*, opencode::*,
     project::*, rename::*,
-    resume::*, secure_update::*, session::*, session_writer::*, settings::*, stats::*,
+    resume::*, secure_update::*, session::*, session_delete::*, session_writer::*, settings::*, stats::*,
     unified_presets::*, update::*, watcher::*, wsl::*,
 };
 use std::sync::Mutex;
@@ -72,6 +72,7 @@ pub fn run() {
             load_session_messages_paginated,
             get_session_message_count,
             search_messages,
+            delete_session,
             fix_session,
             get_session_token_stats,
             get_project_token_stats,

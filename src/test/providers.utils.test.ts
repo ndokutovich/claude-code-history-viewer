@@ -6,10 +6,55 @@ import {
   hasNonDefaultProvider,
   getProviderId,
   getProviderLabel,
+  getResumeCommand,
   normalizeProviderIds,
   PROVIDER_IDS,
   supportsConversationBreakdown,
+  supportsResumeCommand,
 } from "@/utils/providers";
+
+describe("getResumeCommand", () => {
+  it("builds a claude resume command with cd prefix", () => {
+    expect(getResumeCommand("claude", "abc-123", "/Users/jack/my project")).toBe(
+      "cd '/Users/jack/my project' && claude --resume abc-123"
+    );
+  });
+
+  it("builds a codex resume command with cd prefix", () => {
+    expect(getResumeCommand("codex", "sess_42", "/tmp/work")).toBe(
+      "cd '/tmp/work' && codex resume sess_42"
+    );
+  });
+
+  it("omits the cd prefix when cwd is not provided", () => {
+    expect(getResumeCommand("claude", "abc-123")).toBe("claude --resume abc-123");
+  });
+
+  it("escapes embedded apostrophes in the cwd", () => {
+    expect(getResumeCommand("codex", "x1", "/a/it's here")).toBe(
+      "cd '/a/it'\\''s here' && codex resume x1"
+    );
+  });
+
+  it("returns null for providers without a resume command", () => {
+    expect(getResumeCommand("cursor", "abc", "/tmp")).toBeNull();
+    expect(getResumeCommand("gemini", "abc", "/tmp")).toBeNull();
+    expect(getResumeCommand("opencode", "abc", "/tmp")).toBeNull();
+  });
+
+  it("fail-closes on session ids with shell metacharacters", () => {
+    expect(getResumeCommand("claude", "abc; rm -rf /", "/tmp")).toBeNull();
+    expect(getResumeCommand("codex", "a b", "/tmp")).toBeNull();
+    expect(getResumeCommand("claude", "", "/tmp")).toBeNull();
+  });
+
+  it("reports resume-command support per provider", () => {
+    expect(supportsResumeCommand("claude")).toBe(true);
+    expect(supportsResumeCommand("codex")).toBe(true);
+    expect(supportsResumeCommand("cursor")).toBe(false);
+    expect(supportsResumeCommand(undefined)).toBe(false);
+  });
+});
 
 describe("providers utils", () => {
   it("normalizes provider ids by canonical order", () => {

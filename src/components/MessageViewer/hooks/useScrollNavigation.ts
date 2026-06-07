@@ -63,6 +63,10 @@ export const useScrollNavigation = ({
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [scrollReadyForSessionId, setScrollReadyForSessionId] = useState<string | null>(null);
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks whether the user is near the bottom, for stick-to-bottom auto-scroll
+  // when new messages arrive (e.g. from the live file watcher).
+  const isNearBottomRef = useRef(true);
+  const prevMessagesLengthRef = useRef(0);
 
   // Helper to get the scroll viewport element
   const getScrollViewport = useCallback((): HTMLElement | null => {
@@ -238,6 +242,13 @@ export const useScrollNavigation = ({
     let scrollElementRef: HTMLElement | null = null;
 
     const handleScroll = () => {
+      // Update near-bottom ref immediately for accurate auto-scroll decisions
+      const vp = getScrollViewport();
+      if (vp) {
+        isNearBottomRef.current =
+          vp.scrollHeight - vp.scrollTop - vp.clientHeight < SCROLL_THRESHOLD_PX;
+      }
+
       if (throttleTimer) return;
 
       throttleTimer = setTimeout(() => {
@@ -276,6 +287,38 @@ export const useScrollNavigation = ({
       }
     };
   }, [messagesLength, getScrollViewport]);
+
+  // Reset the message-count baseline on session switch so an N→0→N'
+  // transition doesn't spuriously trigger auto-scroll.
+  useEffect(() => {
+    prevMessagesLengthRef.current = 0;
+  }, [selectedSessionId]);
+
+  // Auto-scroll to bottom when new messages arrive and the user was already at
+  // the bottom (stick-to-bottom). Stops following once the user scrolls up.
+  useEffect(() => {
+    const prevLength = prevMessagesLengthRef.current;
+    prevMessagesLengthRef.current = messagesLength;
+
+    if (
+      prevLength > 0 &&
+      messagesLength > prevLength &&
+      isNearBottomRef.current &&
+      !currentMatchUuid &&
+      scrollReadyForSessionId === selectedSessionId
+    ) {
+      const rafId = requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+      return () => cancelAnimationFrame(rafId);
+    }
+  }, [
+    messagesLength,
+    scrollToBottom,
+    scrollReadyForSessionId,
+    selectedSessionId,
+    currentMatchUuid,
+  ]);
 
   return {
     showScrollToTop,

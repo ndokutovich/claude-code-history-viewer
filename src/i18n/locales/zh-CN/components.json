@@ -353,6 +353,7 @@
     "pathCopyFailed": "复制路径失败",
     "copied": "已复制",
     "markdownTooltip": "将对话导出为 Markdown 格式",
+    "jsonTooltip": "将对话导出为 JSON 格式",
     "htmlTooltip": "将对话导出为 HTML 格式",
     "docxTooltip": "将对话导出为 Word 文档",
     "resume": "恢复",
