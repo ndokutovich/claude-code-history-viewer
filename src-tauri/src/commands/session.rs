@@ -69,7 +69,14 @@ fn build_system_metadata(entry: &RawLogEntry) -> Option<serde_json::Value> {
 fn is_noise_message_type(message_type: &str) -> bool {
     matches!(
         message_type,
-        "progress" | "queue-operation" | "file-history-snapshot"
+        "progress"
+            | "queue-operation"
+            | "file-history-snapshot"
+            | "attachment"
+            | "last-prompt"
+            | "ai-title"
+            | "mode"
+            | "permission-mode"
     )
 }
 
@@ -1408,5 +1415,43 @@ mod tests {
         let input = r"/tmp/\\?\weird_filename";
         let expected = r"/tmp/\\?\weird_filename";
         assert_eq!(normalize_windows_path(input), expected);
+    }
+
+    // ── Regression: schema drift in current Claude Code JSONL ──────────────
+    // The current Claude Code writes content-less metadata entry types into the
+    // session JSONL. They carry no `message`/`content` and usually no
+    // `timestamp`, so they must be treated as noise — otherwise they render as
+    // empty rows with a fallback (now) timestamp, burying real messages.
+    #[test]
+    fn test_new_metadata_types_are_noise() {
+        for ty in [
+            "attachment",
+            "last-prompt",
+            "ai-title",
+            "mode",
+            "permission-mode",
+        ] {
+            assert!(
+                is_noise_message_type(ty),
+                "expected `{ty}` to be classified as noise",
+            );
+        }
+    }
+
+    #[test]
+    fn test_known_noise_types_still_noise() {
+        for ty in ["progress", "queue-operation", "file-history-snapshot"] {
+            assert!(is_noise_message_type(ty), "`{ty}` must remain noise");
+        }
+    }
+
+    #[test]
+    fn test_real_message_types_are_not_noise() {
+        for ty in ["user", "assistant", "system", "summary"] {
+            assert!(
+                !is_noise_message_type(ty),
+                "`{ty}` must never be classified as noise",
+            );
+        }
     }
 }
