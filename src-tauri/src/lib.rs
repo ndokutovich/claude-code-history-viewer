@@ -5,7 +5,7 @@ mod utils;
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::{
     claude_settings::*, codex::*, cursor::*, edits::*, feedback::*, files::*, gemini::*,
-    mcp_presets::*, metadata::*, multi_provider::*, opencode::*, project::*, rename::*,
+    cline::*, mcp_presets::*, metadata::*, multi_provider::*, opencode::*, project::*, rename::*,
     resume::*, secure_update::*, session::*, session_writer::*, settings::*, stats::*,
     unified_presets::*, update::*, watcher::*,
 };
@@ -86,6 +86,12 @@ pub fn run() {
             load_opencode_sessions,
             load_opencode_messages,
             rename_opencode_session_native,
+            // Cline / Roo Code support (v1.9.x)
+            get_cline_path,
+            validate_cline_folder,
+            scan_cline_projects,
+            load_cline_sessions,
+            load_cline_messages,
             // Global stats (upstream-enhanced)
             get_global_stats_summary,
             // Git log for Session Board

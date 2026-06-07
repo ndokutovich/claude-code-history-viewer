@@ -11,4 +11,5 @@ pub mod claude_code;
 pub mod gemini;
 pub mod codex;      // v1.8.0 - Codex CLI support
 pub mod opencode;   // v1.9.0 - OpenCode support
+pub mod cline;      // v1.9.x - Cline / Roo Code support
 pub mod provider_capabilities; // Provider feature flags (resume support, etc.)

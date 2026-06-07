@@ -11,6 +11,11 @@
 // - load_provider_messages()  → route message load by provider id
 // - search_all_providers()    → federated search across all providers
 
+use crate::commands::adapters::cline::{
+    get_all_cline_base_paths, load_cline_messages as cline_load_messages,
+    load_cline_sessions as cline_load_sessions, parse_scheme_path as cline_parse_scheme_path,
+    scan_cline_projects as cline_scan_projects,
+};
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::adapters::opencode::{get_opencode_base_path, scan_opencode_projects_impl};
 use crate::models::universal::{UniversalMessage, UniversalProject, UniversalSession};
@@ -49,7 +54,7 @@ pub struct DetectedProvider {
 /// full list with availability flags so the frontend can show a summary.
 #[tauri::command]
 pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
-    let mut providers = Vec::with_capacity(5);
+    let mut providers = Vec::with_capacity(6);
 
     // ---- Claude Code -------------------------------------------------------
     {
@@ -112,6 +117,23 @@ pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
         providers.push(DetectedProvider {
             id: "opencode".to_string(),
             display_name: "OpenCode".to_string(),
+            base_path: path,
+            is_available: available,
+            error,
+        });
+    }
+
+    // ---- Cline / Roo Code --------------------------------------------------
+    {
+        let bases = get_all_cline_base_paths();
+        let result: Result<String, String> = match bases.first() {
+            Some((p, _)) => Ok(p.to_string_lossy().to_string()),
+            None => Err("CLINE_FOLDER_NOT_FOUND: No Cline or Roo Code installation found".to_string()),
+        };
+        let (available, path, error) = result_to_probe(result);
+        providers.push(DetectedProvider {
+            id: "cline".to_string(),
+            display_name: "Cline".to_string(),
             base_path: path,
             is_available: available,
             error,
@@ -218,6 +240,19 @@ pub async fn scan_all_projects(
         }
     }
 
+    // ---- Cline / Roo Code --------------------------------------------------
+    if wanted.iter().any(|p| p == "cline") {
+        for (base, _label) in get_all_cline_base_paths() {
+            let source_id = format!("cline:{}", base.display());
+            match cline_scan_projects(&base, &source_id) {
+                Ok(projects) => all_projects.extend(projects),
+                Err(e) => {
+                    eprintln!("[multi_provider] Cline scan failed: {}", e);
+                }
+            }
+        }
+    }
+
     // Cursor IDE provides workspaces, not projects in the same sense; skip
     // in the unified scan (users access Cursor via its dedicated commands).
 
@@ -300,6 +335,12 @@ pub async fn load_provider_sessions(
             } else {
                 Err("MULTI_PROVIDER_OPENCODE: OpenCode base path not found".to_string())
             }
+        }
+
+        "cline" => {
+            // project_path is the `cline://<base>|<cwd>` scheme path.
+            let (base, cwd) = cline_parse_scheme_path(&project_path)?;
+            cline_load_sessions(&base, &cwd, &source_id)
         }
 
         other => Err(format!(
@@ -385,6 +426,21 @@ pub async fn load_provider_messages(
             } else {
                 Err("MULTI_PROVIDER_OPENCODE: OpenCode base path not found".to_string())
             }
+        }
+
+        "cline" => {
+            // session_path is the `cline://<base>|<task_id>` scheme path.
+            let (base, task_id) = cline_parse_scheme_path(&session_path)?;
+            let source_id = format!("cline:{}", base.display());
+            cline_load_messages(
+                &base,
+                &task_id,
+                &session_path,
+                "",
+                &source_id,
+                offset,
+                limit,
+            )
         }
 
         other => Err(format!(
@@ -525,6 +581,49 @@ pub async fn search_all_providers(
                                     .filter(|m| message_matches_query(m, &query))
                                     .collect();
                                 all_results.extend(matching);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ---- Cline / Roo Code --------------------------------------------------
+    if wanted.iter().any(|p| p == "cline") {
+        'cline_search: for (base, _label) in get_all_cline_base_paths() {
+            let source_id = format!("cline:{}", base.display());
+            if let Ok(projects) = cline_scan_projects(&base, &source_id) {
+                for project in projects {
+                    // project.path == "cline://<base>|<cwd>"
+                    let cwd = match cline_parse_scheme_path(&project.path) {
+                        Ok((_, cwd)) => cwd,
+                        Err(_) => continue,
+                    };
+                    if let Ok(sessions) = cline_load_sessions(&base, &cwd, &source_id) {
+                        for session in sessions {
+                            // session.id == "cline://<base>|<task_id>"
+                            let task_id = match cline_parse_scheme_path(&session.id) {
+                                Ok((_, t)) => t,
+                                Err(_) => continue,
+                            };
+                            if let Ok(msgs) = cline_load_messages(
+                                &base,
+                                &task_id,
+                                &session.id,
+                                &project.id,
+                                &source_id,
+                                0,
+                                SEARCH_MAX_MESSAGES_PER_SESSION,
+                            ) {
+                                let matching: Vec<UniversalMessage> = msgs
+                                    .into_iter()
+                                    .filter(|m| message_matches_query(m, &query))
+                                    .collect();
+                                all_results.extend(matching);
+                                if all_results.len() >= max_results {
+                                    break 'cline_search;
+                                }
                             }
                         }
                     }

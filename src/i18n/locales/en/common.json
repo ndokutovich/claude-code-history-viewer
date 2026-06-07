@@ -516,6 +516,7 @@
       "claude": "Claude Code",
       "codex": "Codex CLI",
       "opencode": "OpenCode",
+      "cline": "Cline",
       "cursor": "Cursor IDE",
       "gemini": "Gemini CLI"
     },
