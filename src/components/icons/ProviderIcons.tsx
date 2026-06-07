@@ -1,5 +1,5 @@
 import React from "react";
-import { Bot, Braces, Code2, Hammer, Sparkles, Terminal, Zap } from "lucide-react";
+import { Bot, Braces, Code2, Hammer, Orbit, Sparkles, Terminal, Zap } from "lucide-react";
 
 interface ProviderIconProps {
   providerId: string;
@@ -105,6 +105,13 @@ export const ForgeCodeIcon: React.FC<{ className?: string }> = ({ className }) =
 );
 
 /**
+ * Antigravity Icon - Violet color scheme
+ */
+export const AntigravityIcon: React.FC<{ className?: string }> = ({ className }) => (
+  <Orbit className={className} />
+);
+
+/**
  * Generic provider icon (fallback)
  */
 export const GenericProviderIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -132,6 +139,8 @@ export const ProviderIcon: React.FC<ProviderIconProps> = ({ providerId, classNam
       return <AiderIcon className={className} />;
     case "forgecode":
       return <ForgeCodeIcon className={className} />;
+    case "antigravity":
+      return <AntigravityIcon className={className} />;
     default:
       return <GenericProviderIcon className={className} />;
   }
@@ -158,6 +167,8 @@ export const getProviderColorClass = (providerId?: string): string => {
       return "text-green-600";
     case "forgecode":
       return "text-orange-500";
+    case "antigravity":
+      return "text-violet-500";
     default:
       return "text-gray-500";
   }

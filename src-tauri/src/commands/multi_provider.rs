@@ -16,6 +16,12 @@ use crate::commands::adapters::aider::{
     load_aider_sessions as aider_load_sessions, parse_scheme_path as aider_parse_scheme_path,
     scan_aider_projects as aider_scan_projects,
 };
+use crate::commands::adapters::antigravity::{
+    get_antigravity_base_path, load_antigravity_messages as antigravity_load_messages,
+    load_antigravity_sessions as antigravity_load_sessions,
+    parse_scheme_path as antigravity_parse_scheme_path,
+    scan_antigravity_projects as antigravity_scan_projects,
+};
 use crate::commands::adapters::cline::{
     get_all_cline_base_paths, load_cline_messages as cline_load_messages,
     load_cline_sessions as cline_load_sessions, parse_scheme_path as cline_parse_scheme_path,
@@ -64,7 +70,7 @@ pub struct DetectedProvider {
 /// full list with availability flags so the frontend can show a summary.
 #[tauri::command]
 pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
-    let mut providers = Vec::with_capacity(6);
+    let mut providers = Vec::with_capacity(7);
 
     // ---- Claude Code -------------------------------------------------------
     {
@@ -176,6 +182,24 @@ pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
         providers.push(DetectedProvider {
             id: "forgecode".to_string(),
             display_name: "ForgeCode".to_string(),
+            base_path: path,
+            is_available: available,
+            error,
+        });
+    }
+
+    // ---- Antigravity -------------------------------------------------------
+    {
+        let result: Result<String, String> = match get_antigravity_base_path() {
+            Some(p) => Ok(p.to_string_lossy().to_string()),
+            None => {
+                Err("ANTIGRAVITY_FOLDER_NOT_FOUND: No Antigravity installation found".to_string())
+            }
+        };
+        let (available, path, error) = result_to_probe(result);
+        providers.push(DetectedProvider {
+            id: "antigravity".to_string(),
+            display_name: "Antigravity".to_string(),
             base_path: path,
             is_available: available,
             error,
@@ -322,6 +346,19 @@ pub async fn scan_all_projects(
         }
     }
 
+    // ---- Antigravity -------------------------------------------------------
+    if wanted.iter().any(|p| p == "antigravity") {
+        if let Some(root) = get_antigravity_base_path() {
+            let source_id = format!("antigravity:{}", root.display());
+            match antigravity_scan_projects(&root, &source_id) {
+                Ok(projects) => all_projects.extend(projects),
+                Err(e) => {
+                    eprintln!("[multi_provider] Antigravity scan failed: {}", e);
+                }
+            }
+        }
+    }
+
     // Cursor IDE provides workspaces, not projects in the same sense; skip
     // in the unified scan (users access Cursor via its dedicated commands).
 
@@ -424,6 +461,12 @@ pub async fn load_provider_sessions(
                 .ok_or_else(|| "MULTI_PROVIDER_FORGECODE: ForgeCode base path not found".to_string())?;
             let workspace_id = forgecode_parse_project_path(&project_path)?;
             forgecode_load_sessions(&base, &workspace_id, &source_id)
+        }
+
+        "antigravity" => {
+            // project_path is the `antigravity://<root>` scheme path.
+            let (root, _) = antigravity_parse_scheme_path(&project_path)?;
+            antigravity_load_sessions(&root, &source_id)
         }
 
         other => Err(format!(
@@ -557,6 +600,21 @@ pub async fn load_provider_messages(
                 &conversation_id,
                 &session_path,
                 &project_path,
+                &source_id,
+                offset,
+                limit,
+            )
+        }
+
+        "antigravity" => {
+            // session_path is the `antigravity://<root>|<session_id>` scheme path.
+            let (root, session_id) = antigravity_parse_scheme_path(&session_path)?;
+            let source_id = format!("antigravity:{}", root.display());
+            antigravity_load_messages(
+                &root,
+                &session_id,
+                &session_path,
+                "",
                 &source_id,
                 offset,
                 limit,
@@ -837,6 +895,40 @@ pub async fn search_all_providers(
                                     break 'forgecode_search;
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ---- Antigravity -------------------------------------------------------
+    if wanted.iter().any(|p| p == "antigravity") {
+        if let Some(root) = get_antigravity_base_path() {
+            let source_id = format!("antigravity:{}", root.display());
+            if let Ok(sessions) = antigravity_load_sessions(&root, &source_id) {
+                for session in sessions {
+                    // session.id == "antigravity://<root>|<session_id>"
+                    let session_id = match antigravity_parse_scheme_path(&session.id) {
+                        Ok((_, id)) => id,
+                        Err(_) => continue,
+                    };
+                    if let Ok(msgs) = antigravity_load_messages(
+                        &root,
+                        &session_id,
+                        &session.id,
+                        &session.project_id,
+                        &source_id,
+                        0,
+                        SEARCH_MAX_MESSAGES_PER_SESSION,
+                    ) {
+                        let matching: Vec<UniversalMessage> = msgs
+                            .into_iter()
+                            .filter(|m| message_matches_query(m, &query))
+                            .collect();
+                        all_results.extend(matching);
+                        if all_results.len() >= max_results {
+                            break;
                         }
                     }
                 }

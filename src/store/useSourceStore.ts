@@ -187,6 +187,7 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       { name: 'Cline', command: 'get_cline_path', id: 'cline' },
       { name: 'Aider', command: 'get_aider_path', id: 'aider' },
       { name: 'ForgeCode', command: 'get_forgecode_path', id: 'forgecode' },
+      { name: 'Antigravity', command: 'get_antigravity_path', id: 'antigravity' },
     ];
 
     let completed = 0;
