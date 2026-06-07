@@ -81,15 +81,9 @@ export const MessageNode = React.memo(({
     [message]
   );
 
-  // Sidechain filtering is now handled at the data loading level (adapter.loadMessages)
-  // This is a defensive check to catch adapter bugs during development
-  if (message.isSidechain && import.meta.env.DEV) {
-    console.warn(
-      '[MessageViewer] Sidechain message not filtered by adapter:',
-      message.uuid,
-      'This indicates an adapter bug - sidechains should be filtered during data loading.'
-    );
-  }
+  // Sidechain (sub-agent) messages are filtered at the data loading level
+  // (adapter.loadMessages) unless the "Show Sub-agent Messages" toggle is enabled,
+  // in which case they are loaded intentionally and marked with a sub-agent badge below.
 
   // Apply left margin based on depth
   const leftMargin = depth > 0 ? `ml-${Math.min(depth * 4, MAX_DEPTH_MARGIN)}` : "";
@@ -132,7 +126,7 @@ export const MessageNode = React.memo(({
           </span>
           {message.isSidechain && (
             <span className="px-2 py-1 whitespace-nowrap text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 rounded-full">
-              {t("messageViewer.branch")}
+              {t("messageViewer.subAgent")}
             </span>
           )}
           {/* Copy Reference Button */}

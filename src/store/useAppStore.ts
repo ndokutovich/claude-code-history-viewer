@@ -436,6 +436,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     showMessagesOnly: false,
     showCommandOnly: false,
     showNoiseMessages: false,
+    showSubagentMessages: false,
   },
 
   // Core state
@@ -829,10 +830,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
       // Determine whether to exclude sidechains:
       // - Use provided parameter if explicitly set
+      // - Otherwise, the "Show Sub-agent Messages" toggle forces sidechains to load
       // - Otherwise fall back to global store setting
       const shouldExcludeSidechain = excludeSidechain !== undefined
         ? excludeSidechain
-        : get().excludeSidechain;
+        : get().messageFilters.showSubagentMessages
+          ? false
+          : get().excludeSidechain;
 
       // Load messages using adapter
       const shouldIncludeNoise = get().messageFilters.showNoiseMessages;
@@ -1619,14 +1623,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setMessageFilters: (filters: Partial<MessageFilters>) => {
     const prevShowNoise = get().messageFilters.showNoiseMessages;
+    const prevShowSubagent = get().messageFilters.showSubagentMessages;
     set((state) => ({
       messageFilters: {
         ...state.messageFilters,
         ...filters,
       },
     }));
-    // showNoiseMessages is a backend filter — reload session when it changes
-    if (filters.showNoiseMessages !== undefined && filters.showNoiseMessages !== prevShowNoise) {
+    // showNoiseMessages and showSubagentMessages are backend filters —
+    // reload the session when either changes so the data is re-fetched.
+    const noiseChanged =
+      filters.showNoiseMessages !== undefined && filters.showNoiseMessages !== prevShowNoise;
+    const subagentChanged =
+      filters.showSubagentMessages !== undefined && filters.showSubagentMessages !== prevShowSubagent;
+    if (noiseChanged || subagentChanged) {
       const { selectedSession } = get();
       if (selectedSession) {
         get().selectSession(selectedSession);

@@ -267,6 +267,7 @@ export interface MessageFilters {
   showMessagesOnly: boolean;
   showCommandOnly: boolean; // Show only bash commands (like bash history)
   showNoiseMessages: boolean; // Show progress/file-history-snapshot/queue-operation messages
+  showSubagentMessages: boolean; // Show sub-agent (sidechain) messages — backend filter, triggers reload
 }
 
 export interface AppState {
