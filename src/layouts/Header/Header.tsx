@@ -24,7 +24,13 @@ import { SessionBuilderModal } from "@/components/modals/SessionBuilderModal";
 import { cn } from "@/utils/cn";
 import { COLORS } from "@/constants/colors";
 import { useTranslation } from "react-i18next";
+import { isMacOS, isTauri } from "@/utils/platform";
 import { SettingDropdown } from "./SettingDropdown";
+
+// macOS traffic-light buttons overlap the header when Tauri's Overlay
+// titleBarStyle is active. Reserve space for them only in the desktop shell
+// on macOS — the WebUI build and Windows/Linux desktop are unaffected.
+const HAS_MACOS_TRAFFIC_LIGHTS = isTauri() && isMacOS();
 
 export const Header = () => {
   const { t } = useTranslation("common");
@@ -76,12 +82,23 @@ export const Header = () => {
     <header
       role="banner"
       className={cn(
-        "px-6 py-4 border-b",
+        "relative px-6 py-4 border-b",
         COLORS.ui.background.secondary,
         COLORS.ui.border.light
       )}
     >
-      <div className="flex items-center justify-between">
+      {/* Full-header drag region — sits behind all content so the entire
+          header is draggable on macOS Overlay title bars. Interactive
+          children re-enable pointer events; non-interactive areas let clicks
+          fall through to this layer. No-op on Windows/Linux. */}
+      <div data-tauri-drag-region className="absolute inset-0" />
+
+      <div
+        className={cn(
+          "relative z-10 flex items-center justify-between pointer-events-none",
+          HAS_MACOS_TRAFFIC_LIGHTS && "pl-[72px]"
+        )}
+      >
         <div className="flex items-center space-x-3">
           <img
             src="/app-icon.png"
@@ -100,7 +117,7 @@ export const Header = () => {
 
         <nav
           aria-label={t("nav.toolbarLabel", "Application toolbar")}
-          className="flex items-center space-x-4"
+          className="flex items-center space-x-4 pointer-events-auto"
         >
           <div className="flex items-center space-x-2">
             {/* Sources Button */}
