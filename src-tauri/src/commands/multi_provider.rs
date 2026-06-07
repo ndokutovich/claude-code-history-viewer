@@ -34,11 +34,17 @@ use crate::commands::adapters::forgecode::{
 };
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::adapters::opencode::{get_opencode_base_path, scan_opencode_projects_impl};
+use crate::commands::search_match::{
+    cache_key, current_search_generation, take_matching, top_k_by, QueryMatcher,
+};
 use crate::models::universal::{UniversalMessage, UniversalProject, UniversalSession};
 use crate::models::SearchFilters;
+use lru::LruCache;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
+use std::num::NonZeroUsize;
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 // ============================================================================
 // DETECTED PROVIDER
@@ -645,6 +651,18 @@ pub async fn load_provider_messages(
 // SEARCH ALL PROVIDERS
 // ============================================================================
 
+/// Bounded LRU cache of federated search results, keyed by a hash of
+/// (query, active_providers, limit). Entries carry the search generation they
+/// were produced under; a generation bump (via the file watcher) makes them
+/// stale without an explicit purge.
+const SEARCH_CACHE_CAPACITY: usize = 64;
+
+lazy_static::lazy_static! {
+    static ref SEARCH_CACHE: Mutex<LruCache<u64, (u64, Vec<UniversalMessage>)>> = Mutex::new(
+        LruCache::new(NonZeroUsize::new(SEARCH_CACHE_CAPACITY).expect("non-zero capacity")),
+    );
+}
+
 /// Search messages across all providers (or a subset).
 ///
 /// `query`: full-text search query
@@ -658,6 +676,23 @@ pub async fn search_all_providers(
     custom_claude_paths: Option<Vec<String>>,
 ) -> Result<Vec<UniversalMessage>, String> {
     let max_results = limit.unwrap_or(100);
+
+    // ---- Result cache (generation-gated) -----------------------------------
+    let generation = current_search_generation();
+    let key = cache_key(&(&query, &active_providers, max_results));
+    if let Ok(mut cache) = SEARCH_CACHE.lock() {
+        if let Some((cached_gen, cached)) = cache.get(&key) {
+            if *cached_gen == generation {
+                return Ok(cached.clone());
+            }
+        }
+    }
+
+    // Multi-term matcher built once and shared across every provider scan.
+    let matcher = QueryMatcher::from_query(&query);
+    if matcher.is_empty() {
+        return Ok(Vec::new());
+    }
 
     let wanted: Vec<String> = match active_providers {
         Some(list) => list,
@@ -727,7 +762,7 @@ pub async fn search_all_providers(
             if let Ok(projects) =
                 crate::commands::codex::scan_codex_projects(codex_path, source_id.clone()).await
             {
-                for project in projects {
+                'codex_search: for project in projects {
                     if let Ok(sessions) = crate::commands::codex::load_codex_sessions(
                         String::new(),
                         project.path.clone(),
@@ -749,11 +784,13 @@ pub async fn search_all_providers(
                             )
                             .await
                             {
-                                let matching: Vec<UniversalMessage> = msgs
-                                    .into_iter()
-                                    .filter(|m| message_matches_query(m, &query))
-                                    .collect();
+                                let remaining = max_results.saturating_sub(all_results.len());
+                                let matching =
+                                    take_matching(msgs, remaining, |m| message_matches(m, &matcher));
                                 all_results.extend(matching);
+                                if all_results.len() >= max_results {
+                                    break 'codex_search;
+                                }
                             }
                         }
                     }
@@ -767,7 +804,7 @@ pub async fn search_all_providers(
         if let Some(opencode_base) = get_opencode_base_path() {
             let source_id = format!("opencode:{}", opencode_base.display());
             if let Ok(projects) = scan_opencode_projects_impl(&opencode_base, &source_id) {
-                for project in projects {
+                'opencode_search: for project in projects {
                     let opencode_path = opencode_base.to_string_lossy().to_string();
                     if let Ok(sessions) = crate::commands::opencode::load_opencode_sessions(
                         opencode_path.clone(),
@@ -787,11 +824,13 @@ pub async fn search_all_providers(
                             )
                             .await
                             {
-                                let matching: Vec<UniversalMessage> = msgs
-                                    .into_iter()
-                                    .filter(|m| message_matches_query(m, &query))
-                                    .collect();
+                                let remaining = max_results.saturating_sub(all_results.len());
+                                let matching =
+                                    take_matching(msgs, remaining, |m| message_matches(m, &matcher));
                                 all_results.extend(matching);
+                                if all_results.len() >= max_results {
+                                    break 'opencode_search;
+                                }
                             }
                         }
                     }
@@ -829,7 +868,7 @@ pub async fn search_all_providers(
                             ) {
                                 let matching: Vec<UniversalMessage> = msgs
                                     .into_iter()
-                                    .filter(|m| message_matches_query(m, &query))
+                                    .filter(|m| message_matches(m, &matcher))
                                     .collect();
                                 all_results.extend(matching);
                                 if all_results.len() >= max_results {
@@ -873,7 +912,7 @@ pub async fn search_all_providers(
                         ) {
                             let matching: Vec<UniversalMessage> = msgs
                                 .into_iter()
-                                .filter(|m| message_matches_query(m, &query))
+                                .filter(|m| message_matches(m, &matcher))
                                 .collect();
                             all_results.extend(matching);
                             if all_results.len() >= max_results {
@@ -921,7 +960,7 @@ pub async fn search_all_providers(
                             ) {
                                 let matching: Vec<UniversalMessage> = msgs
                                     .into_iter()
-                                    .filter(|m| message_matches_query(m, &query))
+                                    .filter(|m| message_matches(m, &matcher))
                                     .collect();
                                 all_results.extend(matching);
                                 if all_results.len() >= max_results {
@@ -957,7 +996,7 @@ pub async fn search_all_providers(
                     ) {
                         let matching: Vec<UniversalMessage> = msgs
                             .into_iter()
-                            .filter(|m| message_matches_query(m, &query))
+                            .filter(|m| message_matches(m, &matcher))
                             .collect();
                         all_results.extend(matching);
                         if all_results.len() >= max_results {
@@ -969,11 +1008,17 @@ pub async fn search_all_providers(
         }
     }
 
-    // Sort by timestamp descending and truncate
-    all_results.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
-    all_results.truncate(max_results);
+    // Top-k by timestamp descending: O(n) partial selection instead of an
+    // O(n log n) full sort when there are more candidates than requested.
+    let results = top_k_by(all_results, max_results, |a, b| b.timestamp.cmp(&a.timestamp));
 
-    Ok(all_results)
+    // Cache under the generation captured at entry; a concurrent file change
+    // will have advanced the generation, so this entry is simply skipped next time.
+    if let Ok(mut cache) = SEARCH_CACHE.lock() {
+        cache.put(key, (generation, results.clone()));
+    }
+
+    Ok(results)
 }
 
 // ============================================================================
@@ -1184,13 +1229,15 @@ fn parse_gemini_session_path(path: &str) -> (String, String, String, String) {
     (actual_path, session_id, project_id, source_id)
 }
 
-/// Check whether any content in a UniversalMessage matches the search query
-/// (case-insensitive substring search).
-fn message_matches_query(msg: &UniversalMessage, query: &str) -> bool {
-    let lower_query = query.to_lowercase();
+/// Check whether any content in a UniversalMessage matches the search query.
+///
+/// A message matches when its serialized content contains all query terms
+/// (ASCII case-insensitive, order-independent), as determined by the shared
+/// [`QueryMatcher`]. The matcher is built once per search and reused here.
+fn message_matches(msg: &UniversalMessage, matcher: &QueryMatcher) -> bool {
     for content in &msg.content {
         if let Ok(json) = serde_json::to_string(content) {
-            if json.to_lowercase().contains(&lower_query) {
+            if matcher.is_match(&json) {
                 return true;
             }
         }

@@ -25,4 +25,5 @@ pub mod aider; // v1.9.x - Aider chat history support
 pub mod forgecode; // v1.9.x - ForgeCode support
 pub mod antigravity; // v1.9.x - Antigravity support
 pub mod multi_provider; // v1.9.0 - Unified multi-provider facade
+pub mod search_match; // Shared search primitives: matcher, top-k, cache invalidation
 pub mod watcher; // File watcher for real-time session detection

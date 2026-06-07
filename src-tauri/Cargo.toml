@@ -56,5 +56,8 @@ memchr = "2.7"
 lazy_static = "1.5"
 simd-json = "0.14"
 tempfile = "3.10.1"
+# Search optimization: SIMD multi-pattern matching + bounded LRU result cache
+aho-corasick = "1.1"
+lru = "0.12"
 
 [dev-dependencies]

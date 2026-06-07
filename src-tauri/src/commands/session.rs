@@ -1,4 +1,5 @@
 use crate::commands::adapters::claude_code::claude_message_to_universal;
+use crate::commands::search_match::QueryMatcher;
 use crate::models::universal::UniversalMessage;
 use crate::models::*;
 use crate::utils::{
@@ -1030,33 +1031,25 @@ fn normalize_quotes(text: &str) -> String {
         .collect()
 }
 
-/// Check if content matches all search terms
-/// Quoted terms must match exactly, unquoted terms must all appear somewhere
-fn matches_search_terms(content: &str, terms: &[(bool, String)]) -> bool {
-    // Normalize quotes in content so smart quotes match regular quotes
-    let normalized_content = normalize_quotes(content);
-    let content_lower = normalized_content.to_lowercase();
-
+/// Build an aho-corasick matcher for the parsed search terms.
+///
+/// Quoted terms become a single contiguous phrase pattern; unquoted terms
+/// contribute one pattern per whitespace-separated word. A haystack matches
+/// only when *every* resulting pattern is present (logical AND), preserving the
+/// previous `matches_search_terms` semantics while avoiding a fresh
+/// `to_lowercase()` allocation of the content on every probe.
+fn build_terms_matcher(terms: &[(bool, String)]) -> QueryMatcher {
+    let mut patterns: Vec<String> = Vec::new();
     for (is_quoted, term) in terms {
-        let term_lower = term.to_lowercase();
-
         if *is_quoted {
-            // Quoted term: must match exactly as substring
-            if !content_lower.contains(&term_lower) {
-                return false;
-            }
+            patterns.push(normalize_quotes(term));
         } else {
-            // Unquoted term: split by spaces and all words must appear
-            let words: Vec<&str> = term_lower.split_whitespace().collect();
-            for word in words {
-                if !content_lower.contains(word) {
-                    return false;
-                }
+            for word in term.split_whitespace() {
+                patterns.push(normalize_quotes(word));
             }
         }
     }
-
-    true
+    QueryMatcher::from_patterns(&patterns)
 }
 
 #[tauri::command]
@@ -1082,6 +1075,12 @@ pub async fn search_messages(
     // Parse the search query into terms
     let search_terms = parse_search_query(&query);
     if search_terms.is_empty() {
+        return Ok(vec![]);
+    }
+
+    // Build the matcher once and reuse it for every message in every file.
+    let matcher = build_terms_matcher(&search_terms);
+    if matcher.is_empty() {
         return Ok(vec![]);
     }
 
@@ -1215,7 +1214,7 @@ pub async fn search_messages(
                                 _ => "".to_string(),
                             };
 
-                            if matches_search_terms(&content_str, &search_terms) {
+                            if matcher.is_match(&normalize_quotes(&content_str)) {
                                 let subtype = log_entry.subtype.clone();
                                 let system_metadata = build_system_metadata(&log_entry);
                                 let claude_message = ClaudeMessage {

@@ -115,6 +115,10 @@ fn handle_file_event(app_handle: &AppHandle, event: &DebouncedEvent) {
         return;
     }
 
+    // A session file changed: invalidate cached search results so the next
+    // query recomputes against fresh data.
+    crate::commands::search_match::bump_search_generation();
+
     // Extract project path and session path
     let Some((project_path, session_path)) = extract_paths(path) else {
         log::warn!("Could not extract paths from: {}", path.display());
