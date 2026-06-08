@@ -3,11 +3,9 @@
 // ============================================================================
 // UI for managing multiple conversation data sources
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { invoke } from '@tauri-apps/api/core';
 import { useSourceStore } from '../store/useSourceStore';
-import { useAppStore } from '../store/useAppStore';
 import type { UniversalSource, HealthStatus, WslDistro } from '../types/universal';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
@@ -327,9 +325,6 @@ export const SourceManager: React.FC = () => {
         )}
       </div>
 
-      {/* Custom Claude Directories */}
-      <CustomClaudeDirsSection />
-
       {/* Add Source Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
@@ -413,141 +408,6 @@ export const SourceManager: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-};
-
-// ============================================================================
-// CUSTOM CLAUDE DIRECTORIES SECTION
-// ============================================================================
-
-const CustomClaudeDirsSection: React.FC = () => {
-  const { t } = useTranslation('sourceManager');
-  const customClaudeDirs = useAppStore((s) => s.customClaudeDirs);
-  const loadCustomClaudeDirs = useAppStore((s) => s.loadCustomClaudeDirs);
-  const addCustomClaudeDir = useAppStore((s) => s.addCustomClaudeDir);
-  const removeCustomClaudeDir = useAppStore((s) => s.removeCustomClaudeDir);
-  const { sources, addSource, removeSource } = useSourceStore();
-
-  const [isBusy, setIsBusy] = useState(false);
-  const [sectionError, setSectionError] = useState<string | null>(null);
-
-  useEffect(() => {
-    void loadCustomClaudeDirs();
-  }, [loadCustomClaudeDirs]);
-
-  const handleAddDir = useCallback(async (): Promise<void> => {
-    setSectionError(null);
-    try {
-      const selected = await open({
-        directory: true,
-        multiple: false,
-        title: t('customClaudeDir.selectFolder'),
-      });
-
-      if (!selected || typeof selected !== 'string') return;
-
-      if (customClaudeDirs.includes(selected)) {
-        setSectionError(t('customClaudeDir.alreadyAdded'));
-        return;
-      }
-
-      setIsBusy(true);
-
-      const isValid = await invoke<boolean>('validate_custom_claude_dir', { path: selected });
-      if (!isValid) {
-        setSectionError(t('customClaudeDir.invalid'));
-        return;
-      }
-
-      // Persist to settings and register as a scannable source.
-      await addCustomClaudeDir(selected);
-      if (!sources.some((s) => s.path === selected)) {
-        try {
-          await addSource(selected, t('customClaudeDir.autoLabel'));
-        } catch (err) {
-          console.error('Failed to register custom Claude directory as source:', err);
-        }
-      }
-    } catch (err) {
-      setSectionError((err as Error).message);
-    } finally {
-      setIsBusy(false);
-    }
-  }, [customClaudeDirs, addCustomClaudeDir, addSource, sources, t]);
-
-  const handleRemoveDir = useCallback(async (dir: string): Promise<void> => {
-    if (!confirm(t('customClaudeDir.confirmRemove'))) return;
-    setSectionError(null);
-    try {
-      // Remove the registered source first. `removeSource` rejects when this is
-      // the last remaining source; in that case we must keep the custom dir so
-      // settings and in-memory state do not desync.
-      const matching = sources.find((s) => s.path === dir);
-      if (matching) {
-        await removeSource(matching.id);
-      }
-      await removeCustomClaudeDir(dir);
-    } catch (err) {
-      setSectionError((err as Error).message);
-    }
-  }, [removeCustomClaudeDir, removeSource, sources, t]);
-
-  return (
-    <div className="space-y-3 border-t pt-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-base font-semibold">{t('customClaudeDir.title')}</h3>
-          <p className="text-sm text-muted-foreground">
-            {t('customClaudeDir.description')}
-          </p>
-        </div>
-        <Button size="sm" onClick={handleAddDir} disabled={isBusy}>
-          {isBusy ? (
-            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Plus className="h-4 w-4 mr-2" />
-          )}
-          {t('customClaudeDir.add')}
-        </Button>
-      </div>
-
-      {sectionError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{sectionError}</AlertDescription>
-        </Alert>
-      )}
-
-      {customClaudeDirs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {t('customClaudeDir.empty')}
-        </p>
-      ) : (
-        <div className="space-y-2">
-          {customClaudeDirs.map((dir) => (
-            <div
-              key={dir}
-              className="flex items-center justify-between gap-2 p-3 border rounded-lg"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="text-sm truncate" title={dir}>{dir}</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleRemoveDir(dir)}
-                title={t('customClaudeDir.remove')}
-                aria-label={t('customClaudeDir.remove')}
-                className="text-destructive hover:text-destructive shrink-0"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 };

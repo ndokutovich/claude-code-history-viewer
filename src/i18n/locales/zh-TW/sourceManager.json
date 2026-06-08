@@ -40,18 +40,6 @@
     "failedToAdd": "新增來源失敗"
   },
   "autoDetected": "自動偵測 ({{number}})",
-  "customClaudeDir": {
-    "title": "自訂 Claude 目錄",
-    "description": "新增備用 Claude 設定目錄（例如 CLAUDE_CONFIG_DIR），在預設 ~/.claude 之外一併掃描。",
-    "add": "新增目錄",
-    "remove": "移除",
-    "empty": "尚未設定自訂 Claude 目錄。",
-    "selectFolder": "選擇 Claude 設定目錄",
-    "alreadyAdded": "此目錄已新增",
-    "invalid": "不是有效的 Claude 設定目錄（必須包含 projects/ 資料夾）",
-    "confirmRemove": "移除此自訂 Claude 目錄？",
-    "autoLabel": "自訂 Claude 目錄"
-  },
   "wsl": {
     "title": "掃描 WSL 發行版",
     "description": "偵測 Windows Subsystem for Linux 中的 AI 工具歷史記錄",
