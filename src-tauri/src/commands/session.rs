@@ -79,6 +79,9 @@ fn is_noise_message_type(message_type: &str) -> bool {
             | "mode"
             | "permission-mode"
             | "pr-link"
+            | "custom-title"
+            | "agent-name"
+            | "bridge-session"
     )
 }
 
@@ -1444,6 +1447,9 @@ mod tests {
             "mode",
             "permission-mode",
             "pr-link",
+            "custom-title",
+            "agent-name",
+            "bridge-session",
         ] {
             assert!(
                 is_noise_message_type(ty),
