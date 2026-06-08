@@ -43,6 +43,18 @@ export interface MessageHeaderProps {
   message: UIMessage;
 }
 
+/**
+ * Ordered row descriptor produced by the message-tree flattener.
+ * One entry per rendered MessageNode, in DFS order with tree depth.
+ * This array is what the virtualizer windows over.
+ */
+export interface MessageRowDescriptor {
+  message: UIMessage;
+  depth: number;
+  /** Stable React/virtualizer key (mirrors the legacy renderMessageTree keys). */
+  key: string;
+}
+
 export interface SummaryMessageProps {
   content: string;
   timestamp: string;
