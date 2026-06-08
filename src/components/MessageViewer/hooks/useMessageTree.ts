@@ -47,13 +47,21 @@ export const useMessageTree = (messages: UIMessage[]): UseMessageTreeResult => {
       new Map(messages.map((msg) => [msg.uuid, msg])).values()
     );
 
-    // Build child map and find roots in a single pass
+    // Build child map and find roots in a single pass.
+    // A message is a root when it has no parent OR its parent is not present in
+    // the loaded page. The latter is essential for pagination: loading the last
+    // N messages of a long session yields a window whose parents live earlier
+    // (off-page). Without this, those messages land in childMap under an
+    // unreachable parent uuid and never get walked — orphaning most of the page
+    // into a near-blank list whenever a single rootless entry (e.g. a system /
+    // compact_boundary message) flips the renderer into tree mode.
+    const presentUuids = new Set(uniqueMessages.map((m) => m.uuid));
     const childMap = new Map<string, UIMessage[]>();
     const roots: UIMessage[] = [];
 
     uniqueMessages.forEach((msg) => {
       const parentUuid = getParentUuid(msg);
-      if (!parentUuid) {
+      if (!parentUuid || !presentUuids.has(parentUuid)) {
         roots.push(msg);
       } else {
         const siblings = childMap.get(parentUuid);
