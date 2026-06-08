@@ -18,17 +18,17 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 </tr>
 <tr>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.1_x64-setup.exe">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.2_x64-setup.exe">
 <img src="https://img.shields.io/badge/Download-.exe-blue?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.1_universal.dmg">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.2_universal.dmg">
 <img src="https://img.shields.io/badge/Download-.dmg-black?style=for-the-badge&logo=apple&logoColor=white" alt="macOS Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.1_amd64.AppImage">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.2_amd64.AppImage">
 <img src="https://img.shields.io/badge/Download-.AppImage-orange?style=for-the-badge&logo=linux&logoColor=white" alt="Linux Download"/>
 </a>
 </td>
@@ -69,6 +69,15 @@ Per-project token usage breakdown and session-level analysis
 ### Demo
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## What's New in v1.10.2
+
+Performance release — found via live CPU profiling of the running app:
+
+- **Idle re-render storm eliminated** — the file watcher was re-subscribing on every render (~47×/sec), driving an unbounded re-render loop that pinned the CPU at idle. Fixed; idle React commits dropped from 31–38/sec to **0**, and the UI no longer burns CPU when sitting still.
+- **Message list virtualized** — large sessions rendered every message into the DOM (1256 messages = 73k+ DOM nodes) and froze on very large histories. The list now windows visible rows only (DOM **73k → ~1k**), so huge sessions load and scroll without freezing. Scroll-to-bottom, load-more, in-session search, and the navigator are preserved.
+
+---
 
 ## What's New in v1.10.1
 
