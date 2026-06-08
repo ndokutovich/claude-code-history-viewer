@@ -187,113 +187,69 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            const { validateSignature, selectPlatformAssets, buildManifest } =
+              require(`${process.env.GITHUB_WORKSPACE}/scripts/updater-manifest.cjs`);
 
-            // Safely fetch release information via GitHub API
             const release = await github.rest.repos.getRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: ${{ needs.create-release.outputs.release_id }}
             });
-
             const releaseData = release.data;
             const version = releaseData.tag_name.replace(/^v/, '');
-            const pubDate = releaseData.published_at;
-
             console.log(`Processing release version: ${version}`);
-            console.log(`Publish date: ${pubDate}`);
 
-            // Find platform-specific assets
+            // Pair each updater artifact (macOS uses .app.tar.gz, NOT .dmg) with
+            // its exact .sig asset.
+            const selected = selectPlatformAssets(releaseData.assets);
             const platforms = {};
 
-            // macOS (darwin-universal)
-            const dmgAsset = releaseData.assets.find(asset =>
-              asset?.name?.includes('.dmg') && !asset.name.includes('.sig')
-            );
-            const dmgSigAsset = releaseData.assets.find(asset =>
-              asset?.name?.includes('.dmg.sig')
-            );
-
-            if (dmgAsset) {
-              let signature = '';
-              if (dmgSigAsset) {
-                try {
-                  const sigResponse = await fetch(dmgSigAsset.browser_download_url);
-                  const sigContent = await sigResponse.text();
-                  signature = Buffer.from(sigContent).toString('base64');
-                } catch (error) {
-                  console.warn('Failed to download macOS signature:', error.message);
-                }
+            for (const [key, { asset, sigAsset }] of Object.entries(selected)) {
+              if (!sigAsset) {
+                core.setFailed(`No signature asset for ${key} (artifact ${asset.name})`);
+                return;
               }
-              platforms['darwin-universal'] = {
-                signature: signature,
-                url: dmgAsset.browser_download_url
-              };
-              console.log(`macOS DMG: ${dmgAsset.browser_download_url}`);
+              // Download the .sig via the API with octet-stream. browser_download_url
+              // returns a 404 "Not Found" body while the release is still a draft —
+              // the authenticated asset endpoint returns the real bytes regardless.
+              const sigRes = await github.rest.repos.getReleaseAsset({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                asset_id: sigAsset.id,
+                headers: { accept: 'application/octet-stream' }
+              });
+              const rawSig = Buffer.from(sigRes.data).toString('utf8');
+
+              let signature;
+              try {
+                // The .sig file contents ARE the signature string — used verbatim,
+                // never re-encoded. Throws (fails the build) if invalid.
+                signature = validateSignature(rawSig, key);
+              } catch (error) {
+                core.setFailed(error.message);
+                return;
+              }
+
+              platforms[key] = { signature, url: asset.browser_download_url };
+              console.log(`${key}: ${asset.name} — signature ok (${signature.length} chars)`);
             }
 
-            // Windows (x86_64)
-            const msiAsset = releaseData.assets.find(asset =>
-              asset?.name?.endsWith('.msi') && !asset.name.includes('.sig')
-            );
-            const msiSigAsset = releaseData.assets.find(asset =>
-              asset?.name?.endsWith('.msi.sig')
-            );
-
-            if (msiAsset) {
-              let signature = '';
-              if (msiSigAsset) {
-                try {
-                  const sigResponse = await fetch(msiSigAsset.browser_download_url);
-                  const sigContent = await sigResponse.text();
-                  signature = Buffer.from(sigContent).toString('base64');
-                } catch (error) {
-                  console.warn('Failed to download Windows signature:', error.message);
-                }
-              }
-              platforms['windows-x86_64'] = {
-                signature: signature,
-                url: msiAsset.browser_download_url
-              };
-              console.log(`Windows MSI: ${msiAsset.browser_download_url}`);
+            let manifest;
+            try {
+              manifest = buildManifest({
+                version,
+                notes: releaseData.body || '',
+                pubDate: releaseData.published_at || new Date().toISOString(),
+                platforms
+              });
+            } catch (error) {
+              core.setFailed(error.message);
+              return;
             }
 
-            // Linux (x86_64) - AppImage
-            const appImageAsset = releaseData.assets.find(asset =>
-              asset?.name?.endsWith('.AppImage') && !asset.name.includes('.sig')
-            );
-            const appImageSigAsset = releaseData.assets.find(asset =>
-              asset?.name?.endsWith('.AppImage.sig')
-            );
-
-            if (appImageAsset) {
-              let signature = '';
-              if (appImageSigAsset) {
-                try {
-                  const sigResponse = await fetch(appImageSigAsset.browser_download_url);
-                  const sigContent = await sigResponse.text();
-                  signature = Buffer.from(sigContent).toString('base64');
-                } catch (error) {
-                  console.warn('Failed to download Linux signature:', error.message);
-                }
-              }
-              platforms['linux-x86_64'] = {
-                signature: signature,
-                url: appImageAsset.browser_download_url
-              };
-              console.log(`Linux AppImage: ${appImageAsset.browser_download_url}`);
-            }
-
-            // Generate latest.json
-            const latestJson = {
-              version: version,
-              notes: releaseData.body || '',
-              pub_date: pubDate,
-              platforms: platforms
-            };
-
-            fs.writeFileSync('latest.json', JSON.stringify(latestJson, null, 2));
+            fs.writeFileSync('latest.json', JSON.stringify(manifest, null, 2));
             console.log('Generated latest.json:');
-            console.log(JSON.stringify(latestJson, null, 2));
+            console.log(JSON.stringify(manifest, null, 2));
 
       - name: Upload latest.json to release
         run: |
