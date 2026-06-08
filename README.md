@@ -18,17 +18,17 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 </tr>
 <tr>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.0_x64-setup.exe">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.1_x64-setup.exe">
 <img src="https://img.shields.io/badge/Download-.exe-blue?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.0_universal.dmg">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.1_universal.dmg">
 <img src="https://img.shields.io/badge/Download-.dmg-black?style=for-the-badge&logo=apple&logoColor=white" alt="macOS Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.0_amd64.AppImage">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.1_amd64.AppImage">
 <img src="https://img.shields.io/badge/Download-.AppImage-orange?style=for-the-badge&logo=linux&logoColor=white" alt="Linux Download"/>
 </a>
 </td>
@@ -69,6 +69,15 @@ Per-project token usage breakdown and session-level analysis
 ### Demo
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## What's New in v1.10.1
+
+Patch release with two fixes:
+
+- **Model pricing corrections** — Claude Opus 4.6/4.7/4.8 were billed at the deprecated Opus 4 rate ($15/$75), a 3× overcharge in token-cost stats; now priced at the correct $5/$25 tier. Added Sonnet 4.6, Haiku 4.5, GPT-5.4/5.5 and cache-read rates for GPT/Codex models.
+- **Custom Claude directories via the source system** — removed a parallel directory mechanism that conflicted with the provider/source architecture; additional Claude directories are now added through the normal "Add source" flow (each is a distinct source). `CLAUDE_CONFIG_DIR` still overrides the default location.
+
+---
 
 ## What's New in v1.10.0
 
