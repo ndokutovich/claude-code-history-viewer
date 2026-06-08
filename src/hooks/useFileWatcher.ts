@@ -58,6 +58,17 @@ export function useFileWatcher(options: UseFileWatcherOptions = {}): UseFileWatc
   const debounceTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const watchVersionRef = useRef(0);
 
+  // Hold the user callbacks in refs so `startWatching` stays referentially
+  // stable even when callers pass new inline callbacks each render. Without
+  // this, the watch effect re-subscribed (listen/unlisten) on every render and
+  // setIsWatching re-rendered the consumer → an idle re-render storm.
+  const onChangedRef = useRef(onSessionChanged);
+  const onCreatedRef = useRef(onSessionCreated);
+  const onDeletedRef = useRef(onSessionDeleted);
+  onChangedRef.current = onSessionChanged;
+  onCreatedRef.current = onSessionCreated;
+  onDeletedRef.current = onSessionDeleted;
+
   const createDebouncedCallback = useCallback(
     (callback: ((event: FileWatcherEvent) => void) | undefined, event: FileWatcherEvent) => {
       if (!callback) return;
@@ -108,7 +119,7 @@ export function useFileWatcher(options: UseFileWatcherOptions = {}): UseFileWatc
       const unlisteners: UnlistenFn[] = [];
 
       const unlistenChanged = await listen<FileWatcherEvent>('session-file-changed', (event) => {
-        createDebouncedCallback(onSessionChanged, event.payload);
+        createDebouncedCallback(onChangedRef.current, event.payload);
       });
 
       if (watchVersionRef.current !== version) {
@@ -118,7 +129,7 @@ export function useFileWatcher(options: UseFileWatcherOptions = {}): UseFileWatc
       unlisteners.push(unlistenChanged);
 
       const unlistenCreated = await listen<FileWatcherEvent>('session-file-created', (event) => {
-        createDebouncedCallback(onSessionCreated, event.payload);
+        createDebouncedCallback(onCreatedRef.current, event.payload);
       });
 
       if (watchVersionRef.current !== version) {
@@ -128,7 +139,7 @@ export function useFileWatcher(options: UseFileWatcherOptions = {}): UseFileWatc
       unlisteners.push(unlistenCreated);
 
       const unlistenDeleted = await listen<FileWatcherEvent>('session-file-deleted', (event) => {
-        createDebouncedCallback(onSessionDeleted, event.payload);
+        createDebouncedCallback(onDeletedRef.current, event.payload);
       });
 
       if (watchVersionRef.current !== version) {
@@ -146,7 +157,7 @@ export function useFileWatcher(options: UseFileWatcherOptions = {}): UseFileWatc
       isWatchingRef.current = false;
       setIsWatching(false);
     }
-  }, [onSessionChanged, onSessionCreated, onSessionDeleted, createDebouncedCallback]);
+  }, [createDebouncedCallback]);
 
   useEffect(() => {
     if (enabled) {

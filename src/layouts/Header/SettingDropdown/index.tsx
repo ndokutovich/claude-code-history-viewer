@@ -7,6 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { memo } from "react";
 import { Settings, RefreshCw, MessageSquare, Download, Loader2 } from "lucide-react";
 
 import { cn } from "@/utils/cn";
@@ -22,7 +23,7 @@ import { FilterMenuGroup } from "./FilterMenuGroup";
 import { FontMenuGroup } from "./FontMenuGroup";
 import { AccessibilityMenuGroup } from "./AccessibilityMenuGroup";
 
-export const SettingDropdown = () => {
+export const SettingDropdown = memo(() => {
   const manualUpdater = useGitHubUpdater();
   const smartUpdater = useSmartUpdater();
   const { t } = useTranslation("common");
@@ -104,4 +105,6 @@ export const SettingDropdown = () => {
       </DropdownMenu>
     </>
   );
-};
+});
+
+SettingDropdown.displayName = "SettingDropdown";

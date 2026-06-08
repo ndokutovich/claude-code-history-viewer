@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { toast } from "sonner";
@@ -80,7 +81,38 @@ function App() {
     fontScale,
     highContrast,
     isCaptureMode,
-  } = useAppStore();
+  } = useAppStore(
+    useShallow((s) => ({
+      projects: s.projects,
+      sessions: s.sessions,
+      sessionsByProject: s.sessionsByProject,
+      selectedProject: s.selectedProject,
+      selectedSession: s.selectedSession,
+      messages: s.messages,
+      pagination: s.pagination,
+      isLoading: s.isLoading,
+      isLoadingProjects: s.isLoadingProjects,
+      isLoadingSessions: s.isLoadingSessions,
+      isLoadingMessages: s.isLoadingMessages,
+      error: s.error,
+      sessionTokenStats: s.sessionTokenStats,
+      projectTokenStats: s.projectTokenStats,
+      projectStatsSummary: s.projectStatsSummary,
+      loadingProgress: s.loadingProgress,
+      messageViewMode: s.messageViewMode,
+      messageFilters: s.messageFilters,
+      initializeApp: s.initializeApp,
+      selectProject: s.selectProject,
+      selectSession: s.selectSession,
+      clearSelection: s.clearSelection,
+      loadMoreMessages: s.loadMoreMessages,
+      refreshCurrentSession: s.refreshCurrentSession,
+      setLoadingProgress: s.setLoadingProgress,
+      fontScale: s.fontScale,
+      highContrast: s.highContrast,
+      isCaptureMode: s.isCaptureMode,
+    }))
+  );
 
   // Apply font scale and high contrast accessibility settings to the document root
   useEffect(() => {
@@ -118,7 +150,12 @@ function App() {
   useExternalLinks(appRef);
 
   // Session Board store
-  const { loadBoardSessions, isLoadingBoard } = useSessionBoard();
+  const { loadBoardSessions, isLoadingBoard } = useSessionBoard(
+    useShallow((s) => ({
+      loadBoardSessions: s.loadBoardSessions,
+      isLoadingBoard: s.isLoadingBoard,
+    }))
+  );
 
   // Recent Edits state
   const [recentEdits, setRecentEdits] = useState<PaginatedRecentEdits | null>(null);
@@ -126,9 +163,11 @@ function App() {
   const [recentEditsError, setRecentEditsError] = useState<string | null>(null);
 
   // Source store for multi-source management
-  const {
-    initializeSources,
-  } = useSourceStore();
+  const { initializeSources } = useSourceStore(
+    useShallow((s) => ({
+      initializeSources: s.initializeSources,
+    }))
+  );
 
   // Watch for file system changes to auto-refresh session data
   useFileWatcher({
