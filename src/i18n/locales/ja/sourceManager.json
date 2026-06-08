@@ -40,18 +40,6 @@
     "failedToAdd": "ソースの追加に失敗しました"
   },
   "autoDetected": "自動検出 ({{number}})",
-  "customClaudeDir": {
-    "title": "カスタム Claude ディレクトリ",
-    "description": "既定の ~/.claude に加えてスキャンする代替 Claude 構成ディレクトリ（例: CLAUDE_CONFIG_DIR）を追加します。",
-    "add": "ディレクトリを追加",
-    "remove": "削除",
-    "empty": "カスタム Claude ディレクトリが構成されていません。",
-    "selectFolder": "Claude 構成ディレクトリを選択",
-    "alreadyAdded": "このディレクトリは既に追加されています",
-    "invalid": "有効な Claude 構成ディレクトリではありません（projects/ フォルダが必要です）",
-    "confirmRemove": "このカスタム Claude ディレクトリを削除しますか？",
-    "autoLabel": "カスタム Claude ディレクトリ"
-  },
   "wsl": {
     "title": "WSL ディストリビューションをスキャン",
     "description": "Windows Subsystem for Linux 内の AI ツール履歴を検出します",

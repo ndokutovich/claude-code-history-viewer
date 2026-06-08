@@ -64,8 +64,6 @@ pub fn run() {
             resolve_session_by_id,
             get_claude_folder_path,
             validate_claude_folder,
-            validate_custom_claude_dir,
-            detect_claude_config_dir,
             scan_projects,
             load_project_sessions,
             load_session_messages,

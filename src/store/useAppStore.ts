@@ -45,7 +45,7 @@ import { initialSearchState } from "./slices/searchSlice";
 import type { AnalyticsSliceState, AnalyticsSliceActions } from "./slices/analyticsSlice";
 import { initialAnalyticsState } from "./slices/analyticsSlice";
 import type { SettingsSliceState, SettingsSliceActions } from "./slices/settingsSlice";
-import { initialSettingsState, CUSTOM_CLAUDE_DIRS_KEY } from "./slices/settingsSlice";
+import { initialSettingsState } from "./slices/settingsSlice";
 import type { CaptureModeSliceState, CaptureModeSliceActions } from "./slices/captureModeSlice";
 import { initialCaptureModeState } from "./slices/captureModeSlice";
 import type { BoardSliceState, BoardSliceActions } from "./slices/boardSlice";
@@ -1935,55 +1935,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // ============================================================
   setFontScale: (scale: number) => set({ fontScale: scale }),
   setHighContrast: (value: boolean) => set({ highContrast: value }),
-
-  // ============================================================
-  // Custom Claude configuration directories
-  // ============================================================
-  loadCustomClaudeDirs: async () => {
-    try {
-      const store = await load("settings.json", { autoSave: false } as StoreOptions);
-      const saved = await store.get<string[]>(CUSTOM_CLAUDE_DIRS_KEY);
-      if (Array.isArray(saved)) {
-        set({ customClaudeDirs: saved.filter((p) => typeof p === "string") });
-      }
-    } catch (error) {
-      console.error("Failed to load custom Claude directories:", error);
-    }
-  },
-
-  addCustomClaudeDir: async (path: string) => {
-    const trimmed = path.trim();
-    if (!trimmed) return;
-    const existing = get().customClaudeDirs;
-    if (existing.includes(trimmed)) return;
-
-    const updated = [...existing, trimmed];
-    // Persist FIRST so a save failure cannot leave in-memory state diverged from
-    // persisted settings. In-memory state is only updated after a successful save.
-    try {
-      const store = await load("settings.json", { autoSave: false } as StoreOptions);
-      await store.set(CUSTOM_CLAUDE_DIRS_KEY, updated);
-      await store.save();
-    } catch (error) {
-      console.error("Failed to persist custom Claude directories:", error);
-      throw error;
-    }
-    set({ customClaudeDirs: updated });
-  },
-
-  removeCustomClaudeDir: async (path: string) => {
-    const updated = get().customClaudeDirs.filter((p) => p !== path);
-    // Persist FIRST; only mutate in-memory state after a successful save.
-    try {
-      const store = await load("settings.json", { autoSave: false } as StoreOptions);
-      await store.set(CUSTOM_CLAUDE_DIRS_KEY, updated);
-      await store.save();
-    } catch (error) {
-      console.error("Failed to persist custom Claude directories:", error);
-      throw error;
-    }
-    set({ customClaudeDirs: updated });
-  },
 
   // ============================================================
   // In-session search (KakaoTalk-style navigation)

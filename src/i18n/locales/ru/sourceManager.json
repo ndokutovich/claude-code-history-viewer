@@ -40,18 +40,6 @@
     "failedToAdd": "Не удалось добавить источник"
   },
   "autoDetected": "Автоопределение ({{number}})",
-  "customClaudeDir": {
-    "title": "Пользовательские каталоги Claude",
-    "description": "Добавьте альтернативные каталоги конфигурации Claude (например, CLAUDE_CONFIG_DIR) для сканирования в дополнение к стандартному ~/.claude.",
-    "add": "Добавить каталог",
-    "remove": "Удалить",
-    "empty": "Пользовательские каталоги Claude не настроены.",
-    "selectFolder": "Выберите каталог конфигурации Claude",
-    "alreadyAdded": "Этот каталог уже добавлен",
-    "invalid": "Недопустимый каталог конфигурации Claude (должен содержать папку projects/)",
-    "confirmRemove": "Удалить этот пользовательский каталог Claude?",
-    "autoLabel": "Пользовательский каталог Claude"
-  },
   "wsl": {
     "title": "Сканировать дистрибутивы WSL",
     "description": "Обнаружение истории AI-инструментов внутри Windows Subsystem for Linux",

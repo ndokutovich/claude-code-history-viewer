@@ -117,29 +117,6 @@ pub async fn validate_claude_folder(path: String) -> Result<bool, String> {
     Ok(false)
 }
 
-/// Validate a custom (user-added) Claude configuration directory.
-///
-/// Unlike [`validate_claude_folder`], the path is treated as the Claude config
-/// root itself (it must directly contain a `projects/` subfolder) and symlink
-/// safety checks are applied. Returns `Ok(true)` when valid, `Ok(false)`
-/// otherwise so the frontend can skip invalid entries gracefully.
-#[tauri::command]
-pub async fn validate_custom_claude_dir(path: String) -> Result<bool, String> {
-    let path_buf = PathBuf::from(&path);
-    Ok(crate::utils::validate_custom_claude_path(&path_buf).is_ok())
-}
-
-/// Resolve the Claude configuration directory from the `CLAUDE_CONFIG_DIR`
-/// environment variable.
-///
-/// Returns `Some(path)` when the variable is set and points to a valid Claude
-/// configuration directory; `None` otherwise. Lets the frontend include the
-/// override as an additional scannable source on startup.
-#[tauri::command]
-pub async fn detect_claude_config_dir() -> Result<Option<String>, String> {
-    Ok(crate::utils::resolve_claude_config_dir())
-}
-
 #[tauri::command]
 pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, String> {
     let start_time = std::time::Instant::now();
