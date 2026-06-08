@@ -13,7 +13,7 @@ import {
   SlidersHorizontal,
   Camera,
 } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 
 import { TooltipButton } from "@/shared/TooltipButton";
 import { useAppStore } from "@/store/useAppStore";
@@ -32,7 +32,7 @@ import { SettingDropdown } from "./SettingDropdown";
 // on macOS — the WebUI build and Windows/Linux desktop are unaffected.
 const HAS_MACOS_TRAFFIC_LIGHTS = isTauri() && isMacOS();
 
-export const Header = () => {
+export const Header = memo(() => {
   const { t } = useTranslation("common");
   const { t: tComponents } = useTranslation("components");
   const { t: tMessages } = useTranslation("messages");
@@ -382,4 +382,6 @@ export const Header = () => {
       />
     </header>
   );
-};
+});
+
+Header.displayName = "Header";

@@ -1,10 +1,12 @@
 import React, {
   useEffect,
+  useLayoutEffect,
   useRef,
   useCallback,
   useMemo,
   useState,
 } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Loader2, MessageCircle, ChevronDown, ListTree, Search, X, ChevronUp } from "lucide-react";
 import { useSearchState } from "../../hooks/useSearchState";
 import { useTranslation } from "react-i18next";
@@ -77,15 +79,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     }
   }, [messageCount, lastMessageId, rebuildSearchIndex]);
 
-  // Scroll to current match when it changes
-  useEffect(() => {
-    const { matches, currentMatchIndex } = sessionSearch;
-    if (currentMatchIndex >= 0 && matches[currentMatchIndex]) {
-      const uuid = matches[currentMatchIndex].messageUuid;
-      const el = document.getElementById(`message-${uuid}`);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, [sessionSearch.currentMatchIndex, sessionSearch.matches]);
+  // (Search match scroll effect is defined below, after the virtualizer.)
 
   // Ctrl+F / Cmd+F opens search toolbar
   useEffect(() => {
@@ -129,14 +123,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     document.addEventListener('mouseup', handleMouseUp);
   }, [navigatorWidth]);
 
-  // Navigate to a specific message by UUID
-  const handleNavigateToMessage = useCallback((uuid: string) => {
-    const element = document.getElementById(`message-${uuid}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setActiveMessageUuid(uuid);
-    }
-  }, []);
+  // (handleNavigateToMessage is defined below, after the virtualizer.)
 
   // Handle extract message range
   const handleExtractRange = useCallback(async (startIndex: number, endIndex: number, openModal: boolean) => {
@@ -256,22 +243,17 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     }
   }, [messages, selectedSession, t]);
 
-  // Scroll management hook
-  const {
-    scrollContainerRef,
-    showScrollToBottom,
-    handleScrollToBottom,
-    handleLoadMoreWithScroll,
-  } = useMessageScrolling({
-    messages,
-    selectedSession,
-    pagination,
-    isLoading,
-    onLoadMore,
-  });
+  // Scroll container ref is owned here so both the virtualizer and the
+  // scrolling hook can share the same scroll element.
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // The virtual list is not the first child of the scroll element (a load-more
+  // button + DEV debug box render above it), so the virtualizer needs to know
+  // that offset via scrollMargin.
+  const listRef = useRef<HTMLDivElement>(null);
+  const [listScrollMargin, setListScrollMargin] = useState(0);
 
   // Message tree hook
-  const { rootMessages, uniqueMessages, renderMessageTree } = useMessageTree(messages);
+  const { flattenRows } = useMessageTree(messages);
 
   // Memoize hidden message Set for O(1) lookups (must be above early returns)
   const hiddenMessageSet = useMemo(
@@ -287,6 +269,96 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
       : messages,
     [messages, isCaptureMode, hiddenMessageSet]
   );
+
+  // Ordered, flattened rows (DFS order + depth) — computed once per change and
+  // virtualized. Capture mode applies the hidden filter here.
+  const rows = useMemo(
+    () => flattenRows(isCaptureMode ? hiddenMessageSet : null),
+    [flattenRows, isCaptureMode, hiddenMessageSet]
+  );
+
+  // UUID → row index map for search / navigator scroll-to-message.
+  const uuidToIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    rows.forEach((row, index) => {
+      // First occurrence wins (mirrors getElementById, which returns the first node).
+      if (!map.has(row.message.uuid)) map.set(row.message.uuid, index);
+    });
+    return map;
+  }, [rows]);
+
+  // Virtualizer: windows over `rows` so only visible rows hit the DOM.
+  // Dynamic measurement is achieved by assigning `virtualizer.measureElement`
+  // as the ref on each rendered row (see render below).
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => 240,
+    overscan: 8,
+    getItemKey: (index) => rows[index]?.key ?? index,
+    scrollMargin: listScrollMargin,
+  });
+
+  // Keep scrollMargin in sync with the list's offset from the scroll content
+  // top. Recomputes when content above the list changes height.
+  useLayoutEffect(() => {
+    const scrollEl = scrollContainerRef.current;
+    const listEl = listRef.current;
+    if (!scrollEl || !listEl) return;
+    const offset =
+      listEl.getBoundingClientRect().top -
+      scrollEl.getBoundingClientRect().top +
+      scrollEl.scrollTop;
+    setListScrollMargin((prev) => (Math.abs(prev - offset) > 1 ? offset : prev));
+  }, [pagination.hasMore, pagination.isLoadingMore, messages.length, isLoading, rows.length]);
+
+  // Scroll management hook (virtualizer-aware for scroll-to-bottom / auto-scroll)
+  const {
+    showScrollToBottom,
+    handleScrollToBottom,
+    handleLoadMoreWithScroll,
+  } = useMessageScrolling({
+    messages,
+    selectedSession,
+    pagination,
+    isLoading,
+    onLoadMore,
+    scrollContainerRef,
+    virtualizer,
+    rowCount: rows.length,
+  });
+
+  // Scroll to a row index, then refine with a DOM scrollIntoView once the
+  // virtualizer has mounted the row (centers precisely on variable-height rows).
+  const scrollToMessageUuid = useCallback(
+    (uuid: string, align: "center" | "end" = "center") => {
+      const index = uuidToIndexMap.get(uuid);
+      if (index === undefined) return;
+      virtualizer.scrollToIndex(index, { align });
+      setTimeout(() => {
+        const el = document.getElementById(`message-${uuid}`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 80);
+    },
+    [uuidToIndexMap, virtualizer]
+  );
+
+  // Navigate to a specific message by UUID (MessageNavigator click)
+  const handleNavigateToMessage = useCallback(
+    (uuid: string) => {
+      scrollToMessageUuid(uuid);
+      setActiveMessageUuid(uuid);
+    },
+    [scrollToMessageUuid]
+  );
+
+  // Scroll to current search match when it changes
+  useEffect(() => {
+    const { matches, currentMatchIndex } = sessionSearch;
+    if (currentMatchIndex >= 0 && matches[currentMatchIndex]) {
+      scrollToMessageUuid(matches[currentMatchIndex].messageUuid, "center");
+    }
+  }, [sessionSearch.currentMatchIndex, sessionSearch.matches, scrollToMessageUuid]);
 
   // Map of message UUID → timestamp where a date divider should appear.
   // First message overall and the first message of each new calendar day get one.
@@ -573,63 +645,53 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
             </div>
           )}
 
-          {/* Message list */}
+          {/* Message list (virtualized) */}
           {(() => {
             try {
-              // In capture mode, filter out hidden messages
-              const hiddenSet = isCaptureMode ? hiddenMessageSet : null;
-
-              if (rootMessages.length > 0) {
-                // Render tree structure (filter hidden in capture mode)
-                const visibleRoots = hiddenSet
-                  ? rootMessages.filter((m) => !hiddenSet.has(m.uuid))
-                  : rootMessages;
-                return visibleRoots
-                  .map((message) =>
-                    renderMessageTree(
-                      message,
-                      0,
-                      new Set(),
-                      "",
-                      selectedSession?.file_path,
-                      MessageNode,
-                      messageNodeProps
-                    )
-                  )
-                  .flat();
-              } else {
-                // Render flat structure (filter hidden in capture mode)
-                const visibleFlat = hiddenSet
-                  ? uniqueMessages.filter((m) => !hiddenSet.has(m.uuid))
-                  : uniqueMessages;
-                return visibleFlat.map((message, index) => {
-                  // Generate unique key: use index and timestamp if UUID is missing or duplicated
-                  const uniqueKey =
-                    message.uuid && message.uuid !== "unknown-session"
-                      ? `${message.uuid}-${index}`
-                      : `fallback-${index}-${message.timestamp}-${message.type}`;
-
-                  return (
-                    <MessageNode
-                      key={uniqueKey}
-                      message={message}
-                      depth={0}
-                      providerName={providerName}
-                      sessionFilePath={selectedSession?.file_path}
-                      allMessages={visibleMessages}
-                      onExtractRange={handleExtractRange}
-                      isCaptureMode={isCaptureMode}
-                      onHideMessage={hideMessage}
-                      dateDividerMap={dateDividerMap}
-                    />
-                  );
-                });
-              }
+              const virtualRows = virtualizer.getVirtualItems();
+              return (
+                <div
+                  ref={listRef}
+                  style={{
+                    height: `${virtualizer.getTotalSize()}px`,
+                    width: "100%",
+                    position: "relative",
+                  }}
+                >
+                  {virtualRows.map((virtualRow) => {
+                    const row = rows[virtualRow.index];
+                    if (!row) return null;
+                    return (
+                      <div
+                        key={virtualRow.key}
+                        data-index={virtualRow.index}
+                        ref={virtualizer.measureElement}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "100%",
+                          transform: `translateY(${
+                            virtualRow.start - virtualizer.options.scrollMargin
+                          }px)`,
+                        }}
+                      >
+                        <MessageNode
+                          message={row.message}
+                          depth={row.depth}
+                          sessionFilePath={selectedSession?.file_path}
+                          {...messageNodeProps}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              );
             } catch (error) {
               console.error("Message rendering error:", error);
               console.error("Message state when error occurred:", {
                 messagesLength: messages.length,
-                rootMessagesLength: rootMessages.length,
+                rowsLength: rows.length,
                 pagination,
                 firstMessage: messages[0],
                 lastMessage: messages[messages.length - 1],

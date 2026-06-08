@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useGitHubUpdater } from './useGitHubUpdater';
 import { 
   getUpdateSettings, 
@@ -46,8 +46,20 @@ export function useSmartUpdater() {
     await githubUpdater.checkForUpdates(forceCheck);
   }, [githubUpdater]);
 
-  // Auto-check (improved version)
+  // Keep a ref to the latest smartCheckForUpdates so the mount-only auto-check
+  // effect can call it without depending on its (unstable) identity.
+  const smartCheckForUpdatesRef = useRef(smartCheckForUpdates);
+  smartCheckForUpdatesRef.current = smartCheckForUpdates;
+
+  // Auto-check: schedule the delayed update check exactly once on mount.
+  // A ref guard prevents StrictMode double-invocation from scheduling twice.
+  const autoCheckScheduled = useRef(false);
   useEffect(() => {
+    if (autoCheckScheduled.current) {
+      return;
+    }
+    autoCheckScheduled.current = true;
+
     const settings = getUpdateSettings();
 
     // Don't check if auto-check is disabled
@@ -76,11 +88,12 @@ export function useSmartUpdater() {
     }
 
     const timer = setTimeout(() => {
-      smartCheckForUpdates();
+      smartCheckForUpdatesRef.current();
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [smartCheckForUpdates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Improved update modal display conditions
   const shouldShowUpdateModal = useCallback(() => {

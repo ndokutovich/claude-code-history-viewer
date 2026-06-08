@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { fetch } from "@tauri-apps/plugin-http";
 import { check, Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
@@ -240,10 +240,13 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
 
   // Auto-execution is managed by SmartUpdater, removed from here
 
-  return {
-    state,
-    checkForUpdates,
-    downloadAndInstall,
-    dismissUpdate,
-  };
+  return useMemo(
+    () => ({
+      state,
+      checkForUpdates,
+      downloadAndInstall,
+      dismissUpdate,
+    }),
+    [state, checkForUpdates, downloadAndInstall, dismissUpdate]
+  );
 }

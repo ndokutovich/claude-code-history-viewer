@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback, type RefObject } from "react";
+import type { Virtualizer } from "@tanstack/react-virtual";
 import type { UISession, PaginationState } from "../../../types";
 import {
   SCROLL_ADJUSTMENT_DELAY,
@@ -14,6 +15,15 @@ interface UseMessageScrollingParams {
   pagination: PaginationState;
   isLoading: boolean;
   onLoadMore: () => void;
+  /**
+   * Externally-owned scroll container ref. Lifted out of the hook so the
+   * virtualizer (which needs the same element) can be created alongside it.
+   */
+  scrollContainerRef: RefObject<HTMLDivElement | null>;
+  /** Virtualizer instance (used for index-based scroll-to-bottom). */
+  virtualizer?: Virtualizer<HTMLDivElement, Element> | null;
+  /** Number of virtualized rows (last index = rowCount - 1). */
+  rowCount?: number;
 }
 
 interface UseMessageScrollingResult {
@@ -29,8 +39,10 @@ export const useMessageScrolling = ({
   pagination,
   isLoading,
   onLoadMore,
+  scrollContainerRef,
+  virtualizer,
+  rowCount = 0,
 }: UseMessageScrollingParams): UseMessageScrollingResult => {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const prevMessagesLength = useRef(messages.length);
 
   // Ref to prevent infinite rendering
@@ -47,22 +59,50 @@ export const useMessageScrolling = ({
   // Track previous session ID
   const prevSessionIdRef = useRef<string | null>(null);
 
+  // Keep latest virtualizer/rowCount accessible from the stable scrollToBottom
+  // callback without changing its identity (which would re-trigger scroll effects).
+  const virtualizerRef = useRef(virtualizer);
+  virtualizerRef.current = virtualizer;
+  const rowCountRef = useRef(rowCount);
+  rowCountRef.current = rowCount;
+
   // Function to scroll to bottom
   const scrollToBottom = useCallback(() => {
-    if (scrollContainerRef.current) {
-      const element = scrollContainerRef.current;
-      // Multiple attempts to ensure scrolling to bottom
-      const attemptScroll = (attempts = 0) => {
+    const element = scrollContainerRef.current;
+    if (!element) return;
+
+    const v = virtualizerRef.current;
+    const count = rowCountRef.current;
+
+    // Virtualized path: jump to the last row, then settle exactly at the bottom
+    // via DOM scroll (row heights are estimated until measured, so the
+    // virtualizer lands close and the retry pins it to the true bottom).
+    if (v && count > 0) {
+      v.scrollToIndex(count - 1, { align: "end" });
+      const settle = (attempts = 0) => {
         element.scrollTop = element.scrollHeight;
         if (
-          attempts < 3 &&
+          attempts < 4 &&
           element.scrollTop < element.scrollHeight - element.clientHeight - 10
         ) {
-          setTimeout(() => attemptScroll(attempts + 1), SCROLL_ADJUSTMENT_DELAY);
+          setTimeout(() => settle(attempts + 1), SCROLL_ADJUSTMENT_DELAY);
         }
       };
-      attemptScroll();
+      requestAnimationFrame(() => settle());
+      return;
     }
+
+    // Fallback (no virtualizer): original multi-attempt DOM scroll
+    const attemptScroll = (attempts = 0) => {
+      element.scrollTop = element.scrollHeight;
+      if (
+        attempts < 3 &&
+        element.scrollTop < element.scrollHeight - element.clientHeight - 10
+      ) {
+        setTimeout(() => attemptScroll(attempts + 1), SCROLL_ADJUSTMENT_DELAY);
+      }
+    };
+    attemptScroll();
   }, []);
 
   // Detect message changes and adjust scroll position (optimized)
