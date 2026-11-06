@@ -267,12 +267,15 @@ export const MessageNode = React.memo(({
               {/* Claude API Content Array */}
               {message.content &&
                 typeof message.content === "object" &&
-                Array.isArray(message.content) &&
-                (message.type !== "assistant" ||
-                  (message.type === "assistant" &&
-                    !extractedContent)) && (
+                Array.isArray(message.content) && (
                   <div className="mb-2">
-                    <ClaudeContentArrayRenderer content={message.content} />
+                    <ClaudeContentArrayRenderer
+                      content={message.content}
+                      // The bubble above already shows the text block;
+                      // providers that store user turns as content arrays
+                      // would otherwise render it twice (upstream #eaaa8787).
+                      skipText={!!extractedContent}
+                    />
                   </div>
                 )}
 
