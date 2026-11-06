@@ -143,6 +143,7 @@ pub fn run() {
             get_antigravity_path,
             validate_antigravity_folder,
             scan_antigravity_projects,
+            scan_antigravity_all,
             load_antigravity_sessions,
             load_antigravity_messages,
             // Global stats (upstream-enhanced)
