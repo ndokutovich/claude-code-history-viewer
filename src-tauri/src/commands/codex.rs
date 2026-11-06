@@ -66,10 +66,8 @@ pub async fn validate_codex_folder(path: String) -> Result<bool, String> {
                     return Ok(true);
                 }
             } else if path.is_file() {
-                if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-                    if filename.starts_with("rollout-") && filename.ends_with(".jsonl") {
-                        return Ok(true); // Found at least one valid rollout file
-                    }
+                if crate::commands::adapters::codex::is_rollout_jsonl(&path) {
+                    return Ok(true); // Found at least one valid rollout file
                 }
             }
         }
@@ -118,12 +116,10 @@ pub async fn scan_codex_projects(
                     // Recurse into subdirectories
                     find_rollout_files(&path, files)?;
                 } else if path.is_file() {
-                    let filename = path.file_name()
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("");
-
-                    // Check if it's a rollout file
-                    if filename.starts_with("rollout-") && filename.ends_with(".jsonl") {
+                    // Discoverable rollout: plain or zst, skipping a
+                    // compressed twin whose plain file exists (upstream
+                    // #74bdee28).
+                    if crate::commands::adapters::codex::is_discoverable_rollout(&path) {
                         files.push(path);
                     }
                 }

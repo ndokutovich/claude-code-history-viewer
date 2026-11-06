@@ -41,7 +41,7 @@ pub struct CodexEvent {
 pub fn parse_rollout_filename(filename: &str) -> Option<(String, String)> {
     // Pattern: rollout-YYYY-MM-DDThh-mm-ss-UUID.jsonl
     let re = regex::Regex::new(
-        r"^rollout-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})-([a-f0-9-]+)\.jsonl$"
+        r"^rollout-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})-([a-f0-9-]+)\.jsonl(?:\.zst)?$"
     ).ok()?;
 
     let caps = re.captures(filename)?;
@@ -80,31 +80,83 @@ pub fn parse_codex_jsonl(file_path: &Path) -> Result<Vec<CodexEvent>, String> {
     let file = File::open(file_path)
         .map_err(|e| format!("CODEX_FILE_ERROR: Failed to open file: {}", e))?;
 
-    // BufReader for memory-efficient streaming (handles 10-50MB files)
-    let reader = BufReader::new(file);
+    // Codex compresses old rollouts to .jsonl.zst; decompress into memory
+    // (upstream #74bdee28). Plain files stay on the streaming reader.
+    let is_compressed = file_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .is_some_and(|name| name.ends_with(".jsonl.zst"));
+
     let mut events: Vec<CodexEvent> = Vec::new();
 
-    // Iterate through lines with enumeration for error reporting
-    for (line_num, line_result) in reader.lines().enumerate() {
+    if is_compressed {
+        let bytes = zstd::decode_all(std::io::BufReader::new(file))
+            .map_err(|e| format!("CODEX_ZST_ERROR: Failed to decompress rollout: {}", e))?;
+        let content = String::from_utf8_lossy(&bytes);
+        parse_event_lines(content.lines().map(|l| Ok(l.to_string())), &mut events)?;
+    } else {
+        let reader = BufReader::new(file);
+        parse_event_lines(reader.lines(), &mut events)?;
+    }
+
+    Ok(events)
+}
+
+/// Line-level JSONL parsing shared by the streaming and decompressed paths.
+fn parse_event_lines<I>(lines: I, events: &mut Vec<CodexEvent>) -> Result<(), String>
+where
+    I: Iterator<Item = std::io::Result<String>>,
+{
+    for (line_num, line_result) in lines.enumerate() {
         let line = line_result
             .map_err(|e| format!("CODEX_READ_ERROR: Line {}: Read error: {}", line_num + 1, e))?;
-
-        // Skip empty lines (Claude Code pattern)
         if line.trim().is_empty() {
             continue;
         }
-
-        // Parse JSON - continue on error (graceful degradation)
         match serde_json::from_str::<CodexEvent>(&line) {
             Ok(event) => events.push(event),
             Err(e) => {
                 eprintln!("⚠️ CODEX_PARSE_ERROR: Line {}: {}", line_num + 1, e);
-                continue; // Don't fail entire file for one bad line
+                continue;
             }
         }
     }
+    Ok(())
+}
 
-    Ok(events)
+/// True for a Codex rollout file, plain (`.jsonl`) or zstd-compressed
+/// (`.jsonl.zst`). Codex generates these names itself, always lowercase.
+#[allow(clippy::case_sensitive_file_extension_comparisons)]
+pub fn is_rollout_jsonl(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| {
+            name.starts_with("rollout-")
+                && (name.ends_with(".jsonl") || name.ends_with(".jsonl.zst"))
+        })
+}
+
+/// Discovery filter for session walkers: every rollout
+/// [`is_rollout_jsonl`] accepts, but a compressed `.jsonl.zst` whose plain
+/// `.jsonl` twin exists is skipped — Codex materializes the plain file for
+/// appends, so the plain one is current and listing both would duplicate
+/// the session.
+pub fn is_discoverable_rollout(path: &Path) -> bool {
+    if !is_rollout_jsonl(path) {
+        return false;
+    }
+    let is_compressed = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.ends_with(".jsonl.zst"));
+    if is_compressed {
+        // "rollout-….jsonl.zst" → "rollout-….jsonl"
+        let plain = path.with_extension("");
+        if plain.exists() {
+            return false;
+        }
+    }
+    true
 }
 
 // ============================================================================
@@ -430,5 +482,58 @@ mod tests {
         };
 
         assert_eq!(extract_cwd(&event3), None);
+    }
+
+    // ========================================================================
+    // zstd-compressed rollouts (.jsonl.zst) — upstream #74bdee28
+    // ========================================================================
+
+    #[test]
+    fn test_parse_rollout_filename_zst() {
+        let filename =
+            "rollout-2025-01-27T14-30-45-a1b2c3d4-e5f6-7890-abcd-ef1234567890.jsonl.zst";
+        let (timestamp, uuid) =
+            parse_rollout_filename(filename).expect("zst rollout name should parse");
+        assert_eq!(timestamp, "2025-01-27T14-30-45");
+        assert_eq!(uuid, "a1b2c3d4-e5f6-7890-abcd-ef1234567890");
+    }
+
+    #[test]
+    fn test_discovery_skips_compressed_rollout_with_plain_twin() {
+        let dir = tempfile::tempdir().unwrap();
+        let name = "rollout-2025-01-27T14-30-45-a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+        let zst = dir.path().join(format!("{name}.jsonl.zst"));
+        fs::write(&zst, b"x").unwrap();
+        assert!(is_rollout_jsonl(&zst));
+        assert!(is_discoverable_rollout(&zst), "no plain twin yet");
+
+        let plain = dir.path().join(format!("{name}.jsonl"));
+        fs::write(&plain, b"x").unwrap();
+        assert!(
+            !is_discoverable_rollout(&zst),
+            "compressed twin must be skipped when the plain file exists"
+        );
+        assert!(is_discoverable_rollout(&plain));
+    }
+
+    #[test]
+    fn test_parse_codex_jsonl_decompresses_zst() {
+        let dir = tempfile::tempdir().unwrap();
+        let body = concat!(
+            r#"{"type":"session_meta","timestamp":"2025-01-27T14:30:45Z"}"#,
+            "\n",
+            r#"{"type":"user_message","timestamp":"2025-01-27T14:30:46Z"}"#,
+            "\n",
+        );
+        let compressed = zstd::encode_all(body.as_bytes(), 3).expect("zstd encode");
+        let zst = dir
+            .path()
+            .join("rollout-2025-01-27T14-30-45-a1b2c3d4-e5f6-7890-abcd-ef1234567890.jsonl.zst");
+        fs::write(&zst, compressed).unwrap();
+
+        let events = parse_codex_jsonl(&zst).expect("parse compressed rollout");
+        assert_eq!(events.len(), 2);
+        assert_eq!(events[0].event_type, "session_meta");
+        assert_eq!(events[1].event_type, "user_message");
     }
 }
