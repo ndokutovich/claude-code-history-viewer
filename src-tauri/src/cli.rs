@@ -203,8 +203,14 @@ fn percent_decode(input: &str) -> String {
     let mut i = 0;
     while i < bytes.len() {
         if bytes[i] == b'%' && i + 2 < bytes.len() {
-            if let Ok(byte) = u8::from_str_radix(&input[i + 1..i + 3], 16) {
-                buf.push(byte);
+            // Only decode when both following bytes are ASCII hex digits;
+            // a `%` before a multibyte UTF-8 char would otherwise slice
+            // mid-codepoint and panic (upstream #398).
+            if let (Some(hi), Some(lo)) = (
+                (bytes[i + 1] as char).to_digit(16),
+                (bytes[i + 2] as char).to_digit(16),
+            ) {
+                buf.push((hi * 16 + lo) as u8);
                 i += 3;
                 continue;
             }
@@ -419,6 +425,14 @@ mod tests {
     #[test]
     fn percent_decode_preserves_utf8() {
         assert_eq!(percent_decode("%ED%95%9C%EA%B8%80"), "한글");
+    }
+
+    #[test]
+    fn percent_decode_percent_before_multibyte_does_not_panic() {
+        // A literal `%` followed by a multibyte char must stay literal,
+        // never slice mid-codepoint (upstream #398).
+        assert_eq!(percent_decode("100%€done"), "100%€done");
+        assert_eq!(percent_decode("%한글"), "%한글");
     }
 
     #[test]

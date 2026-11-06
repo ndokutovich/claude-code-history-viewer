@@ -856,9 +856,15 @@ fn percent_decode(input: &str) -> String {
     let mut out = Vec::with_capacity(bytes.len());
     let mut i = 0;
     while i < bytes.len() {
-        if bytes[i] == b'%' && i + 3 <= bytes.len() {
-            if let Ok(byte) = u8::from_str_radix(&input[i + 1..i + 3], 16) {
-                out.push(byte);
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            // Only decode when both following bytes are ASCII hex digits; a
+            // `%` before a multibyte UTF-8 char must stay literal instead of
+            // slicing mid-codepoint (upstream #398).
+            if let (Some(hi), Some(lo)) = (
+                (bytes[i + 1] as char).to_digit(16),
+                (bytes[i + 2] as char).to_digit(16),
+            ) {
+                out.push((hi * 16 + lo) as u8);
                 i += 3;
                 continue;
             }
