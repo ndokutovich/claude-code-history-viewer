@@ -167,6 +167,22 @@ pub fn get_opencode_base_path() -> Option<PathBuf> {
 // SQLITE BACKEND (opencode.db)
 // ============================================================================
 
+/// Prefix for virtual projects that split OpenCode's `global` project
+/// sessions by their raw `session.directory` value (upstream #432).
+const OPENCODE_GLOBAL_DIRECTORY_PREFIX: &str = "global-dir-";
+
+/// Stable id for a directory-scoped virtual project. Hashes the RAW
+/// `s.directory` value - scan and load must hash the same thing, which is
+/// exactly the mismatch upstream #432 fixed (COALESCE'd grouping vs raw
+/// filtering dropped empty-directory sessions at load time).
+fn opencode_directory_project_id(directory: &str) -> String {
+    format!(
+        "{}{}",
+        OPENCODE_GLOBAL_DIRECTORY_PREFIX,
+        crate::commands::adapters::gemini::compute_sha256(directory)
+    )
+}
+
 /// Resolve the SQLite database path for an OpenCode base directory.
 pub fn opencode_db_path(base_path: &Path) -> PathBuf {
     base_path.join("opencode.db")
@@ -236,6 +252,16 @@ fn scan_projects_from_db(base_path: &Path, source_id: &str) -> Option<Vec<Univer
     for row in rows.flatten() {
         let (id, worktree, name, time_created, time_updated, session_count) = row;
 
+        // The `global` project aggregates directory-less sessions; split it
+        // into virtual per-directory projects so each working directory gets
+        // its own node (upstream #432).
+        if id == "global" {
+            if let Some(split) = scan_global_directory_projects(&conn, &db_path_str, source_id) {
+                projects.extend(split);
+            }
+            continue;
+        }
+
         let display_name = name.filter(|n| !n.is_empty()).unwrap_or_else(|| {
             PathBuf::from(&worktree)
                 .file_name()
@@ -270,6 +296,82 @@ fn scan_projects_from_db(base_path: &Path, source_id: &str) -> Option<Vec<Univer
     }
 }
 
+/// Split the `global` project's sessions into virtual per-directory
+/// projects. Grouping and loading both use the RAW `s.directory` value, so
+/// the stable hash matches on both sides (upstream #432).
+fn scan_global_directory_projects(
+    conn: &Connection,
+    db_path_str: &str,
+    source_id: &str,
+) -> Option<Vec<UniversalProject>> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT COALESCE(s.directory, ''), COUNT(*), MIN(s.time_created), MAX(s.time_updated)              FROM session s WHERE s.project_id = 'global' GROUP BY COALESCE(s.directory, '')",
+        )
+        .ok()?;
+
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, i64>(2)?,
+                row.get::<_, i64>(3)?,
+            ))
+        })
+        .ok()?;
+
+    let mut projects: Vec<UniversalProject> = Vec::new();
+
+    for row in rows.flatten() {
+        let (directory, session_count, time_created, time_updated) = row;
+        if session_count <= 0 {
+            continue;
+        }
+
+        // Empty-directory sessions stay in the bare `global` bucket.
+        let (project_id, display_name) = if directory.is_empty() {
+            ("global".to_string(), "OpenCode Global".to_string())
+        } else {
+            (
+                opencode_directory_project_id(&directory),
+                PathBuf::from(&directory)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .filter(|n| !n.is_empty())
+                    .unwrap_or(&directory)
+                    .to_string(),
+            )
+        };
+
+        let mut metadata: HashMap<String, Value> = HashMap::new();
+        if !directory.is_empty() {
+            metadata.insert("projectDirectory".to_string(), json!(directory));
+        }
+        metadata.insert("storageType".to_string(), json!("sqlite"));
+        metadata.insert("storageDbPath".to_string(), json!(db_path_str));
+
+        projects.push(UniversalProject {
+            id: project_id.clone(),
+            source_id: source_id.to_string(),
+            provider_id: "opencode".to_string(),
+            name: display_name,
+            path: format!("opencode://{}", project_id),
+            session_count: session_count.max(0) as usize,
+            total_messages: 0,
+            first_activity_at: Some(epoch_ms_to_rfc3339(time_created)),
+            last_activity_at: Some(epoch_ms_to_rfc3339(time_updated.max(time_created))),
+            metadata,
+        });
+    }
+
+    if projects.is_empty() {
+        None
+    } else {
+        Some(projects)
+    }
+}
+
 /// Load sessions for a project from the SQLite `session` table.
 fn load_sessions_from_db(
     base_path: &Path,
@@ -279,29 +381,74 @@ fn load_sessions_from_db(
     let conn = open_opencode_db(base_path)?;
     let db_path_str = opencode_db_path(base_path).to_string_lossy().to_string();
 
-    let mut stmt = conn
-        .prepare(
-            "SELECT s.id, s.title, s.time_created, s.time_updated, \
-                    (SELECT COUNT(*) FROM message m WHERE m.session_id = s.id) AS message_count \
-             FROM session s WHERE s.project_id = ?1",
-        )
-        .ok()?;
+    // `global` holds only its empty-directory sessions; `global-dir-<hash>`
+    // selects the global sessions whose RAW directory hashes to the project
+    // id (upstream #432 - both sides hash the raw value).
+    let (sql, params): (&str, Vec<String>) =
+        if project_id.starts_with(OPENCODE_GLOBAL_DIRECTORY_PREFIX) {
+            (
+                "SELECT s.id, s.title, s.time_created, s.time_updated, \
+                        (SELECT COUNT(*) FROM message m WHERE m.session_id = s.id) AS message_count \
+                 FROM session s WHERE s.project_id = 'global' AND COALESCE(s.directory, '') != ''",
+                Vec::new(),
+            )
+        } else if project_id == "global" {
+            (
+                "SELECT s.id, s.title, s.time_created, s.time_updated, \
+                        (SELECT COUNT(*) FROM message m WHERE m.session_id = s.id) AS message_count \
+                 FROM session s WHERE s.project_id = 'global' AND COALESCE(s.directory, '') = ''",
+                Vec::new(),
+            )
+        } else {
+            (
+                "SELECT s.id, s.title, s.time_created, s.time_updated, \
+                        (SELECT COUNT(*) FROM message m WHERE m.session_id = s.id) AS message_count \
+                 FROM session s WHERE s.project_id = ?1",
+                vec![project_id.to_string()],
+            )
+        };
 
-    let rows = stmt
-        .query_map([project_id], |row| {
-            Ok((
-                row.get::<_, String>(0)?,         // id
-                row.get::<_, Option<String>>(1)?, // title
-                row.get::<_, i64>(2)?,            // time_created
-                row.get::<_, i64>(3)?,            // time_updated
-                row.get::<_, i64>(4)?,            // message_count
-            ))
-        })
-        .ok()?;
+    let mut stmt = conn.prepare(sql).ok()?;
+
+    type SessionRow = (String, Option<String>, i64, i64, i64);
+    let filter_row = |row: &rusqlite::Row<'_>| -> rusqlite::Result<SessionRow> {
+        Ok((
+            row.get::<_, String>(0)?,         // id
+            row.get::<_, Option<String>>(1)?, // title
+            row.get::<_, i64>(2)?,            // time_created
+            row.get::<_, i64>(3)?,            // time_updated
+            row.get::<_, i64>(4)?,            // message_count
+        ))
+    };
+
+    let rows: Vec<SessionRow> = if project_id.starts_with(OPENCODE_GLOBAL_DIRECTORY_PREFIX) {
+        // Retain only sessions whose raw directory hashes to this project.
+        let mut dir_stmt = conn
+            .prepare("SELECT COALESCE(directory, '') FROM session WHERE id = ?1")
+            .ok()?;
+        stmt.query_map([], filter_row)
+            .ok()?
+            .flatten()
+            .filter(|row| {
+                dir_stmt
+                    .query_row([&row.0], |r| r.get::<_, String>(0))
+                    .ok()
+                    .map(|d| opencode_directory_project_id(&d) == project_id)
+                    .unwrap_or(false)
+            })
+            .collect()
+    } else if params.is_empty() {
+        stmt.query_map([], filter_row).ok()?.flatten().collect()
+    } else {
+        stmt.query_map(rusqlite::params_from_iter(params.iter()), filter_row)
+            .ok()?
+            .flatten()
+            .collect()
+    };
 
     let mut sessions: Vec<UniversalSession> = Vec::new();
 
-    for row in rows.flatten() {
+    for row in rows {
         let (id, title, time_created, time_updated, message_count) = row;
 
         let display_title = title
@@ -1406,7 +1553,8 @@ mod tests {
             );
             CREATE TABLE session (
                 id TEXT PRIMARY KEY, project_id TEXT NOT NULL, title TEXT NOT NULL,
-                time_created INTEGER NOT NULL, time_updated INTEGER NOT NULL
+                time_created INTEGER NOT NULL, time_updated INTEGER NOT NULL,
+                directory TEXT NOT NULL DEFAULT ''
             );
             CREATE TABLE message (
                 id TEXT PRIMARY KEY, session_id TEXT NOT NULL,
@@ -1473,6 +1621,60 @@ mod tests {
             ],
         )
         .unwrap();
+    }
+
+    fn seed_global_sessions(dir: &Path) {
+        let conn = Connection::open(dir.join("opencode.db")).expect("open test db");
+        conn.execute(
+            "INSERT INTO project (id, worktree, name, time_created, time_updated)              VALUES (?1, ?2, ?3, ?4, ?5)",
+            rusqlite::params!["global", "", None::<String>, 1_700_000_000_000_i64, 1_700_000_100_000_i64],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO session (id, project_id, title, time_created, time_updated, directory)              VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params!["ses_g1", "global", "dir session", 1_700_000_000_000_i64, 1_700_000_050_000_i64, "/tmp/proj-a"],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO session (id, project_id, title, time_created, time_updated, directory)              VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params!["ses_g2", "global", "dirless session", 1_700_000_000_000_i64, 1_700_000_060_000_i64, ""],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn sqlite_global_sessions_split_by_directory() {
+        let tmp = tempfile::tempdir().unwrap();
+        create_seeded_db(tmp.path());
+        seed_global_sessions(tmp.path());
+
+        let projects = scan_opencode_projects_impl(tmp.path(), "src-1").unwrap();
+        // proj1 + global-dir virtual + bare global bucket
+        let global_dir = projects
+            .iter()
+            .find(|p| p.id.starts_with("global-dir-"))
+            .expect("global-dir virtual project");
+        assert_eq!(global_dir.name, "proj-a");
+        assert_eq!(global_dir.session_count, 1);
+        assert_eq!(
+            global_dir.metadata.get("projectDirectory"),
+            Some(&serde_json::json!("/tmp/proj-a"))
+        );
+
+        let bare_global = projects.iter().find(|p| p.id == "global").expect("bare global");
+        assert_eq!(bare_global.session_count, 1);
+
+        // Load: hash of the raw directory routes the session home; the bare
+        // bucket returns only the empty-directory session.
+        let dir_sessions =
+            load_opencode_sessions_impl(tmp.path(), &global_dir.id, "src-1").unwrap();
+        assert_eq!(dir_sessions.len(), 1);
+        assert_eq!(dir_sessions[0].id, "ses_g1");
+
+        let bare_sessions =
+            load_opencode_sessions_impl(tmp.path(), "global", "src-1").unwrap();
+        assert_eq!(bare_sessions.len(), 1);
+        assert_eq!(bare_sessions[0].id, "ses_g2");
     }
 
     fn storage_type_of(metadata: &HashMap<String, Value>) -> Option<&str> {

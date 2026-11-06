@@ -125,7 +125,7 @@ fn normalize_path(path: &str) -> String {
     path.replace("\\", "/").to_lowercase()
 }
 
-fn compute_sha256(input: &str) -> String {
+pub fn compute_sha256(input: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(input.as_bytes());
     format!("{:x}", hasher.finalize())
