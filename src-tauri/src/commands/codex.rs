@@ -331,7 +331,8 @@ pub async fn load_codex_messages(
             if event.event_type == "response_item" {
                 if let Some(ref payload) = event.payload {
                     if let Some(msg_type) = payload.get("type").and_then(|t| t.as_str()) {
-                        return msg_type == "message";
+                        // reasoning items render as thinking blocks (upstream #610)
+                        return msg_type == "message" || msg_type == "reasoning";
                     }
                 }
             }

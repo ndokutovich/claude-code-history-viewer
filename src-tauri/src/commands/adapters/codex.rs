@@ -352,6 +352,29 @@ fn convert_content(event: &CodexEvent) -> Vec<UniversalContent> {
     let mut content_items: Vec<UniversalContent> = Vec::new();
 
     if let Some(ref payload) = event.payload {
+        // Reasoning items: prefer summary[].text; some backends (DeepSeek via
+        // Codex, upstream #597) leave summary empty and store the text as
+        // content[].reasoning_text. Rendered as thinking, not plain text.
+        if payload.get("type").and_then(Value::as_str) == Some("reasoning") {
+            let mut thinking = join_reasoning_texts(payload.get("summary"), |_| true);
+            if thinking.is_empty() {
+                thinking = join_reasoning_texts(payload.get("content"), |v| {
+                    v.get("type").and_then(Value::as_str) == Some("reasoning_text")
+                });
+            }
+            if !thinking.is_empty() {
+                content_items.push(UniversalContent {
+                    content_type: ContentType::Thinking,
+                    data: json!({ "text": thinking }),
+                    encoding: None,
+                    mime_type: Some("text/plain".to_string()),
+                    size: None,
+                    hash: None,
+                });
+                return content_items;
+            }
+        }
+
         // Extract text content from payload.content field
         // Codex format: content: [{"type":"input_text","text":"..."}]
         if let Some(content_array) = payload.get("content").and_then(|c| c.as_array()) {
@@ -389,6 +412,20 @@ fn convert_content(event: &CodexEvent) -> Vec<UniversalContent> {
     }
 
     content_items
+}
+
+/// Joins the `text` of matching entries in a reasoning `summary`/`content` array.
+fn join_reasoning_texts(arr: Option<&Value>, keep: impl Fn(&Value) -> bool) -> String {
+    arr.and_then(Value::as_array)
+        .map(|arr| {
+            arr.iter()
+                .filter(|v| keep(v))
+                .filter_map(|v| v.get("text").and_then(Value::as_str))
+                .collect::<Vec<_>>()
+                .join("
+")
+        })
+        .unwrap_or_default()
 }
 
 /// Extract CWD (current working directory) with priority logic
@@ -634,6 +671,46 @@ mod tests {
             execution_context: None,
         }];
         assert_eq!(session_id_from_events(&events, "file-uuid"), "file-uuid");
+    }
+
+    #[test]
+    fn test_reasoning_content_prefers_summary_then_content_texts() {
+        let mk = |payload: Value| CodexEvent {
+            id: None,
+            timestamp: None,
+            event_type: "response_item".to_string(),
+            payload: Some(payload),
+            internal: None,
+            environment_context: None,
+            execution_context: None,
+        };
+
+        // Summary present -> wins.
+        let ev = mk(json!({
+            "type": "reasoning",
+            "summary": [ { "type": "summary_text", "text": "from summary" } ],
+            "content": [ { "type": "reasoning_text", "text": "from content" } ]
+        }));
+        let content = convert_content(&ev);
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0].content_type, ContentType::Thinking);
+        assert_eq!(content[0].data["text"], "from summary");
+
+        // Empty summary (DeepSeek via Codex, #597) -> content[].reasoning_text.
+        let ev = mk(json!({
+            "type": "reasoning",
+            "summary": [],
+            "content": [
+                { "type": "reasoning_text", "text": "first thought" },
+                { "type": "reasoning_text", "text": "second thought" },
+                { "type": "other", "text": "not reasoning" }
+            ]
+        }));
+        let content = convert_content(&ev);
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0].content_type, ContentType::Thinking);
+        assert_eq!(content[0].data["text"], "first thought
+second thought");
     }
 
     #[test]
