@@ -161,7 +161,16 @@ pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, St
 
         let raw_project_name = entry.file_name().to_string_lossy().to_string();
         let project_path = entry.path().to_string_lossy().to_string();
-        let project_name = extract_project_name(&raw_project_name);
+        // Decoded display name — filesystem-verified when possible, legacy
+        // heuristic as fallback (upstream #548/#549: Windows drive-letter
+        // names and either-separator markers decode correctly now).
+        let decoded = crate::utils::decode_project_path_verified(&project_path)
+            .unwrap_or_else(|| crate::utils::decode_project_path(&project_path));
+        let project_name = std::path::Path::new(&decoded)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .filter(|n| !n.is_empty() && n != &raw_project_name)
+            .unwrap_or_else(|| extract_project_name(&raw_project_name));
 
         let mut session_count = 0;
         let mut message_count = 0;

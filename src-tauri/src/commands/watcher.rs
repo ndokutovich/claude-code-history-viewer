@@ -104,7 +104,12 @@ pub async fn stop_file_watcher(app_handle: AppHandle) -> Result<(), String> {
 }
 
 fn handle_file_event(app_handle: &AppHandle, event: &DebouncedEvent) {
-    let path = &event.path;
+    // The watcher watches the canonicalized directory, so on Windows every
+    // event path carries the extended-length `\\?\` prefix while the frontend
+    // compares strictly against `home_dir()`-based paths — strip it here
+    // (upstream #604) so auto-refresh matches again.
+    let stripped = crate::utils::strip_windows_extended_prefix(&event.path);
+    let path = &stripped;
 
     // Only process .jsonl files
     if let Some(ext) = path.extension() {

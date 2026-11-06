@@ -368,7 +368,20 @@ fn process_session_file(
         .and_then(|n| n.to_str())
         .unwrap_or("Unknown")
         .to_string();
-    let project_name = extract_project_name(&raw_project_name);
+    // Prefer the decoded, filesystem-verified project name; the legacy
+    // heuristic stays as fallback (upstream #548/#549).
+    let parent_path = entry
+        .path()
+        .parent()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let decoded = crate::utils::decode_project_path_verified(&parent_path)
+        .unwrap_or_else(|| crate::utils::decode_project_path(&parent_path));
+    let project_name = std::path::Path::new(&decoded)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .filter(|n| !n.is_empty() && n != &raw_project_name)
+        .unwrap_or_else(|| extract_project_name(&raw_project_name));
 
     Some(ClaudeSession {
         session_id,

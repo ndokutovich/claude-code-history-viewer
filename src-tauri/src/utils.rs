@@ -374,3 +374,230 @@ mod custom_claude_dir_tests {
         let _ = fs::remove_dir_all(&tmp);
     }
 }
+
+// ============================================================================
+// WINDOWS EXTENDED-LENGTH PREFIX
+// ============================================================================
+
+/// Remove the extended-length prefix that Windows may add to canonical paths
+/// (`\?\C:\…` → `C:\…`, `\?\UNC\server\share` → `\server\share`).
+///
+/// `canonicalize()` returns the prefixed form on Windows; the desktop watcher
+/// watches the canonicalized directory, so every event path carries the
+/// prefix while the frontend compares strictly against `home_dir()`-based
+/// paths — the open session and project list then never auto-refresh
+/// (upstream #604). Cross-platform so the rule is unit-testable anywhere.
+pub fn strip_windows_extended_prefix(path: &std::path::Path) -> std::path::PathBuf {
+    let raw = path.to_string_lossy();
+    if let Some(rest) = raw.strip_prefix(r"\?\UNC\") {
+        return std::path::PathBuf::from(format!(r"\{rest}"));
+    }
+    if let Some(rest) = raw.strip_prefix(r"\?\") {
+        return std::path::PathBuf::from(rest);
+    }
+    path.to_path_buf()
+}
+
+#[cfg(test)]
+mod extended_prefix_tests {
+    use super::strip_windows_extended_prefix;
+    use std::path::Path;
+
+    #[test]
+    fn strips_drive_prefix() {
+        let stripped = strip_windows_extended_prefix(Path::new(
+            r"\?\C:\Users\xxx\.claude\projects\demo\a.jsonl",
+        ));
+        assert_eq!(
+            stripped,
+            Path::new(r"C:\Users\xxx\.claude\projects\demo\a.jsonl")
+        );
+    }
+
+    #[test]
+    fn strips_unc_prefix() {
+        let stripped = strip_windows_extended_prefix(Path::new(
+            r"\?\UNC\server\share\proj\a.jsonl",
+        ));
+        assert_eq!(stripped, Path::new(r"\server\share\proj\a.jsonl"));
+    }
+
+    #[test]
+    fn passes_plain_paths_through() {
+        for raw in ["/home/x/.claude/projects/p/a.jsonl", r"C:\Users\x\a.jsonl"] {
+            assert_eq!(
+                strip_windows_extended_prefix(Path::new(raw)),
+                Path::new(raw)
+            );
+        }
+    }
+}
+
+// ============================================================================
+// PROJECT FOLDER NAME DECODING (upstream #548/#549 final state)
+// ============================================================================
+// Claude stores sessions under ~/.claude/projects/ with the project path
+// encoded (`-Users-jack-app` on Unix, `D--OneDrive-Work` on Windows: every
+// separator and the drive colon become `-`). Decoding walks the filesystem,
+// checking each candidate split so names containing hyphens resolve right.
+
+/// Decode a Claude session storage path to the actual project path.
+///
+/// 1. `sessions-index.json` `originalPath` (most reliable)
+/// 2. Filesystem-verified decode of the encoded folder name
+/// 3. Lossy Unix-only heuristic as a last resort
+pub fn decode_project_path(session_storage_path: &str) -> String {
+    let index_path = std::path::Path::new(session_storage_path).join("sessions-index.json");
+    if let Ok(content) = std::fs::read_to_string(&index_path) {
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&content) {
+            if let Some(original) = parsed.get("originalPath").and_then(|v| v.as_str()) {
+                if !original.is_empty() && std::path::Path::new(original).is_absolute() {
+                    return original.to_string();
+                }
+            }
+        }
+    }
+
+    if let Some(encoded) = encoded_folder_name(session_storage_path) {
+        if let Some(path) = decode_with_filesystem_check(encoded) {
+            return path;
+        }
+
+        // Lossy heuristic: builds a `/`-rooted path, so it only applies to a
+        // Unix-shaped name (leading dash). A drive-lettered `D--OneDrive-…`
+        // is excluded by that test — fabricating `/D--OneDrive/…` on Windows
+        // would be worse than the storage path (#548).
+        if encoded.starts_with('-') {
+            let parts: Vec<&str> = encoded.splitn(4, '-').collect();
+            if parts.len() >= 4 {
+                return format!("/{}/{}/{}", parts[1], parts[2], parts[3]);
+            } else if parts.len() == 3 {
+                return format!("/{}/{}", parts[1], parts[2]);
+            } else if parts.len() == 2 {
+                return format!("/{}", parts[1]);
+            }
+        }
+    }
+    session_storage_path.to_string()
+}
+
+/// Resolve a session storage folder to a real on-disk project path, returning
+/// `None` unless the result can be verified against the filesystem. Complements
+/// `cwd`-from-JSONL resolution (#369): the folder is authoritative when the
+/// embedded `cwd` is stale.
+pub fn decode_project_path_verified(session_storage_path: &str) -> Option<String> {
+    let index_path = std::path::Path::new(session_storage_path).join("sessions-index.json");
+    if let Ok(content) = std::fs::read_to_string(&index_path) {
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&content) {
+            if let Some(original) = parsed.get("originalPath").and_then(|v| v.as_str()) {
+                let original = original.trim();
+                let candidate = std::path::Path::new(original);
+                // symlink_metadata so a symlinked directory is rejected here too.
+                let is_real_dir = std::fs::symlink_metadata(candidate)
+                    .map(|m| m.file_type().is_dir())
+                    .unwrap_or(false);
+                if candidate.is_absolute() && is_real_dir {
+                    return Some(original.to_string());
+                }
+            }
+        }
+    }
+    decode_with_filesystem_check(encoded_folder_name(session_storage_path)?)
+}
+
+/// The encoded folder name inside a session storage path. Matches either
+/// separator — a literal `".claude/projects/"` can never be found in a
+/// Windows path with backslashes (#548).
+fn encoded_folder_name(session_storage_path: &str) -> Option<&str> {
+    const MARKERS: [&str; 2] = [".claude/projects/", r".claude\projects\"];
+    MARKERS.iter().find_map(|marker| {
+        session_storage_path
+            .find(marker)
+            .map(|pos| &session_storage_path[pos + marker.len()..])
+    })
+}
+
+/// Split an encoded name into its filesystem root and the rest to decode.
+/// Unix `-Users-jack-app` → (`/`, `Users-jack-app`); Windows `D--OneDrive-Work`
+/// → (`D:\`, `OneDrive-Work`).
+#[allow(clippy::unnecessary_wraps)]
+fn split_encoded_root(encoded: &str) -> Option<(std::path::PathBuf, &str)> {
+    #[cfg(windows)]
+    {
+        let drive = encoded.as_bytes().first()?;
+        if drive.is_ascii_alphabetic() && encoded.get(1..3) == Some("--") {
+            return Some((
+                std::path::PathBuf::from(format!("{}:\\", &encoded[..1])),
+                &encoded[3..],
+            ));
+        }
+        None
+    }
+
+    #[cfg(not(windows))]
+    Some((
+        std::path::PathBuf::from("/"),
+        encoded.strip_prefix('-').unwrap_or(encoded),
+    ))
+}
+
+/// Decode by checking filesystem existence at each possible split point.
+pub fn decode_with_filesystem_check(encoded: &str) -> Option<String> {
+    let (root, rest) = split_encoded_root(encoded)?;
+    decode_recursive_inner(rest, &root, 0).map(|p| p.to_string_lossy().into_owned())
+}
+
+/// Recursively decode hyphen-separated segments by checking the filesystem,
+/// so names like `claude-code-history-viewer-src` split at real directories.
+fn decode_recursive_inner(encoded: &str, base_path: &std::path::Path, depth: usize) -> Option<std::path::PathBuf> {
+    if depth > 20 {
+        return None;
+    }
+    if encoded.is_empty() {
+        if base_path.exists() {
+            return Some(base_path.to_path_buf());
+        }
+        return None;
+    }
+
+    let hyphen_positions: Vec<usize> = encoded
+        .char_indices()
+        .filter(|(_, c)| *c == '-')
+        .map(|(i, _)| i)
+        .collect();
+
+    for &pos in &hyphen_positions {
+        let segment = &encoded[..pos];
+        if segment.is_empty() {
+            continue;
+        }
+        let candidate = base_path.join(segment);
+        let is_real_dir = std::fs::symlink_metadata(&candidate)
+            .map(|m| m.file_type().is_dir())
+            .unwrap_or(false);
+        if is_real_dir {
+            let remaining = &encoded[pos + 1..];
+            if remaining.is_empty() {
+                return Some(candidate);
+            }
+            // First try: remaining as a single leaf.
+            let full_path = candidate.join(remaining);
+            let full_path_is_real = std::fs::symlink_metadata(&full_path)
+                .map(|m| !m.file_type().is_symlink())
+                .unwrap_or(false);
+            if full_path_is_real {
+                return Some(full_path);
+            }
+            // Recurse: remaining may itself contain separator hyphens.
+            if let result @ Some(_) = decode_recursive_inner(remaining, &candidate, depth + 1) {
+                return result;
+            }
+        }
+    }
+
+    let full_path = base_path.join(encoded);
+    if full_path.exists() {
+        return Some(full_path);
+    }
+    None
+}
