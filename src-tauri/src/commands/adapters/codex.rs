@@ -69,6 +69,72 @@ pub fn extract_session_id(event: &CodexEvent, filename_uuid: &str) -> String {
     filename_uuid.to_string()
 }
 
+/// Session id for a rollout: the FIRST `session_meta` payload id wins —
+/// `codex fork` replays the source rollout (including its session_meta) as
+/// history, so a later meta must not re-tag the session (upstream #451).
+/// Meta-less rollouts fall back to the filename UUID (upstream #38b9e583).
+pub fn session_id_from_events(events: &[CodexEvent], filename_uuid: &str) -> String {
+    for event in events {
+        if event.event_type == "session_meta" {
+            if let Some(payload) = event.payload.as_ref() {
+                if let Some(id) = payload.get("id").and_then(Value::as_str) {
+                    if !id.is_empty() {
+                        return id.to_string();
+                    }
+                }
+            }
+        }
+    }
+    match events.first() {
+        Some(first) => extract_session_id(first, filename_uuid),
+        None => filename_uuid.to_string(),
+    }
+}
+
+/// CWD for a rollout: first `session_meta` payload cwd, else the LAST
+/// `turn_context` payload cwd (a fork replays the source's turn contexts
+/// first, so the last one is where the session actually runs), else the
+/// first event's environment_context cwd.
+pub fn cwd_from_events(events: &[CodexEvent]) -> Option<String> {
+    for event in events {
+        if event.event_type == "session_meta" {
+            if let Some(cwd) = event
+                .payload
+                .as_ref()
+                .and_then(|p| p.get("cwd"))
+                .and_then(Value::as_str)
+            {
+                if !cwd.is_empty() {
+                    return Some(cwd.to_string());
+                }
+            }
+        }
+    }
+    let mut turn_cwd = None;
+    for event in events {
+        if event.event_type == "turn_context" {
+            if let Some(cwd) = event
+                .payload
+                .as_ref()
+                .and_then(|p| p.get("cwd"))
+                .and_then(Value::as_str)
+            {
+                if !cwd.is_empty() {
+                    turn_cwd = Some(cwd.to_string());
+                }
+            }
+        }
+    }
+    turn_cwd.or_else(|| {
+        events
+            .first()
+            .and_then(|e| e.environment_context.as_ref())
+            .and_then(|ctx| ctx.get("cwd"))
+            .and_then(Value::as_str)
+            .map(String::from)
+    })
+}
+
 // ============================================================================
 // JSONL STREAMING PARSER (Claude Code pattern from session.rs:38-70)
 // ============================================================================
@@ -535,5 +601,64 @@ mod tests {
         assert_eq!(events.len(), 2);
         assert_eq!(events[0].event_type, "session_meta");
         assert_eq!(events[1].event_type, "user_message");
+    }
+    #[test]
+    fn test_session_id_first_meta_wins_over_replayed_source() {
+        let mk = |t: &str, id: Option<&str>| CodexEvent {
+            id: None,
+            timestamp: None,
+            event_type: t.to_string(),
+            payload: id.map(|i| json!({ "id": i, "cwd": "/tmp/x" })),
+            internal: None,
+            environment_context: None,
+            execution_context: None,
+        };
+        let events = vec![
+            mk("session_meta", Some("own-session")),
+            mk("user_message", None),
+            // Replayed source meta from `codex fork` — must NOT win.
+            mk("session_meta", Some("source-session")),
+        ];
+        assert_eq!(session_id_from_events(&events, "file-uuid"), "own-session");
+    }
+
+    #[test]
+    fn test_session_id_meta_less_falls_back_to_filename() {
+        let events = vec![CodexEvent {
+            id: None,
+            timestamp: None,
+            event_type: "user_message".to_string(),
+            payload: None,
+            internal: None,
+            environment_context: None,
+            execution_context: None,
+        }];
+        assert_eq!(session_id_from_events(&events, "file-uuid"), "file-uuid");
+    }
+
+    #[test]
+    fn test_cwd_last_turn_context_wins_when_no_meta() {
+        let mk = |t: &str, cwd: Option<&str>| CodexEvent {
+            id: None,
+            timestamp: None,
+            event_type: t.to_string(),
+            payload: cwd.map(|c| json!({ "cwd": c })),
+            internal: None,
+            environment_context: None,
+            execution_context: None,
+        };
+        // A fork replays source turn contexts first; the LAST one is real.
+        let events = vec![
+            mk("turn_context", Some("/src/replayed")),
+            mk("turn_context", Some("/real/cwd")),
+        ];
+        assert_eq!(cwd_from_events(&events).as_deref(), Some("/real/cwd"));
+
+        // session_meta cwd beats turn_context.
+        let events = vec![
+            mk("session_meta", Some("/meta/cwd")),
+            mk("turn_context", Some("/turn/cwd")),
+        ];
+        assert_eq!(cwd_from_events(&events).as_deref(), Some("/meta/cwd"));
     }
 }

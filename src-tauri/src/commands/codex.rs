@@ -145,13 +145,7 @@ pub async fn scan_codex_projects(
         if let Some((_, uuid)) = parse_rollout_filename(&filename) {
             // Try to get actual session ID from file
             let session_id: String = match parse_codex_jsonl(&file_path) {
-                Ok(events) => {
-                    if let Some(first_event) = events.first() {
-                        extract_session_id(first_event, &uuid)
-                    } else {
-                        uuid.clone()
-                    }
-                }
+                Ok(events) => session_id_from_events(&events, &uuid),
                 Err(_) => uuid.clone(), // Fallback to UUID if parse fails
             };
 
@@ -233,19 +227,11 @@ pub async fn load_codex_sessions(
     let (timestamp_str, uuid) = parse_rollout_filename(&filename)
         .ok_or("CODEX_PARSE_ERROR: Invalid rollout filename format")?;
 
-    let session_id: String = if let Some(first_event) = events.first() {
-        extract_session_id(first_event, &uuid)
-    } else {
-        uuid.clone()
-    };
+    let session_id: String = session_id_from_events(&events, &uuid);
 
-    // Extract CWD from first event
-    let cwd: Option<String> = events
-        .first()
-        .and_then(|e| e.environment_context.as_ref())
-        .and_then(|ctx| ctx.get("cwd"))
-        .and_then(|v| v.as_str())
-        .map(String::from);
+    // CWD: first session_meta, else last turn_context (fork replays source
+    // contexts first), else the first event's environment_context.
+    let cwd: Option<String> = cwd_from_events(&events);
 
     // Metadata with camelCase keys
     let mut metadata: HashMap<String, serde_json::Value> = HashMap::new();
@@ -353,7 +339,9 @@ pub async fn load_codex_messages(
             event.event_type == "event_msg"
         })
         .map(|(idx, event)| {
-            let session_id: String = extract_session_id(event, &uuid);
+            // One id for the whole file: a fork's replayed source events
+            // must not re-tag messages with the source session id.
+            let session_id: String = session_id_from_events(&events, &uuid);
             let mut msg: UniversalMessage = codex_event_to_universal(
                 event,
                 "codex".to_string(), // project_id
