@@ -851,7 +851,8 @@
     "copySubagentPaths": "Copy sub-agent transcript paths",
     "noSubagentTranscripts": "No sub-agent transcripts",
     "subagentPathsCopied": "{{count}} sub-agent transcript path(s) copied",
-    "subagentLookupFailed": "Could not read sub-agent transcripts"
+    "subagentLookupFailed": "Could not read sub-agent transcripts",
+    "viewSubagentTranscripts": "View sub-agent transcripts"
   },
   "sessionBoard": {
     "gitCommits": "Git Commits",
@@ -1200,5 +1201,14 @@
   "messageViewer.search.button": "Search in session (Ctrl+F)",
   "messageViewer.search.content": "Content",
   "messageViewer.search.placeholder": "Search in session...",
-  "messageViewer.search.toolId": "Tool ID"
+  "messageViewer.search.toolId": "Tool ID",
+  "subagents": {
+    "title": "Sub-agent transcripts",
+    "description": "Agents Claude Code ran for this session, including dynamic workflows",
+    "loading": "Loading transcripts…",
+    "empty": "This session has no sub-agent transcripts",
+    "loadingMessages": "Loading messages…",
+    "pickOne": "Pick an agent to read its transcript",
+    "noMessages": "No displayable messages"
+  }
 }

@@ -870,7 +870,8 @@
     "copySubagentPaths": "複製子代理紀錄路徑",
     "noSubagentTranscripts": "沒有子代理紀錄",
     "subagentPathsCopied": "已複製 {{count}} 個路徑",
-    "subagentLookupFailed": "無法讀取子代理紀錄"
+    "subagentLookupFailed": "無法讀取子代理紀錄",
+    "viewSubagentTranscripts": "檢視子代理紀錄"
   },
   "sessionBoard": {
     "gitCommits": "Git 提交",
@@ -1219,5 +1220,14 @@
   "messageViewer.search.button": "在工作階段中搜尋 (Ctrl+F)",
   "messageViewer.search.content": "內容",
   "messageViewer.search.placeholder": "在工作階段中搜尋...",
-  "messageViewer.search.toolId": "工具ID"
+  "messageViewer.search.toolId": "工具ID",
+  "subagents": {
+    "title": "子代理紀錄",
+    "description": "本工作階段中 Claude Code 執行的代理，包括動態工作流程",
+    "loading": "正在載入紀錄…",
+    "empty": "此工作階段沒有子代理紀錄",
+    "loadingMessages": "正在載入訊息…",
+    "pickOne": "選擇一個代理以檢視其紀錄",
+    "noMessages": "沒有可顯示的訊息"
+  }
 }

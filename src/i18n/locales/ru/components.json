@@ -854,7 +854,8 @@
     "copySubagentPaths": "Скопировать пути транскриптов субагентов",
     "noSubagentTranscripts": "Транскриптов субагентов нет",
     "subagentPathsCopied": "Скопировано путей: {{count}}",
-    "subagentLookupFailed": "Не удалось прочитать транскрипты субагентов"
+    "subagentLookupFailed": "Не удалось прочитать транскрипты субагентов",
+    "viewSubagentTranscripts": "Показать транскрипты субагентов"
   },
   "sessionBoard": {
     "gitCommits": "Git коммиты",
@@ -1203,5 +1204,14 @@
   "messageViewer.search.button": "Поиск в сессии (Ctrl+F)",
   "messageViewer.search.content": "Содержимое",
   "messageViewer.search.placeholder": "Поиск в сессии...",
-  "messageViewer.search.toolId": "ID инструмента"
+  "messageViewer.search.toolId": "ID инструмента",
+  "subagents": {
+    "title": "Транскрипты субагентов",
+    "description": "Агенты, которых Claude Code запускал в этой сессии, включая динамические воркфлоу",
+    "loading": "Загружаю транскрипты…",
+    "empty": "В этой сессии нет транскриптов субагентов",
+    "loadingMessages": "Загружаю сообщения…",
+    "pickOne": "Выберите агента, чтобы прочитать транскрипт",
+    "noMessages": "Нет отображаемых сообщений"
+  }
 }

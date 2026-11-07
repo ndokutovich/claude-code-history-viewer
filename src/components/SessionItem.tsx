@@ -20,8 +20,10 @@ import {
   Monitor,
   Tag,
   Trash2,
+  Bot,
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
+import { SubagentTranscriptsDialog } from "./SubagentTranscriptsDialog";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { ClaudeSession } from "../types";
@@ -244,6 +246,7 @@ export const SessionItem: React.FC<SessionItemProps> = ({
       state.projects.find((p) => p.name === session.project_name)?.actual_path
   );
   const resumeExtraArgs = useAppStore((state) => state.resumeExtraArgs);
+  const [isSubagentsOpen, setIsSubagentsOpen] = useState(false);
 
   const handleCopyResumeCommand = useCallback(
     (e: React.MouseEvent) => {
@@ -614,6 +617,10 @@ export const SessionItem: React.FC<SessionItemProps> = ({
                   </DropdownMenuItem>
                   {providerId === "claude" && (
                     <>
+                      <DropdownMenuItem onClick={() => setIsSubagentsOpen(true)}>
+                        <Bot className="w-3 h-3 mr-2" />
+                        {t("session.viewSubagentTranscripts", "View sub-agent transcripts")}
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => void handleCopySubagentPaths()}>
                         <Copy className="w-3 h-3 mr-2" />
                         {t("session.copySubagentPaths", "Copy sub-agent transcript paths")}
@@ -707,6 +714,14 @@ export const SessionItem: React.FC<SessionItemProps> = ({
         currentName={localSummary || ""}
         onSuccess={handleNativeRenameSuccess}
       />
+      {isSubagentsOpen && (
+        <SubagentTranscriptsDialog
+          open={isSubagentsOpen}
+          onOpenChange={setIsSubagentsOpen}
+          sessionFilePath={session.file_path}
+        />
+      )}
+
     </div>
   );
 };

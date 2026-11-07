@@ -872,7 +872,8 @@
     "copySubagentPaths": "서브 에이전트 기록 경로 복사",
     "noSubagentTranscripts": "서브 에이전트 기록이 없습니다",
     "subagentPathsCopied": "{{count}}개 경로를 복사했습니다",
-    "subagentLookupFailed": "서브 에이전트 기록을 읽지 못했습니다"
+    "subagentLookupFailed": "서브 에이전트 기록을 읽지 못했습니다",
+    "viewSubagentTranscripts": "서브 에이전트 기록 보기"
   },
   "sessionBoard": {
     "gitCommits": "Git 커밋",
@@ -1221,5 +1222,14 @@
   "messageViewer.search.button": "세션 내 검색 (Ctrl+F)",
   "messageViewer.search.content": "내용",
   "messageViewer.search.placeholder": "세션 내 검색...",
-  "messageViewer.search.toolId": "도구 ID"
+  "messageViewer.search.toolId": "도구 ID",
+  "subagents": {
+    "title": "서브 에이전트 기록",
+    "description": "이 세션에서 Claude Code가 실행한 에이전트(동적 워크플로 포함)",
+    "loading": "기록을 불러오는 중…",
+    "empty": "이 세션에는 서브 에이전트 기록이 없습니다",
+    "loadingMessages": "메시지를 불러오는 중…",
+    "pickOne": "에이전트를 선택해 기록을 확인하세요",
+    "noMessages": "표시할 메시지가 없습니다"
+  }
 }

@@ -751,7 +751,8 @@
     "copySubagentPaths": "サブエージェント記録のパスをコピー",
     "noSubagentTranscripts": "サブエージェント記録がありません",
     "subagentPathsCopied": "{{count}} 件のパスをコピーしました",
-    "subagentLookupFailed": "サブエージェント記録を読み取れませんでした"
+    "subagentLookupFailed": "サブエージェント記録を読み取れませんでした",
+    "viewSubagentTranscripts": "サブエージェント記録を表示"
   },
   "sessionBoard": {
     "gitCommits": "Gitコミット",
@@ -1339,5 +1340,14 @@
   "messageViewer.search.button": "セッション内検索 (Ctrl+F)",
   "messageViewer.search.content": "コンテンツ",
   "messageViewer.search.placeholder": "セッション内を検索...",
-  "messageViewer.search.toolId": "ツーID"
+  "messageViewer.search.toolId": "ツーID",
+  "subagents": {
+    "title": "サブエージェント記録",
+    "description": "このセッションで Claude Code が実行したエージェント（動的ワークフローを含む）",
+    "loading": "記録を読み込み中…",
+    "empty": "このセッションにはサブエージェント記録がありません",
+    "loadingMessages": "メッセージを読み込み中…",
+    "pickOne": "エージェントを選択して記録を表示します",
+    "noMessages": "表示できるメッセージがありません"
+  }
 }
