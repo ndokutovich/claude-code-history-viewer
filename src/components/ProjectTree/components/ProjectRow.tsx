@@ -23,10 +23,13 @@ export interface ProjectRowProps {
   onExpandRequest?: (projectPath: string) => Promise<void>;
   /** Called when ArrowLeft is pressed and the project is expanded */
   onCollapseRequest?: (projectPath: string) => void;
+  /** Other providers recording sessions for this same folder (upstream #23ea7fbe). */
+  siblingProviders?: string[];
 }
 
 export const ProjectRow: React.FC<ProjectRowProps> = ({
   project,
+  siblingProviders = [],
   isExpanded,
   isLoading,
   selectedProject,
@@ -111,13 +114,21 @@ export const ProjectRow: React.FC<ProjectRowProps> = ({
           providerId={project.providerId || ""}
           className={cn("w-4 h-4", getProviderColorClass(project.providerId))}
         />
-        <div className="flex-1 flex items-center">
+        <div className="flex-1 flex items-center min-w-0 gap-1">
           <p
             className="font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap text-sm"
             title={project.name}
           >
             {project.name}
           </p>
+          {/* Same folder recorded by other providers — one row covers them all */}
+          {siblingProviders.map((providerId) => (
+            <ProviderIcon
+              key={providerId}
+              providerId={providerId}
+              className={cn("w-3 h-3 shrink-0 opacity-70", getProviderColorClass(providerId))}
+            />
+          ))}
         </div>
       </button>
     </div>

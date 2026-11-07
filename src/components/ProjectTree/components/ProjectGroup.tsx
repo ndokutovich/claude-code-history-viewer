@@ -88,7 +88,7 @@ export const ProjectGroup: React.FC<ProjectGroupProps> = ({
       )}
 
       {/* Projects in this group */}
-      {visibleProjects.map((project) => {
+      {mergeProjectsByFolder(visibleProjects, selectedProject).map(({ lead: project, siblings }) => {
         const isExpanded = expandedProjects.has(project.path);
         const isLoadingProject = loadingProjects.has(project.path);
 
@@ -103,6 +103,9 @@ export const ProjectGroup: React.FC<ProjectGroupProps> = ({
               onProjectSelect={onProjectSelect}
               onContextMenu={onProjectContextMenu}
               onExpandRequest={onExpandRequest}
+              siblingProviders={siblings
+                .map((sibling) => sibling.providerId)
+                .filter((id): id is string => Boolean(id))}
             />
 
             {/* Hide Project Button (Capture Mode) */}
@@ -171,3 +174,33 @@ export const ProjectGroup: React.FC<ProjectGroupProps> = ({
     </div>
   );
 };
+
+/**
+ * One row per working directory (upstream #23ea7fbe). Several providers record
+ * sessions for the same folder under different store paths; listing them as
+ * separate rows fragments the tree. The selected project leads its group so
+ * highlight and expansion follow the user; otherwise the first one does.
+ */
+function mergeProjectsByFolder(
+  list: UIProject[],
+  selectedProject: UIProject | null
+): Array<{ lead: UIProject; siblings: UIProject[] }> {
+  const byFolder = new Map<string, UIProject[]>();
+  for (const project of list) {
+    const key = project.actual_path || project.path;
+    const bucket = byFolder.get(key);
+    if (bucket) {
+      bucket.push(project);
+    } else {
+      byFolder.set(key, [project]);
+    }
+  }
+
+  return Array.from(byFolder.values()).map((group) => {
+    const leadIndex = selectedProject
+      ? group.findIndex((project) => project.path === selectedProject.path)
+      : -1;
+    const lead = group[leadIndex === -1 ? 0 : leadIndex] as UIProject;
+    return { lead, siblings: group.filter((project) => project !== lead) };
+  });
+}
