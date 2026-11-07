@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { FileText } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { REMARK_PLUGINS as SHARED_REMARK, REHYPE_PLUGINS as SHARED_REHYPE } from "./common/markdownPlugins";
 import { Highlight, themes } from "prism-react-renderer";
 import { useCopyButton } from "../hooks/useCopyButton";
 import { useTheme } from "@/contexts/theme";
@@ -253,7 +253,8 @@ export const FileContent = ({
                     COLORS.semantic.info.text
                   )}
                 >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown remarkPlugins={SHARED_REMARK}
+                rehypePlugins={SHARED_REHYPE}>
                     {displayContent}
                   </ReactMarkdown>
                 </div>

@@ -3,7 +3,7 @@
 import { Check, FileText, AlertTriangle, Folder, File } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { REMARK_PLUGINS as SHARED_REMARK, REHYPE_PLUGINS as SHARED_REHYPE } from "../common/markdownPlugins";
 import { Highlight, themes } from "prism-react-renderer";
 import { useCopyButton } from "../../hooks/useCopyButton";
 import { Renderer } from "../../shared/RendererHeader";
@@ -433,7 +433,8 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
         <div className="text-sm">
           {typeof content === "string" ? (
             <div className="prose prose-sm max-w-none">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown remarkPlugins={SHARED_REMARK}
+                rehypePlugins={SHARED_REHYPE}>
                 {content}
               </ReactMarkdown>
             </div>
@@ -451,7 +452,8 @@ export const ClaudeToolResultItem = ({ toolResult, index }: Props) => {
                   ) {
                     return (
                       <div key={idx} className="prose prose-sm max-w-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        <ReactMarkdown remarkPlugins={SHARED_REMARK}
+                rehypePlugins={SHARED_REHYPE}>
                           {contentItem.text}
                         </ReactMarkdown>
                       </div>

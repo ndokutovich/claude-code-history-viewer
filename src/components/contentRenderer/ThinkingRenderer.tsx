@@ -1,6 +1,6 @@
 import { Bot } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { REMARK_PLUGINS as SHARED_REMARK, REHYPE_PLUGINS as SHARED_REHYPE } from "../common/markdownPlugins";
 import { useTranslation } from "react-i18next";
 
 type Props = {
@@ -42,7 +42,8 @@ export const ThinkingRenderer = ({ text, content }: Props) => {
 
       {withoutThinking && (
         <div className="prose prose-sm max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-code:text-red-600 prose-code:bg-gray-100">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown remarkPlugins={SHARED_REMARK}
+                rehypePlugins={SHARED_REHYPE}>
             {withoutThinking}
           </ReactMarkdown>
         </div>

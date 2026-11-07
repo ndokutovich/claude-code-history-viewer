@@ -10,12 +10,9 @@
 
 import { memo } from "react";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { REMARK_PLUGINS, REHYPE_PLUGINS } from "./markdownPlugins";
 import { layout } from "@/components/renderers";
 import { cn } from "@/utils/cn";
-
-/** Module-level plugin array for stable reference across renders. */
-const REMARK_PLUGINS = [remarkGfm];
 
 interface MarkdownProps {
   children: string;
@@ -26,7 +23,10 @@ interface MarkdownProps {
 export const Markdown = memo(function Markdown({ children, className }: MarkdownProps) {
   return (
     <div className={cn(layout.prose, className)}>
-      <ReactMarkdown remarkPlugins={REMARK_PLUGINS}>
+      <ReactMarkdown
+        remarkPlugins={REMARK_PLUGINS}
+        rehypePlugins={REHYPE_PLUGINS}
+      >
         {children}
       </ReactMarkdown>
     </div>
