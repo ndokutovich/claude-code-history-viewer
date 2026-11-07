@@ -336,3 +336,23 @@ mod tests {
         assert_eq!(projects[0].name, "my-project");
     }
 }
+
+#[cfg(test)]
+mod live_detect_tests {
+    #[tokio::test]
+    #[ignore = "runs against the real home directory"]
+    async fn live_claude_detection_and_scan() {
+        let path = super::get_claude_folder_path().await;
+        eprintln!("get_claude_folder_path -> {:?}", path);
+        let path = path.expect("claude folder must resolve");
+        let valid = super::validate_claude_folder(path.clone()).await;
+        eprintln!("validate -> {:?}", valid);
+        let t = std::time::Instant::now();
+        let projects = super::scan_projects(path.clone()).await;
+        match projects {
+            Ok(p) => eprintln!("scan_projects -> {} projects in {:?}", p.len(), t.elapsed()),
+            Err(e) => eprintln!("scan_projects ERROR: {e}"),
+        }
+        assert!(valid.unwrap_or(false));
+    }
+}

@@ -1628,3 +1628,41 @@ mod tests {
         assert_eq!(entrypoint.as_deref(), Some("claude-desktop"));
     }
 }
+
+#[cfg(test)]
+mod live_session_tests {
+    #[tokio::test]
+    #[ignore = "runs against a real project directory"]
+    async fn live_load_project_sessions() {
+        let home = dirs::home_dir().unwrap();
+        let projects = home.join(".claude").join("projects");
+        let mut checked = 0;
+        for entry in std::fs::read_dir(&projects).unwrap().flatten().take(6) {
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
+            }
+            let files = std::fs::read_dir(&path)
+                .unwrap()
+                .flatten()
+                .filter(|e| e.path().extension().and_then(|x| x.to_str()) == Some("jsonl"))
+                .count();
+            let t = std::time::Instant::now();
+            let res = super::load_project_sessions(
+                path.to_string_lossy().to_string(),
+                Some(false),
+                Some(false),
+            )
+            .await;
+            match res {
+                Ok(s) => eprintln!(
+                    "{:>4} files -> {:>4} sessions  ({:?})  {:?}",
+                    files, s.len(), t.elapsed(), path.file_name().unwrap()
+                ),
+                Err(e) => eprintln!("ERROR on {:?}: {e}", path.file_name()),
+            }
+            checked += 1;
+        }
+        assert!(checked > 0);
+    }
+}
