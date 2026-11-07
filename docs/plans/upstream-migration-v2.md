@@ -209,3 +209,18 @@ Multi-select + mass delete (#456, + a11y 03fea98e + scope 5568ff5c) — PORT (P2
 9. Provider decisions for wave 2 (likely SKIP most)
 
 Ship each batch as PR to `origin` (never upstream). Re-measure: `git rev-list --count v1.13.0..upstream/main` stays 433 until next fetch; new tail re-triaged then.
+
+## PRODUCT DECISIONS LEFT (explicitly deferred to the owner, 2026-11-07)
+
+These are the only upstream items not integrated. Each is a product choice, not unfinished work:
+
+1. **20+ additional providers** (Kimi, Grok, Amazon Q, Qwen, Zed, Trae, Goose, Crush, Copilot, Amazon…).
+   Each = Rust adapter + TS adapter + registration + 6 locales + permanent maintenance.
+2. **Server mode / WebUI** — an HTTP server with auth and deep links over the same history.
+   Our fork has no server surface at all.
+3. **Cline SDK-era store (#589)** — new `~/.cline/data/sessions` layout. Code-complete portable
+   (~715 lines), but the owner has no such store locally, so it cannot be verified on real data.
+4. **Upstream's three-column explorer (#ccf7c19b temp buckets, #4bc63da2 sessions column)** —
+   parts of a different information architecture than our two-pane tree.
+5. **Pricing drift-watch CI** — a GitHub workflow that fetches provider price feeds; lives in
+   upstream's CI infrastructure. The *data* it feeds is already integrated here.
