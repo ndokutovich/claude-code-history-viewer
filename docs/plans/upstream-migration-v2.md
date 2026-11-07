@@ -213,6 +213,27 @@ Multi-select + mass delete (#456, + a11y 03fea98e + scope 5568ff5c) — PORT (P2
 
 Ship each batch as PR to `origin` (never upstream). Re-measure: `git rev-list --count v1.13.0..upstream/main` stays 433 until next fetch; new tail re-triaged then.
 
+## Provider-fix sweep — C group (2026-11-08)
+
+Each item was read against our code, not against the ledger's label.
+
+| Item | Verdict | Why |
+|---|---|---|
+| #575/#585 streamed usage dedup | **PORTED** `db9dbc79` | Measured on a real 2.3 GB session: rows sharing `message.id` inflated tokens by 94% (38.6B reported vs 19.8B actual). Per-field growth dedup now runs in all four scan paths. |
+| #577/#594 subagent rollup | **PORTED** `db9dbc79` | One session carried 144 subagent transcripts, each listed as a session and none billed to its parent. Folded under `billing_total`; session-shaped metrics count heads only. |
+| #560 OpenCode Task runs | **PORTED** `f8b7df11` | OpenCode stores a child run as a `session` row with `parent_id` (5 in the local DB). Listed and readable as subagents via `opencode://` ids. |
+| #428 OpenCode cache bound | **N/A** | Our watcher keeps no OpenCode session cache, so there is nothing to bound. |
+| #425 Cline char-safe truncation | **ALREADY PRESENT** | `truncate_chars` and its tests landed with the adapter; the Roo/Kilo label fallback has no local data behind it. |
+| #495 Cursor global stats | **SKIP** | It is a new feature (849 lines in the provider + 260 in stats), not a fix. Our global stats cover Claude/Codex/Gemini only; per-session stats are provider-neutral. |
+| #3155c05c Gemini path normalize | **N/A** | We route Gemini sessions by `gemini://` URI, not by filesystem path. |
+| ab6bcb45 "OpenCode schema align" | **N/A** | The commit is `fix(ompi): align session parsing` — pi/ompi, not OpenCode. The ledger mislabelled it. |
+| 50d32412 Codex sqlite orphans | **N/A** | Our Codex reader has no `state_*.sqlite`; deletes are file-based. |
+| #397/#482/#571 Cursor Agent CLI | **SKIP** | A new provider, a separate decision, not a fix to one we have. |
+
+Unrelated bug fixed in the same pass: `31ba420c` — the update check could spin
+forever because both `check()` and the release-feed fetch run in Rust with no
+timeout; both are now raced against a 15 s ceiling.
+
 ## PRODUCT DECISIONS LEFT (explicitly deferred to the owner, 2026-11-07)
 
 These are the only upstream items not integrated. Each is a product choice, not unfinished work:
