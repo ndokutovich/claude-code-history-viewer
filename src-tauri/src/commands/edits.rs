@@ -94,7 +94,14 @@ fn process_session_file_for_edits(file_path: &PathBuf) -> Option<SessionEditsRes
                                         edit.get("old_string").and_then(|v| v.as_str()),
                                         edit.get("new_string").and_then(|v| v.as_str()),
                                     ) {
-                                        content = content.replacen(old_str, new_str, 1);
+                                        // `replace_all` may be snake_case here
+                                        // or camelCase in older payloads.
+                                        let replace_all = edit
+                                            .get("replace_all")
+                                            .or_else(|| edit.get("replaceAll"))
+                                            .and_then(|v| v.as_bool())
+                                            .unwrap_or(false);
+                                        content = apply_edit(&content, old_str, new_str, replace_all);
                                         lines_removed += old_str.lines().count();
                                         lines_added += new_str.lines().count();
                                     }
@@ -121,7 +128,12 @@ fn process_session_file_for_edits(file_path: &PathBuf) -> Option<SessionEditsRes
                         if let Some(original) =
                             tool_use_result.get("originalFile").and_then(|v| v.as_str())
                         {
-                            let content = original.replacen(old_str, new_str, 1);
+                            let replace_all = tool_use_result
+                                .get("replaceAll")
+                                .or_else(|| tool_use_result.get("replace_all"))
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false);
+                            let content = apply_edit(original, old_str, new_str, replace_all);
 
                             edits.push(RecentFileEdit {
                                 file_path: file_path_str.to_string(),
@@ -342,6 +354,18 @@ fn build_tool_use_edits(
 
 /// Extract edits from already-parsed ClaudeMessage structs (for provider messages)
 #[allow(dead_code)]
+/// Replay one Edit/MultiEdit step the way the Edit tool applied it: every
+/// occurrence when `replace_all` was set, otherwise the first (upstream #606).
+/// `content_after_change` is what Restore writes to disk, so it must match
+/// what the tool actually produced.
+fn apply_edit(content: &str, old_str: &str, new_str: &str, replace_all: bool) -> String {
+    if replace_all {
+        content.replace(old_str, new_str)
+    } else {
+        content.replacen(old_str, new_str, 1)
+    }
+}
+
 pub fn collect_recent_edits_from_messages(
     messages: &[ClaudeMessage],
     project_cwd: Option<&str>,
@@ -811,5 +835,97 @@ mod tests {
         // Should only have files within /test/project (the most common cwd)
         assert_eq!(edits_result.unique_files_count, 2);
         assert_eq!(edits_result.project_cwd, Some("/test/project".to_string()));
+    }
+}
+
+#[cfg(test)]
+mod replace_all_tests {
+    use super::*;
+
+    /// Drive the file-level collector with a real JSONL session file: this is
+    /// the path Restore consumes (originalFile replayed with the edits).
+    fn collect_from_file(lines: &[serde_json::Value]) -> Vec<RecentFileEdit> {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let path = dir.path().join("s1.jsonl");
+        let body = lines
+            .iter()
+            .map(|v| serde_json::to_string(v).unwrap())
+            .collect::<Vec<_>>()
+            .join("
+");
+        std::fs::write(&path, body).unwrap();
+        process_session_file_for_edits(&path)
+            .map(|result| result.edits)
+            .unwrap_or_default()
+    }
+
+    fn edit_line(tool_use_result: serde_json::Value) -> serde_json::Value {
+        serde_json::json!({
+            "uuid": "u1",
+            "sessionId": "s1",
+            "timestamp": "2026-01-01T00:00:00Z",
+            "type": "user",
+            "cwd": "/proj",
+            "toolUseResult": tool_use_result,
+        })
+    }
+
+    #[test]
+    fn multi_edit_honors_replace_all() {
+        let files = collect_from_file(&[edit_line(serde_json::json!({
+            "type": "update",
+            "filePath": "/proj/a.rs",
+            "originalFile": "foo
+foo
+bar
+",
+            "edits": [
+                { "old_string": "foo", "new_string": "baz", "replace_all": true }
+            ]
+        }))]);
+
+        assert_eq!(files.len(), 1, "one file edit collected");
+        assert_eq!(files[0].content_after_change, "baz
+baz
+bar
+");
+    }
+
+    #[test]
+    fn multi_edit_without_replace_all_replaces_first_only() {
+        let files = collect_from_file(&[edit_line(serde_json::json!({
+            "type": "update",
+            "filePath": "/proj/a.rs",
+            "originalFile": "foo
+foo
+bar
+",
+            "edits": [
+                { "old_string": "foo", "new_string": "baz", "replace_all": false }
+            ]
+        }))]);
+
+        assert_eq!(files[0].content_after_change, "baz
+foo
+bar
+");
+    }
+
+    #[test]
+    fn single_edit_honors_camel_case_replace_all() {
+        let files = collect_from_file(&[edit_line(serde_json::json!({
+            "type": "update",
+            "filePath": "/proj/a.rs",
+            "originalFile": "x
+x
+",
+            "oldString": "x",
+            "newString": "y",
+            "replaceAll": true
+        }))]);
+
+        assert_eq!(files[0].content_after_change, "y
+y
+");
     }
 }
