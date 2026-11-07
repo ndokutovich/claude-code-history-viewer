@@ -26,11 +26,12 @@ export function MessageViewControls() {
   ];
 
   // Content-type visibility toggles (checked = visible).
-  const contentToggles: { key: "contentText" | "contentToolUse" | "contentToolResult" | "contentThinking"; label: string }[] = [
+  const contentToggles: { key: "contentText" | "contentToolUse" | "contentToolResult" | "contentThinking" | "contentParallelTasks"; label: string }[] = [
     { key: "contentText", label: t("messageView.contentText") },
     { key: "contentToolUse", label: t("messageView.contentToolUse") },
     { key: "contentToolResult", label: t("messageView.contentToolResult") },
     { key: "contentThinking", label: t("messageView.contentThinking") },
+    { key: "contentParallelTasks", label: t("messageView.contentParallelTasks") },
   ];
 
   return (

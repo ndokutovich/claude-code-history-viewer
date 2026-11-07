@@ -18,6 +18,7 @@ export const DEFAULT_MESSAGE_FILTERS: MessageFilters = {
   contentToolUse: true,
   contentToolResult: true,
   contentThinking: true,
+  contentParallelTasks: true,
 };
 
 /**
@@ -37,7 +38,8 @@ export function hasActiveMessageFilters(filters: MessageFilters): boolean {
     !filters.contentText ||
     !filters.contentToolUse ||
     !filters.contentToolResult ||
-    !filters.contentThinking
+    !filters.contentThinking ||
+    !filters.contentParallelTasks
   );
 }
 
@@ -72,8 +74,33 @@ function getContentTypes(message: UIMessage): Set<string> {
   if (message.toolUseResult && Object.keys(message.toolUseResult).length > 0) {
     types.add("tool_result");
   }
+  // Represented by a message-level marker rather than a content block.
+  if (isParallelTaskRow(message)) types.add("parallel_task");
 
   return types;
+}
+
+/**
+ * Whether a row belongs to a background/parallel task (upstream #446).
+ *
+ * Our providers express these rows two ways: the client writes a
+ * `<task-notification>` update when a background agent finishes, and a Task
+ * tool call may be launched with `run_in_background`.
+ */
+export function isParallelTaskRow(message: UIMessage): boolean {
+  const texts: string[] = [];
+  if (typeof message.content === "string") {
+    texts.push(message.content);
+  } else if (Array.isArray(message.content)) {
+    for (const item of message.content) {
+      if (item.type === "text" && typeof item.text === "string") texts.push(item.text);
+      if (item.type === "tool_use" && item.name === "Task") {
+        const input = item.input as Record<string, unknown> | undefined;
+        if (input?.run_in_background === true) return true;
+      }
+    }
+  }
+  return texts.some((text) => text.includes("<task-notification>"));
 }
 
 /**
@@ -101,10 +128,16 @@ function passesContentTypeFilter(message: UIMessage, filters: MessageFilters): b
     filters.contentText &&
     filters.contentToolUse &&
     filters.contentToolResult &&
-    filters.contentThinking
+    filters.contentThinking &&
+    filters.contentParallelTasks
   ) {
     return true;
   }
+
+  // A background-task row belongs to its own category: its text is the
+  // notification payload, not an ordinary reply, so the parallel-tasks toggle
+  // decides whether it is shown (upstream #446).
+  if (isParallelTaskRow(message)) return filters.contentParallelTasks;
 
   const present = getContentTypes(message);
   if (present.size === 0) return true;
@@ -113,6 +146,7 @@ function passesContentTypeFilter(message: UIMessage, filters: MessageFilters): b
   if (present.has("tool_use") && filters.contentToolUse) return true;
   if (present.has("tool_result") && filters.contentToolResult) return true;
   if (present.has("thinking") && filters.contentThinking) return true;
+  if (present.has("parallel_task") && filters.contentParallelTasks) return true;
 
   return false;
 }

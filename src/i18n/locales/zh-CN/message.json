@@ -79,5 +79,6 @@
   "navigator.noMessages": "此会话没有消息",
   "navigator.close": "关闭导航器",
   "navigator.messageCount": "{{count}} 条消息",
-  "messageViewer.minimap.toggle": "切换会话小地图"
+  "messageViewer.minimap.toggle": "切换会话小地图",
+  "messageView.contentParallelTasks": "并行任务"
 }

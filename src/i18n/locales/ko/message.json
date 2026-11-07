@@ -79,5 +79,6 @@
   "navigator.noMessages": "이 세션에 메시지가 없습니다",
   "navigator.close": "네비게이터 닫기",
   "navigator.messageCount": "{{count}}개 메시지",
-  "messageViewer.minimap.toggle": "세션 미니맵 전환"
+  "messageViewer.minimap.toggle": "세션 미니맵 전환",
+  "messageView.contentParallelTasks": "병렬 작업"
 }

@@ -277,6 +277,9 @@ export interface MessageFilters {
   contentToolUse: boolean;
   contentToolResult: boolean;
   contentThinking: boolean;
+  /** Background/parallel task rows: `<task-notification>` updates and Task
+   * calls launched with `run_in_background` (upstream #446). */
+  contentParallelTasks: boolean;
 }
 
 export interface AppState {
