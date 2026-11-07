@@ -109,6 +109,8 @@ const WSL_EXCLUDED_KEY = 'wslExcludedDistros';
 // SOURCE STORE
 // ============================================================================
 
+let initializationInFlight: Promise<void> | null = null;
+
 export const useSourceStore = create<SourceStoreState>((set, get) => ({
   // Initial state
   sources: [],
@@ -126,7 +128,14 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
   // ------------------------------------------------------------------------
 
   initializeSources: async (onProgress) => {
-    set({ isLoadingSources: true, error: null });
+    // React StrictMode invokes effects twice; a second concurrent run raced
+    // the first through adapterRegistry.initialize() (which throws when
+    // already initialized) and through source persistence.
+    if (initializationInFlight) {
+      return initializationInFlight;
+    }
+    initializationInFlight = (async () => {
+      set({ isLoadingSources: true, error: null });
 
     try {
       // Initialize adapter registry first
@@ -195,7 +204,10 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
       }
     } finally {
       set({ isLoadingSources: false });
+      initializationInFlight = null;
     }
+    })();
+    return initializationInFlight;
   },
 
   // ------------------------------------------------------------------------
@@ -217,23 +229,40 @@ export const useSourceStore = create<SourceStoreState>((set, get) => ({
     ];
 
     let completed = 0;
-    const PROVIDER_TIMEOUT = 5000; // 5s per provider to avoid blocking startup
+    // 15s: the first cold run validates stores on a possibly cold disk; 5s
+    // silently dropped providers (Claude Code included) behind a timeout.
+    const PROVIDER_TIMEOUT = 15_000;
     const results = await Promise.allSettled(
       providers.map(async (provider) => {
         const detect = async () => {
           const path = await invoke<string>(provider.command);
-          const validation = await get().validatePath(path);
-          if (validation.isValid && validation.providerId === provider.id) {
+          // Validate with THIS provider's adapter only. Asking the registry
+          // to elect a provider ran every adapter's validate on every path
+          // (9x9 Tauri calls racing a 5s budget) — a single slow adapter
+          // dropped unrelated providers, Claude Code among them.
+          const adapter = adapterRegistry.tryGet(provider.id);
+          if (!adapter) {
+            console.warn(`  ✗ ${provider.name}: adapter not registered`);
+            return null;
+          }
+          const validation = await adapter.validate(path);
+          if (validation.isValid) {
             console.log(`  ✓ Found ${provider.name} at: ${path}`);
             return path;
           }
+          console.warn(
+            `  ✗ ${provider.name}: ${validation.errors.map((e) => e.message).join('; ') || 'not a valid store'}`
+          );
           return null;
         };
         try {
           const result = await Promise.race([
             detect(),
             new Promise<null>((_, reject) =>
-              setTimeout(() => reject(new Error(`${provider.name} detection timed out`)), PROVIDER_TIMEOUT)
+              setTimeout(
+                  () => reject(new Error(`${provider.name} detection timed out after ${PROVIDER_TIMEOUT}ms`)),
+                  PROVIDER_TIMEOUT
+                )
             ),
           ]);
           completed++;

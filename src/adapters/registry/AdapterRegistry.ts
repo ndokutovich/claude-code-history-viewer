@@ -59,8 +59,10 @@ export class AdapterRegistry {
    * FAIL FAST: Throws if already initialized or if adapter fails
    */
   async initialize(): Promise<void> {
+    // Idempotent: React StrictMode mounts effects twice, and a second
+    // initialize() throwing used to abort source loading entirely.
     if (this.initialized) {
-      throw new Error('AdapterRegistry already initialized');
+      return;
     }
 
     console.log('🚀 Initializing AdapterRegistry...');
