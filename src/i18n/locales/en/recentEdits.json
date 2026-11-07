@@ -22,5 +22,10 @@
   "remaining": "remaining",
   "editsCount": "{{count}} edits",
   "revealInFolder": "Reveal in Folder",
-  "viewDiff": "View diff"
+  "viewDiff": "View diff",
+  "collapse": "Collapse",
+  "expand": "Expand",
+  "fileCreated": "File Created",
+  "fileEdited": "File Edited",
+  "timestamp": "Timestamp"
 }

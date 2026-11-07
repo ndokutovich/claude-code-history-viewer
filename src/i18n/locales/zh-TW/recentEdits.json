@@ -22,5 +22,10 @@
   "remaining": "剩餘",
   "editsCount": "{{count}} 次編輯",
   "revealInFolder": "在資料夾中顯示",
-  "viewDiff": "檢視差異"
+  "viewDiff": "檢視差異",
+  "collapse": "摺疊",
+  "expand": "展開",
+  "fileCreated": "檔案已建立",
+  "fileEdited": "檔案已編輯",
+  "timestamp": "時間戳"
 }

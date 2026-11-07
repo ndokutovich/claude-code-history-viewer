@@ -6,6 +6,7 @@
  * view preferences.
  */
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { UIMessage } from "../../../types";
 import { cn } from "../../../utils/cn";
 import { viewportFraction, fractionToScrollTop } from "../helpers/minimap";
@@ -29,6 +30,7 @@ export const SessionMinimap: React.FC<SessionMinimapProps> = ({
   scrollElement,
   className,
 }) => {
+  const { t } = useTranslation("components");
   const [viewport, setViewport] = useState({ start: 0, size: 1 });
   const draggingRef = useRef(false);
 
@@ -101,7 +103,7 @@ export const SessionMinimap: React.FC<SessionMinimapProps> = ({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={Math.round(viewport.start * 100)}
-      aria-label="Session minimap"
+      aria-label={t("messageViewer.minimap.label")}
       className={cn(
         "relative w-2.5 shrink-0 cursor-pointer rounded-full bg-muted/60",
         "hover:bg-muted transition-colors touch-none select-none",

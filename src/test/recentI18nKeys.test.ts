@@ -16,6 +16,13 @@ import jaComponents from "@/i18n/locales/ja/components.json";
 import zhCNComponents from "@/i18n/locales/zh-CN/components.json";
 import zhTWComponents from "@/i18n/locales/zh-TW/components.json";
 
+import enRecentEdits from "@/i18n/locales/en/recentEdits.json";
+import ruRecentEdits from "@/i18n/locales/ru/recentEdits.json";
+import koRecentEdits from "@/i18n/locales/ko/recentEdits.json";
+import jaRecentEdits from "@/i18n/locales/ja/recentEdits.json";
+import zhCNRecentEdits from "@/i18n/locales/zh-CN/recentEdits.json";
+import zhTWRecentEdits from "@/i18n/locales/zh-TW/recentEdits.json";
+
 import enCommon from "@/i18n/locales/en/common.json";
 import ruCommon from "@/i18n/locales/ru/common.json";
 import koCommon from "@/i18n/locales/ko/common.json";
@@ -31,6 +38,17 @@ const COMPONENTS = {
   "zh-CN": zhCNComponents,
   "zh-TW": zhTWComponents,
 } as const;
+
+const RECENT_EDITS = {
+  en: enRecentEdits,
+  ru: ruRecentEdits,
+  ko: koRecentEdits,
+  ja: jaRecentEdits,
+  "zh-CN": zhCNRecentEdits,
+  "zh-TW": zhTWRecentEdits,
+} as const;
+
+const RECENT_EDITS_KEYS = ["collapse", "expand", "fileCreated", "fileEdited", "timestamp"];
 
 const COMMON = {
   en: enCommon,
@@ -58,6 +76,7 @@ function lookup(dict: Dict, path: string): unknown {
 const COMPONENT_KEYS = [
   "messageView.contentParallelTasks",
   "messageViewer.minimap.toggle",
+  "messageViewer.minimap.label",
   "sessionColumn.title",
   "sessionColumn.empty",
   "session.copySubagentPaths",
@@ -81,6 +100,14 @@ describe("recently added keys resolve in every locale", () => {
   for (const [locale, dict] of Object.entries(COMPONENTS)) {
     it(`components/${locale}`, () => {
       for (const key of COMPONENT_KEYS) {
+        expect(lookup(dict as Dict, key), `${locale} is missing ${key}`).toBeTypeOf("string");
+      }
+    });
+  }
+
+  for (const [locale, dict] of Object.entries(RECENT_EDITS)) {
+    it(`recentEdits/${locale}`, () => {
+      for (const key of RECENT_EDITS_KEYS) {
         expect(lookup(dict as Dict, key), `${locale} is missing ${key}`).toBeTypeOf("string");
       }
     });

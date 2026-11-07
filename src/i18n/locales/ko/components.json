@@ -731,7 +731,8 @@
   },
   "messageViewer": {
     "minimap": {
-      "toggle": "세션 미니맵 전환"
+      "toggle": "세션 미니맵 전환",
+      "label": "세션 미니맵"
     },
     "user": "사용자",
     "claude": "Claude",

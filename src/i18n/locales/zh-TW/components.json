@@ -729,7 +729,8 @@
   },
   "messageViewer": {
     "minimap": {
-      "toggle": "切換工作階段小地圖"
+      "toggle": "切換工作階段小地圖",
+      "label": "工作階段小地圖"
     },
     "user": "使用者",
     "claude": "Claude",

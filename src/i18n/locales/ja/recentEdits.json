@@ -22,5 +22,10 @@
   "remaining": "残り",
   "editsCount": "{{count}}回の編集",
   "revealInFolder": "フォルダで表示",
-  "viewDiff": "差分を表示"
+  "viewDiff": "差分を表示",
+  "collapse": "折りたたむ",
+  "expand": "展開",
+  "fileCreated": "ファイル作成",
+  "fileEdited": "ファイル編集",
+  "timestamp": "タイムスタンプ"
 }

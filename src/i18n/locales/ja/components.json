@@ -591,7 +591,8 @@
   },
   "messageViewer": {
     "minimap": {
-      "toggle": "セッションミニマップの切り替え"
+      "toggle": "セッションミニマップの切り替え",
+      "label": "セッションミニマップ"
     },
     "user": "ユーザー",
     "claude": "Claude",

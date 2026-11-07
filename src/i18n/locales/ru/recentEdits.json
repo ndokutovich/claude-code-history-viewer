@@ -22,5 +22,10 @@
   "remaining": "осталось",
   "editsCount": "{{count}} правок",
   "revealInFolder": "Показать в папке",
-  "viewDiff": "Показать изменения"
+  "viewDiff": "Показать изменения",
+  "collapse": "Свернуть",
+  "expand": "Развернуть",
+  "fileCreated": "Файл создан",
+  "fileEdited": "Файл изменён",
+  "timestamp": "Время"
 }

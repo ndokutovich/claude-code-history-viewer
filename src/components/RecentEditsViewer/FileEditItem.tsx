@@ -122,9 +122,9 @@ export const FileEditItem: React.FC<FileEditItemProps> = ({ edit, isDarkMode }) 
             )}
           >
             {isExpanded ? (
-              <span title="Collapse"><ChevronDown className="w-4 h-4" /></span>
+              <span title={t("collapse")}><ChevronDown className="w-4 h-4" /></span>
             ) : (
-              <span title="Expand"><ChevronRight className="w-4 h-4" /></span>
+              <span title={t("expand")}><ChevronRight className="w-4 h-4" /></span>
             )}
           </div>
 
@@ -138,9 +138,9 @@ export const FileEditItem: React.FC<FileEditItemProps> = ({ edit, isDarkMode }) 
             )}
           >
             {edit.operation_type === "write" ? (
-              <span title="File Created"><FilePlus className="w-4 h-4" /></span>
+              <span title={t("fileCreated")}><FilePlus className="w-4 h-4" /></span>
             ) : (
-              <span title="File Edited"><FileEdit className="w-4 h-4" /></span>
+              <span title={t("fileEdited")}><FileEdit className="w-4 h-4" /></span>
             )}
           </div>
 
@@ -183,7 +183,7 @@ export const FileEditItem: React.FC<FileEditItemProps> = ({ edit, isDarkMode }) 
 
           {/* Timestamp */}
           <div className="flex items-center space-x-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-lg">
-            <span title="Timestamp"><Clock className="w-3 h-3" /></span>
+            <span title={t("timestamp")}><Clock className="w-3 h-3" /></span>
             <span title={formatTimestamp(edit.timestamp)}>
               {getRelativeTime(edit.timestamp, tCommon)}
             </span>

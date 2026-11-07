@@ -729,7 +729,8 @@
   },
   "messageViewer": {
     "minimap": {
-      "toggle": "切换会话小地图"
+      "toggle": "切换会话小地图",
+      "label": "会话小地图"
     },
     "user": "用户",
     "claude": "Claude",

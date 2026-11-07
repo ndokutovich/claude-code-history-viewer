@@ -711,7 +711,8 @@
   },
   "messageViewer": {
     "minimap": {
-      "toggle": "Toggle session minimap"
+      "toggle": "Toggle session minimap",
+      "label": "Session minimap"
     },
     "user": "User",
     "claude": "Claude",

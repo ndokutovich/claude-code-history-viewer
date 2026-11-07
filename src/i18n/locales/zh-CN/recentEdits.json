@@ -22,5 +22,10 @@
   "remaining": "剩余",
   "editsCount": "{{count}} 次编辑",
   "revealInFolder": "在文件夹中显示",
-  "viewDiff": "查看差异"
+  "viewDiff": "查看差异",
+  "collapse": "折叠",
+  "expand": "展开",
+  "fileCreated": "文件已创建",
+  "fileEdited": "文件已编辑",
+  "timestamp": "时间戳"
 }
