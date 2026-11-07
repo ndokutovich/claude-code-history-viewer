@@ -44,6 +44,9 @@ pub struct RawLogEntry {
 
     // Fields for summary
     pub summary: Option<String>,
+    /// Claude Code auto-generated session title (`{"type":"ai-title"}` rows).
+    #[serde(rename = "aiTitle")]
+    pub ai_title: Option<String>,
     #[serde(rename = "leafUuid")]
     pub leaf_uuid: Option<String>,
 

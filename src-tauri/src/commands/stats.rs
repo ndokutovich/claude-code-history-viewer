@@ -997,6 +997,9 @@ fn extract_session_token_stats_sync(
     let mut first_time: Option<String> = None;
     let mut last_time: Option<String> = None;
     let mut summary: Option<String> = None;
+    // Claude Code's auto-generated title outranks the legacy summary, matching
+    // the session list (upstream #616/#611). Last non-empty value wins.
+    let mut ai_title: Option<String> = None;
     let mut tool_usage: HashMap<String, (u32, u32)> = HashMap::new();
     let mut included_message_count = 0usize;
 
@@ -1012,6 +1015,15 @@ fn extract_session_token_stats_sync(
             if log_entry.message_type == "summary" {
                 if let Some(s) = &log_entry.summary {
                     summary = Some(s.clone());
+                }
+            }
+
+            if log_entry.message_type == "ai-title" {
+                if let Some(title) = log_entry.ai_title.as_deref() {
+                    let title = title.trim();
+                    if !title.is_empty() {
+                        ai_title = Some(title.to_string());
+                    }
                 }
             }
 
@@ -1089,7 +1101,7 @@ fn extract_session_token_stats_sync(
         message_count: included_message_count,
         first_message_time: first_time.unwrap_or_else(|| "unknown".to_string()),
         last_message_time: last_time.unwrap_or_else(|| "unknown".to_string()),
-        summary,
+        summary: ai_title.or(summary),
         most_used_tools: build_tool_usage_stats(tool_usage),
     })
 }
@@ -2360,5 +2372,43 @@ impl TryFrom<RawLogEntry> for ClaudeMessage {
             subtype,
             system_metadata: None,
         })
+    }
+}
+
+#[cfg(test)]
+mod ai_title_stats_tests {
+    use super::*;
+
+    fn write_session(lines: &[&str]) -> (tempfile::TempDir, PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("s1.jsonl");
+        std::fs::write(&path, lines.join("\n") + "\n").unwrap();
+        (dir, path)
+    }
+
+    #[test]
+    fn session_title_prefers_the_last_ai_title_over_summary() {
+        let (_dir, path) = write_session(&[
+            r#"{"type":"summary","summary":"legacy summary"}"#,
+            r#"{"type":"ai-title","aiTitle":"first title"}"#,
+            r#"{"type":"ai-title","aiTitle":"refined title"}"#,
+            r#"{"type":"user","sessionId":"s1","timestamp":"2026-01-01T00:00:00Z","message":{"role":"user","content":"hi"}}"#,
+        ]);
+
+        let stats = extract_session_token_stats_sync(&path, StatsMode::BillingTotal, None, None)
+            .expect("stats extract");
+        assert_eq!(stats.summary.as_deref(), Some("refined title"));
+    }
+
+    #[test]
+    fn session_title_falls_back_to_summary_without_ai_title() {
+        let (_dir, path) = write_session(&[
+            r#"{"type":"summary","summary":"legacy summary"}"#,
+            r#"{"type":"user","sessionId":"s1","timestamp":"2026-01-01T00:00:00Z","message":{"role":"user","content":"hi"}}"#,
+        ]);
+
+        let stats = extract_session_token_stats_sync(&path, StatsMode::BillingTotal, None, None)
+            .expect("stats extract");
+        assert_eq!(stats.summary.as_deref(), Some("legacy summary"));
     }
 }
