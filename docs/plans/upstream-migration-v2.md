@@ -40,13 +40,13 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 - ✅ #607 rename trailing newline (2026-11-07) — rewritten JSONL is newline-terminated so Claude Code's next append cannot glue onto our last line; helper + unit tests.
 - ✅ 2026-11-07 batch 2 — #606 replace_all replay, #525/#640 restore guard, #475 reveal-in-folder, #607 rename trailing newline, #616 stats ai-title names, #602/#613 link navigation guard. 267 Rust + 378 FE tests green.
 - ✅ Verified already-owned (no port needed): Recent Edits viewer + backend, resume-in-terminal (#463), agent task/progress grouping.
+- ✅ #456 multi-select + mass delete (2026-11-07) — select mode in tree and flat list, two-step confirm, per-file outcome, 7 tests.
+- ✅ #411 archive backup (2026-11-07) — `backup_claude_projects` zips the projects tree with strict destination guards, save dialog entry in the project-list menu, 5 backend tests.
 **QUEUED — next session, fresh context (P2 features, port-notes ready):**
 - Recent Edits panel — **HAVE (own design)**: `RecentEditsViewer` + backend `commands/edits.rs` shipped June.
   Ported deltas: #606 replace_all, #525/#640 restore guard, #475 reveal-in-folder.
   Remaining deltas (optional): #473 full diff view, dock/sidebar presentation (#515), restore preview.
-- resume-in-terminal (#463+#595) + multi-select mass delete (#456): interdependent UI; needs getResumeCommand per-provider map first.
 - minimap #634: opt-in session minimap beside message list.
-- archive backup #411: one-click zip of all projects.
 - workflow rendering #99b2ec7d; parallel-tasks filter #446; explorer columns (#23ea7fbe/#ccf7c19b/#4bc63da2); headless --export #413.
 - perf COMPARE (#458/#381/#591/#528/#436/#468): diff against our June cache; port deltas only.
 - #568 preserve branched conversations (chain merge covered the display half; verify fork-parent visibility).
