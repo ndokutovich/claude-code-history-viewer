@@ -32,6 +32,20 @@ interface ModelPricing {
 }
 
 const MODEL_PRICING: Record<string, ModelPricing> = {
+  // Claude 5.x — values audited against platform.claude.com on 2026-10-10
+  // (upstream `src/data/model-pricing.json`). Longer keys are matched first,
+  // so `claude-opus-5-5` never falls through to `claude-opus-5`.
+  'claude-opus-5-5': { input: 4, output: 20, cacheWrite: 5, cacheRead: 0.20 },
+  'claude-sonnet-5-5': { input: 2, output: 10, cacheWrite: 2.5, cacheRead: 0.10 },
+  // Haiku 5.5 bills $0.50/$2.50 per million above 100k prompt tokens; the
+  // base row is what this token-only table can express.
+  'claude-haiku-5-5': { input: 0.1, output: 0.5, cacheWrite: 0.125, cacheRead: 0.01 },
+  'claude-opus-5': { input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.50 },
+  'claude-sonnet-5': { input: 2, output: 10, cacheWrite: 2.5, cacheRead: 0.20 },
+  'claude-fable-5-1': { input: 10, output: 50, cacheWrite: 12.5, cacheRead: 0.25 },
+  'claude-fable-5': { input: 10, output: 50, cacheWrite: 12.5, cacheRead: 1 },
+  'claude-mythos-5-1': { input: 10, output: 50, cacheWrite: 12.5, cacheRead: 0.25 },
+  'claude-mythos-5': { input: 10, output: 50, cacheWrite: 12.5, cacheRead: 1 },
   // Claude models — newer Opus 4.x (4-5+) use the $5/$25 tier; only the
   // original Opus 4 keeps $15/$75. Explicit entries prevent `includes()`
   // match-order from billing 4-6/4-7/4-8 at the deprecated Opus 4 rate (3x).
