@@ -195,6 +195,9 @@ struct CodexFileMeta {
     message_count: usize,
     first_ts: Option<String>,
     last_ts: Option<String>,
+    /// First user message text — the session title. Cached so opening a
+    /// project does not re-decompress every rollout.
+    summary: Option<String>,
 }
 
 static CODEX_META_CACHE: std::sync::OnceLock<
@@ -214,6 +217,7 @@ fn codex_file_meta(path: &Path) -> Option<CodexFileMeta> {
                     message_count: cached.message_count,
                     first_ts: cached.first_ts.clone(),
                     last_ts: cached.last_ts.clone(),
+                    summary: cached.summary.clone(),
                 });
             }
         }
@@ -228,6 +232,7 @@ fn codex_file_meta(path: &Path) -> Option<CodexFileMeta> {
         message_count: events.len(),
         first_ts: events.first().and_then(|e| e.timestamp.clone()),
         last_ts: events.last().and_then(|e| e.timestamp.clone()),
+        summary: summary_from_events(&events),
     };
     if let Ok(mut guard) = cache.lock() {
         guard.insert(path.to_path_buf(), (len, mtime, CodexFileMeta {
@@ -235,10 +240,28 @@ fn codex_file_meta(path: &Path) -> Option<CodexFileMeta> {
             cwd: entry.cwd.clone(),
             message_count: entry.message_count,
             first_ts: entry.first_ts.clone(),
+            summary: entry.summary.clone(),
             last_ts: entry.last_ts.clone(),
         }));
     }
     Some(entry)
+}
+
+/// First user message, trimmed to a title-sized preview.
+fn summary_from_events(events: &[CodexEvent]) -> Option<String> {
+    events
+        .iter()
+        .find(|e| matches!(determine_role(e), MessageRole::User))
+        .and_then(|e| e.payload.as_ref())
+        .and_then(|p| p.get("content"))
+        .and_then(|c| c.as_str())
+        .map(|text| {
+            if text.chars().count() > 100 {
+                format!("{}...", text.chars().take(100).collect::<String>())
+            } else {
+                text.to_string()
+            }
+        })
 }
 
 /// Project scheme id for a cwd: `codex://<cwd>`; cwd-less sessions share
@@ -332,10 +355,21 @@ pub async fn load_codex_sessions(
 }
 
 /// Build one UniversalSession from a rollout file (plain or zst).
+///
+/// Uses the len+mtime metadata cache: a project with hundreds of rollouts
+/// must not re-decompress every archive just to list its sessions.
 fn build_codex_session(file_path: &Path, source_id: &str) -> Result<UniversalSession, String> {
-    // Parse JSONL to get message count and metadata
-    let events: Vec<CodexEvent> = parse_codex_jsonl(file_path)?;
-    let message_count: usize = events.len();
+    let meta = codex_file_meta(file_path)
+        .ok_or_else(|| format!("CODEX_FILE_ERROR: Cannot read rollout {}", file_path.display()))?;
+    build_codex_session_from_meta(file_path, &meta, source_id)
+}
+
+fn build_codex_session_from_meta(
+    file_path: &Path,
+    meta: &CodexFileMeta,
+    source_id: &str,
+) -> Result<UniversalSession, String> {
+    let message_count: usize = meta.message_count;
 
     // Extract session ID from first event or filename
     let filename: String = file_path
@@ -347,11 +381,11 @@ fn build_codex_session(file_path: &Path, source_id: &str) -> Result<UniversalSes
     let (timestamp_str, uuid) = parse_rollout_filename(&filename)
         .ok_or("CODEX_PARSE_ERROR: Invalid rollout filename format")?;
 
-    let session_id: String = session_id_from_events(&events, &uuid);
+    let session_id: String = meta.session_id.clone();
+    let _ = &uuid;
 
-    // CWD: first session_meta, else last turn_context (fork replays source
-    // contexts first), else the first event's environment_context.
-    let cwd: Option<String> = cwd_from_events(&events);
+    // CWD comes from the cached metadata (same fork-aware extraction).
+    let cwd: Option<String> = meta.cwd.clone();
 
     // Metadata with camelCase keys
     let mut metadata: HashMap<String, serde_json::Value> = HashMap::new();
@@ -362,27 +396,16 @@ fn build_codex_session(file_path: &Path, source_id: &str) -> Result<UniversalSes
         metadata.insert("cwd".to_string(), serde_json::json!(cwd_path));
     }
 
-    // Create summary from first user event
-    let summary: Option<String> = events
-        .iter()
-        .find(|e| matches!(determine_role(e), MessageRole::User))
-        .and_then(|e| e.payload.as_ref())
-        .and_then(|p| p.get("content"))
-        .and_then(|c| c.as_str())
-        .map(|text| {
-            if text.chars().count() > 100 {
-                format!("{}...", text.chars().take(100).collect::<String>())
-            } else {
-                text.to_string()
-            }
-        });
+    let summary: Option<String> = meta.summary.clone();
 
-    // Extract timestamps from events
-    let first_timestamp = events.first()
-        .and_then(|e| e.timestamp.clone())
+    // Timestamps from the cached metadata.
+    let first_timestamp = meta
+        .first_ts
+        .clone()
         .unwrap_or_else(|| timestamp_str.replace('-', ":"));
-    let last_timestamp = events.last()
-        .and_then(|e| e.timestamp.clone())
+    let last_timestamp = meta
+        .last_ts
+        .clone()
         .unwrap_or_else(|| first_timestamp.clone());
 
     // Calculate duration (placeholder - we don't have precise timing data)
@@ -549,5 +572,42 @@ mod cwd_project_tests {
 
         let unknown = projects.iter().find(|p| p.id == "codex://unknown").unwrap();
         assert_eq!(unknown.session_count, 1);
+    }
+}
+
+#[cfg(test)]
+mod meta_cache_tests {
+    use super::*;
+
+    #[test]
+    fn build_session_reads_cached_meta_without_reparsing() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join(
+            "rollout-2026-01-01T00-00-00-dddddddd-0000-0000-0000-00000000000d.jsonl",
+        );
+        std::fs::write(
+            &path,
+            concat!(
+                r#"{"type":"session_meta","timestamp":"2026-01-01T00:00:00Z","payload":{"id":"sess-x","cwd":"w:/proj/x"}}"#,
+                "\n",
+                r#"{"type":"user_message","timestamp":"2026-01-01T00:00:01Z","payload":{"content":"Refactor the parser"}}"#,
+                "\n",
+            ),
+        )
+        .unwrap();
+
+        let meta = codex_file_meta(&path).expect("meta from file");
+        assert_eq!(meta.session_id, "sess-x");
+        assert_eq!(meta.cwd.as_deref(), Some("w:/proj/x"));
+        assert_eq!(meta.summary.as_deref(), Some("Refactor the parser"));
+
+        let session = build_codex_session_from_meta(&path, &meta, "src").unwrap();
+        assert_eq!(session.id, "sess-x");
+        assert_eq!(session.title, "Refactor the parser");
+        assert_eq!(session.message_count, 2);
+        assert_eq!(
+            session.metadata.get("cwd").and_then(|v| v.as_str()),
+            Some("w:/proj/x")
+        );
     }
 }
