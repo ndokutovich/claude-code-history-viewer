@@ -683,11 +683,13 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     );
 
     if (outcome.deleted > 0) {
-      if (selectedSession && outcome.deleted > 0) {
-        const selectedPath = (selectedSession as UISession).file_path;
-        if (selection.selectedPaths.has(selectedPath)) {
-          onSessionSelect(null);
-        }
+      // Clear the open session if it was among the deleted ones, then
+      // refresh every expanded project so the tree matches the disk.
+      if (
+        selectedSession &&
+        selection.selectedPaths.has(selectedSession.file_path)
+      ) {
+        onSessionSelect(null);
       }
       await loadSessionsForProjects(Array.from(expandedProjects));
     }
