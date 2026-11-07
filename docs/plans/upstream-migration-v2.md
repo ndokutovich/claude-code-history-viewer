@@ -221,5 +221,5 @@ These are the only upstream items not integrated. Each is a product choice, not 
    Each = Rust adapter + TS adapter + registration + 6 locales + permanent maintenance.
 2. **Server mode / WebUI** — an HTTP server with auth and deep links over the same history.
    Our fork has no server surface at all.
-4. **Upstream's third explorer column (#4bc63da2 sessions column)** — the temp bucketing half
+3. **Upstream's third explorer column (#4bc63da2 sessions column)** — the temp bucketing half
    (#ccf7c19b) is integrated; the separate sessions column is a layout change.
