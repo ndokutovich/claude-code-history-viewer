@@ -1,0 +1,433 @@
+67979b40 2026-10-20 chore: release v1.32.2
+8a9df561 2026-10-20 fix(edits): restore only recorded whole-file versions
+26101c89 2026-10-20 i18n(recentEdits): add restoreUnavailable tooltip in all locales
+0ce6fa0b 2026-10-20 test(edits): reproduce Restore overwriting files with non-file content
+b4ab413d 2026-10-20 ci(server-release): add jammy-security arm64 ports, rebuild a tag on demand (#702)
+aeea19f8 2026-10-20 chore: release v1.32.1
+e8aa95f4 2026-10-20 fix(edits): recent edits for one session refuse a folder or FIFO named like a session
+6b5f4b5f 2026-10-20 fix(sessions): a session's readers open regular files only, and an archive leaves out a subagent entry that is not one
+c3eb2459 2026-10-20 fix(server): a single-session route answers for a folder or FIFO named like a session
+e09c3c98 2026-10-20 fix(subagents): subagent readers never follow a symlinked folder or open a non-file
+aa0d355a 2026-10-20 fix(sessions): history lists read regular session files only, never through a symlink
+6ac0261b 2026-10-20 fix(search): never read a session file through a symlink (#696 review)
+c3f4fc1b 2026-10-20 fix(server): an empty claude_path is the default Claude root, never the working directory (#693)
+742e1e5f 2026-10-20 fix(stats): never fold subagent transcripts reached through a symlinked folder
+8599a911 2026-10-20 fix(stats): never follow a symlink out of a Claude history root (backport of #691)
+7f489070 2026-10-11 docs(readme): add v1.32.0 highlights in all five languages
+594cb7a1 2026-10-11 chore: release v1.32.0
+cf0ba80e 2026-10-11 fix(recent-edits): give the restore preview its own diff provider (#642)
+98533217 2026-10-11 fix(recent-edits): read the restore preview through the restore guard (#640) (#641)
+7371d434 2026-10-10 fix(pricing): Sonnet 5.5 cache-read cut, add Haiku 5.5, exclude Nano Banana (#639)
+508812cb 2026-10-10 feat(viewer): add an opt-in session minimap beside the message list (#634)
+5a7dd561 2026-10-10 fix(recent-edits): restore against the row's current project scope (#633)
+e3ed8f0e 2026-10-10 chore(serena): migrate project.yml to the Serena 1.7 schema and enable Rust (#636)
+c3ade3d1 2026-10-10 ci(pricing-watch): stop re-flagging feed values already checked (#638)
+e1789a79 2026-10-05 fix(viewer): let prompt jump work from the project tree, not behind dialogs (#630)
+7e52c341 2026-10-04 feat(viewer): jump between prompts with Alt+ArrowUp and Alt+ArrowDown (#629)
+acdfaea9 2026-10-04 docs(readme): add v1.31.0 highlights in all five languages
+40eb613d 2026-10-04 chore: release v1.31.0
+d801b697 2026-10-04 refactor(resume): tidy up follow-ups from the resume-args feature (#628)
+c7babb94 2026-10-03 fix(navigator): keep tool-result text out of prompts and flag any failed notification (#626)
+18830407 2026-10-04 feat(session): add extra CLI arguments setting for session resume (closes #509) (#595)
+07fec7d9 2026-10-04 test: satisfy clippy 1.99's assert_is_empty lint (#627)
+593e0394 2026-10-01 fix(pricing): price Claude Opus 5.5 and add newly listed models (#625)
+150efb18 2026-10-01 refactor(settings): use the shared Windows prefix helper in settings paths (#624)
+c1c7a59f 2026-10-01 fix(watcher): strip the Windows extended-length prefix from watch events (#604)
+090737b5 2026-10-01 docs(readme): add v1.30.0 highlights in all five languages
+baac6044 2026-10-01 chore: release v1.30.0
+a6e7df6a 2026-10-01 fix(server): only accept provider URIs where a provider URI is expected (#620)
+8c9946f3 2026-10-01 fix(metadata): serialize metadata saves so concurrent updates are not lost (#623)
+09b259a3 2026-10-01 fix(archive): show auto-generated titles for previously archived sessions (#622)
+c1374fda 2026-10-01 fix(store): drop stale session pages loaded during a reload (#621)
+5fe4d1e5 2026-09-30 fix(server): limit project-scoped settings endpoints to known project directories (#618)
+48d009ee 2026-09-30 fix(server): validate session paths against configured history roots (#617)
+89e61026 2026-09-30 fix(store): keep a selected session beyond the first page on reload (#614)
+6ec51b09 2026-09-30 fix(stats): use Claude auto-generated titles for session names in stats (#616)
+10e6e31a 2026-09-30 fix(navigator): treat stopped tasks as failed and filter by row kind (#615)
+d864bdeb 2026-09-30 fix(links): only let blob/data links through when they are downloads (#613)
+e43bb358 2026-09-30 fix(sessions): show Claude Code auto-generated session titles (#601) (#611)
+7c9f7e33 2026-09-30 fix(codex): show reasoning text stored in content instead of summary (#597) (#610)
+581c5105 2026-09-30 fix(store): keep in-place reload when refreshing all conversations (#609) (#612)
+f61f3ca4 2026-09-29 fix(navigator): tell typed prompts apart from agent updates and injected rows (#600)
+7a93736b 2026-09-30 fix(settings): reload in place when toggling the sidechain filter (#603)
+1eed29d7 2026-09-30 fix(links): stop non-external links from navigating the app away (#602)
+7f85be33 2026-09-30 fix(edits): honor replace_all when rebuilding Edit/MultiEdit results (#606)
+3b551796 2026-09-30 fix(settings): refuse to overwrite an unparseable config when saving MCP servers (#605)
+83ae84a6 2026-09-30 fix(rename): end rewritten session JSONL with a newline (#607)
+b67bac1d 2026-09-28 docs(readme): add v1.29.0 highlights in all five languages
+2fdc0f35 2026-09-28 chore: release v1.29.0
+6a9be4b0 2026-09-28 fix(stats): roll Claude subagent transcripts into their session's usage (#577) (#594)
+e2f74a94 2026-09-28 fix(zcode): count subagent runs in their parent session's usage (#577) (#593)
+41530711 2026-09-27 perf: speed up session list loads for large Claude and Codex histories (#591)
+6e936488 2026-09-27 feat(provider): add Z Code (Z.ai) session source (#573)
+c099980f 2026-09-27 ci(frontend): bundle with vite build on every frontend PR (#592)
+2f03f827 2026-09-26 Merge branch 'main' into develop
+08de93f2 2026-09-26 docs(readme): sync ko/ja/zh-CN/zh-TW with the v1.28.0 English README
+b20faeba 2026-09-26 Merge branch 'main' into develop
+95635d9a 2026-09-26 docs(readme): add v1.28.0 highlights
+1d16de59 2026-09-25 fix(sessions): hide redundant Claude predecessors (#572)
+2b6041f0 2026-09-26 chore: release v1.28.0
+0687b42c 2026-09-26 fix(settings): accept Claude Code's full cleanupPeriodDays range (#587) (#590)
+9d6c17ca 2026-09-25 feat(cline): read Cline's SDK-era session store (#589)
+5a767673 2026-09-25 fix(cline): parse Windows project and session paths (#588)
+b7f487fd 2026-09-25 feat(providers): support new Kilo Code OpenCode-core store (#580)
+0820adba 2026-09-23 fix(cline): discover Cline-family extensions on Windows (#582) (#586)
+79f44485 2026-09-23 fix(stats): count a streamed turn's final output tokens (#575) (#585)
+de08e59b 2026-09-22 fix(deps): bump nwsapi to 2.2.28 to stop Element.matches recursion in jsdom (#584)
+3688ce6b 2026-09-22 fix(vite): set worker.format to es so the search worker bundles on macOS (#579)
+ab6bcb45 2026-09-04 fix(ompi): align session parsing with current schema
+c8bbbdb4 2026-09-04 fix(session): skip symlinked .jsonl in cross-file chain scans
+7c15534c 2026-09-04 feat(cursor-agent): use CLI-stored session titles so /rename shows up (#571)
+7f096a1d 2026-09-04 fix(sessions): preserve branched Claude conversations (#568)
+d87bb2d2 2026-09-03 fix: address code review findings on the UX pass
+ab2affed 2026-09-02 docs(spec): round 5 status
+23ea7fbe 2026-09-02 feat(explorer): one row per folder across providers
+e6f10e99 2026-09-02 fix(theme): readable status foregrounds; settings container query on the parent
+0cb7060f 2026-09-02 docs(spec): round 4 status
+81a27a6c 2026-09-02 fix(viewer): give each content entry its own expand-key scope
+8ad5a2a7 2026-09-02 fix(build): restore the SessionCopyMenu import and make typecheck real
+85ee6fcc 2026-09-02 fix(layout): make KPI cards, Settings Manager and header titles reflow
+a603c3cd 2026-09-02 docs(spec): round 3 status
+90ee4ecc 2026-09-02 refactor(header): one view switcher, one refresh, tools in the app menu
+c05fb77d 2026-09-02 fix(search): readable global search results
+eaaa8787 2026-09-02 fix(viewer): stop rendering user text twice for array-content providers
+d454c1af 2026-09-02 docs(spec): uiux pain points audit, plan and follow-ups
+1bd82f8b 2026-09-02 fix(theme): drive remaining chrome and status colors from theme tokens
+82a05981 2026-09-02 fix(i18n): migrate plural keys to i18next v4 suffixes
+dcdb03a5 2026-09-02 fix(analytics): say "All time" when the date filter is empty
+ded2d32d 2026-09-02 fix(settings): surface MCP, directory and WSL failures with a toast
+ccf7c19b 2026-09-02 feat(explorer): bucket projects under OS temp directories
+4bc63da2 2026-09-02 feat(explorer): show the selected project's sessions in their own column
+051fa7a3 2026-09-02 feat(viewer): drop repeated headers on continued assistant turns
+00a9b362 2026-09-02 feat(viewer): summarize tool calls in the collapsed row and expand in one click
+5f992438 2026-09-02 Merge feat/model-pricing-lifecycle into develop
+30a31395 2026-09-02 fix(pricing): address review — replacedBy referential check, toast gating, local-day lifecycle, tier-aware row keys, '@' alias match
+eae3db1c 2026-09-02 feat(pricing): sourced pricing table, weekly drift watch, model retirement lifecycle
+5e08fb46 2026-09-01 chore: release v1.27.0
+ae536bbe 2026-09-01 feat(antigravity): recover desktop session titles and latest agent message
+5da74de9 2026-09-01 refactor(antigravity): drop the unusable conversation .pb tool scan
+e9dd7097 2026-09-01 chore(deps): update dependencies to clear audit advisories
+1dbe4a84 2026-09-01 fix(webui): honour provider wildcard watcher events
+97dc6252 2026-09-01 Merge pull request #565 from 1bosh/fix/subagent-provider-lost
+63b065ef 2026-09-01 fix(webui): carry provider into synthetic subagent session
+fdfc766c 2026-08-30 chore: release v1.26.3
+1cf36ca8 2026-08-30 Merge pull request #562 from jhlee0409/fix/525-restore-from-edit-history
+29b1f7b3 2026-08-30 fix(webui): authorise restore from recorded edit history
+c5b3c7f3 2026-08-30 chore: release v1.26.2
+3c049d4e 2026-08-30 Merge pull request #561 from jhlee0409/fix/560-virtual-session-paths
+ee2d6aad 2026-08-30 fix(webui): accept provider URIs, and read OpenCode subagents from the DB
+304fc6e9 2026-08-29 Merge pull request #559 from jhlee0409/ci/windows-blocking-gate
+a5284a20 2026-08-29 ci(rust): make the Windows suite a blocking gate
+368dc994 2026-08-29 Merge pull request #558 from jhlee0409/fix/551-final-home-sites
+2fe721a6 2026-08-29 fix(tests): the last four home sites
+bd151960 2026-08-29 Merge pull request #557 from jhlee0409/fix/551-commands-home-sweep
+79d7faf6 2026-08-29 fix(tests): sandbox the commands layer, and give is_safe_path a seam
+b3e85042 2026-08-29 Merge pull request #556 from jhlee0409/fix/551-provider-home-sweep
+43d8a131 2026-08-29 fix(tests): build the forgecode home fixture from the guard
+8da83326 2026-08-29 fix(tests): sandbox the grok default-dir test, and drop two dead skips
+f970ed2a 2026-08-29 fix(tests): collapse the home guards onto SandboxHome
+f745adf3 2026-08-29 fix(tests): route the provider layer through the sandboxed home
+5598d72f 2026-08-29 Merge pull request #555 from jhlee0409/fix/551-antigravity-home-sandbox
+0f7406d9 2026-08-29 fix(tests): derive the CLI workspace expectation from the fixture
+980f07c4 2026-08-29 fix(tests): strip the verbatim prefix from the sandbox home
+8f5538c5 2026-08-29 fix(tests): sandbox the antigravity home, and share one guard
+3421917b 2026-08-29 Merge pull request #554 from jhlee0409/fix/release-publish-not-gated-on-tap
+3ddd7341 2026-08-29 fix(release): do not gate publishing on the Homebrew tap sync
+eb6ae1b5 2026-08-29 chore: release v1.26.1
+35dbfe25 2026-08-29 Merge pull request #553 from jhlee0409/fix/532-release-manual-trigger
+ddf71d12 2026-08-29 fix(release): add a manual trigger, and resolve the tag once
+ce25f3da 2026-08-29 Merge pull request #552 from jhlee0409/fix/546-clippy-default-features
+d3f1815f 2026-08-29 fix(ci): lint the default feature set too, and canonicalise the sandbox home
+bb392cd2 2026-08-29 Merge pull request #550 from jhlee0409/fix/541-windows-path-fixtures
+123e356c 2026-08-29 fix(tests): compare the Gemini home in its plain form
+b7b131a9 2026-08-29 fix(tests): share the encoder, and fix the last separator assumptions
+e01aecca 2026-08-29 fix(tests): separator-built expectations, and sandbox the antigravity CLI root
+338bb806 2026-08-29 fix(tests): make the project snapshots platform-stable
+bdba483c 2026-08-29 fix(tests): port the JSON-embedded path fixtures
+22933048 2026-08-29 fix(tests): satisfy clippy after the helper move
+0719c799 2026-08-29 fix(tests): give fixtures platform-appropriate absolute paths
+a1f780e7 2026-08-29 Merge pull request #549 from jhlee0409/fix/548-windows-project-decode
+bb6e3e1b 2026-08-29 fix(windows): key the heuristic on the name, not the host
+43c55dbf 2026-08-29 fix(windows): gate the heuristic by platform, not by leading dash
+b8264157 2026-08-29 fix(windows): make project-folder decoding reachable
+7fb20dcb 2026-08-29 Merge pull request #547 from jhlee0409/fix/545-rename-test-isolation
+da96054d 2026-08-29 fix(tests): isolate rename.rs from the developer's home
+dfff86ac 2026-08-29 Merge pull request #544 from jhlee0409/fix/540-test-sandbox-remaining-modules
+ce384985 2026-08-29 fix(tests): sandbox nine more tests the panic exposed
+e6639a47 2026-08-29 fix(tests): sandbox the remaining modules that resolved the real home
+dce2b190 2026-08-28 Merge pull request #543 from jhlee0409/fix/538-dock-request-aba
+022c956b 2026-08-28 fix(recent-edits): distinguish two dock requests that carry the same key
+df47e100 2026-08-28 Merge pull request #542 from jhlee0409/fix/535-windowed-message-ordering
+4330adcf 2026-08-28 fix(viewer): order a windowed message set by time instead of hoisting
+f2d3c8b2 2026-08-28 Merge pull request #539 from jhlee0409/ci/windows-rust-matrix
+2b9e8dcf 2026-08-28 ci(rust): split Windows into a blocking build gate and an informational run
+8d207ab4 2026-08-28 ci(rust): add Windows to the test matrix
+4e206dd8 2026-08-28 Merge pull request #533 from jprisant/fix/recent-edits-dock-persistence
+9510c348 2026-08-28 Merge pull request #537 from jprisant/fix/test-sandbox-overwrites-real-settings
+a4d77407 2026-08-27 fix(tests): stop the settings tests overwriting the real ~/.claude config
+574be760 2026-08-26 test(recent-edits): pin the load-more-after-reset contract
+8a9e025c 2026-08-26 fix(recent-edits): keep the dock open when the project is deselected
+b5f583e5 2026-08-27 chore: release v1.26.0
+e97877a1 2026-08-27 Merge pull request #531 from jhlee0409/fix/508-sidebar-flash-on-watcher-reload
+bf29493c 2026-08-27 fix(watcher): stop the session list blanking on every watcher reload
+97328f71 2026-08-26 Merge pull request #530 from jhlee0409/fix/518-dangling-skip-links
+625b1fc1 2026-08-26 Merge remote-tracking branch 'origin/develop' into fix/518-dangling-skip-links
+ada9cdd7 2026-08-26 Merge pull request #529 from jhlee0409/fix/517-recent-edits-cursor-ownership
+109a570e 2026-08-26 fix(a11y): gate skip links on their targets' real render conditions
+0cf43cf0 2026-08-26 fix(recent-edits): write the list and its cursor together
+5b13bd8c 2026-08-26 Merge pull request #528 from jhlee0409/perf/offload-blocking-reads
+f22b6b3a 2026-08-26 perf(commands): run the heavy read commands on the blocking pool
+17222212 2026-08-26 Merge pull request #527 from jhlee0409/fix/508-watcher-clears-open-session
+aff72cb1 2026-08-26 fix(watcher): keep the open session selected when its file changes
+d26a7e8f 2026-08-26 Merge pull request #526 from jhlee0409/refactor/file-edit-item-shared-actions
+9af9af52 2026-08-26 refactor(recent-edits): migrate the standard card onto useFileEditActions
+c1a4e82b 2026-08-26 Merge pull request #515 from jprisant/feature/recent-edits-panel
+3d60d215 2026-08-26 Merge pull request #524 from Win-Hao/fix/523-kimi-search-merge-and-detect-base-path
+ff0146e9 2026-08-26 Merge pull request #520 from jprisant/fix/webui-restore-loopback-gate
+ac7b8214 2026-08-26 fix(webui): require auth as well as loopback before restore skips the allowlist
+44b1299e 2026-08-26 Merge remote-tracking branch 'origin/develop' into fix/webui-restore-loopback-gate
+61a6229a 2026-08-26 Merge branch 'develop' into feature/recent-edits-panel
+6c708f5f 2026-08-26 fix(kimi): defer the legacy-session check to extract_session_info
+4120383c 2026-08-26 fix(kimi): require a loadable legacy session before preferring its root
+8f32b023 2026-08-26 fix(kimi): merge both stores in search and stop reporting an empty base path
+03404ed6 2026-08-26 Merge pull request #522 from jhlee0409/fix/recent-edits-cache-invalidation
+6dc736e3 2026-08-26 Merge pull request #521 from jhlee0409/chore/rename-clippy-windows
+52bb0fa8 2026-08-26 test(recent-edits): use the executor form, jsdom on CI lacks Promise.withResolvers
+edf90c79 2026-08-26 fix(recent-edits): invalidate the fetch cache when the watcher sees a change
+93118962 2026-08-26 Merge pull request #513 from Win-Hao/feature/kimi-code-sessions
+62b37328 2026-08-21 fix(lint): silence a Windows-only clippy false positive in rename
+960a18c3 2026-08-26 Merge pull request #514 from jprisant/fix/recent-edits-cache-key
+efc70141 2026-08-26 Merge pull request #512 from Win-Hao/fix/project-tree-row-icons
+93564535 2026-08-24 test: anchor the undock-absence assertion so it cannot pass vacuously
+44fc5430 2026-08-24 fix(recent-edits): give the row file name a size instead of inheriting 16px
+20f76198 2026-08-24 feat(recent-edits): drop the undock menu item now the header toggle owns it
+af2dcd7f 2026-08-24 fix(ui): stop cn() silently dropping the project's px font sizes
+14f7a78c 2026-08-24 review: #515 root-path marker, translated titles, and restore parity for cards
+bdc403d1 2026-08-24 fix(webui): gate restore writes on the bind address, matching the read path
+c668db95 2026-08-21 fix(lint): silence a Windows-only clippy false positive in rename
+02d2a097 2026-08-24 feat(recent-edits): show what restoring will overwrite, before it overwrites it
+566cf321 2026-08-24 feat(recent-edits): short segmented view modes, and the folder path as a control
+e10c8188 2026-08-24 feat(recent-edits): size the docked card to the list scale, and loosen the rows
+0d623476 2026-08-24 fix(recent-edits): enable Sidebar with a project alone, and accent the compact rows
+37356771 2026-08-24 feat(recent-edits): give both shapes the same header and put the toggle in one place
+e2534361 2026-08-24 feat(recent-edits): give the dock a real header and one Page/Sidebar toggle
+51f9e752 2026-08-24 feat(recent-edits): name the docked panel and keep the file name visible in cards
+bfc84049 2026-08-24 review: #515 gate the dock mount on xl and on a selected project
+0f4c00e1 2026-08-24 review: #515 tie the recent-edits skip link to the dock's real render condition
+c5fa0de9 2026-08-24 fix(recent-edits): wrap the panel header so options stays reachable when narrow
+47abf274 2026-08-24 fix(recent-edits): dock the panel outside the navigator and keep it without a session
+1bb39a2a 2026-08-24 review: #515 apply the symlink policy to every component inside the project
+f02f2985 2026-08-24 review: #515 match a scoped provider session on path identity, not raw bytes
+b86de76a 2026-08-24 review: #515 reject a zero page limit instead of serving an unadvanceable page
+225c41aa 2026-08-23 test(recent-edits): pin the same-project shape of the load-more token
+688f8d29 2026-08-23 review: #514 let only the newest load-more release the loading flag
+9d8db111 2026-08-23 review: #514 keep the recent-edits generation monotonic across a reset
+0cce6f53 2026-08-23 review: #515 stop reporting an unreadable file as a missing one
+0aa93842 2026-08-23 review: #515 treat a UNC root as the same root in either spelling
+be21e7ad 2026-08-23 review: #514 apply the same ownership rule to failures as to results
+ced117d2 2026-08-23 review: #514 version the recent-edits cache so a stale page cannot extend it
+e8bc2e39 2026-08-23 review: #514 guard the recent-edits commit on the request sequence
+025e7394 2026-08-23 review: #515 dialog semantics, path policy, grouping identity, narrow windows
+9b776a8b 2026-08-23 review: #514 cache empty results, guard projectPath, own the load-more response
+af2fc577 2026-08-23 test(recent-edits): gate the case-folding assertion to Windows
+6a716975 2026-08-23 fix(recent-edits): twelve defects from the second adversarial pass
+29c433e7 2026-08-22 fix(recent-edits): stop the C3 guard stranding the loading flag
+b58ce269 2026-08-22 fix(recent-edits): clear a stale dock error on a cache hit
+91537082 2026-08-22 fix(recent-edits): guard the cache writers found by adversarial review
+63c02520 2026-08-22 fix(recent-edits): four backend defects found by adversarial review
+aa77405b 2026-08-22 fix(recent-edits): four dock-fetch defects found by adversarial review
+b29cf0e6 2026-08-21 docs(design): name the density icon that actually exists
+bb88d817 2026-08-21 fix(recent-edits): keep the row's click target off the expansion
+70eb9606 2026-08-21 feat(recent-edits): add the control that docks the panel
+c92402a0 2026-08-21 feat(recent-edits): translate the panel across all five locales
+18aa0082 2026-08-21 feat(recent-edits): wire scope and grouping to the dock's fetch
+b240cda2 2026-08-21 feat(recent-edits): dock the panel beside the transcript
+8c2814f8 2026-08-21 test(recent-edits): pin that session scoping survives an id change mid-file
+8fcaaae1 2026-08-21 feat(recent-edits): session scoping, edit grouping, and two new fields
+d760c6df 2026-08-21 fix(lint): silence a Windows-only clippy false positive in rename
+8446ceb7 2026-08-21 feat(recent-edits): add panel header toggles and options menu
+062ddfc7 2026-08-21 feat(recent-edits): add the compact two-line row
+5d4c178d 2026-08-21 feat(recent-edits): add recentEditsPanelSlice
+d835753e 2026-08-21 feat(recent-edits): add elideProjectRoot path helper
+e1c36f4a 2026-08-21 docs(spec): record the measured cache-key outcome
+50b49b7c 2026-08-21 fix(recent-edits): key the fetch cache on the requested project path
+c5a1e3b0 2026-08-21 docs: confirm the four open spec decisions and record their alternatives
+51c55823 2026-08-21 docs: add spec and design for the Recent Edits panel
+1b353363 2026-08-20 fix(kimi): reject symlinks on every component of a session path
+af5f1d9b 2026-08-20 perf(kimi): resolve image blobs only when a session is opened
+ff2c63a7 2026-08-20 feat(kimi): report kimi-code token usage to the analytics dashboard
+59145bbc 2026-08-20 fix(kimi): strip the kimi-code scheme when naming a project from its path
+1a70f282 2026-08-20 feat(kimi): render pasted images in kimi-code sessions
+0357e731 2026-08-20 fix(kimi): resume kimi-code sessions with -S instead of -r
+bee8331e 2026-08-20 fix(kimi): rename kimi-code entrypoint values away from the kimi-cli name
+09b41697 2026-08-20 fix(kimi): keep fold state alive when context.undo is a no-op
+29f259bf 2026-08-20 fix(kimi): address code review findings in kimi-code provider
+5325a42f 2026-08-20 feat(i18n): rename Kimi CLI label to Kimi
+662c9bc7 2026-08-20 feat(kimi): mark kimi-code VS Code sessions with vscode entrypoint
+74a1e550 2026-08-20 feat(kimi): add kimi-code wire session provider
+9aea4ebe 2026-08-20 fix(project-tree): remove content-visibility from collapsed rows
+fe46b656 2026-08-19 Merge pull request #504 from OctoBored/fix/star-history-chart
+8b3a64a3 2026-08-19 chore: release v1.25.0
+8347270c 2026-08-19 Merge branch 'main' into develop
+0a28471a 2026-08-19 Merge pull request #503 from Bronek/fix/webkit-dmabuf-crash-outside-appimage
+77ac13fa 2026-08-19 Merge pull request #506 from xPeiPeix/fix/codex-global-search-relevance
+d7b33a9b 2026-08-18 fix(search): preserve JSON-escaped matches
+54936818 2026-08-17 fix(search): prioritize Codex conversation matches
+510d3d0b 2026-08-17 docs: fix broken star history chart
+d6fec366 2026-08-16 fix: use var_os for WEBKIT_DISABLE_DMABUF_RENDERER presence check
+4d2cf9d6 2026-08-16 fix: apply WebKit DMABUF workaround outside AppImage on Linux
+8b9e94aa 2026-08-16 Merge pull request #499 from helmet-png/feat/katex-math-rendering
+673d2ff9 2026-08-16 chore: release v1.24.1
+6130cac2 2026-08-16 fix(deps): align katex version with rehype-katex's runtime resolution
+86c8f8a8 2026-08-16 fix(markdown): apply math rendering to all remaining ReactMarkdown call sites
+dbba9b54 2026-08-16 fix: resolve rust security audit dependency
+6cb22df6 2026-08-16 chore: release v1.24.0
+5a978c87 2026-08-16 fix: correct provider model cost and token accounting
+6e07146b 2026-08-16 Merge pull request #500 from helmet-png/feat/narrow-min-window-width
+02ef981f 2026-08-16 refactor(markdown): dedupe remark/rehype plugin config into a shared module
+423da1cd 2026-08-05 feat(window): allow shrinking below 1/3 of a typical screen width
+98186395 2026-08-05 feat(markdown): render LaTeX math formulas via KaTeX
+de6e0434 2026-08-16 docs: improve README guidance
+c772b83e 2026-08-16 chore: release v1.23.0
+c1d5ceb4 2026-08-16 Merge pull request #498 from jhlee0409/develop
+f1af6822 2026-08-16 Fix project history and worktree UX
+37641b11 2026-08-16 fix: minimize startup permissions and provider discovery (#497)
+24a71fdf 2026-08-15 Merge pull request #496 from jhlee0409/codex/session-continuation-split
+9fceba3b 2026-08-15 feat(sessions): merge cross-file Claude continuations
+4909fc6e 2026-08-15 Merge pull request #495 from jhlee0409/codex/cursor-provider-split-v2
+7bb001fb 2026-08-15 feat(providers): add Cursor global stats support
+9cce65cc 2026-08-15 Merge pull request #487 from lucashcribeiro/feature/grok-cli-provider
+bfe5b517 2026-08-15 fix(grok): harden search and model pricing
+d5dce298 2026-08-01 feat(stats): attribute Grok CLI models in global analytics
+be3c2127 2026-08-01 feat(frontend): register Grok CLI provider in UI and i18n
+f4b509cd 2026-08-01 feat(providers): add Grok CLI backend provider
+15c7cfa0 2026-08-15 Merge pull request #493 from owensantoso/feature/webui-session-deep-links
+3e1dbc4b 2026-08-15 Merge pull request #494 from F1Justin/fix/ompi-pi-gemini-token-stats
+eb2e624c 2026-08-15 Merge pull request #489 from octo-patch/octo/20260801-parameter-refresh-recvqq19RdtyY7
+9f24c308 2026-08-15 fix(webui): guard stale deep-link preloads
+64c3c405 2026-08-15 docs(pricing): clarify MiniMax M3 tier assumption
+3155c05c 2026-08-15 fix(stats): normalize Gemini session paths
+1ce1624e 2026-08-09 fix(stats): add ompi/pi/gemini token stats support (#445 follow-up)
+57782add 2026-08-09 feat(webui): Add session and message deep links
+8501e35a 2026-08-01 fix: update MiniMax pricing
+050cf097 2026-07-23 chore(ci): fix chronic release-only Rust doc + security-audit failures (#483)
+b224c9f1 2026-07-22 fix: 支持从会话标识复制 ID 和恢复命令 (#471)
+2e29912c 2026-07-22 chore: release v1.22.0
+ed2c998c 2026-07-22 Merge remote-tracking branch 'origin/main' into develop
+feeb22de 2026-07-19 feat(recent-edits): add "reveal in folder" button to edit rows (#475)
+4ebc5b2f 2026-07-19 fix(cursor-agent): clean XML wrappers, suppress [REDACTED], surface tool/shell output (#472) (#482)
+a1c7d1c1 2026-07-19 feat(sessions): resume selected sessions in a terminal (#463)
+ee6082b3 2026-07-19 fix(search): reveal & highlight in-session matches inside tool cards (#429) (#481)
+b8af4571 2026-07-18 feat(recent-edits): clickable +N/−N stats and a full Diff view for file edit items (#473)
+17e7c160 2026-07-18 fix(folder-selector): prevent long path from distorting dialog width (#479)
+6dee9c8c 2026-07-18 fix(rename): write custom-title event so Claude 2.x reflects renames in `claude -r` (#477)
+2144a032 2026-07-18 fix(rename): allow renaming sessions under depth-1 symlinked project dirs (#478)
+8546a439 2026-07-12 feat(antigravity): read the antigravity-cli conversation store (#452) (#470)
+c0727adf 2026-07-12 fix(vscode): read legacy .json chat sessions and multi-root workspaces (#469)
+50ce59a5 2026-07-12 chore: release v1.21.0
+22657329 2026-07-12 perf(providers): parallelize per-workspace scans with a bounded pool (#468)
+4c921fe5 2026-07-12 perf(search): per-file signature validation for the search cache (#467)
+be07e308 2026-07-12 perf(search): resolve global-search result clicks without a serial project sweep (#466)
+c9eb7333 2026-07-12 fix(webui): wire detect_claude_config_dir into the server router (#465)
+d93907c9 2026-07-12 perf(stats): per-file daily-aggregate cache for stats commands (#464)
+f94c2b10 2026-07-12 perf(messages): real chat-style message pagination across all providers (#458)
+016f0acd 2026-07-12 perf(renderers): size-guard syntax highlighting and large JSON blocks (#461)
+5568ff5c 2026-07-12 fix(sessions): make select-all scope explicit over paginated session lists (#459)
+7f5f942c 2026-07-12 perf(projects): defer search filtering and skip offscreen project row rendering (#460)
+034fb54a 2026-07-12 perf(session): paginate project session loading (#381)
+03fea98e 2026-07-12 fix(a11y): make the multi-select session checkbox keyboard-operable
+4c198989 2026-07-12 feat(vibe): render image attachments from session transcripts
+107d8e0c 2026-07-12 feat(sessions): multi-select mode with mass delete (#456)
+74bdee28 2026-07-12 feat(codex): discover and parse zstd-compressed rollouts (.jsonl.zst)
+38b9e583 2026-07-12 fix(codex): identify meta-less rollouts via turn_context cwd + filename id
+4b59d2a5 2026-07-12 chore: release v1.20.0
+9af129b3 2026-07-12 docs(changelog): add 1.20.0 entry
+dd2f63be 2026-07-12 fix(watcher): route Pi/oh-my-pi session file events to live refresh
+f0745208 2026-07-12 docs(readme)+test(vibe): 28-provider README across 5 languages; vibe robustness tests
+8abfa0a1 2026-07-12 feat(vibe): add Mistral Vibe CLI provider support (#438)
+9734c4d0 2026-07-11 Update model pricing to GPT/Anthropic's latest models (#457)
+9d9c062d 2026-07-12 chore: release v1.19.0
+792a1875 2026-07-12 Merge branch 'develop'
+51e2b637 2026-07-12 docs(changelog): add 1.19.0 entry
+3dfe865d 2026-07-12 feat: filter parallel tasks across providers (#446)
+b2e1ec64 2026-07-11 feat(pi): add Pi and oh-my-pi provider support (#445)
+48a30151 2026-07-12 fix(project): count only top-level jsonl as sessions in scan_projects (#450)
+a6fedb88 2026-07-12 docs(readme): sync ko/ja/zh-CN/zh-TW translations to current v1.18.0 English README
+1931bc84 2026-07-12 docs(readme): sync ko/ja/zh-CN/zh-TW translations to current v1.18.0 English README
+58c053bd 2026-07-12 chore: remove accidentally committed playwright artifacts and gitignore them
+99b2ec7d 2026-07-12 feat(workflow): render Claude Code Workflow runs with navigable agent transcripts
+7727193b 2026-07-12 fix(codex): keep first session_meta so forked sessions list under the right project
+089c0bef 2026-07-12 chore(clippy): fix manual_filter and question_mark lints flagged by Rust 1.97
+232c12cc 2026-07-12 feat(web): add global conversation refresh (#439)
+74e4f6b9 2026-07-12 fix(ui): make tool/thinking box and markdown font sizes respect the app font-size setting (#443)
+b08fe517 2026-07-12 fix(dev): prevent Vite server from watching src-tauri/target/ directory (#442)
+2f77115f 2026-07-12 chore(harness): add harness-kit repo layer via /harness-kit:introspect
+ce01bea1 2026-07-01 fix(search): index tool_use.input so in-session search matches tool arguments (#437)
+8fa7f074 2026-06-30 docs(readme): add v1.18.0 highlights
+d8178718 2026-06-30 chore: release v1.18.0
+41de73d4 2026-06-30 docs(changelog): add 1.18.0 entry
+47c0c211 2026-06-30 fix(providers): split opencode global sessions by directory (#432)
+91718576 2026-06-30 feat(sidebar): collapsible provider filter panel (#431)
+76af742d 2026-06-30 perf(scan): run provider scanners concurrently to fix startup regression (#436)
+69869ef7 2026-06-30 fix(export): include subagent (sidechain) messages when exporting a subagent session (#435)
+8aa2c1bb 2026-06-30 feat(search): show which conversation each global-search result belongs to (#426)
+fa96b51b 2026-06-30 improve(names): prefer verifiable folder name over stale cwd for project identity (#419)
+c2bafa69 2026-06-30 fix(watcher): bound OpenCode session cache to prevent unbounded memory growth (#428)
+872a8a00 2026-06-23 fix(providers): char-safe Cline truncation + Roo/Kilo summary label (#425)
+6eeb354c 2026-06-23 chore: release v1.17.1
+16062cd5 2026-06-23 fix(providers): correct Zed data-dir paths and tolerate older threads schema (#424)
+80d9eeef 2026-06-23 fix(providers): extract Zed tool-result text instead of leaking enum JSON (#423)
+9fbdd335 2026-06-23 fix(providers): read Kilo/Roo task index from globalState, not disk-only (#422)
+57c87ece 2026-06-22 docs(readme): list the 11 new v1.17.0 providers (now 25 assistants)
+0dd530fc 2026-06-22 chore: release v1.17.0
+e5d0371f 2026-06-22 feat(providers): add Open Interpreter, Qwen Code, Zed, OpenHands, and Trae (#418)
+309a0738 2026-06-22 feat(providers): add Amazon Q Developer CLI provider (#417)
+3fa14d1c 2026-06-22 feat(providers): add Continue.dev, PearAI, Kilo Code, Goose, Crush, and llm (#416)
+3100618a 2026-06-21 build: commit Cargo.lock for reproducible builds & CI resilience
+a0b0adff 2026-06-21 chore: release v1.16.0
+c0750f99 2026-06-21 docs(changelog): v1.16.0 entry; fix(ui): scale .metric-label font too
+aff7b945 2026-06-21 feat(analytics): break out skill and subagent usage in stats (#321) (#414)
+c81e9a82 2026-06-21 fix(ui): make hardcoded pixel font sizes respect the app font-size setting (#412)
+62303923 2026-06-21 feat(cli): headless session export via --export (HTML/JSON) (#343) (#413)
+78311048 2026-06-21 feat(providers): add GitHub Copilot (CLI, Desktop, VS Code Chat) support (#415)
+2068855a 2026-06-21 feat(archive): one-click full backup of all Claude projects (#326) (#411)
+25c9c03f 2026-06-21 fix(session): fall back to permanent delete when system trash is unavailable (#410)
+50d32412 2026-06-21 fix(codex): remove orphaned state_5.sqlite thread row on session delete
+271f8317 2026-06-21 chore: release v1.15.0
+258f02b6 2026-06-21 fix(watcher): canonicalize event path before Kimi base-path match
+e4273fdb 2026-06-21 chore(claude): re-allow cargo for local Rust verification
+f16cd222 2026-06-21 ci: gate the frontend (tsc/eslint/vitest/i18n) on PRs
+1cbc45e6 2026-06-21 feat(session): native rename + CODEX_HOME support for Codex CLI (#373)
+3a51992d 2026-06-21 fix(test): include kiro in the provider-id-list assertion
+ac1e666a 2026-06-21 feat: add Kiro CLI provider (#324)
+f261c79f 2026-06-21 feat: add Kimi CLI provider (#349)
+ba7795c1 2026-06-21 perf(providers): speed up project scans (#370)
+5c0fc736 2026-06-21 fix(session): resolve Claude project cwd/name from JSONL metadata (#369)
+b8ba8e5e 2026-06-21 perf(search): move FlexSearch indexing to a Web Worker (#352)
+746dc5a2 2026-06-21 fix(messages): remove blank gaps in virtualized history (#371)
+29f7af21 2026-06-20 fix(rename): use Claude native rename event format (#368)
+4b74c6b6 2026-06-20 Improve long project path labels (#354)
+f4c7bee5 2026-06-20 fix(cursor): avoid percent_decode panic on multibyte workspace names (#398)
+aa3a8a60 2026-06-20 feat(provider): add Cursor Agent CLI support (#304) (#397)
+a5e91ef5 2026-06-20 chore: release v1.14.1
+f28efa29 2026-06-20 fix(search): global search now matches tool result content (#394) (#396)
+2c720731 2026-06-20 improve(names): recognize /branch custom-title as a session rename source (#395)
+72f142df 2026-06-20 fix(gemini): detect and parse Gemini CLI .jsonl sessions (#348) (#393)
+c65ee5ea 2026-06-20 fix(search): show the conversation when navigating from global search (#390) (#392)
+85e34d73 2026-06-20 fix(projects): add min-h-0 so project-list scrollbar reaches the bottom (#101) (#391)
+281a1b06 2026-06-17 chore: release v1.14.0
+ea771e68 2026-06-17 Merge branch 'develop'
+1dcef91e 2026-06-17 fix(messages): estimate full height for subagent rows to prevent #185 crash (#334) (#389)
+e5548779 2026-06-17 fix(subagent): map clicks via meta.json toolUseId for multi-subagent sessions (#288) (#388)
+e50692d3 2026-06-17 fix(stats): include custom Claude directories in the global summary (#362) (#387)
+389390d3 2026-06-17 feat(renderer): render advisor tool results instead of unknown-type fallback (#380) (#386)
+f8f17c54 2026-06-17 fix(filter): persist message filter across session switches and restarts (#363) (#385)
+ad5f3749 2026-06-17 feat(server): consolidated WebUI account auth + read-only + base-path (supersedes #382/#377/#374/#375/#376) (#384)
+0b84ecf3 2026-06-17 fix(webui-server): accept sessions under a symlinked ~/.claude allowlist root (#355) (#383)
+302a7162 2026-06-17 fix: configure ibus env on linux startup (#360)
+ad9da2de 2026-06-16 fix(webui): stop watcher refresh loop (#367)
+cb1dc814 2026-06-17 feat(provider): add CodeBuddy Code support (#353)
+2babde64 2026-06-03 fix(wsl): WSL chat history ignored in project list and global search for Claude-only user (#347)
+537713b3 2026-06-03 fix(ui): use OverlayScrollbars initialized event instead of polling (#351)
+9d86b46e 2026-05-25 docs: v1.13.0 highlights + trim README version list to latest 3
+e16f08fc 2026-05-25 docs: v1.13.0 highlights + trim README version list to latest 3
