@@ -4,6 +4,7 @@ import { check, Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { getVersion } from "@tauri-apps/api/app";
 import { getCachedUpdateResult, setCachedUpdateResult } from "../utils/updateCache";
+import { UPDATE_CHECK_TIMEOUT_MS, withTimeout } from "../utils/updateTimeout";
 
 export interface GitHubRelease {
   tag_name: string;
@@ -112,8 +113,14 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
         }
       }
 
-      // Fetch release info from GitHub API
-      const releaseInfo = await fetchGitHubRelease();
+      // Fetch release info from GitHub API. The plugin's HTTP client runs the
+      // request in Rust; its AbortSignal is a courtesy, so the race is what
+      // actually bounds a stalled connection.
+      const releaseInfo = await withTimeout(
+        fetchGitHubRelease(),
+        UPDATE_CHECK_TIMEOUT_MS,
+        "Could not reach the release feed"
+      );
 
       if (!releaseInfo) {
         throw new Error("Could not fetch release information.");
@@ -123,8 +130,13 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
         console.log('Release info:', releaseInfo);
       }
 
-      // Check for updates with Tauri updater
-      const update = await check();
+      // Check for updates with Tauri updater. `check()` has no timeout of its
+      // own; without the race a stalled endpoint keeps the spinner forever.
+      const update = await withTimeout(
+        check({ timeout: UPDATE_CHECK_TIMEOUT_MS }),
+        UPDATE_CHECK_TIMEOUT_MS,
+        "Update check timed out"
+      );
 
       const hasUpdate = !!update;
 
@@ -158,7 +170,12 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
       // If updateInfo is null (e.g., from cache hit), re-fetch the Update object
       let updateObj = state.updateInfo;
       if (!updateObj) {
-        updateObj = await check() ?? null;
+        updateObj =
+          (await withTimeout(
+            check({ timeout: UPDATE_CHECK_TIMEOUT_MS }),
+            UPDATE_CHECK_TIMEOUT_MS,
+            "Update check timed out"
+          )) ?? null;
         if (!updateObj) {
           setState((prev) => ({
             ...prev,

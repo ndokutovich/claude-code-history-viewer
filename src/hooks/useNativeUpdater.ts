@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { check, Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { useTranslation } from "react-i18next";
+import { UPDATE_CHECK_TIMEOUT_MS, withTimeout } from "@/utils/updateTimeout";
 
 export interface UpdateState {
   isChecking: boolean;
@@ -36,7 +37,11 @@ export function useNativeUpdater(): UseNativeUpdaterReturn {
     try {
       setState((prev) => ({ ...prev, isChecking: true, error: null }));
 
-      const update = await check();
+      const update = await withTimeout(
+        check({ timeout: UPDATE_CHECK_TIMEOUT_MS }),
+        UPDATE_CHECK_TIMEOUT_MS,
+        "Update check timed out"
+      );
 
       setState((prev) => ({
         ...prev,
