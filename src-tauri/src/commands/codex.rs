@@ -247,6 +247,9 @@ fn codex_file_meta(path: &Path) -> Option<CodexFileMeta> {
     Some(entry)
 }
 
+/// Longest session-title preview taken from the first user message.
+const SUMMARY_MAX_CHARS: usize = 100;
+
 /// First user message, trimmed to a title-sized preview.
 fn summary_from_events(events: &[CodexEvent]) -> Option<String> {
     events
@@ -256,8 +259,11 @@ fn summary_from_events(events: &[CodexEvent]) -> Option<String> {
         .and_then(|p| p.get("content"))
         .and_then(|c| c.as_str())
         .map(|text| {
-            if text.chars().count() > 100 {
-                format!("{}...", text.chars().take(100).collect::<String>())
+            if text.chars().count() > SUMMARY_MAX_CHARS {
+                format!(
+                    "{}...",
+                    text.chars().take(SUMMARY_MAX_CHARS).collect::<String>()
+                )
             } else {
                 text.to_string()
             }
