@@ -6,6 +6,7 @@ mod utils;
 
 use crate::cli::{get_startup_session_hint, parse_session_hint, StartupSessionHint};
 use crate::commands::backup::backup_claude_projects;
+use crate::commands::subagents::list_subagent_transcripts;
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::{
     aider::*, antigravity::*, claude_settings::*, codex::*, cursor::*, edits::*, feedback::*, files::*,
@@ -17,29 +18,38 @@ use crate::commands::{
 use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+/// Run `--export` when requested. Returns true when the process is done (the
+/// caller must not open a window); malformed flags exit non-zero.
+fn run_headless_export(argv: &[String]) -> bool {
+    let Some(request) = headless_export::parse_export_request(argv) else {
+        return false;
+    };
+
+    match request {
+        Ok(parsed) => {
+            if let Err(message) =
+                tauri::async_runtime::block_on(headless_export::run_export(parsed))
+            {
+                eprintln!("{message}");
+                std::process::exit(1);
+            }
+        }
+        Err(message) => {
+            eprintln!("{message}");
+            std::process::exit(2);
+        }
+    }
+    true
+}
+
 pub fn run() {
     use tauri::{Emitter, Manager};
 
     // Headless export runs before any window/plugin is created: it is a CLI
-    // tool, not the app (upstream #413). Any malformed flag prints and exits
-    // non-zero instead of silently opening the GUI.
+    // tool, not the app (upstream #413).
     let argv: Vec<String> = std::env::args().collect();
-    if let Some(request) = headless_export::parse_export_request(&argv) {
-        match request {
-            Ok(parsed) => {
-                if let Err(message) =
-                    tauri::async_runtime::block_on(headless_export::run_export(parsed))
-                {
-                    eprintln!("{message}");
-                    std::process::exit(1);
-                }
-                return;
-            }
-            Err(message) => {
-                eprintln!("{message}");
-                std::process::exit(2);
-            }
-        }
+    if run_headless_export(&argv) {
+        return;
     }
 
     // Parse CLI args once for a session preload hint (e.g. `--session <uuid>`).
@@ -87,6 +97,7 @@ pub fn run() {
             get_startup_session_hint,
             resolve_session_by_id,
             backup_claude_projects,
+            list_subagent_transcripts,
             get_claude_folder_path,
             validate_claude_folder,
             scan_projects,
