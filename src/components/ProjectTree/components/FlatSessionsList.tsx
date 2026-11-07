@@ -7,6 +7,7 @@
 
 import React from "react";
 import {
+  Check,
   Wrench,
   AlertTriangle,
   AlertCircle,
@@ -38,6 +39,10 @@ export interface FlatSessionsListProps {
   isCaptureMode?: boolean;
   hiddenSessionIds?: Set<string>;
   onHideSession?: (sessionId: string) => void;
+  /** Multi-select mode (upstream #456) */
+  selectionMode?: boolean;
+  selectedPaths?: ReadonlySet<string>;
+  onToggleCheck?: (filePath: string) => void;
 }
 
 export const FlatSessionsList: React.FC<FlatSessionsListProps> = ({
@@ -52,6 +57,9 @@ export const FlatSessionsList: React.FC<FlatSessionsListProps> = ({
   isCaptureMode,
   hiddenSessionIds,
   onHideSession,
+  selectionMode = false,
+  selectedPaths,
+  onToggleCheck,
 }) => {
   // Filter hidden sessions in capture mode
   const visibleSessions = isCaptureMode && hiddenSessionIds
@@ -82,6 +90,10 @@ export const FlatSessionsList: React.FC<FlatSessionsListProps> = ({
               aria-selected={isSelected}
               tabIndex={-1}
               onClick={() => {
+                if (selectionMode) {
+                  onToggleCheck?.(session.file_path);
+                  return;
+                }
                 // Find the project for this session
                 const project = projects.find(
                   (p) => p.path === session.projectPath
@@ -99,6 +111,20 @@ export const FlatSessionsList: React.FC<FlatSessionsListProps> = ({
                   : "hover:bg-gray-200 dark:hover:bg-gray-700"
               )}
             >
+              {selectionMode && (
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                    selectedPaths?.has(session.file_path)
+                      ? "bg-blue-600 border-blue-600 text-white"
+                      : "border-gray-400 dark:border-gray-500"
+                  )}
+                >
+                  {selectedPaths?.has(session.file_path) && <Check className="w-3 h-3" />}
+                </span>
+              )}
+
               {/* Provider Icon */}
               <ProviderIcon
                 providerId={session.providerId || ""}

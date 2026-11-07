@@ -32,6 +32,10 @@ export interface ProjectGroupProps {
   onExpandRequest: (projectPath: string) => Promise<void>;
   formatTimeAgo: (dateStr: string) => string;
   t: TFunction;
+  /** Multi-select mode (upstream #456) */
+  selectionMode?: boolean;
+  selectedPaths?: ReadonlySet<string>;
+  onToggleCheck?: (filePath: string) => void;
   /** Capture mode props */
   isCaptureMode?: boolean;
   hiddenProjectPaths?: Set<string>;
@@ -63,6 +67,9 @@ export const ProjectGroup: React.FC<ProjectGroupProps> = ({
   hiddenSessionIds,
   onHideProject,
   onHideSession,
+  selectionMode = false,
+  selectedPaths,
+  onToggleCheck,
 }) => {
   // Filter hidden projects in capture mode
   const visibleProjects = isCaptureMode && hiddenProjectPaths
@@ -135,6 +142,9 @@ export const ProjectGroup: React.FC<ProjectGroupProps> = ({
                         formatTimeAgo={formatTimeAgo}
                         t={t}
                         ariaLevel={2}
+                        selectionMode={selectionMode}
+                        isChecked={selectedPaths?.has(session.file_path) ?? false}
+                        onToggleCheck={onToggleCheck}
                       />
                       {/* Hide Session Button (Capture Mode) */}
                       {isCaptureMode && onHideSession && (

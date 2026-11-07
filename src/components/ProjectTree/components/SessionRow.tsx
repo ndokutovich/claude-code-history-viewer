@@ -7,6 +7,7 @@
 
 import React from "react";
 import {
+  Check,
   Wrench,
   AlertTriangle,
   AlertCircle,
@@ -26,6 +27,10 @@ export interface SessionRowProps {
   t: TFunction;
   /** aria-level for the treeitem (defaults to 2 for nested project sessions) */
   ariaLevel?: number;
+  /** Multi-select mode (upstream #456): clicking a row toggles selection. */
+  selectionMode?: boolean;
+  isChecked?: boolean;
+  onToggleCheck?: (filePath: string) => void;
 }
 
 export const SessionRow: React.FC<SessionRowProps> = ({
@@ -36,6 +41,9 @@ export const SessionRow: React.FC<SessionRowProps> = ({
   formatTimeAgo,
   t,
   ariaLevel = 2,
+  selectionMode = false,
+  isChecked = false,
+  onToggleCheck,
 }) => {
   const isSessionSelected = selectedSession?.session_id === session.session_id;
   const title = getSessionTitle(session);
@@ -45,9 +53,14 @@ export const SessionRow: React.FC<SessionRowProps> = ({
       key={session.session_id}
       role="treeitem"
       aria-level={ariaLevel}
-      aria-selected={isSessionSelected}
+      aria-selected={selectionMode ? isChecked : isSessionSelected}
       tabIndex={-1}
       onClick={() => {
+        if (selectionMode) {
+          // Multi-select: the row toggles membership instead of navigating.
+          onToggleCheck?.(session.file_path);
+          return;
+        }
         // Toggle: click selected session to deselect
         if (isSessionSelected) {
           onSessionSelect(null);
@@ -60,10 +73,24 @@ export const SessionRow: React.FC<SessionRowProps> = ({
         "w-full text-left p-3 rounded-lg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset",
         isSessionSelected
           ? "bg-blue-100 dark:bg-blue-900 border-l-4 border-blue-400 dark:border-blue-500"
-          : "hover:bg-gray-200 dark:hover:bg-gray-700"
+          : "hover:bg-gray-200 dark:hover:bg-gray-700",
+        selectionMode && isChecked && "bg-blue-50 dark:bg-blue-900/40 ring-1 ring-inset ring-blue-400"
       )}
     >
       <div className="flex items-start space-x-3">
+        {selectionMode && (
+          <span
+            aria-hidden="true"
+            className={cn(
+              "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+              isChecked
+                ? "bg-blue-600 border-blue-600 text-white"
+                : "border-gray-400 dark:border-gray-500"
+            )}
+          >
+            {isChecked && <Check className="w-3 h-3" />}
+          </span>
+        )}
         <MessageCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">

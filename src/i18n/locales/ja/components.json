@@ -734,7 +734,16 @@
       "placeholder": "このセッションのタイトルを入力してください",
       "titlePlaceholder": "タイトル",
       "preview": "プレビュー: [{{title}}] {{original}}..."
-    }
+    },
+    "selectSessions": "選択",
+    "bulkHint": "複数のセッションを選んでまとめて削除します",
+    "selectedCount": "{{count}} 件選択中",
+    "deleteSelected": "削除",
+    "confirmDeleteSelected": "削除を確認",
+    "clearSelection": "選択解除",
+    "cancelSelection": "キャンセル",
+    "deleteSuccess": "{{count}} 件のセッションを削除しました",
+    "deletePartial": "{{count}} 件のセッションを削除できませんでした"
   },
   "sessionBoard": {
     "gitCommits": "Gitコミット",

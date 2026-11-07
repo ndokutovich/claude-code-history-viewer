@@ -853,7 +853,16 @@
       "placeholder": "輸入此會話的標題",
       "titlePlaceholder": "標題",
       "preview": "預覽: [{{title}}] {{original}}..."
-    }
+    },
+    "selectSessions": "選擇",
+    "bulkHint": "選擇多個工作階段以一次刪除",
+    "selectedCount": "已選擇 {{count}} 個",
+    "deleteSelected": "刪除",
+    "confirmDeleteSelected": "確認刪除",
+    "clearSelection": "清除選擇",
+    "cancelSelection": "取消",
+    "deleteSuccess": "已刪除 {{count}} 個工作階段",
+    "deletePartial": "有 {{count}} 個工作階段無法刪除"
   },
   "sessionBoard": {
     "gitCommits": "Git 提交",

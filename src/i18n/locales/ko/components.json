@@ -855,7 +855,16 @@
       "placeholder": "이 세션의 제목을 입력하세요",
       "titlePlaceholder": "제목",
       "preview": "미리보기: [{{title}}] {{original}}..."
-    }
+    },
+    "selectSessions": "선택",
+    "bulkHint": "여러 세션을 선택해 한 번에 삭제합니다",
+    "selectedCount": "{{count}}개 선택됨",
+    "deleteSelected": "삭제",
+    "confirmDeleteSelected": "삭제 확인",
+    "clearSelection": "선택 해제",
+    "cancelSelection": "취소",
+    "deleteSuccess": "{{count}}개 세션을 삭제했습니다",
+    "deletePartial": "{{count}}개 세션을 삭제하지 못했습니다"
   },
   "sessionBoard": {
     "gitCommits": "Git 커밋",

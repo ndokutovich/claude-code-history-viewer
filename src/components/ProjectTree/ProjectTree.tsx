@@ -14,12 +14,15 @@ import { cn } from "../../utils/cn";
 import { getLocale } from "../../utils/time";
 import { getSessionTitle } from "../../utils/sessionUtils";
 import { openFolder } from "../../utils/fileActions";
+import { invoke } from "@tauri-apps/api/core";
+import { Trash2, CheckSquare, XSquare } from "lucide-react";
 import { ProjectListControls } from "../ProjectListControls";
 import { ProjectContextMenu } from "../ProjectContextMenu";
 import { NativeRenameDialog } from "../NativeRenameDialog";
 import { useAppStore } from "../../store/useAppStore";
 import type { ProjectTreeProps } from "./types";
 import { useProjectTreeState } from "./hooks/useProjectTreeState";
+import { useSessionSelection, deleteSelectedSessions } from "./hooks/useSessionSelection";
 import {
   buildTreeItemAnnouncement,
   findTypeaheadMatchIndex,
@@ -662,6 +665,62 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     [announceTree, describeTreeItem, syncRovingTabIndex]
   );
 
+  // ---- Multi-select mass delete (upstream #456) ----
+  const selection = useSessionSelection();
+  const [deleteArmed, setDeleteArmed] = useState(false);
+
+  const handleDeleteSelected = useCallback(async () => {
+    if (selection.selectedCount === 0) return;
+    if (!deleteArmed) {
+      // Two-step confirm: the first click arms, the second within 5s deletes.
+      setDeleteArmed(true);
+      window.setTimeout(() => setDeleteArmed(false), 5000);
+      return;
+    }
+
+    const outcome = await deleteSelectedSessions(selection.selectedPaths, (filePath) =>
+      invoke("delete_session", { filePath })
+    );
+
+    if (outcome.deleted > 0) {
+      if (selectedSession && outcome.deleted > 0) {
+        const selectedPath = (selectedSession as UISession).file_path;
+        if (selection.selectedPaths.has(selectedPath)) {
+          onSessionSelect(null);
+        }
+      }
+      await loadSessionsForProjects(Array.from(expandedProjects));
+    }
+
+    if (outcome.failed.length > 0) {
+      toast.error(
+        t("session.deletePartial", {
+          count: outcome.failed.length,
+          defaultValue: "{{count}} session(s) could not be deleted",
+        }),
+        { description: outcome.failed[0]?.error }
+      );
+    } else {
+      toast.success(
+        t("session.deleteSuccess", {
+          count: outcome.deleted,
+          defaultValue: "{{count}} session(s) deleted",
+        })
+      );
+    }
+
+    setDeleteArmed(false);
+    selection.exitSelectionMode();
+  }, [
+    deleteArmed,
+    selection,
+    selectedSession,
+    onSessionSelect,
+    loadSessionsForProjects,
+    expandedProjects,
+    t,
+  ]);
+
   // Expose expand/collapse functions via custom event for ProjectListControls
   useEffect(() => {
     const handleExpandAll = async () => {
@@ -705,6 +764,70 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     <div className="w-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 flex flex-col h-full">
       {/* Project List Controls */}
       <ProjectListControls isLoadingSearch={isLoadingAllSessions} />
+
+      {/* Multi-select toolbar (upstream #456) */}
+      <div className="px-4 py-2 border-b border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 flex items-center justify-between gap-2">
+        {selection.selectionMode ? (
+          <>
+            <span className="text-xs text-gray-600 dark:text-gray-300">
+              {t("session.selectedCount", {
+                count: selection.selectedCount,
+                defaultValue: "{{count}} selected",
+              })}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleDeleteSelected}
+                disabled={selection.selectedCount === 0}
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors",
+                  "disabled:opacity-40 disabled:cursor-not-allowed",
+                  deleteArmed
+                    ? "bg-red-600 text-white hover:bg-red-700"
+                    : "text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
+                )}
+                title={t("session.deleteSelected", "Delete selected sessions")}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {deleteArmed
+                  ? t("session.confirmDeleteSelected", "Confirm delete")
+                  : t("session.deleteSelected", "Delete")}
+              </button>
+              <button
+                type="button"
+                onClick={selection.clear}
+                className="p-1 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                title={t("session.clearSelection", "Clear selection")}
+              >
+                <XSquare className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={selection.exitSelectionMode}
+                className="px-2 py-1 rounded text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                {t("session.cancelSelection", "Cancel")}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              {t("session.bulkHint", "Select several sessions to delete them at once")}
+            </span>
+            <button
+              type="button"
+              onClick={selection.enterSelectionMode}
+              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+              title={t("session.selectSessions", "Select sessions")}
+            >
+              <CheckSquare className="w-3.5 h-3.5" />
+              {t("session.selectSessions", "Select")}
+            </button>
+          </>
+        )}
+      </div>
 
       {/* Selection Header with Clear Button */}
       {(selectedProject || selectedSession) && (
@@ -778,6 +901,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
               isCaptureMode={isCaptureMode}
               hiddenSessionIds={hiddenSessionIdsSet}
               onHideSession={hideSession}
+              selectionMode={selection.selectionMode}
+              selectedPaths={selection.selectedPaths}
+              onToggleCheck={selection.toggle}
             />
           </div>
         ) : (
@@ -801,6 +927,9 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
                 onProjectContextMenu={handleProjectContextMenu}
                 onSessionContextMenu={handleSessionContextMenu}
                 onExpandRequest={(path) => loadSessionsForProjects([path])}
+                selectionMode={selection.selectionMode}
+                selectedPaths={selection.selectedPaths}
+                onToggleCheck={selection.toggle}
                 formatTimeAgo={formatTimeAgo}
                 t={t}
                 isCaptureMode={isCaptureMode}

@@ -837,7 +837,16 @@
       "placeholder": "Введите заголовок для этого сеанса",
       "titlePlaceholder": "Заголовок",
       "preview": "Предпросмотр: [{{title}}] {{original}}..."
-    }
+    },
+    "selectSessions": "Выбрать",
+    "bulkHint": "Выберите несколько сессий, чтобы удалить их разом",
+    "selectedCount": "Выбрано: {{count}}",
+    "deleteSelected": "Удалить",
+    "confirmDeleteSelected": "Подтвердить удаление",
+    "clearSelection": "Снять выбор",
+    "cancelSelection": "Отмена",
+    "deleteSuccess": "Удалено сессий: {{count}}",
+    "deletePartial": "Не удалось удалить сессий: {{count}}"
   },
   "sessionBoard": {
     "gitCommits": "Git коммиты",

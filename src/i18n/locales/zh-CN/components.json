@@ -853,7 +853,16 @@
       "placeholder": "输入此会话的标题",
       "titlePlaceholder": "标题",
       "preview": "预览: [{{title}}] {{original}}..."
-    }
+    },
+    "selectSessions": "选择",
+    "bulkHint": "选择多个会话以一次性删除",
+    "selectedCount": "已选择 {{count}} 个",
+    "deleteSelected": "删除",
+    "confirmDeleteSelected": "确认删除",
+    "clearSelection": "清除选择",
+    "cancelSelection": "取消",
+    "deleteSuccess": "已删除 {{count}} 个会话",
+    "deletePartial": "有 {{count}} 个会话无法删除"
   },
   "sessionBoard": {
     "gitCommits": "Git 提交",

@@ -834,7 +834,16 @@
       "placeholder": "Enter a title for this session",
       "titlePlaceholder": "Title",
       "preview": "Preview: [{{title}}] {{original}}..."
-    }
+    },
+    "selectSessions": "Select",
+    "bulkHint": "Select several sessions to delete them at once",
+    "selectedCount": "{{count}} selected",
+    "deleteSelected": "Delete",
+    "confirmDeleteSelected": "Confirm delete",
+    "clearSelection": "Clear selection",
+    "cancelSelection": "Cancel",
+    "deleteSuccess": "{{count}} session(s) deleted",
+    "deletePartial": "{{count}} session(s) could not be deleted"
   },
   "sessionBoard": {
     "gitCommits": "Git Commits",
