@@ -388,7 +388,7 @@ export const SessionItem: React.FC<SessionItemProps> = ({
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs">
               <p className="font-medium">Archived session</p>
-              <p className="text-[11px] text-primary-foreground/80 mt-1 leading-relaxed">
+              <p className="text-px11 text-primary-foreground/80 mt-1 leading-relaxed">
                 Stored under Codex `archived_sessions`.
               </p>
             </TooltipContent>
@@ -484,7 +484,7 @@ export const SessionItem: React.FC<SessionItemProps> = ({
                         aria-label={t("session.cliSync.title", "Synced with Claude Code CLI")}
                       >
                         <Link2 className="w-2.5 h-2.5 text-blue-400" aria-hidden="true" />
-                        <span className="text-[9px] font-medium text-blue-400 uppercase tracking-wide">
+                        <span className="text-px9 font-medium text-blue-400 uppercase tracking-wide">
                           CLI
                         </span>
                       </button>
@@ -636,7 +636,7 @@ export const SessionItem: React.FC<SessionItemProps> = ({
         {session.storageType && (
           <span
             className={cn(
-              "px-1 rounded text-[9px] font-mono uppercase tracking-wide border",
+              "px-1 rounded text-px9 font-mono uppercase tracking-wide border",
               isSelected
                 ? "border-accent/40 text-accent/80"
                 : "border-muted-foreground/30 text-muted-foreground"
@@ -651,7 +651,7 @@ export const SessionItem: React.FC<SessionItemProps> = ({
         {showEntrypoint && (
           <span
             className={cn(
-              "inline-flex items-center gap-0.5 px-1 rounded text-[9px] font-mono uppercase tracking-wide border",
+              "inline-flex items-center gap-0.5 px-1 rounded text-px9 font-mono uppercase tracking-wide border",
               entrypoint.badgeClassName
             )}
             title={t("session.item.entrypoint.label", "Source: {{source}}", {

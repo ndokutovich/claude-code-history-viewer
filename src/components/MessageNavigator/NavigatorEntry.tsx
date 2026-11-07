@@ -55,13 +55,13 @@ export const NavigatorEntry = React.memo<NavigatorEntryProps>(({
       {/* Header row: role dot + turn label + time + tool icon */}
       <div className="flex items-center gap-1.5 mb-0.5">
         <span className={cn("w-2 h-2 rounded-full shrink-0", roleStyle.dot)} />
-        <span className="text-[10px] font-medium text-muted-foreground">
+        <span className="text-px10 font-medium text-muted-foreground">
           #{entry.turnIndex}
         </span>
         {entry.hasToolUse && (
           <Wrench className="w-2.5 h-2.5 text-muted-foreground/60" />
         )}
-        <span className="ml-auto text-[10px] text-muted-foreground/60">
+        <span className="ml-auto text-px10 text-muted-foreground/60">
           {formattedTime}
         </span>
       </div>

@@ -72,6 +72,7 @@
     font-size: calc(16px * var(--font-scale, 1));
   }
 
+
   /* High contrast mode overrides */
   html.high-contrast {
     --background: 0 0% 0%;
@@ -335,3 +336,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Fixed-pixel text utilities that still respect the app font-size setting
+ * (upstream #412): every hardcoded `text-[Npx]` became a `text-pxN` class
+ * so the accessibility scale multiplies what used to be frozen sizes. */
+@utility text-px6 { font-size: calc(6px * var(--font-scale, 1)); }
+@utility text-px8 { font-size: calc(8px * var(--font-scale, 1)); }
+@utility text-px9 { font-size: calc(9px * var(--font-scale, 1)); }
+@utility text-px10 { font-size: calc(10px * var(--font-scale, 1)); }
+@utility text-px11 { font-size: calc(11px * var(--font-scale, 1)); }
+@utility text-px12 { font-size: calc(12px * var(--font-scale, 1)); }
+@utility text-px13 { font-size: calc(13px * var(--font-scale, 1)); }
+@utility text-px14 { font-size: calc(14px * var(--font-scale, 1)); }

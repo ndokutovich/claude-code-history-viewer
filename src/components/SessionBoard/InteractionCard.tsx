@@ -159,7 +159,7 @@ function SmartJsonDisplay({ data }: { data: unknown }) {
   if (data == null) return null;
   const str = typeof data === "string" ? data : JSON.stringify(data, null, 2);
   return (
-    <pre className="text-[10px] font-mono whitespace-pre-wrap break-words opacity-70 max-h-40 overflow-hidden">
+    <pre className="text-px10 font-mono whitespace-pre-wrap break-words opacity-70 max-h-40 overflow-hidden">
       {str.length > 500 ? str.slice(0, 500) + "..." : str}
     </pre>
   );
@@ -182,7 +182,7 @@ const FileEditDisplay = ({
   if (path && typeof path === "string") {
     const displayText = path.split(/[\\/]/).pop();
     return (
-      <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded text-[10px] text-emerald-600 font-medium mb-1">
+      <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded text-px10 text-emerald-600 font-medium mb-1">
         <PencilLine className="w-3 h-3" />
         <span className="truncate" title={path}>
           {t("session.interaction.edit", { file: displayText })}
@@ -212,7 +212,7 @@ const ExitCodeDisplay = ({ message }: { message: ClaudeMessage }) => {
   return (
     <div
       className={clsx(
-        "flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border self-start",
+        "flex items-center gap-1 text-px9 font-mono px-1.5 py-0.5 rounded border self-start",
         codeNum === 0
           ? "text-emerald-600 bg-emerald-500/5 border-emerald-500/20"
           : "text-destructive bg-destructive/5 border-destructive/20"
@@ -584,11 +584,11 @@ export const InteractionCard = memo(
           >
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+                <span className="text-px10 font-bold uppercase tracking-widest text-muted-foreground/50">
                   {agentName}{" "}
                   {totalMessagesCount > 1 && `(x${totalMessagesCount})`}
                 </span>
-                <span className="text-[10px] text-muted-foreground font-mono">
+                <span className="text-px10 text-muted-foreground font-mono">
                   {new Date(message.timestamp).toLocaleTimeString()}
                 </span>
               </div>
@@ -596,11 +596,11 @@ export const InteractionCard = memo(
               <div className="flex items-center gap-1.5 text-xs font-medium">
                 {RoleIcon}
                 <div className="flex flex-col">
-                  <span className="uppercase text-[10px] font-bold tracking-wide opacity-80">
+                  <span className="uppercase text-px10 font-bold tracking-wide opacity-80">
                     {toolUseBlock ? toolUseBlock.name : role}
                   </span>
                   {totalMessagesCount > 1 && (
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-px10 text-muted-foreground">
                       {t("session.interaction.messagesAndTokens", {
                         messages: totalMessagesCount,
                         tokens: totalTokens.toLocaleString(),
@@ -610,7 +610,7 @@ export const InteractionCard = memo(
                 </div>
               </div>
 
-              <div className="text-[11px] leading-tight text-foreground/90 font-mono line-clamp-4 whitespace-pre-wrap break-words border-t border-border/20 pt-1 mt-0.5">
+              <div className="text-px11 leading-tight text-foreground/90 font-mono line-clamp-4 whitespace-pre-wrap break-words border-t border-border/20 pt-1 mt-0.5">
                 {totalMessagesCount > 1 ? (
                   <div className="flex flex-col gap-1">
                     <div className="italic opacity-70">
@@ -650,7 +650,7 @@ export const InteractionCard = memo(
             onClick={onClick}
           >
             {agentName !== generalPurpose && (
-              <div className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/40 leading-none select-none">
+              <div className="text-px8 font-bold uppercase tracking-widest text-muted-foreground/40 leading-none select-none">
                 {agentName}
               </div>
             )}
@@ -688,7 +688,7 @@ export const InteractionCard = memo(
               <div className="flex-1 min-w-0">
                 {toolUseBlock && (
                   <div
-                    className="text-[9px] font-medium uppercase tracking-tight text-accent opacity-90 mb-0.5 flex items-center gap-1.5 hover:opacity-100 cursor-pointer"
+                    className="text-px9 font-medium uppercase tracking-tight text-accent opacity-90 mb-0.5 flex items-center gap-1.5 hover:opacity-100 cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
                       onToggleSticky?.();
@@ -696,7 +696,7 @@ export const InteractionCard = memo(
                   >
                     {toolUseBlock.name}
                     {siblings && siblings.length > 0 && (
-                      <span className="flex items-center gap-0.5 text-[8px] bg-accent/10 text-accent px-1 rounded-sm border border-accent/20">
+                      <span className="flex items-center gap-0.5 text-px8 bg-accent/10 text-accent px-1 rounded-sm border border-accent/20">
                         <Layers className="w-2 h-2" />
                         x{siblings.length + 1}
                       </span>
@@ -719,7 +719,7 @@ export const InteractionCard = memo(
                   </div>
                 )}
                 {isShell && shellCommand && (
-                  <p className="text-[10px] font-mono text-[var(--tool-terminal)] truncate opacity-70 mb-0.5">
+                  <p className="text-px10 font-mono text-[var(--tool-terminal)] truncate opacity-70 mb-0.5">
                     ${" "}
                     {shellCommand.length > 60
                       ? shellCommand.slice(0, 60) + "..."
@@ -784,7 +784,7 @@ export const InteractionCard = memo(
         >
           {editedMdFile ? (
             <div
-              className="flex items-center gap-1.5 px-2 py-1 bg-amber-500/10 border border-amber-500/20 rounded text-[10px] text-amber-600 font-medium mb-1 cursor-help group/md"
+              className="flex items-center gap-1.5 px-2 py-1 bg-amber-500/10 border border-amber-500/20 rounded text-px10 text-amber-600 font-medium mb-1 cursor-help group/md"
               title={t("session.interaction.markdownFileEdit")}
             >
               <FileText className="w-3 h-3" />
@@ -795,7 +795,7 @@ export const InteractionCard = memo(
           ) : editedMdFile === null && isFileEdit ? (
             <FileEditDisplay toolUseBlock={toolUseBlock} />
           ) : isShell && shellCommand ? (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-[var(--tool-terminal)]/10 border border-[var(--tool-terminal)]/20 rounded text-[10px] text-[var(--tool-terminal)] font-medium mb-1">
+            <div className="flex items-center gap-1.5 px-2 py-1 bg-[var(--tool-terminal)]/10 border border-[var(--tool-terminal)]/20 rounded text-px10 text-[var(--tool-terminal)] font-medium mb-1">
               <Terminal className="w-3.5 h-3.5 shrink-0" />
               <code className="font-mono truncate">$ {shellCommand}</code>
             </div>
@@ -815,17 +815,17 @@ export const InteractionCard = memo(
               </div>
 
               {isCommit && (
-                <span className="text-[9px] bg-indigo-500/10 text-indigo-600 px-1 rounded border border-indigo-200 uppercase tracking-wider font-bold cursor-pointer">
+                <span className="text-px9 bg-indigo-500/10 text-indigo-600 px-1 rounded border border-indigo-200 uppercase tracking-wider font-bold cursor-pointer">
                   {t("components:sessionBoard.badgeGit")}
                 </span>
               )}
               {isShell && (
-                <span className="text-[9px] bg-[var(--tool-terminal)]/10 text-[var(--tool-terminal)] px-1 rounded border border-[var(--tool-terminal)]/20 uppercase tracking-wider font-bold cursor-pointer">
+                <span className="text-px9 bg-[var(--tool-terminal)]/10 text-[var(--tool-terminal)] px-1 rounded border border-[var(--tool-terminal)]/20 uppercase tracking-wider font-bold cursor-pointer">
                   {t("components:sessionBoard.badgeShell")}
                 </span>
               )}
               {editedMdFile && (
-                <span className="text-[9px] bg-amber-500/10 text-amber-600 px-1 rounded border border-amber-200 uppercase tracking-wider font-bold cursor-pointer">
+                <span className="text-px9 bg-amber-500/10 text-amber-600 px-1 rounded border border-amber-200 uppercase tracking-wider font-bold cursor-pointer">
                   {t("components:sessionBoard.badgeDocs")}
                 </span>
               )}
@@ -840,7 +840,7 @@ export const InteractionCard = memo(
                     .map(([name, count]) => (
                       <div
                         key={name}
-                        className="flex items-center gap-0.5 text-[9px] text-muted-foreground/80 bg-muted/30 px-1 rounded-sm border border-border/20 hover:bg-muted/50 cursor-pointer transition-colors"
+                        className="flex items-center gap-0.5 text-px9 text-muted-foreground/80 bg-muted/30 px-1 rounded-sm border border-border/20 hover:bg-muted/50 cursor-pointer transition-colors"
                         title={`${count}x ${name}`}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -863,7 +863,7 @@ export const InteractionCard = memo(
                         />
                         <span className="font-mono">{name}</span>
                         {count > 1 && (
-                          <span className="opacity-50 text-[8px] ml-px">
+                          <span className="opacity-50 text-px8 ml-px">
                             ({count})
                           </span>
                         )}
@@ -873,12 +873,12 @@ export const InteractionCard = memo(
               )}
 
               {isCancelled && (
-                <span className="text-[9px] uppercase font-bold text-orange-500 tracking-wide border border-orange-500/30 px-1 rounded">
+                <span className="text-px9 uppercase font-bold text-orange-500 tracking-wide border border-orange-500/30 px-1 rounded">
                   {t("session.interaction.cancelled")}
                 </span>
               )}
             </div>
-            <span className="text-[9px] text-muted-foreground font-mono">
+            <span className="text-px9 text-muted-foreground font-mono">
               {new Date(message.timestamp).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -900,7 +900,7 @@ export const InteractionCard = memo(
           </div>
 
           {message.type === "assistant" && message.usage && (
-            <div className="mt-auto pt-1 flex gap-2 text-[9px] text-muted-foreground opacity-60 font-mono items-center">
+            <div className="mt-auto pt-1 flex gap-2 text-px9 text-muted-foreground opacity-60 font-mono items-center">
               <span>
                 {t("session.interaction.inputTokens")}{" "}
                 {message.usage.input_tokens}
@@ -966,7 +966,7 @@ export const InteractionCard = memo(
             {isClaudeAssistantMessage(message) &&
               message.stop_reason === "max_tokens" && (
                 <div
-                  className="flex items-center gap-1 text-[9px] font-mono px-1.5 py-0.5 rounded border self-start text-orange-600 bg-orange-500/5 border-orange-500/20"
+                  className="flex items-center gap-1 text-px9 font-mono px-1.5 py-0.5 rounded border self-start text-orange-600 bg-orange-500/5 border-orange-500/20"
                   title={t("session.interaction.cutoffTitle")}
                 >
                   <Scissors className="w-2.5 h-2.5" />
@@ -978,7 +978,7 @@ export const InteractionCard = memo(
           </div>
 
           {isError && (
-            <div className="mt-1 p-1 bg-destructive/10 rounded text-[9px] text-destructive border border-destructive/20 font-mono italic flex items-center gap-1">
+            <div className="mt-1 p-1 bg-destructive/10 rounded text-px9 text-destructive border border-destructive/20 font-mono italic flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
               <span>{t("session.interaction.errorDetected")}</span>
             </div>

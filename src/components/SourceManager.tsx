@@ -270,7 +270,7 @@ export const SourceManager: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <span className="font-medium truncate">{distro.name}</span>
                         {distro.isDefault && (
-                          <Badge variant="secondary" className="text-[10px]">{t('wsl.default')}</Badge>
+                          <Badge variant="secondary" className="text-px10">{t('wsl.default')}</Badge>
                         )}
                       </div>
                       {distro.claudePath ? (

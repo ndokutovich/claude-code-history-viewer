@@ -130,7 +130,7 @@ export const MessageNavigator: React.FC<MessageNavigatorProps> = ({
           <ListTree className="w-4 h-4 text-muted-foreground" />
 
           {/* Entry count */}
-          <span className="text-[10px] font-mono text-muted-foreground">{allEntries.length}</span>
+          <span className="text-px10 font-mono text-muted-foreground">{allEntries.length}</span>
         </div>
       </aside>
     );
@@ -159,7 +159,7 @@ export const MessageNavigator: React.FC<MessageNavigatorProps> = ({
         <span className="text-xs font-semibold text-foreground flex-1">
           {t("navigator.title")}
         </span>
-        <span className="text-[10px] text-muted-foreground tabular-nums">
+        <span className="text-px10 text-muted-foreground tabular-nums">
           {entries.length}
         </span>
         <button
