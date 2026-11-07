@@ -50,6 +50,7 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 - ✅ subagent discovery + copy paths (2026-11-07) — `commands/subagents.rs` lists flat and workflow (`workflows/wf_*/agent-*.jsonl`) transcripts; session menu copies their paths. This is the prerequisite for #99b2ec7d.
 - ✅ #99b2ec7d workflow/sub-agent rendering (2026-11-07) — discovery + guarded loader + inline reader dialog; workflow agents grouped by wf_ name.
 - ✅ Pricing data (2026-11-07) — audited Claude 5.x rates (opus-5-5 $4/$20, sonnet-5-5 with the $0.10 cache read, haiku-5-5, opus-5/sonnet-5, fable/mythos) ported from upstream model-pricing.json; 5 tests. Our cost stats no longer fall back to generic rates for current models.
+- ✅ #589/#582 Cline SDK-era store (2026-11-07) — `adapters/cline_sdk.rs` reads `~/.cline/data/sessions`, routed by `cline://sdk:`; detection falls back to it; 5 tests.
 **QUEUED — next session, fresh context (P2 features, port-notes ready):**
 - Recent Edits panel — **HAVE (own design)**: `RecentEditsViewer` + backend `commands/edits.rs` shipped June.
   Ported deltas: #606 replace_all, #525/#640 restore guard, #475 reveal-in-folder.
@@ -218,8 +219,6 @@ These are the only upstream items not integrated. Each is a product choice, not 
    Each = Rust adapter + TS adapter + registration + 6 locales + permanent maintenance.
 2. **Server mode / WebUI** — an HTTP server with auth and deep links over the same history.
    Our fork has no server surface at all.
-3. **Cline SDK-era store (#589)** — new `~/.cline/data/sessions` layout. Code-complete portable
-   (~715 lines), but the owner has no such store locally, so it cannot be verified on real data.
 4. **Upstream's three-column explorer (#ccf7c19b temp buckets, #4bc63da2 sessions column)** —
    parts of a different information architecture than our two-pane tree.
 5. **Pricing drift-watch CI** — a GitHub workflow that fetches provider price feeds; lives in
