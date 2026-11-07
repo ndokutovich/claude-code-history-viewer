@@ -1099,9 +1099,15 @@ pub fn load_all_antigravity_sessions(
     source_id: &str,
 ) -> Result<Vec<UniversalSession>, String> {
     if has_brain_transcripts(root) {
+        // Deduplicate case-insensitively: the same workspace arrives as
+        // w:/... and W:/..., and the case-folded filter would load its
+        // sessions once per spelling.
+        let mut seen_keys: std::collections::HashSet<Option<String>> =
+            std::collections::HashSet::new();
         let mut seen_workspaces: Vec<Option<String>> = Vec::new();
         for session in collect_brain_sessions(root, source_id) {
-            if !seen_workspaces.contains(&session.workspace) {
+            let key = session.workspace.as_ref().map(|w| w.to_lowercase());
+            if seen_keys.insert(key) {
                 seen_workspaces.push(session.workspace);
             }
         }
@@ -1265,6 +1271,12 @@ pub fn scan_antigravity_store(
         last: Option<String>,
     }
 
+    // Windows workspaces arrive in mixed case (file:///w:/ vs file:///W:/);
+    // group case-insensitively so one project does not split in two
+    // (upstream's UNC-spelling review applied to drive roots).
+    fn workspace_key(ws: &Option<String>) -> Option<String> {
+        ws.as_ref().map(|w| w.to_lowercase())
+    }
     let mut by_workspace: HashMap<Option<String>, Acc> = HashMap::new();
     for session in &sessions {
         let first = session.messages.first().map(|m| m.timestamp.clone());
@@ -1272,7 +1284,7 @@ pub fn scan_antigravity_store(
             .last_modified
             .clone()
             .or_else(|| session.messages.last().map(|m| m.timestamp.clone()));
-        let acc = by_workspace.entry(session.workspace.clone()).or_default();
+        let acc = by_workspace.entry(workspace_key(&session.workspace)).or_default();
         acc.session_count += 1;
         acc.total_messages += session.messages.len();
         if let Some(first) = &first {
@@ -1341,10 +1353,13 @@ pub fn load_antigravity_store_sessions(
 
     let mut sessions: Vec<UniversalSession> = collect_brain_sessions(root, source_id)
         .into_iter()
-        .filter(|session| match (&session.workspace, workspace) {
-            (Some(a), Some(b)) => a == b,
-            (None, None) => true,
-            _ => false,
+        .filter(|session| {
+            let key = session.workspace.as_ref().map(|w| w.to_lowercase());
+            match (&key, workspace) {
+                (Some(a), Some(b)) => a == &b.to_lowercase(),
+                (None, None) => true,
+                _ => false,
+            }
         })
         .map(|session| {
             let project_scheme = match &session.workspace {
@@ -2126,5 +2141,34 @@ mod tests {
         assert_eq!(projects.len(), 1);
         assert_eq!(projects[0].name, "Antigravity");
         assert_eq!(projects[0].session_count, 1);
+    }
+}
+
+#[cfg(test)]
+mod live_tests {
+    use super::*;
+
+    #[test]
+    #[ignore = "runs against the real local Antigravity stores"]
+    fn live_scan_real_stores() {
+        for root in get_antigravity_roots() {
+            let projects = scan_antigravity_store(&root, "live-test").unwrap();
+            eprintln!(
+                "ROOT {:?} -> {} projects, sessions: {:?}",
+                root,
+                projects.len(),
+                projects.iter().map(|p| (p.name.clone(), p.session_count)).collect::<Vec<_>>()
+            );
+            assert!(!projects.is_empty(), "no projects from {:?}", root);
+            let sessions = load_all_antigravity_sessions(&root, "live-test").unwrap();
+            eprintln!("  total sessions: {}", sessions.len());
+            let mut by_id: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
+            for s in &sessions {
+                *by_id.entry(s.id.as_str()).or_insert(0) += 1;
+            }
+            let dupes: Vec<_> = by_id.iter().filter(|(_, n)| **n > 1).take(5).collect();
+            eprintln!("  distinct ids: {}, duplicated ids (sample): {:?}", by_id.len(), dupes);
+            assert!(!sessions.is_empty());
+        }
     }
 }
