@@ -38,6 +38,8 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 - ✅ #463 resume-in-terminal — ALREADY PRESENT: `commands/resume.rs::resume_session` spawns a terminal; wired via ExportControls.
 - ⏭ Recent Edits remaining: the dock/sidebar PANEL UI + recentEditsPanelSlice + restore preview (backend list/restore already exist).
 - ✅ #607 rename trailing newline (2026-11-07) — rewritten JSONL is newline-terminated so Claude Code's next append cannot glue onto our last line; helper + unit tests.
+- ✅ 2026-11-07 batch 2 — #606 replace_all replay, #525/#640 restore guard, #475 reveal-in-folder, #607 rename trailing newline, #616 stats ai-title names, #602/#613 link navigation guard. 267 Rust + 378 FE tests green.
+- ✅ Verified already-owned (no port needed): Recent Edits viewer + backend, resume-in-terminal (#463), agent task/progress grouping.
 **QUEUED — next session, fresh context (P2 features, port-notes ready):**
 - Recent Edits panel — **HAVE (own design)**: `RecentEditsViewer` + backend `commands/edits.rs` shipped June.
   Ported deltas: #606 replace_all, #525/#640 restore guard, #475 reveal-in-folder.
