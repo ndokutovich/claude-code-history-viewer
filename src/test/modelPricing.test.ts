@@ -36,7 +36,6 @@ describe("model pricing", () => {
 // ---------------------------------------------------------------------------
 // Claude 5.x pricing (upstream model-pricing.json, audited 2026-10-10)
 // ---------------------------------------------------------------------------
-import { calculateModelPrice } from "../components/AnalyticsDashboard/utils/calculations";
 
 const ONE_MILLION = 1_000_000;
 
