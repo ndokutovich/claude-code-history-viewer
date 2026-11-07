@@ -21,5 +21,6 @@
   "confirmRestore": "Restore",
   "remaining": "remaining",
   "editsCount": "{{count}} edits",
-  "revealInFolder": "Reveal in Folder"
+  "revealInFolder": "Reveal in Folder",
+  "viewDiff": "View diff"
 }

@@ -19,10 +19,12 @@ import {
   Loader2,
   RotateCcw,
   FolderOpen,
+  GitCompare,
 } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
 import { cn } from "@/utils/cn";
 import { openFolder } from "@/utils/fileActions";
+import { EnhancedDiffViewer } from "../EnhancedDiffViewer";
 import type { FileEditItemProps, RestoreStatus } from "./types";
 import { getLanguageFromPath, formatTimestamp, getRelativeTime } from "./utils";
 import {
@@ -39,6 +41,8 @@ export const FileEditItem: React.FC<FileEditItemProps> = ({ edit, isDarkMode }) 
   const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [restoreStatus, setRestoreStatus] = useState<RestoreStatus>("idle");
+  // Side-by-side diff against the recorded original (upstream #473).
+  const [showDiff, setShowDiff] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -203,6 +207,27 @@ export const FileEditItem: React.FC<FileEditItemProps> = ({ edit, isDarkMode }) 
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </button>
 
+          {/* Diff view (upstream #473) — only when the original was recorded */}
+          {edit.original_content != null && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDiff((value) => !value);
+              }}
+              className={cn(
+                "p-2 rounded-lg transition-all duration-200",
+                showDiff
+                  ? "bg-accent/10 text-accent"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+              )}
+              aria-pressed={showDiff}
+              aria-label={t("viewDiff")}
+              title={t("viewDiff")}
+            >
+              <GitCompare className="w-4 h-4" />
+            </button>
+          )}
+
           {/* Reveal in folder (upstream #475) */}
           <button
             onClick={(e) => {
@@ -300,7 +325,13 @@ export const FileEditItem: React.FC<FileEditItemProps> = ({ edit, isDarkMode }) 
         <div className="border-t border-border">
           {/* Code/Markdown content */}
           <div className="max-h-96 overflow-auto">
-            {language === "markdown" ? (
+            {showDiff && edit.original_content != null ? (
+              <EnhancedDiffViewer
+                oldText={edit.original_content}
+                newText={edit.content_after_change}
+                filePath={edit.file_path}
+              />
+            ) : language === "markdown" ? (
               <Markdown className="p-3 bg-card text-foreground">
                 {edit.content_after_change}
               </Markdown>

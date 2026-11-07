@@ -21,5 +21,6 @@
   "confirmRestore": "恢复",
   "remaining": "剩余",
   "editsCount": "{{count}} 次编辑",
-  "revealInFolder": "在文件夹中显示"
+  "revealInFolder": "在文件夹中显示",
+  "viewDiff": "查看差异"
 }

@@ -21,5 +21,6 @@
   "confirmRestore": "복원",
   "remaining": "남음",
   "editsCount": "{{count}}회 편집",
-  "revealInFolder": "폴더에서 보기"
+  "revealInFolder": "폴더에서 보기",
+  "viewDiff": "변경 사항 보기"
 }

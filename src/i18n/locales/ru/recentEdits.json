@@ -21,5 +21,6 @@
   "confirmRestore": "Восстановить",
   "remaining": "осталось",
   "editsCount": "{{count}} правок",
-  "revealInFolder": "Показать в папке"
+  "revealInFolder": "Показать в папке",
+  "viewDiff": "Показать изменения"
 }

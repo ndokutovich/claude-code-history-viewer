@@ -21,5 +21,6 @@
   "confirmRestore": "復元",
   "remaining": "残り",
   "editsCount": "{{count}}回の編集",
-  "revealInFolder": "フォルダで表示"
+  "revealInFolder": "フォルダで表示",
+  "viewDiff": "差分を表示"
 }
