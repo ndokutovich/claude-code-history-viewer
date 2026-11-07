@@ -20,7 +20,7 @@ import { MessageNavigator } from "../MessageNavigator";
 import { SessionBuilderModal } from "../modals/SessionBuilderModal";
 import type { MessageViewerProps } from "./types";
 import { MessageNode, FloatingDateOverlay } from "./components";
-import { useMessageScrolling, useMessageTree } from "./hooks";
+import { usePromptJump, useMessageScrolling, useMessageTree } from "./hooks";
 import { isSameDay } from "../../utils/time";
 
 const DEFAULT_NAVIGATOR_WIDTH = 280;
@@ -342,6 +342,13 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     },
     [uuidToIndexMap, virtualizer]
   );
+
+  // Alt+ArrowUp / Alt+ArrowDown jump between turn starts in the loaded rows.
+  usePromptJump({
+    rows,
+    virtualizer,
+    scrollToIndex: (index, align) => virtualizer.scrollToIndex(index, { align }),
+  });
 
   // Navigate to a specific message by UUID (MessageNavigator click)
   const handleNavigateToMessage = useCallback(
