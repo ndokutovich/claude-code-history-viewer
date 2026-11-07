@@ -52,6 +52,7 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 - ✅ Pricing data (2026-11-07) — audited Claude 5.x rates (opus-5-5 $4/$20, sonnet-5-5 with the $0.10 cache read, haiku-5-5, opus-5/sonnet-5, fable/mythos) ported from upstream model-pricing.json; 5 tests. Our cost stats no longer fall back to generic rates for current models.
 - ✅ #589/#582 Cline SDK-era store (2026-11-07) — `adapters/cline_sdk.rs` reads `~/.cline/data/sessions`, routed by `cline://sdk:`; detection falls back to it; 5 tests.
 - ✅ #ccf7c19b temp-directory bucket (2026-11-07) — projects under OS temp/cache roots collect in a "Temporary locations" group; 5 tests.
+- ✅ Pricing infrastructure (2026-11-08) — audited table moved to `src/data/model-pricing.json` (102 entries); `scripts/check-model-pricing.mjs` + weekly `pricing-watch` workflow ported and verified live (25 findings).
 **QUEUED — next session, fresh context (P2 features, port-notes ready):**
 - Recent Edits panel — **HAVE (own design)**: `RecentEditsViewer` + backend `commands/edits.rs` shipped June.
   Ported deltas: #606 replace_all, #525/#640 restore guard, #475 reveal-in-folder.
@@ -222,5 +223,3 @@ These are the only upstream items not integrated. Each is a product choice, not 
    Our fork has no server surface at all.
 4. **Upstream's third explorer column (#4bc63da2 sessions column)** — the temp bucketing half
    (#ccf7c19b) is integrated; the separate sessions column is a layout change.
-5. **Pricing drift-watch CI** — a GitHub workflow that fetches provider price feeds; lives in
-   upstream's CI infrastructure. The *data* it feeds is already integrated here.
