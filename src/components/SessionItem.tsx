@@ -38,6 +38,7 @@ import { useAppStore } from "@/store/useAppStore";
 import {
   getProviderId,
   getResumeCommand,
+  parseResumeExtraArgs,
   supportsResumeCommand,
 } from "@/utils/providers";
 import {
@@ -241,13 +242,15 @@ export const SessionItem: React.FC<SessionItemProps> = ({
     (state) =>
       state.projects.find((p) => p.name === session.project_name)?.actual_path
   );
+  const resumeExtraArgs = useAppStore((state) => state.resumeExtraArgs);
 
   const handleCopyResumeCommand = useCallback(
     (e: React.MouseEvent) => {
       const resumeCommand = getResumeCommand(
         getProviderId(providerId),
         session.actual_session_id,
-        projectCwd
+        projectCwd,
+        parseResumeExtraArgs(resumeExtraArgs)
       );
       if (!resumeCommand) {
         e.stopPropagation();
@@ -266,7 +269,7 @@ export const SessionItem: React.FC<SessionItemProps> = ({
             )
       );
     },
-    [handleCopyToClipboard, projectCwd, providerId, session.actual_session_id, t]
+    [handleCopyToClipboard, projectCwd, providerId, session.actual_session_id, resumeExtraArgs, t]
   );
 
   const handleCopyFilePath = useCallback(

@@ -325,7 +325,12 @@
       "title": "Language",
       "description": "Select your preferred language"
     },
-    "checkUpdate": "Check for Updates"
+    "checkUpdate": "Check for Updates",
+    "resumeArgs": {
+      "title": "Resume CLI arguments",
+      "hint": "Appended to the resume command",
+      "invalid": "Only flags like --fast or --model=sonnet are kept"
+    }
   },
   "settingsManager": "Settings Manager",
   "status.detectingSources": "Detecting Sources",

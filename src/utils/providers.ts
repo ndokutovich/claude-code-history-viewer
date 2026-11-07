@@ -84,6 +84,27 @@ function shellQuotePath(p: string): string {
   return `'${p.replace(/'/g, "'\\''")}'`;
 }
 
+/** Maximum number of extra CLI arguments a user may append (mirrors the backend). */
+export const MAX_EXTRA_ARGS = 32;
+/** Maximum length of a single extra argument (mirrors the backend). */
+export const MAX_EXTRA_ARG_LEN = 128;
+
+/**
+ * Split the settings text into arguments and drop anything that could change
+ * the meaning of the pasted shell command (upstream #595). Kept in sync with
+ * `validate_extra_args` in `src-tauri/src/commands/resume.rs`.
+ */
+export function parseResumeExtraArgs(raw: string | undefined | null): string[] {
+  if (!raw) return [];
+  return raw
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0)
+    .filter((token) => token.length <= MAX_EXTRA_ARG_LEN)
+    .filter((token) => /^[A-Za-z0-9\-_.=/:,+]+$/.test(token))
+    .slice(0, MAX_EXTRA_ARGS);
+}
+
 /**
  * Build a paste-able resume command for the given provider/session.
  *
@@ -100,7 +121,8 @@ function shellQuotePath(p: string): string {
 export function getResumeCommand(
   provider: ProviderId | string | undefined,
   sessionId: string,
-  cwd?: string
+  cwd?: string,
+  extraArgs?: readonly string[]
 ): string | null {
   if (!sessionId) {
     return null;
@@ -117,7 +139,15 @@ export function getResumeCommand(
     return null;
   }
 
-  const resume = `${template} ${sessionId}`;
+  const validatedExtra = (extraArgs ?? [])
+    .map((token) => token.trim())
+    .filter((token) => token.length > 0 && token.length <= MAX_EXTRA_ARG_LEN)
+    .filter((token) => /^[A-Za-z0-9\-_.=/:,+]+$/.test(token))
+    .slice(0, MAX_EXTRA_ARGS);
+  const resume =
+    validatedExtra.length > 0
+      ? `${template} ${sessionId} ${validatedExtra.join(" ")}`
+      : `${template} ${sessionId}`;
   return cwd ? `cd ${shellQuotePath(cwd)} && ${resume}` : resume;
 }
 

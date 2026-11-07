@@ -325,7 +325,12 @@
     },
     "checkUpdate": "检查更新",
     "checking": "检查中...",
-    "updateSettings": "更新设置"
+    "updateSettings": "更新设置",
+    "resumeArgs": {
+      "title": "恢复会话 CLI 参数",
+      "hint": "会附加到恢复命令后",
+      "invalid": "仅保留 --fast 或 --model=sonnet 之类的标志"
+    }
   },
   "settingsManager": "设置管理器",
   "status.detectingSources": "检测数据源",

@@ -325,7 +325,12 @@
     },
     "checkUpdate": "檢查更新",
     "checking": "檢查中...",
-    "updateSettings": "更新設定"
+    "updateSettings": "更新設定",
+    "resumeArgs": {
+      "title": "恢復工作階段 CLI 參數",
+      "hint": "會附加到恢復命令後",
+      "invalid": "僅保留 --fast 或 --model=sonnet 之類的旗標"
+    }
   },
   "settingsManager": "設定管理員",
   "status.detectingSources": "偵測資料來源",

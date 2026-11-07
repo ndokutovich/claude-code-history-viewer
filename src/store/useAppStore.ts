@@ -1935,6 +1935,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   // ============================================================
   setFontScale: (scale: number) => set({ fontScale: scale }),
   setHighContrast: (value: boolean) => set({ highContrast: value }),
+  setResumeExtraArgs: (value: string) => set({ resumeExtraArgs: value }),
 
   // ============================================================
   // In-session search (KakaoTalk-style navigation)

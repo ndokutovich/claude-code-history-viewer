@@ -19,6 +19,8 @@ export interface SettingsSliceState {
   fontScale: number;
   /** Whether high-contrast accessibility mode is enabled */
   highContrast: boolean;
+  /** Extra CLI flags appended to resume commands (upstream #595) */
+  resumeExtraArgs: string;
 }
 
 export interface SettingsSliceActions {
@@ -26,6 +28,8 @@ export interface SettingsSliceActions {
   setFontScale: (scale: number) => void;
   /** Toggle high-contrast mode and persist to storage */
   setHighContrast: (value: boolean) => void;
+  /** Update the extra resume CLI arguments */
+  setResumeExtraArgs: (value: string) => void;
 }
 
 export type SettingsSlice = SettingsSliceState & SettingsSliceActions;
@@ -37,4 +41,5 @@ export type SettingsSlice = SettingsSliceState & SettingsSliceActions;
 export const initialSettingsState: SettingsSliceState = {
   fontScale: 100,
   highContrast: false,
+  resumeExtraArgs: "",
 };

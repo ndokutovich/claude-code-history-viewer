@@ -21,6 +21,7 @@ import { ThemeMenuGroup } from "./ThemeMenuGroup";
 import { LanguageMenuGroup } from "./LanguageMenuGroup";
 import { FilterMenuGroup } from "./FilterMenuGroup";
 import { FontMenuGroup } from "./FontMenuGroup";
+import { ResumeArgsMenuGroup } from "./ResumeArgsMenuGroup";
 import { AccessibilityMenuGroup } from "./AccessibilityMenuGroup";
 
 export const SettingDropdown = memo(() => {
@@ -75,6 +76,9 @@ export const SettingDropdown = memo(() => {
 
           <DropdownMenuSeparator />
           <FontMenuGroup />
+
+          <DropdownMenuSeparator />
+          <ResumeArgsMenuGroup />
 
           <DropdownMenuSeparator />
           <AccessibilityMenuGroup />

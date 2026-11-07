@@ -13,6 +13,7 @@ import { useTheme } from "@/contexts/theme";
 import { filterMessages } from "@/utils/messageFilters";
 import { downloadDir, join } from "@tauri-apps/api/path";
 import { createFileActions } from "@/utils/fileActions";
+import { parseResumeExtraArgs } from "@/utils/providers";
 
 interface ExportControlsProps {
   messages: UIMessage[];
@@ -28,6 +29,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
   const [isFixingSession, setIsFixingSession] = useState(false);
   const [isResuming, setIsResuming] = useState(false);
   const [supportsResume, setSupportsResume] = useState(false);
+  const resumeExtraArgs = useAppStore((state) => state.resumeExtraArgs);
 
   // Get current view mode, theme, and pagination state from app settings
   const { messageViewMode, messageFilters, pagination, loadAllMessages, refreshCurrentSession } = useAppStore();
@@ -159,6 +161,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
           sessionId: sessionIdentifier,
           cwd,
           providerId: session.providerId || "claude-code",
+          extraArgs: parseResumeExtraArgs(resumeExtraArgs),
         });
         await writeText(resumeCommand);
         toast.success(t("export.resumeCommandCopied"));
@@ -168,6 +171,7 @@ export function ExportControls({ messages, session }: ExportControlsProps) {
           sessionId: sessionIdentifier,
           cwd,
           providerId: session.providerId || "claude-code",
+          extraArgs: parseResumeExtraArgs(resumeExtraArgs),
         });
         toast.success(t("export.sessionResumed"));
       }

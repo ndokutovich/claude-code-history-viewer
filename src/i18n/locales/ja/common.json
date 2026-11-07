@@ -325,7 +325,12 @@
     },
     "checkUpdate": "アップデートを確認",
     "checking": "確認中...",
-    "updateSettings": "アップデート設定"
+    "updateSettings": "アップデート設定",
+    "resumeArgs": {
+      "title": "再開時の CLI 引数",
+      "hint": "再開コマンドに追加されます",
+      "invalid": "--fast や --model=sonnet のようなフラグのみ保持されます"
+    }
   },
   "settingsManager": "設定マネージャー",
   "status.detectingSources": "ソースを検出中",

@@ -15,11 +15,67 @@ use serde_json::Value;
 #[allow(unused_imports)]
 use std::os::windows::process::CommandExt;
 
+/// Maximum number of extra CLI arguments a user may append.
+const MAX_EXTRA_ARGS: usize = 32;
+/// Maximum length of a single extra argument.
+const MAX_EXTRA_ARG_LEN: usize = 128;
+
+/// Validate caller-supplied extra CLI arguments (upstream #595).
+///
+/// These are concatenated into a shell command that is pasted into a
+/// terminal, so only flag-shaped tokens survive: shell metacharacters,
+/// quotes, whitespace and control characters are rejected outright.
+pub fn validate_extra_args(args: &[String]) -> Result<Vec<String>, String> {
+    if args.len() > MAX_EXTRA_ARGS {
+        return Err(format!(
+            "CLI_EXTRA_ARGS_TOO_MANY: at most {MAX_EXTRA_ARGS} arguments are allowed"
+        ));
+    }
+
+    let mut validated = Vec::with_capacity(args.len());
+    for arg in args {
+        let trimmed = arg.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if trimmed.len() > MAX_EXTRA_ARG_LEN {
+            return Err(format!(
+                "CLI_EXTRA_ARG_TOO_LONG: maximum {MAX_EXTRA_ARG_LEN} characters: '{trimmed}'"
+            ));
+        }
+        if !trimmed.chars().all(|c| {
+            c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | '=' | '/' | ':' | ',' | '+')
+        }) {
+            return Err(format!(
+                "CLI_EXTRA_ARG_INVALID: '{trimmed}' may contain only letters, digits and -_./:,+="
+            ));
+        }
+        validated.push(trimmed.to_string());
+    }
+    Ok(validated)
+}
+
+/// Append validated extra arguments to a resume command.
+fn with_extra_args(command: String, extra: Option<&[String]>) -> Result<String, String> {
+    match extra {
+        None => Ok(command),
+        Some(args) => {
+            let validated = validate_extra_args(args)?;
+            Ok(if validated.is_empty() {
+                command
+            } else {
+                format!("{command} {}", validated.join(" "))
+            })
+        }
+    }
+}
+
 #[tauri::command]
 pub async fn resume_session(
     session_id: String,
     cwd: Option<String>,
     provider_id: String,
+    extra_args: Option<Vec<String>>,
 ) -> Result<(), String> {
     let working_directory = cwd.ok_or("No working directory found for this session")?;
 
@@ -55,6 +111,7 @@ pub async fn resume_session(
     let resume_command = capabilities
         .build_resume_command(&session_uuid)
         .ok_or_else(|| format!("Failed to build resume command for provider: {}", provider_id))?;
+    let resume_command = with_extra_args(resume_command, extra_args.as_deref())?;
 
     println!("DEBUG: Executing command: {}", resume_command);
     open_terminal_with_command(&working_directory, &resume_command)?;
@@ -68,6 +125,7 @@ pub async fn get_resume_command(
     session_id: String,
     cwd: Option<String>,
     provider_id: String,
+    extra_args: Option<Vec<String>>,
 ) -> Result<String, String> {
     let working_directory = cwd.unwrap_or_else(|| ".".to_string());
 
@@ -103,6 +161,7 @@ pub async fn get_resume_command(
     let resume_command = capabilities
         .build_resume_command(&session_uuid)
         .ok_or_else(|| format!("Failed to build resume command for provider: {}", provider_id))?;
+    let resume_command = with_extra_args(resume_command, extra_args.as_deref())?;
 
     Ok(format!(
         "cd {} && {}",
@@ -489,5 +548,56 @@ fn find_common_file_prefix(paths: &[String]) -> String {
         prefix[..last_slash].to_string()
     } else {
         String::new()
+    }
+}
+
+#[cfg(test)]
+mod extra_args_tests {
+    use super::*;
+
+    #[test]
+    fn accepts_flag_shaped_arguments() {
+        let args = vec![
+            "--dangerously-skip-permissions".to_string(),
+            "-c".to_string(),
+            "--model=sonnet".to_string(),
+        ];
+        assert_eq!(validate_extra_args(&args).unwrap(), args);
+    }
+
+    #[test]
+    fn rejects_shell_metacharacters() {
+        for bad in ["a;b", "a&&b", "a|b", "$(id)", "`id`", "a>b", "a b", "a\"b", "a'b", "a	b"] {
+            let err = validate_extra_args(&[bad.to_string()])
+                .expect_err(&format!("{bad} must be rejected"));
+            assert!(err.contains("CLI_EXTRA_ARG_INVALID"), "got: {err}");
+        }
+    }
+
+    #[test]
+    fn rejects_too_many_or_too_long() {
+        let many: Vec<String> = (0..33).map(|i| format!("--f{i}")).collect();
+        assert!(validate_extra_args(&many).unwrap_err().contains("TOO_MANY"));
+
+        let long = vec![format!("--{}", "x".repeat(MAX_EXTRA_ARG_LEN))];
+        assert!(validate_extra_args(&long).unwrap_err().contains("TOO_LONG"));
+    }
+
+    #[test]
+    fn drops_empty_arguments() {
+        let args = vec!["  ".to_string(), "--fast".to_string()];
+        assert_eq!(validate_extra_args(&args).unwrap(), vec!["--fast".to_string()]);
+    }
+
+    #[test]
+    fn appends_validated_arguments_to_the_command() {
+        let command = "claude --resume abc".to_string();
+        let extra = Some(vec!["--fast".to_string(), "--model=sonnet".to_string()]);
+        assert_eq!(
+            with_extra_args(command.clone(), extra.as_deref()).unwrap(),
+            "claude --resume abc --fast --model=sonnet"
+        );
+        assert_eq!(with_extra_args(command.clone(), None).unwrap(), command);
+        assert_eq!(with_extra_args(command.clone(), Some(&[])).unwrap(), command);
     }
 }

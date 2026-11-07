@@ -325,7 +325,12 @@
       "title": "Язык",
       "description": "Выберите предпочитаемый язык"
     },
-    "checkUpdate": "Проверить обновления"
+    "checkUpdate": "Проверить обновления",
+    "resumeArgs": {
+      "title": "Аргументы CLI при возобновлении",
+      "hint": "Добавляются к команде resume",
+      "invalid": "Сохраняются только флаги вида --fast или --model=sonnet"
+    }
   },
   "settingsManager": "Менеджер настроек",
   "status.detectingSources": "Обнаружение источников",
