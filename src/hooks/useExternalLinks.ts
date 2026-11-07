@@ -20,7 +20,6 @@ export function useExternalLinks(
       const href = anchor.getAttribute("href");
       if (!href) return;
 
-      // Only intercept external http(s) links
       if (href.startsWith("http://") || href.startsWith("https://")) {
         e.preventDefault();
         e.stopPropagation();
@@ -29,7 +28,23 @@ export function useExternalLinks(
         } catch (err) {
           console.error("Failed to open external URL:", err);
         }
+        return;
       }
+
+      // Never let the WebView navigate away from the app: a relative path, a
+      // file:// URL or a bare path in a transcript is a reference, not a
+      // destination (upstream #602). In-page anchors still scroll, and
+      // programmatic blob:/data: downloads keep working.
+      const isInPageAnchor = href.startsWith("#");
+      const hasDownload = anchor.hasAttribute("download");
+      const isDownloadableScheme =
+        href.startsWith("blob:") || href.startsWith("data:");
+      if (isInPageAnchor || (hasDownload && isDownloadableScheme)) {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
     };
 
     container.addEventListener("click", handleClick, true);
