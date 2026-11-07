@@ -7,7 +7,7 @@ use rayon::prelude::*;
 use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
 // ============================================================================
@@ -54,6 +54,7 @@ struct GlobalStatsLogEntry {
     #[serde(rename = "type")]
     message_type: String,
     timestamp: Option<String>,
+    uuid: Option<String>,
     #[serde(rename = "isSidechain")]
     is_sidechain: Option<bool>,
     message: Option<GlobalStatsMessageContent>,
@@ -67,6 +68,7 @@ struct GlobalStatsLogEntry {
 struct GlobalStatsMessageContent {
     #[allow(dead_code)]
     role: String,
+    id: Option<String>,
     content: Option<serde_json::Value>,
     model: Option<String>,
     usage: Option<TokenUsage>,
@@ -170,19 +172,58 @@ fn token_usage_has_token_fields(usage: &TokenUsage) -> bool {
         || usage.cache_read_input_tokens.is_some()
 }
 
-fn token_usage_totals(usage: &TokenUsage) -> (u64, u64, u64, u64, u64) {
-    let input_tokens = u64::from(usage.input_tokens.unwrap_or(0));
-    let output_tokens = u64::from(usage.output_tokens.unwrap_or(0));
-    let cache_creation_tokens = u64::from(usage.cache_creation_input_tokens.unwrap_or(0));
-    let cache_read_tokens = u64::from(usage.cache_read_input_tokens.unwrap_or(0));
-    let total_tokens = input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens;
-    (
-        input_tokens,
-        output_tokens,
-        cache_creation_tokens,
-        cache_read_tokens,
-        total_tokens,
-    )
+/// Counts a streamed assistant turn once.
+///
+/// Claude Code writes one assistant turn as several JSONL rows that share
+/// `message.id`. Input and cache usage repeat on every row while output grows
+/// row by row, so summing rows counts the input N times — 94% overcount on a
+/// real 2.3 GB session. The first row of an identity contributes its full
+/// usage; later rows contribute only their per-field growth over the maximum
+/// already seen, so a turn's final usage lands exactly once regardless of the
+/// row order (upstream #575/#585).
+#[derive(Default)]
+struct UsageDedup {
+    seen: HashMap<String, (u64, u64, u64, u64)>,
+}
+
+impl UsageDedup {
+    /// Per-field growth of this row in
+    /// `(input, output, cache_creation, cache_read)`.
+    ///
+    /// A row without a message id cannot be matched to a turn, so it is
+    /// counted in full.
+    fn growth(&mut self, identity: Option<&str>, usage: &TokenUsage) -> (u64, u64, u64, u64) {
+        let current = (
+            u64::from(usage.input_tokens.unwrap_or(0)),
+            u64::from(usage.output_tokens.unwrap_or(0)),
+            u64::from(usage.cache_creation_input_tokens.unwrap_or(0)),
+            u64::from(usage.cache_read_input_tokens.unwrap_or(0)),
+        );
+
+        let Some(identity) = identity.filter(|key| !key.is_empty()) else {
+            return current;
+        };
+
+        let seen = self.seen.entry(identity.to_string()).or_insert((0, 0, 0, 0));
+        let mut growth = (0u64, 0u64, 0u64, 0u64);
+        if current.0 > seen.0 {
+            growth.0 = current.0 - seen.0;
+            seen.0 = current.0;
+        }
+        if current.1 > seen.1 {
+            growth.1 = current.1 - seen.1;
+            seen.1 = current.1;
+        }
+        if current.2 > seen.2 {
+            growth.2 = current.2 - seen.2;
+            seen.2 = current.2;
+        }
+        if current.3 > seen.3 {
+            growth.3 = current.3 - seen.3;
+            seen.3 = current.3;
+        }
+        growth
+    }
 }
 
 fn should_include_stats_entry(
@@ -676,6 +717,7 @@ fn process_session_file_for_global_stats(
     };
 
     let mut session_timestamps: Vec<DateTime<Utc>> = Vec::new();
+    let mut usage_dedup = UsageDedup::default();
 
     // Use SIMD-accelerated line detection
     let line_ranges = find_line_ranges(&mmap);
@@ -707,8 +749,14 @@ fn process_session_file_for_global_stats(
         }
 
         stats.total_messages = stats.total_messages.saturating_add(1);
-        let (input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, tokens) =
-            token_usage_totals(&usage);
+        let identity = entry
+            .message
+            .as_ref()
+            .and_then(|message| message.id.as_deref())
+            .or(entry.uuid.as_deref());
+        let (input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens) =
+            usage_dedup.growth(identity, &usage);
+        let tokens = input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens;
 
         stats.total_tokens += tokens;
         stats.token_distribution.input += input_tokens;
@@ -800,6 +848,7 @@ fn process_session_file_for_project_stats(
 
     let mut stats = ProjectSessionFileStats::default();
     let mut session_timestamps: Vec<DateTime<Utc>> = Vec::new();
+    let mut usage_dedup = UsageDedup::default();
 
     // Use SIMD-accelerated line detection
     let line_ranges = find_line_ranges(&mmap);
@@ -828,8 +877,10 @@ fn process_session_file_for_project_stats(
                 }
 
                 stats.total_messages += 1;
-                let (input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, tokens) =
-                    token_usage_totals(&usage);
+                let identity = message.message_id.as_deref().or(Some(message.uuid.as_str()));
+                let (input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens) =
+                    usage_dedup.growth(identity, &usage);
+                let tokens = input_tokens + output_tokens + cache_creation_tokens + cache_read_tokens;
 
                 stats.token_distribution.input += input_tokens;
                 stats.token_distribution.output += output_tokens;
@@ -897,6 +948,7 @@ fn process_session_file_for_comparison(
     let mut session_id: Option<String> = None;
     let mut total_tokens: u64 = 0;
     let mut message_count: usize = 0;
+    let mut usage_dedup = UsageDedup::default();
     let mut first_time: Option<DateTime<Utc>> = None;
     let mut last_time: Option<DateTime<Utc>> = None;
 
@@ -932,10 +984,10 @@ fn process_session_file_for_comparison(
 
                 message_count += 1;
 
-                total_tokens += u64::from(usage.input_tokens.unwrap_or(0))
-                    + u64::from(usage.output_tokens.unwrap_or(0))
-                    + u64::from(usage.cache_creation_input_tokens.unwrap_or(0))
-                    + u64::from(usage.cache_read_input_tokens.unwrap_or(0));
+                let identity = message.message_id.as_deref().or(Some(message.uuid.as_str()));
+                let (input, output, cache_creation, cache_read) =
+                    usage_dedup.growth(identity, &usage);
+                total_tokens += input + output + cache_creation + cache_read;
 
                 if let Some(timestamp) = parsed_ts {
                     if first_time
@@ -1002,6 +1054,7 @@ fn extract_session_token_stats_sync(
     let mut ai_title: Option<String> = None;
     let mut tool_usage: HashMap<String, (u32, u32)> = HashMap::new();
     let mut included_message_count = 0usize;
+    let mut usage_dedup = UsageDedup::default();
 
     // Use SIMD-accelerated line detection
     let line_ranges = find_line_ranges(&mmap);
@@ -1050,11 +1103,13 @@ fn extract_session_token_stats_sync(
 
                 included_message_count += 1;
 
-                total_input_tokens += u64::from(usage.input_tokens.unwrap_or(0));
-                total_output_tokens += u64::from(usage.output_tokens.unwrap_or(0));
-                total_cache_creation_tokens +=
-                    u64::from(usage.cache_creation_input_tokens.unwrap_or(0));
-                total_cache_read_tokens += u64::from(usage.cache_read_input_tokens.unwrap_or(0));
+                let identity = message.message_id.as_deref().or(Some(message.uuid.as_str()));
+                let (input, output, cache_creation, cache_read) =
+                    usage_dedup.growth(identity, &usage);
+                total_input_tokens += input;
+                total_output_tokens += output;
+                total_cache_creation_tokens += cache_creation;
+                total_cache_read_tokens += cache_read;
 
                 if let Some(ts) = parsed_timestamp {
                     let should_set_first = first_time
@@ -1076,6 +1131,35 @@ fn extract_session_token_stats_sync(
 
                 // Track tool usage
                 track_tool_usage(&message, &mut tool_usage);
+            }
+        }
+    }
+
+    // A session's sub-agent runs are billed to it, not to sessions of their
+    // own (upstream #577/#594). Only `billing_total` absorbs them.
+    if mode.include_sidechain() {
+        for sub_path in subagent_transcripts(session_path) {
+            let Some(sub) = scan_transcript_totals(&sub_path, mode, s_limit, e_limit) else {
+                continue;
+            };
+
+            total_input_tokens += sub.input;
+            total_output_tokens += sub.output;
+            total_cache_creation_tokens += sub.cache_creation;
+            total_cache_read_tokens += sub.cache_read;
+            included_message_count += sub.message_count;
+
+            for (name, (used, ok)) in sub.tool_usage {
+                let entry = tool_usage.entry(name).or_insert((0, 0));
+                entry.0 += used;
+                entry.1 += ok;
+            }
+
+            if is_earlier(sub.first_time.as_deref(), first_time.as_deref()) {
+                first_time = sub.first_time;
+            }
+            if is_later(sub.last_time.as_deref(), last_time.as_deref()) {
+                last_time = sub.last_time;
             }
         }
     }
@@ -1104,6 +1188,146 @@ fn extract_session_token_stats_sync(
         summary: ai_title.or(summary),
         most_used_tools: build_tool_usage_stats(tool_usage),
     })
+}
+
+/// Whether `path` lies inside a `subagents` directory.
+///
+/// Claude Code keeps a session's sub-agent runs under
+/// `<session-uuid>/subagents/` (workflows add one level: `subagents/workflows/wf_*`).
+fn is_subagent_transcript(path: &Path) -> bool {
+    path.components()
+        .any(|component| component.as_os_str() == "subagents")
+}
+
+/// Every `.jsonl` transcript under a project, sub-agent runs included.
+fn collect_session_files(project_path: &str) -> Vec<PathBuf> {
+    WalkDir::new(project_path)
+        .into_iter()
+        .filter_map(std::result::Result::ok)
+        .filter(|entry| entry.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
+        .map(|entry| entry.path().to_path_buf())
+        .collect()
+}
+
+/// Top-level transcripts only — the ones that own a session.
+fn collect_session_heads(project_path: &str) -> Vec<PathBuf> {
+    collect_session_files(project_path)
+        .into_iter()
+        .filter(|path| !is_subagent_transcript(path))
+        .collect()
+}
+
+/// Sub-agent transcripts belonging to a session file.
+fn subagent_transcripts(session_path: &Path) -> Vec<PathBuf> {
+    let root = session_path.with_extension("").join("subagents");
+    if !root.is_dir() {
+        return Vec::new();
+    }
+
+    WalkDir::new(&root)
+        .into_iter()
+        .filter_map(std::result::Result::ok)
+        .filter(|entry| entry.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
+        .map(|entry| entry.path().to_path_buf())
+        .collect()
+}
+
+/// Totals of one transcript file, in the shape a parent session can absorb.
+#[derive(Default)]
+struct TranscriptTotals {
+    input: u64,
+    output: u64,
+    cache_creation: u64,
+    cache_read: u64,
+    message_count: usize,
+    tool_usage: HashMap<String, (u32, u32)>,
+    first_time: Option<String>,
+    last_time: Option<String>,
+}
+
+#[allow(unsafe_code)] // Required for mmap performance optimization
+fn scan_transcript_totals(
+    session_path: &Path,
+    mode: StatsMode,
+    s_limit: Option<&DateTime<Utc>>,
+    e_limit: Option<&DateTime<Utc>>,
+) -> Option<TranscriptTotals> {
+    let file = fs::File::open(session_path).ok()?;
+
+    // SAFETY: read-only mapping kept alive by `file` for the mmap's lifetime.
+    let mmap = unsafe { Mmap::map(&file) }.ok()?;
+
+    let mut totals = TranscriptTotals::default();
+    let mut usage_dedup = UsageDedup::default();
+
+    for (start, end) in find_line_ranges(&mmap) {
+        let mut line_bytes = mmap[start..end].to_vec();
+
+        let Some(log_entry) = parse_raw_log_entry_simd(&mut line_bytes) else {
+            continue;
+        };
+        let Ok(message) = ClaudeMessage::try_from(log_entry) else {
+            continue;
+        };
+
+        let usage = extract_token_usage(&message);
+        let has_usage = token_usage_has_token_fields(&usage);
+        if !should_include_stats_entry(
+            &message.message_type,
+            message.is_sidechain,
+            has_usage,
+            mode,
+        ) {
+            continue;
+        }
+
+        let parsed_timestamp = parse_timestamp_utc(&message.timestamp);
+        if !is_within_date_limits(parsed_timestamp, s_limit, e_limit) {
+            continue;
+        }
+
+        totals.message_count += 1;
+
+        let identity = message.message_id.as_deref().or(Some(message.uuid.as_str()));
+        let (input, output, cache_creation, cache_read) = usage_dedup.growth(identity, &usage);
+        totals.input += input;
+        totals.output += output;
+        totals.cache_creation += cache_creation;
+        totals.cache_read += cache_read;
+
+        if is_earlier(Some(message.timestamp.as_str()), totals.first_time.as_deref()) {
+            totals.first_time = Some(message.timestamp.clone());
+        }
+        if is_later(Some(message.timestamp.as_str()), totals.last_time.as_deref()) {
+            totals.last_time = Some(message.timestamp.clone());
+        }
+
+        track_tool_usage(&message, &mut totals.tool_usage);
+    }
+
+    Some(totals)
+}
+
+fn is_earlier(candidate: Option<&str>, current: Option<&str>) -> bool {
+    match (
+        candidate.and_then(parse_timestamp_utc),
+        current.and_then(parse_timestamp_utc),
+    ) {
+        (Some(new), Some(old)) => new < old,
+        (Some(_), None) => true,
+        _ => false,
+    }
+}
+
+fn is_later(candidate: Option<&str>, current: Option<&str>) -> bool {
+    match (
+        candidate.and_then(parse_timestamp_utc),
+        current.and_then(parse_timestamp_utc),
+    ) {
+        (Some(new), Some(old)) => new > old,
+        (Some(_), None) => true,
+        _ => false,
+    }
 }
 
 #[allow(dead_code)] // Reserved for future Codex/Gemini provider stats
@@ -1357,13 +1581,9 @@ pub async fn get_project_token_stats(
     let offset = offset.unwrap_or(0);
     let limit = limit.unwrap_or(20);
 
-    // Collect all session files
-    let session_files: Vec<PathBuf> = WalkDir::new(&project_path)
-        .into_iter()
-        .filter_map(std::result::Result::ok)
-        .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
-        .map(|e| e.path().to_path_buf())
-        .collect();
+    // Heads only: a session's sub-agent runs are folded into it, not listed
+    // as sessions of their own (#577/#594).
+    let session_files = collect_session_heads(&project_path);
 
     // Parse date limits before parallel processing
     let s_limit = parse_date_limit(start_date, "start_date");
@@ -1432,19 +1652,17 @@ pub async fn get_project_stats_summary(
     let e_limit = parse_date_limit(end_date, "end_date");
 
     // Phase 1: Collect all session files
-    let session_files: Vec<PathBuf> = WalkDir::new(&project_path)
-        .into_iter()
-        .filter_map(std::result::Result::ok)
-        .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
-        .map(|e| e.path().to_path_buf())
-        .collect();
+    let session_files = collect_session_files(&project_path);
     let scan_time = start.elapsed();
 
-    // Phase 2: Process all session files in parallel with per-message date filtering
-    let file_stats: Vec<ProjectSessionFileStats> = session_files
+    // Phase 2: Process all session files in parallel with per-message date filtering.
+    // Sub-agent runs are kept here — their tokens belong to the project — but
+    // they are not sessions, so session-shaped metrics count heads only.
+    let file_stats: Vec<(PathBuf, ProjectSessionFileStats)> = session_files
         .par_iter()
         .filter_map(|path| {
             process_session_file_for_project_stats(path, mode, s_limit.as_ref(), e_limit.as_ref())
+                .map(|stats| (path.clone(), stats))
         })
         .collect();
     let process_time = start.elapsed();
@@ -1452,7 +1670,10 @@ pub async fn get_project_stats_summary(
     // Phase 3: Aggregate results
     let mut summary = ProjectStatsSummary {
         project_name,
-        total_sessions: file_stats.len(),
+        total_sessions: file_stats
+            .iter()
+            .filter(|(path, _)| !is_subagent_transcript(path))
+            .count(),
         ..Default::default()
     };
 
@@ -1462,7 +1683,7 @@ pub async fn get_project_stats_summary(
     let mut activity_map: HashMap<(u8, u8), (u32, u64)> = HashMap::new();
     let mut session_count_by_date: HashMap<String, usize> = HashMap::new();
 
-    for stats in file_stats {
+    for (path, stats) in file_stats {
         summary.total_messages += stats.total_messages as usize;
 
         // Aggregate token distribution
@@ -1499,14 +1720,16 @@ pub async fn get_project_stats_summary(
             entry.1 += tokens;
         }
 
-        // Aggregate per-day session counts
-        for date in stats.session_dates {
-            *session_count_by_date.entry(date).or_insert(0) += 1;
-        }
+        // Session-shaped metrics count owners only: a sub-agent file is part
+        // of its session, not a session (upstream #577/#594).
+        if !is_subagent_transcript(&path) {
+            for date in stats.session_dates {
+                *session_count_by_date.entry(date).or_insert(0usize) += 1;
+            }
 
-        // Collect session duration
-        if stats.session_duration_minutes > 0 {
-            session_durations.push(stats.session_duration_minutes);
+            if stats.session_duration_minutes > 0 {
+                session_durations.push(stats.session_duration_minutes);
+            }
         }
     }
 
@@ -1582,13 +1805,9 @@ pub async fn get_session_comparison(
     let s_limit = parse_date_limit(start_date, "start_date");
     let e_limit = parse_date_limit(end_date, "end_date");
 
-    // Phase 1: Collect all session files
-    let session_files: Vec<PathBuf> = WalkDir::new(&project_path)
-        .into_iter()
-        .filter_map(std::result::Result::ok)
-        .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
-        .map(|e| e.path().to_path_buf())
-        .collect();
+    // Phase 1: Collect session heads — a sub-agent file carries its parent's
+    // session id and would shadow it in the ranking (#577/#594).
+    let session_files = collect_session_heads(&project_path);
     let scan_time = start.elapsed();
 
     // Phase 2: Process all session files in parallel with per-message date filtering
@@ -1712,13 +1931,7 @@ pub async fn get_global_stats_summary(
                         .to_string();
                     project_names.insert(format!("claude:{project_name}"));
 
-                    for entry in WalkDir::new(&project_path)
-                        .into_iter()
-                        .filter_map(std::result::Result::ok)
-                        .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
-                    {
-                        session_files.push(entry.path().to_path_buf());
-                    }
+                    session_files.extend(collect_session_files(&project_path.to_string_lossy()));
                 }
             }
             Err(e) => {
@@ -1730,9 +1943,12 @@ pub async fn get_global_stats_summary(
     // Phase 2: Process all Claude session files in parallel
     let s_ref = s_limit.as_ref();
     let e_ref = e_limit.as_ref();
-    let file_stats: Vec<SessionFileStats> = session_files
+    let file_stats: Vec<(PathBuf, SessionFileStats)> = session_files
         .par_iter()
-        .filter_map(|path| process_session_file_for_global_stats(path, mode, s_ref, e_ref))
+        .filter_map(|path| {
+            process_session_file_for_global_stats(path, mode, s_ref, e_ref)
+                .map(|stats| (path.clone(), stats))
+        })
         .collect();
 
     // NOTE: Codex and Gemini providers are not yet supported for global stats
@@ -1748,12 +1964,12 @@ pub async fn get_global_stats_summary(
     // When date filtering is active, exclude sessions that ended up with zero messages
     let mut file_stats = file_stats;
     if s_ref.is_some() || e_ref.is_some() {
-        file_stats.retain(|s| s.total_messages > 0);
+        file_stats.retain(|(_, stats)| stats.total_messages > 0);
     }
 
     let active_project_keys: HashSet<String> = file_stats
         .iter()
-        .map(|stats| {
+        .map(|(_, stats)| {
             format!(
                 "{}:{}",
                 stats_provider_id(stats.provider),
@@ -1765,7 +1981,10 @@ pub async fn get_global_stats_summary(
     // Phase 3: Aggregate results
     let mut summary = GlobalStatsSummary {
         total_projects: active_project_keys.len() as u32,
-        total_sessions: file_stats.len() as u32,
+        total_sessions: file_stats
+            .iter()
+            .filter(|(path, _)| !is_subagent_transcript(path))
+            .count() as u32,
         ..Default::default()
     };
 
@@ -1779,13 +1998,16 @@ pub async fn get_global_stats_summary(
     let mut global_first_message: Option<DateTime<Utc>> = None;
     let mut global_last_message: Option<DateTime<Utc>> = None;
 
-    for stats in file_stats {
+    for (path, stats) in file_stats {
         let provider = stats.provider;
         let project_name = stats.project_name.clone();
+        let is_head = !is_subagent_transcript(&path);
 
         summary.total_messages += stats.total_messages;
         summary.total_tokens += stats.total_tokens;
-        summary.total_session_duration_minutes += stats.session_duration_minutes;
+        if is_head {
+            summary.total_session_duration_minutes += stats.session_duration_minutes;
+        }
 
         // Aggregate token distribution
         summary.token_distribution.input += stats.token_distribution.input;
@@ -1836,7 +2058,9 @@ pub async fn get_global_stats_summary(
 
         // Aggregate provider stats
         let provider_entry = provider_stats_map.entry(provider).or_insert((0, 0, 0));
-        provider_entry.0 += 1; // sessions
+        if is_head {
+            provider_entry.0 += 1; // sessions
+        }
         provider_entry.1 += stats.total_messages; // messages
         provider_entry.2 += stats.total_tokens; // tokens
 
@@ -1847,7 +2071,9 @@ pub async fn get_global_stats_summary(
 
         // Aggregate project stats
         let project_entry = project_stats_map.entry(project_name).or_insert((0, 0, 0));
-        project_entry.0 += 1; // sessions
+        if is_head {
+            project_entry.0 += 1; // sessions
+        }
         project_entry.1 += stats.total_messages; // messages
         project_entry.2 += stats.total_tokens; // tokens
 
@@ -2410,5 +2636,113 @@ mod ai_title_stats_tests {
         let stats = extract_session_token_stats_sync(&path, StatsMode::BillingTotal, None, None)
             .expect("stats extract");
         assert_eq!(stats.summary.as_deref(), Some("legacy summary"));
+    }
+}
+
+#[cfg(test)]
+mod streamed_usage_tests {
+    use super::*;
+
+    fn usage(input: u32, output: u32, cache_read: u32) -> TokenUsage {
+        TokenUsage {
+            input_tokens: Some(input),
+            output_tokens: Some(output),
+            cache_creation_input_tokens: Some(0),
+            cache_read_input_tokens: Some(cache_read),
+            service_tier: None,
+        }
+    }
+
+    fn write_session(lines: &[String]) -> (tempfile::TempDir, PathBuf) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("s1.jsonl");
+        std::fs::write(&path, lines.join("\n") + "\n").unwrap();
+        (dir, path)
+    }
+
+    fn assistant_row(uuid: &str, message_id: &str, usage: &str) -> String {
+        format!(
+            r#"{{"type":"assistant","sessionId":"s1","uuid":"{uuid}","timestamp":"2026-01-01T00:00:00Z","message":{{"role":"assistant","content":[],"id":"{message_id}","model":"claude-x","usage":{usage}}}}}"#
+        )
+    }
+
+    #[test]
+    fn growth_is_per_field_and_only_counts_increases() {
+        let mut dedup = UsageDedup::default();
+        assert_eq!(dedup.growth(Some("m1"), &usage(1000, 10, 5000)), (1000, 10, 0, 5000));
+        // Same turn, later row: input repeats, output grows.
+        assert_eq!(dedup.growth(Some("m1"), &usage(1000, 25, 5000)), (0, 15, 0, 0));
+        assert_eq!(dedup.growth(Some("m1"), &usage(1000, 60, 5000)), (0, 35, 0, 0));
+        // A row without an identity is counted in full.
+        assert_eq!(dedup.growth(None, &usage(7, 1, 0)), (7, 1, 0, 0));
+    }
+
+    #[test]
+    fn streamed_turn_counts_its_final_usage_once() {
+        let rows = vec![
+            assistant_row("u1", "msg_1", r#"{"input_tokens":1000,"output_tokens":10,"cache_creation_input_tokens":0,"cache_read_input_tokens":5000}"#),
+            assistant_row("u2", "msg_1", r#"{"input_tokens":1000,"output_tokens":25,"cache_creation_input_tokens":0,"cache_read_input_tokens":5000}"#),
+            assistant_row("u3", "msg_1", r#"{"input_tokens":1000,"output_tokens":60,"cache_creation_input_tokens":0,"cache_read_input_tokens":5000}"#),
+        ];
+        let (_dir, path) = write_session(&rows);
+
+        let stats = extract_session_token_stats_sync(&path, StatsMode::BillingTotal, None, None)
+            .expect("stats extract");
+        assert_eq!(stats.total_input_tokens, 1000);
+        assert_eq!(stats.total_output_tokens, 60);
+        assert_eq!(stats.total_cache_read_tokens, 5000);
+    }
+
+    #[test]
+    fn subagent_runs_bill_to_their_session_and_are_not_sessions() {
+        let dir = tempfile::tempdir().unwrap();
+        let project = dir.path().join("proj");
+        std::fs::create_dir_all(project.join("s1").join("subagents")).unwrap();
+
+        let head = project.join("s1.jsonl");
+        std::fs::write(
+            &head,
+            assistant_row("u1", "msg_1", r#"{"input_tokens":100,"output_tokens":10,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}"#) + "\n",
+        )
+        .unwrap();
+        std::fs::write(
+            project.join("s1").join("subagents").join("agent-a.jsonl"),
+            assistant_row("a1", "msg_a", r#"{"input_tokens":50,"output_tokens":5,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}"#) + "\n",
+        )
+        .unwrap();
+
+        let stats = extract_session_token_stats_sync(&head, StatsMode::BillingTotal, None, None)
+            .expect("stats extract");
+        assert_eq!(stats.total_input_tokens, 150);
+        assert_eq!(stats.total_output_tokens, 15);
+
+        // Conversation-only mode leaves the sub-agent out.
+        let conversation = extract_session_token_stats_sync(
+            &head,
+            StatsMode::ConversationOnly,
+            None,
+            None,
+        )
+        .expect("stats extract");
+        assert_eq!(conversation.total_input_tokens, 100);
+
+        // The listing sees one session, not two.
+        let project_str = project.to_string_lossy().to_string();
+        assert_eq!(collect_session_files(&project_str).len(), 2);
+        assert_eq!(collect_session_heads(&project_str).len(), 1);
+    }
+
+    #[test]
+    fn distinct_turns_still_add_up() {
+        let rows = vec![
+            assistant_row("u1", "msg_1", r#"{"input_tokens":1000,"output_tokens":10,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}"#),
+            assistant_row("u2", "msg_2", r#"{"input_tokens":2000,"output_tokens":20,"cache_creation_input_tokens":0,"cache_read_input_tokens":0}"#),
+        ];
+        let (_dir, path) = write_session(&rows);
+
+        let stats = extract_session_token_stats_sync(&path, StatsMode::BillingTotal, None, None)
+            .expect("stats extract");
+        assert_eq!(stats.total_input_tokens, 3000);
+        assert_eq!(stats.total_output_tokens, 30);
     }
 }
