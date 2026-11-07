@@ -11,7 +11,8 @@ pub mod claude_code;
 pub mod gemini;
 pub mod codex;      // v1.8.0 - Codex CLI support
 pub mod opencode;   // v1.9.0 - OpenCode support
-pub mod cline;      // v1.9.x - Cline / Roo Code support
+pub mod cline;
+pub mod cline_sdk;      // v1.9.x - Cline / Roo Code support
 pub mod aider;      // v1.9.x - Aider chat history support
 pub mod forgecode;  // v1.9.x - ForgeCode support
 pub mod antigravity; // v1.9.x - Antigravity support

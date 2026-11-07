@@ -6,6 +6,7 @@
 //
 // PATTERN REFERENCE: src-tauri/src/commands/opencode.rs
 
+use crate::commands::adapters::cline_sdk;
 use crate::commands::adapters::cline::{
     cwd_for_task, get_cline_base_path, load_cline_messages as adapter_load_messages,
     load_cline_sessions as adapter_load_sessions, load_task_history, parse_scheme_path,
@@ -43,10 +44,14 @@ pub(crate) fn harden_cline_path(path: &Path) -> Result<PathBuf, String> {
 pub async fn get_cline_path() -> Result<String, String> {
     match get_cline_base_path() {
         Some(path) => Ok(path.to_string_lossy().to_string()),
-        None => Err(
-            "CLINE_FOLDER_NOT_FOUND: No Cline or Roo Code installation found in any supported editor."
-                .to_string(),
-        ),
+        // Current Cline releases write to the SDK store instead (#582/#589).
+        None => match cline_sdk::sessions_dir() {
+            Some(path) => Ok(path.to_string_lossy().to_string()),
+            None => Err(
+                "CLINE_FOLDER_NOT_FOUND: No Cline or Roo Code installation found in any supported editor."
+                    .to_string(),
+            ),
+        },
     }
 }
 
@@ -72,7 +77,12 @@ pub async fn validate_cline_folder(path: String) -> Result<bool, String> {
     let has_roo_index = base.join("tasks").join("_index.json").is_file();
     let has_tasks_dir = base.join("tasks").is_dir();
 
-    Ok(has_cline_history || has_roo_index || has_tasks_dir)
+    // SDK store: a `sessions` directory of `<id>/<id>.json` manifests, given
+    // either as the `sessions` dir itself or its parent.
+    let is_sdk_store = raw.file_name().and_then(|name| name.to_str()) == Some("sessions")
+        || raw.join("sessions").is_dir();
+
+    Ok(has_cline_history || has_roo_index || has_tasks_dir || is_sdk_store)
 }
 
 // ============================================================================
@@ -89,7 +99,16 @@ pub async fn scan_cline_projects(
     if !base.exists() {
         return Err(format!("CLINE_PATH_ERROR: Path does not exist: {}", cline_path));
     }
-    adapter_scan_projects(&base, &source_id)
+    let mut projects = adapter_scan_projects(&base, &source_id)?;
+
+    // The extension store and the SDK store may coexist; a user with only the
+    // new layout still gets projects (#589).
+    if let Some(root) = cline_sdk::sessions_dir() {
+        projects.extend(cline_sdk::scan_projects(&root, &source_id));
+        projects.sort_by(|a, b| b.last_activity_at.cmp(&a.last_activity_at));
+    }
+
+    Ok(projects)
 }
 
 /// Load sessions for one Cline/Roo project.
@@ -100,6 +119,13 @@ pub async fn load_cline_sessions(
     project_path: String,
     source_id: String,
 ) -> Result<Vec<UniversalSession>, String> {
+    if let Some(cwd) = project_path.strip_prefix(cline_sdk::PREFIX) {
+        let root = cline_sdk::sessions_dir()
+            .ok_or("CLINE_FOLDER_NOT_FOUND: Cline SDK session store not found")?;
+        let cwd = if cwd.is_empty() { None } else { Some(cwd) };
+        return Ok(cline_sdk::load_sessions(&root, cwd, &source_id));
+    }
+
     let (base, cwd) = parse_scheme_path(&project_path)?;
     let base = harden_cline_path(&base)?;
     adapter_load_sessions(&base, &cwd, &source_id)
@@ -114,6 +140,20 @@ pub async fn load_cline_messages(
     offset: usize,
     limit: usize,
 ) -> Result<Vec<UniversalMessage>, String> {
+    if let Some(session_id) = session_path.strip_prefix(cline_sdk::PREFIX) {
+        let root = cline_sdk::sessions_dir()
+            .ok_or("CLINE_FOLDER_NOT_FOUND: Cline SDK session store not found")?;
+        let source_id = format!("cline:{}", root.display());
+        return cline_sdk::load_messages(
+            &root,
+            session_id,
+            &session_path,
+            &source_id,
+            offset,
+            limit,
+        );
+    }
+
     let (base, task_id) = parse_scheme_path(&session_path)?;
     let base = harden_cline_path(&base)?;
     let source_id = format!("cline:{}", base.display());
