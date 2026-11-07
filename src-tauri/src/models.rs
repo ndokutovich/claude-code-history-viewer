@@ -103,6 +103,10 @@ pub struct SessionScanEntry {
     #[serde(rename = "gitCommit")]
     pub git_commit: Option<String>,
     pub summary: Option<String>,
+    /// Claude Code auto-generated session title from `{"type":"ai-title"}`
+    /// records; the last non-empty value wins (upstream #611).
+    #[serde(rename = "aiTitle")]
+    pub ai_title: Option<String>,
     #[serde(rename = "isSidechain")]
     pub is_sidechain: Option<bool>,
     /// Top-level originating client field written by Claude Code on each line

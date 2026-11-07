@@ -134,6 +134,7 @@ fn process_session_file(
 
     // Lightweight scan state — no ClaudeMessage allocation
     let mut session_summary: Option<String> = None;
+    let mut ai_title: Option<String> = None;
     let mut git_branch: Option<String> = None;
     let mut git_commit: Option<String> = None;
     let mut actual_session_id: Option<String> = None;
@@ -206,6 +207,19 @@ fn process_session_file(
             if session_summary.is_none() {
                 session_summary =
                     scan_entry.summary.map(|s| filter_preamble_from_title(&s));
+            }
+            continue;
+        }
+
+        // Claude Code's auto-generated title outranks legacy summaries and
+        // the first user message; the record repeats as the title is refined,
+        // so the LAST non-empty value wins (upstream #611).
+        if scan_entry.message_type == "ai-title" {
+            if let Some(t) = scan_entry.ai_title.as_deref() {
+                let t = t.trim();
+                if !t.is_empty() {
+                    ai_title = Some(t.to_string());
+                }
             }
             continue;
         }
@@ -332,12 +346,11 @@ fn process_session_file(
         false
     };
 
-    // --- Summary from first user message (only if no summary message found) ---
-    let final_summary = if session_summary.is_some() {
-        session_summary
-    } else {
-        extract_summary_from_raw_content(first_user_content_raw.as_deref())
-    };
+    // --- Title priority: ai-title > legacy summary > first user message ---
+    // (custom renames still override at the display layer via metadata)
+    let final_summary = ai_title
+        .or(session_summary)
+        .or_else(|| extract_summary_from_raw_content(first_user_content_raw.as_deref()));
 
     // --- Git info fallback from tool outputs ---
     let tool_outputs: Vec<String> = tool_result_raws
@@ -1469,6 +1482,49 @@ mod tests {
                 "expected `{ty}` to be classified as noise",
             );
         }
+    }
+
+    // ── Feature: auto-generated ai-title becomes the session title ────────
+    fn process_fixture(dir: &std::path::Path, lines: &[&str]) -> Option<ClaudeSession> {
+        use std::io::Write as _;
+        let file = dir.join("sess.jsonl");
+        let mut f = std::fs::File::create(&file).unwrap();
+        for line in lines {
+            writeln!(f, "{}", line).unwrap();
+        }
+        drop(f);
+        let entry = walkdir::WalkDir::new(&file).into_iter().next().unwrap().unwrap();
+        process_session_file(&entry, false, false)
+    }
+
+    #[test]
+    fn test_ai_title_last_wins_and_outranks_summary() {
+        let dir = tempfile::tempdir().unwrap();
+        let session = process_fixture(
+            dir.path(),
+            &[
+                r#"{"type":"user","sessionId":"s1","timestamp":"2026-01-01T00:00:00Z","message":{"role":"user","content":"first user msg"}}"#,
+                r#"{"type":"summary","summary":"legacy summary"}"#,
+                r#"{"type":"ai-title","aiTitle":"first title"}"#,
+                r#"{"type":"ai-title","aiTitle":"refined title"}"#,
+            ],
+        )
+        .expect("session parses");
+        assert_eq!(session.summary.as_deref(), Some("refined title"));
+    }
+
+    #[test]
+    fn test_summary_fallback_when_no_ai_title() {
+        let dir = tempfile::tempdir().unwrap();
+        let session = process_fixture(
+            dir.path(),
+            &[
+                r#"{"type":"user","sessionId":"s1","timestamp":"2026-01-01T00:00:00Z","message":{"role":"user","content":"first user msg"}}"#,
+                r#"{"type":"summary","summary":"legacy summary"}"#,
+            ],
+        )
+        .expect("session parses");
+        assert_eq!(session.summary.as_deref(), Some("legacy summary"));
     }
 
     #[test]
