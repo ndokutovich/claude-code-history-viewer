@@ -6,7 +6,15 @@
 //!
 //! This module only *lists* those files — nothing is parsed for messages here,
 //! and nothing outside the session's own folder is ever read.
+//!
+//! OpenCode has no sub-agent files: a Task run is a `session` row whose
+//! `parent_id` points at its parent, addressed as `opencode://<project>/<id>`
+//! (upstream #560).
 
+use crate::commands::adapters::opencode::{
+    get_opencode_base_path, is_safe_storage_id, load_child_sessions,
+};
+use crate::models::MessagePage;
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -122,6 +130,59 @@ pub fn list_transcripts(session_file: &Path) -> Vec<SubagentTranscript> {
     transcripts
 }
 
+/// `(project_id, session_id)` from an `opencode://` session id.
+fn split_opencode_uri(uri: &str) -> Option<(String, String)> {
+    let (project, session) = uri.strip_prefix("opencode://")?.split_once('/')?;
+    if !is_safe_storage_id(project) || !is_safe_storage_id(session) {
+        return None;
+    }
+    Some((project.to_string(), session.to_string()))
+}
+
+fn list_opencode_children(project_id: &str, parent_id: &str) -> Vec<SubagentTranscript> {
+    let Some(base) = get_opencode_base_path() else {
+        return Vec::new();
+    };
+
+    load_child_sessions(&base, parent_id)
+        .into_iter()
+        .map(|child| SubagentTranscript {
+            agent_id: child.id.clone(),
+            path: format!("opencode://{project_id}/{}", child.id),
+            kind: SubagentKind::Flat,
+            workflow: None,
+        })
+        .collect()
+}
+
+async fn load_opencode_child(
+    project_id: &str,
+    session_id: &str,
+    offset: usize,
+    limit: usize,
+) -> Result<MessagePage, String> {
+    let base = get_opencode_base_path()
+        .ok_or_else(|| "OPENCODE_PATH_ERROR: OpenCode data directory not found".to_string())?;
+
+    let messages = crate::commands::opencode::load_opencode_messages(
+        base.to_string_lossy().to_string(),
+        session_id.to_string(),
+        Some(project_id.to_string()),
+        None,
+        offset,
+        limit,
+    )
+    .await?;
+
+    let fetched = messages.len();
+    Ok(MessagePage {
+        messages,
+        total_count: offset + fetched,
+        has_more: limit > 0 && fetched == limit,
+        next_offset: offset + fetched,
+    })
+}
+
 /// Tauri command: list a session's sub-agent transcripts.
 #[tauri::command]
 pub async fn list_subagent_transcripts(
@@ -129,6 +190,11 @@ pub async fn list_subagent_transcripts(
 ) -> Result<Vec<SubagentTranscript>, String> {
     if session_path.contains('\0') {
         return Err("SUBAGENTS_BAD_PATH: path contains null bytes".to_string());
+    }
+    if session_path.starts_with("opencode://") {
+        let (project_id, session_id) = split_opencode_uri(&session_path)
+            .ok_or_else(|| "SUBAGENTS_BAD_PATH: malformed OpenCode session id".to_string())?;
+        return Ok(list_opencode_children(&project_id, &session_id));
     }
     let path = PathBuf::from(&session_path);
     if !path.is_absolute() {
@@ -150,6 +216,11 @@ pub async fn load_subagent_messages(
 ) -> Result<crate::models::MessagePage, String> {
     if transcript_path.contains(char::from(0)) {
         return Err("SUBAGENTS_BAD_PATH: path contains null bytes".to_string());
+    }
+    if transcript_path.starts_with("opencode://") {
+        let (project_id, session_id) = split_opencode_uri(&transcript_path)
+            .ok_or_else(|| "SUBAGENTS_BAD_PATH: malformed OpenCode session id".to_string())?;
+        return load_opencode_child(&project_id, &session_id, offset, limit).await;
     }
     let path = PathBuf::from(&transcript_path);
     if !path.is_absolute() {

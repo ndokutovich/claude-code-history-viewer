@@ -502,6 +502,47 @@ fn load_sessions_from_db(
 /// Load all messages for a session from the SQLite `message`/`part` tables.
 /// Each `data` column is parsed with the same structs as the JSON backend and
 /// converted via `opencode_message_to_universal`, so output is identical.
+/// A Task run: OpenCode keeps sub-agent runs as `session` rows whose
+/// `parent_id` points at the session that spawned them, so there is no
+/// `agent-*.jsonl` to scan (upstream #560).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OpenCodeChildSession {
+    pub id: String,
+    pub title: Option<String>,
+    pub message_count: i64,
+    pub time_created: i64,
+    pub time_updated: i64,
+}
+
+/// Child sessions of `parent_session_id`, oldest first.
+pub fn load_child_sessions(base_path: &Path, parent_session_id: &str) -> Vec<OpenCodeChildSession> {
+    let Some(conn) = open_opencode_db(base_path) else {
+        return Vec::new();
+    };
+    let Ok(mut stmt) = conn.prepare(
+        "SELECT s.id, s.title, \
+                (SELECT COUNT(*) FROM message m WHERE m.session_id = s.id) AS message_count, \
+                s.time_created, s.time_updated \
+         FROM session s WHERE s.parent_id = ?1 ORDER BY s.time_created",
+    ) else {
+        return Vec::new();
+    };
+
+    let Ok(rows) = stmt.query_map([parent_session_id], |row| {
+        Ok(OpenCodeChildSession {
+            id: row.get(0)?,
+            title: row.get(1).ok(),
+            message_count: row.get(2)?,
+            time_created: row.get(3)?,
+            time_updated: row.get(4)?,
+        })
+    }) else {
+        return Vec::new();
+    };
+
+    rows.filter_map(Result::ok).collect()
+}
+
 fn load_messages_from_db(
     base_path: &Path,
     session_id: &str,
@@ -1554,7 +1595,7 @@ mod tests {
             CREATE TABLE session (
                 id TEXT PRIMARY KEY, project_id TEXT NOT NULL, title TEXT NOT NULL,
                 time_created INTEGER NOT NULL, time_updated INTEGER NOT NULL,
-                directory TEXT NOT NULL DEFAULT ''
+                directory TEXT NOT NULL DEFAULT '', parent_id TEXT
             );
             CREATE TABLE message (
                 id TEXT PRIMARY KEY, session_id TEXT NOT NULL,
@@ -1735,6 +1776,36 @@ mod tests {
         let tokens = messages[1].tokens.as_ref().expect("tokens present");
         assert_eq!(tokens.input_tokens, 100);
         assert_eq!(tokens.output_tokens, 50);
+    }
+
+    #[test]
+    fn sqlite_child_sessions_come_from_parent_id() {
+        let tmp = tempfile::tempdir().unwrap();
+        create_seeded_db(tmp.path());
+
+        let conn = Connection::open(tmp.path().join("opencode.db")).expect("open test db");
+        conn.execute(
+            "INSERT INTO session (id, project_id, title, time_created, time_updated, parent_id) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            rusqlite::params![
+                "ses_child",
+                "proj1",
+                "Task: explore",
+                1_700_000_060_000_i64,
+                1_700_000_070_000_i64,
+                "ses_001"
+            ],
+        )
+        .unwrap();
+
+        let children = load_child_sessions(tmp.path(), "ses_001");
+        assert_eq!(children.len(), 1);
+        assert_eq!(children[0].id, "ses_child");
+        assert_eq!(children[0].title.as_deref(), Some("Task: explore"));
+        assert_eq!(children[0].message_count, 0);
+
+        // The child is not its own parent.
+        assert!(load_child_sessions(tmp.path(), "ses_child").is_empty());
     }
 
     #[test]
