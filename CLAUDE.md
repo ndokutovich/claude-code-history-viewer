@@ -504,6 +504,13 @@ Subsystems ported from upstream and their invariants:
 
 **Provider detection** (`src/store/useSourceStore.ts`) must stay O(1) adapter validates per provider: validate with the provider's own adapter (`adapterRegistry.tryGet(id)`), never `detectProvider` across all adapters for every path — that once cost 9×9 Tauri calls inside one timeout and silently dropped Claude Code on fresh installs.
 
+### Headless CLI export
+
+`claude-code-history-viewer --export <session-id|/abs/path.jsonl> [--format json|markdown] [--output <file>]`
+exports one session without launching the GUI (`src-tauri/src/headless_export.rs`).
+The session id resolves under `~/.claude/projects` (exact or unambiguous prefix);
+malformed flags exit non-zero. Dispatched first in `run()`.
+
 ### Store Architecture (14 slices)
 The Zustand store is split into 14 focused slices: `navigation`, `filter`, `search`, `analytics`, `settings`, `captureMode`, `metadata`, `provider`, `board`, `globalStats`, `message`, `metadataSlice`, `navigator`, `project`, and `watcher`. This replaces the earlier monolithic `useAppStore.ts` structure.
 

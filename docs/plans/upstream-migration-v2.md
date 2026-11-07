@@ -45,6 +45,7 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 - ✅ #634 session minimap (2026-11-07) — opt-in strip, viewport box, click/drag jump; geometry helpers with 11 tests; toggle persisted in view preferences.
 - ✅ #595 resume extra CLI args (2026-11-07) — settings field, sanitising on both sides, 5 backend + 7 frontend tests.
 - ✅ #473 diff view in Recent Edits (2026-11-07) — EnhancedDiffViewer against the recorded original.
+- ✅ #413 headless `--export` (2026-11-07) — CLI export to JSON/Markdown with page-streamed loading; 7 tests + real-session smoke.
 **QUEUED — next session, fresh context (P2 features, port-notes ready):**
 - Recent Edits panel — **HAVE (own design)**: `RecentEditsViewer` + backend `commands/edits.rs` shipped June.
   Ported deltas: #606 replace_all, #525/#640 restore guard, #475 reveal-in-folder.
@@ -55,7 +56,7 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 
 **SKIP (rationale):** 20 new providers (user uses none; each = adapter+registration+i18n×6+maintenance); Server/WebUI cluster (no server mode in fork); pricing lifecycle (P3, drift-prone); Cline SDK store #589/#588/#586 (no local store; 2 legacy tasks); #612/#614/#621 (architecture absent); i18n plural v4 migration (verify our i18next version first — CONFIG); Linux ibus/DMABUF, CI/Homebrew/release chores (not applicable).
 
-- ⏭ REMAINING (feature-sized, port-notes above): workflow rendering #99b2ec7d; parallel-tasks filter #446; explorer columns (#23ea7fbe/#ccf7c19b/#4bc63da2); headless --export #413; Recent Edits dock presentation (#515); perf COMPARE wave.
+- ⏭ REMAINING (feature-sized, port-notes above): workflow rendering #99b2ec7d; parallel-tasks filter #446; explorer columns (#23ea7fbe/#ccf7c19b/#4bc63da2); Recent Edits dock presentation (#515); perf COMPARE wave.
 - DISPOSITIONED no-op: #612/#614/#621 store reload races (their session-list pagination architecture — we have no sessionsOffset/loadMoreSessions machinery; our reload path differs, June tree-orphan fix covered the visible bug).
 - DEFERRED: Cline SDK store #589/#588/#586 (no local ~/.cline store, 2 legacy tasks); OpenCode #428 cache bound + ab6bcb45 schema (our reader differs, verify later); providers wave 2 (SKIP unless user asks); Server/WebUI cluster (SKIP, no server mode); pricing lifecycle (P3).
 - NOTE: Kaspersky blocks cargo build-script exes; user excluded target dirs. Build: `CARGO_TARGET_DIR=C:/Users/xxx/.cargo-target/ccv-merge cargo test --lib` from src-tauri.
