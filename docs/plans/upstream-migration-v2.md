@@ -32,6 +32,7 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 
 **Integrated (19 commits):** antigravity stores, win watcher+decode, codex zstd/identity/reasoning, gemini jsonl, opencode global split, percent_decode, double-render, metadata lock, ai-titles, search indexing, KaTeX, prompt jumps, tool aliases, header drop, chain merge (#496+#572), font scale, trash fallback. Suites: 256 Rust + 367 TS green, vite build green.
 
+- ✅ codex cwd-projects (2026-11-07 follow-up, user-verified symptom "574 projects") — commit: projects group by cwd (upstream model), unknown bucket, len+mtime metadata cache so project opens do not re-decompress 576 zst files; 257 tests green.
 **QUEUED — next session, fresh context (P2 features, port-notes ready):**
 - Recent Edits panel (#515+#514+follow-ups): backend edits reader + recentEditsPanelSlice + dock UI + i18n×6 + restore guard. Port WHOLE subsystem; the 20+ review-fix commits are integral.
 - resume-in-terminal (#463+#595) + multi-select mass delete (#456): interdependent UI; needs getResumeCommand per-provider map first.
