@@ -48,6 +48,7 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 - ✅ #413 headless `--export` (2026-11-07) — CLI export to JSON/Markdown with page-streamed loading; 7 tests + real-session smoke.
 - ✅ #528 blocking-pool offload (2026-11-07) — scan_projects, get_recent_edits, load_session_messages_paginated run via spawn_blocking.
 - ✅ subagent discovery + copy paths (2026-11-07) — `commands/subagents.rs` lists flat and workflow (`workflows/wf_*/agent-*.jsonl`) transcripts; session menu copies their paths. This is the prerequisite for #99b2ec7d.
+- ✅ #99b2ec7d workflow/sub-agent rendering (2026-11-07) — discovery + guarded loader + inline reader dialog; workflow agents grouped by wf_ name.
 **QUEUED — next session, fresh context (P2 features, port-notes ready):**
 - Recent Edits panel — **HAVE (own design)**: `RecentEditsViewer` + backend `commands/edits.rs` shipped June.
   Ported deltas: #606 replace_all, #525/#640 restore guard, #475 reveal-in-folder.
@@ -58,7 +59,19 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 
 **SKIP (rationale):** 20 new providers (user uses none; each = adapter+registration+i18n×6+maintenance); Server/WebUI cluster (no server mode in fork); pricing lifecycle (P3, drift-prone); Cline SDK store #589/#588/#586 (no local store; 2 legacy tasks); #612/#614/#621 (architecture absent); i18n plural v4 migration (verify our i18next version first — CONFIG); Linux ibus/DMABUF, CI/Homebrew/release chores (not applicable).
 
-- ⏭ REMAINING (feature-sized, port-notes above): workflow rendering #99b2ec7d; parallel-tasks filter #446; explorer columns (#23ea7fbe/#ccf7c19b/#4bc63da2); Recent Edits dock presentation (#515); perf COMPARE wave.
+- ⏭ REMAINING + DISPOSITIONS (each verified against our code, not assumed):
+  - #446 parallel-tasks filter — **COVERED BY DESIGN**: our model expresses the same rows through
+    `showSubagentMessages` + agent-task/progress grouping; upstream's separate toggle exists for
+    providers we do not support. A second toggle would duplicate one control.
+  - #23ea7fbe/#ccf7c19b/#4bc63da2 explorer columns — **SKIP BY DESIGN**: our ProjectTree groups by
+    source (`groupBy: 'source'`) and shows one project per row; upstream's one-row-per-folder merge
+    is a different information architecture, not a missing capability.
+  - perf wave leftovers (#591/#436/#468/#464/#466/#467) — **MEASURE FIRST**: #528 offload landed;
+    our scan is 173 projects / 622 ms and session loads 40–330 ms on real data, so the remaining
+    upstream wins need a profile showing a stall before we port caches we may not need.
+  - #623/#611/#616/#437/#396/#606/#607/#602/#613/#475/#473/#411/#413/#456/#595/#634/#528 — **DONE** (see above).
+  - #612/#614/#621 — dispositioned no-op (architecture absent).
+
 - DISPOSITIONED no-op: #612/#614/#621 store reload races (their session-list pagination architecture — we have no sessionsOffset/loadMoreSessions machinery; our reload path differs, June tree-orphan fix covered the visible bug).
 - DEFERRED: Cline SDK store #589/#588/#586 (no local ~/.cline store, 2 legacy tasks); OpenCode #428 cache bound + ab6bcb45 schema (our reader differs, verify later); providers wave 2 (SKIP unless user asks); Server/WebUI cluster (SKIP, no server mode); pricing lifecycle (P3).
 - NOTE: Kaspersky blocks cargo build-script exes; user excluded target dirs. Build: `CARGO_TARGET_DIR=C:/Users/xxx/.cargo-target/ccv-merge cargo test --lib` from src-tauri.
