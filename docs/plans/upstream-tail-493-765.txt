@@ -1,0 +1,272 @@
+2026-03-09|f7ee687|docs: mark #167 as completed in UI improvements plan
+2026-03-10|a33fc7c|fix: compact settings dropdown to prevent overflow on short windows (#168)
+2026-03-10|31b74a2|fix: replace RadioGroup with MenuItem + Check icon for cleaner selection UI
+2026-03-10|38ea3a4|fix: use background highlight instead of Check icon for selected state
+2026-03-10|2552d27|fix: replace checkbox items with Switch toggles for better visibility
+2026-03-10|933a204|fix: add border to Switch off state for better contrast on popover bg
+2026-03-10|7bfbcbc|fix: improve Switch off-state visibility in dark mode
+2026-03-10|946909b|fix: add fallback for stale language value in LanguageMenuGroup
+2026-03-10|2fc5279|Merge pull request #173 from jhlee0409/fix/168-settings-compact
+2026-03-10|b58959a|Revert "fix: compact settings dropdown to prevent overflow (#168)"
+2026-03-10|f408824|Merge pull request #176 from jhlee0409/revert-173-fix/168-settings-compact
+2026-03-10|768a211|fix: restore ARIA semantics for settings dropdown items
+2026-03-11|c17453e|feat: add date display to message timestamps (#170)
+2026-03-11|da23f2e|fix: use Radix tooltip for timestamp hover instead of native title
+2026-03-11|d14c675|fix: show timestamp tooltip above instead of below
+2026-03-11|a8a9207|fix: increase floating date overlay fade-out delay to 3s
+2026-03-11|ee38924|fix: address PR review — await mock plugin, remove unused dateKey
+2026-03-11|7b63387|fix: sync capture mode with current theme and stop force-expanding (#169)
+2026-03-11|991e683|feat: implement true WYSIWYG capture with Zustand expand registry (#169)
+2026-03-11|c502d68|fix: resolve expand registry key collisions for WYSIWYG capture (#183)
+2026-03-11|3cc4d0b|fix: surface theme/language save errors as user-visible toast (#183)
+2026-03-13|af4b54b|chore: adopt develop branch strategy for release isolation
+2026-03-13|15de650|Merge pull request #183 from jhlee0409/feature/ui-improvements-167-170
+2026-03-13|c261792|fix: guide manual restart on updater download complete instead of showing error
+2026-03-13|b3f1af5|fix: tighten downloadCompleted check to require true completion signal
+2026-03-13|9778f82|Merge pull request #185 from jhlee0409/fix/updater-manual-restart-guidance
+2026-03-13|8b016d2|feat: add conversation export (Markdown, JSON, HTML) #184
+2026-03-13|c11b00f|fix: address PR review — type accuracy, XSS, filename sanitization
+2026-03-13|500d712|fix: address PR review — responsive export button, timezone consistency
+2026-03-13|d84f958|fix: add null guard in extractBlocks loop, invalid date fallback
+2026-03-13|9a47a36|refactor: move export button to floating action area
+2026-03-13|d541c43|fix: move floating buttons outside OverlayScrollbarsComponent
+2026-03-13|57b908d|fix: position floating buttons within message area
+2026-03-13|bc8e095|refactor: remove meta info badges, place export next to capture button
+2026-03-13|a392f7b|fix: address review — re-entry guard, token 0 values, capture aria-label
+2026-03-13|aa5294b|fix: address 7 review comments — shared isExportable, date range, XSS, whitespace
+2026-03-14|505b828|Merge pull request #188 from jhlee0409/feature/issue-184-export
+2026-03-14|91c955f|fix: AppImage EGL crash on Arch Linux (#186)
+2026-03-14|56165cf|fix: address PR review comments
+2026-03-14|994ab99|Merge pull request #189 from jhlee0409/fix/issue-186-appimage-egl
+2026-03-15|f16fd8b|feat: add SQLite storage support for OpenCode provider (#187)
+2026-03-15|ef92616|feat: display storage type badge for OpenCode projects
+2026-03-15|9601649|fix: show storage type badge when single provider filtered
+2026-03-15|3a97dca|fix: move storage type badge from project to session level
+2026-03-15|d86856f|fix: address PR review comments — security, perf, tests, i18n
+2026-03-15|d942693|fix: block symlink directories before traversal
+2026-03-15|7d6069d|fix: always return searched_set from search_from_db
+2026-03-15|ceaa0d4|fix: use is_file() instead of exists() for DB path check
+2026-03-15|7e127bf|fix: apply symlink guard to all dir traversals and escape LIKE wildcards
+2026-03-15|a6fa773|fix: harden open_db with symlink check and remove search session limit
+2026-03-15|5fa2dcf|feat: watch opencode.db for SQLite storage changes
+2026-03-15|7200a90|Merge pull request #190 from jhlee0409/feature/issue-187-opencode-sqlite
+2026-03-15|8e9e4a5|chore: release v1.7.0
+2026-03-15|7925462|fix: update appimagetool SHA256 checksum for v1.9.1
+2026-03-15|119f6f4|fix: export VERSION env var for Homebrew formula update step
+2026-03-16|0fa4cd8|fix: add missing model pricing for Opus 4.6, Sonnet 4.6, Haiku 4.5
+2026-03-16|6f1b462|Merge pull request #192 from grimmerk/fix/opus-4-6-pricing
+2026-03-17|4fc29f2|feat: support custom Claude configuration directories (#195)
+2026-03-17|ec737b9|fix: normalize paths and auto-rescan after custom directory changes
+2026-03-17|8495972|refactor: move CustomDirectoriesSection to top-level settings layout
+2026-03-17|1d25d7d|fix: address all PR review comments (security, validation, a11y, error handling)
+2026-03-17|b500564|fix: linkify URLs in AnsiText output for external browser opening (#198)
+2026-03-17|01d76cf|fix: handle balanced parens in URLs and sanitize href attribute
+2026-03-17|cea8f46|fix: strip escaped HTML entities from URLs and support single-char URLs
+2026-03-17|4334279|fix: filter empty assistant message blocks and add missing content type renderers
+2026-03-17|1e3ff61|fix: address PR review — trim thinking, allowlist image types, add docs
+2026-03-17|4391b43|fix: prevent raw image payload fallback when allowlist check fails
+2026-03-18|e6e3e79|fix: prevent text overlap in renderer headers and search toolbar on narrow panels
+2026-03-18|8b1460c|fix: resolve LLM review comments on #206
+2026-03-18|29ee200|fix: restore aria-expanded on RendererHeader toggle button
+2026-03-18|8985572|feat: display session names set via /rename instead of auto-generated slugs
+2026-03-18|018b5bf|refactor: consolidate rename extraction + add incremental tests
+2026-03-18|a23c417|fix: handle Windows fs::rename failure when cache file exists
+2026-03-19|50c3f3c|fix: downgrade mdast-util-gfm-autolink-literal to 2.0.0 for WebKit compatibility
+2026-03-19|6ab94c0|feat: visually differentiate named vs unnamed sessions in session list
+2026-03-20|c99ae38|Merge pull request #196 from jhlee0409/feature/issue-195-custom-claude-dirs
+2026-03-20|2612b74|Merge pull request #202 from jhlee0409/fix/198-ansi-url-linkify
+2026-03-20|4c3c656|Merge pull request #203 from jhlee0409/fix/issue-199-empty-blocks-and-missing-content-types
+2026-03-20|2af8827|Merge pull request #206 from jhlee0409/fix/issue-200-minimal-width-text-overlap
+2026-03-20|8a85c05|Merge pull request #208 from jhlee0409/fix/205-regex-lookbehind-crash
+2026-03-18|f98a945|feat: display session names set via /rename instead of auto-generated slugs
+2026-03-18|4427af8|refactor: consolidate rename extraction + add incremental tests
+2026-03-18|e6acaef|fix: handle Windows fs::rename failure when cache file exists
+2026-03-20|562495e|fix: render system messages and prevent XML tag stripping in markdown
+2026-03-20|9f6dd36|fix: resolve CodeRabbit review comments on #207
+2026-03-20|c5f8ef8|feat: visually differentiate named vs unnamed sessions in session list
+2026-03-20|2c0eea5|Merge pull request #209 from BenCello/feature/session-rename-display
+2026-03-21|fc2bbaf|fix: remove duplicate function definitions from PR #209 merge
+2026-03-21|0e07336|Merge pull request #207 from jhlee0409/feature/session-rename-display
+2026-03-21|2895d32|feat: add user-only message filter toggle to MessageNavigator (#193)
+2026-03-22|5683ef3|fix: resolve LLM review comments on #210
+2026-03-22|95666f2|Merge pull request #210 from jhlee0409/feature/issue-193-user-message-filter
+2026-03-22|b191a82|feat: add advanced message filter with role and content type toggles (#193)
+2026-03-22|0f83f65|fix: resolve LLM review comments on #211
+2026-03-22|85462a4|fix: apply content type filters to assistant messages only (#211)
+2026-03-22|90cd1d2|fix: stabilize FilterToolbar layout to prevent shifting on toggle
+2026-03-22|1d996b2|Merge pull request #211 from jhlee0409/feature/issue-193-advanced-message-filter
+2026-03-22|2cefd87|chore: release v1.8.0
+2026-03-22|95da1f5|Merge pull request #212 from jhlee0409/develop
+2026-03-24|39e6752|feat: add Gemini CLI provider support (#213)
+2026-03-25|115e1be|fix: resolve LLM review comments on #214
+2026-03-25|29cf7b8|fix: resolve Copilot review comments on #214
+2026-03-25|c65f8f2|refactor: simplify Gemini provider code
+2026-03-25|bd2d38f|refactor: extract shared build_provider_message utility
+2026-03-25|920d8bd|fix: resolve round 2 LLM review comments on #214
+2026-03-26|1835906|feat: add missing content type support across all providers
+2026-03-26|0f2e7bb|Merge pull request #214 from jhlee0409/feature/issue-213-gemini-cli-provider
+2026-03-26|2255444|feat: add Cline, Cursor, and Aider provider support
+2026-03-26|d592a06|refactor: simplify new providers — shared utilities and performance fixes
+2026-03-26|20e9b82|fix: resolve CodeRabbit review comments on #217
+2026-03-26|73dbb48|fix: resolve round 2 CodeRabbit comments on #217
+2026-03-26|5a91194|fix: resolve round 3 CodeRabbit comments on #217
+2026-03-26|b0a50e5|fix: percent_decode preserves UTF-8 multibyte sequences (#217)
+2026-03-26|e4c0418|fix: change Cursor badge color from sky to yellow
+2026-03-26|1641b9c|fix: Aider detect only reports available when history files exist
+2026-03-26|597aa6c|fix: sync project session_count with actual loaded sessions
+2026-03-26|69d82a8|Merge pull request #217 from jhlee0409/feature/multi-provider-cline-cursor-aider
+2026-03-26|c6c99c8|feat: enhance global search with project filter and message navigation
+2026-03-26|f2b1594|refactor: replace native select with Radix Select component
+2026-03-26|a483e9c|fix: delay navigateToMessage after session load for reliable highlight
+2026-03-26|a321a01|fix: properly handle scroll-to-target by skipping scrollToBottom
+2026-03-26|d06ab51|perf: optimize search with aho-corasick and partial sort
+2026-03-26|22de6a1|refactor: address code review findings from simplify
+2026-03-26|3443bab|perf: add LRU search cache and early termination
+2026-03-26|896adce|refactor: fix review issues in search cache and early termination
+2026-03-26|d576356|feat: enhance Global Search Modal UI/UX
+2026-03-26|749c890|refactor: address code review findings in GlobalSearchModal
+2026-03-26|9c1219e|refactor: move shortcut hint from modal to header search button
+2026-03-26|14738e6|refactor: extract mac detection to module-level constant in Header
+2026-03-27|1295c8b|fix: address PR #218 review comments
+2026-03-27|45f1e71|fix: add error handling and cleanup to search result navigation
+2026-03-27|c4c703e|fix: correct aria-label on search clear button and document useEffect deps
+2026-03-27|0802408|fix: add toast feedback on search failure
+2026-03-27|e874812|Merge pull request #218 from jhlee0409/feature/global-search-enhancements
+2026-03-27|acffc89|feat: add validate_dialog_path helper for dialog-initiated file operations
+2026-03-27|197e6ef|fix: replace is_safe_path with validate_dialog_path in write_text_file
+2026-03-27|0a5290f|fix: replace is_safe_path with validate_dialog_path in read_text_file
+2026-03-27|c07ab44|refactor: use validate_dialog_path in save_screenshot to remove duplication
+2026-03-27|7f74d8b|fix: add Desktop to is_safe_path whitelist and fix Windows \\?\ prefix bug
+2026-03-27|6a37924|fix: enforce is_safe_path in WebUI handlers for write_text_file and read_text_file
+2026-03-27|865e2a5|fix: add symlink check to validate_dialog_path and sanitize is_safe_path error message
+2026-03-27|2e26214|fix: update PROVIDER_IDS test to match current provider list
+2026-03-27|d9678b0|fix: gate is_safe_path and strip_windows_prefix behind webui-server feature
+2026-03-27|aca55db|fix: address PR review - fail-closed symlink check, cfg(unix) test, OneDrive dirs
+2026-03-28|814032c|Merge pull request #220 from jhlee0409/fix/issue-219-export-windows
+2026-02-25|277560a|enable zoom in/out keyboard shortcuts
+2026-03-28|9032309|feat(wsl): add winreg dependency for Windows WSL detection
+2026-03-28|d9f3305|feat(wsl): add wsl.rs module with types, UNC paths, and detection functions
+2026-03-28|06cc2f9|feat(wsl): add Tauri commands for WSL detection
+2026-03-28|534750c|refactor(providers): extract scan_projects_from_path for WSL path support
+2026-03-28|830a70d|feat(wsl): integrate WSL scanning into scan_all_projects and search_all_providers
+2026-03-28|e6ddd65|feat(wsl): add isWindows platform utility
+2026-03-28|19b9c5c|feat(wsl): add i18n keys for WSL settings (5 locales)
+2026-03-28|71272ab|feat(wsl): add WSL settings to frontend store
+2026-03-28|6a1f9d9|fix(wsl): use navigator.userAgent instead of deprecated navigator.platform
+2026-03-28|7a78445|feat(wsl): add WSL settings UI section
+2026-03-28|02f0121|fix(wsl): correct API command name from list_wsl_distros to detect_wsl_distros
+2026-03-28|e6e05b2|refactor(wsl): address code review — i18n, Switch component, extract helper, cleanup
+2026-03-28|724653d|fix(wsl): return Result<bool, String> from is_wsl_available for consistency
+2026-03-28|522cc48|fix(providers): add symlink checks to scan_projects_from_path entry points
+2026-03-28|95e4ab4|fix(wsl): address PR review — partial settings update, error state for distro detection, detectError i18n key
+2026-03-28|116dfc4|fix(providers): add absolute path validation to scan_projects_from_path
+2026-03-28|7efdea1|refactor(wsl): extract require_absolute_path utility, clear stale state on WSL disable
+2026-03-28|bdd7a84|fix(wsl): scope WSL scanning to Claude only — other providers' loaders use native base paths
+2026-03-28|3196a32|Merge pull request #221 from jhlee0409/feature/wsl-support
+2026-03-28|ec80a6d|chore: release v1.9.0
+2026-03-28|31da78a|docs: update READMEs for v1.9.0 — add 4 new providers, WSL support, enhanced search
+2026-04-01|7625945|feat: add DatePickerHeader to GlobalStatsView
+2026-04-03|56b3009|refactor: move DatePickerHeader to parent component
+2026-04-03|c172a0e|Merge pull request #225 from grimmerk/feat/global-stats-date-filter
+2026-04-03|0d28aa3|feat: add Show JSONL File option to session context menu
+2026-04-03|a0d10ed|feat: add delete session command (move to trash)
+2026-04-03|877cc6b|fix: guard file_path before revealItemInDir call
+2026-04-03|7e01e73|fix: address CodeRabbit review on delete_session
+2026-04-04|58af5a5|fix(docker): move corepack install after copying package files to support remote Docker builds
+2026-04-04|43e9794|chore(docker): use rust:1-slim-bookworm to mitigate MSRV bumps in dependencies
+2026-04-04|bd1d35d|fix(docker): add libgtk-3-0 and libwebkit2gtk-4.1 to runtime image for Tauri server mode
+2026-04-06|fa5f974|Merge pull request #228 from BenCello/feat/show-jsonl-in-finder
+2026-04-06|055420e|Merge pull request #230 from matrach/fix/docker
+2026-04-06|dee077c|Merge PR #229: feat: delete session (move to trash)
+2026-04-06|4ebbd09|fix: support Windows absolute paths in revealInFinder validation
+2026-04-06|0838fb8|refactor: use isAbsolutePath utility, remove redundant comment
+2026-04-06|18f7cfb|fix: review fixes — partial delete, path validation, dedup styles
+2026-04-06|b8880d5|Merge remote-tracking branch 'origin/main' into develop
+2026-04-06|d0d8079|refactor: split UnifiedToolExecutionRenderer into per-tool cards, add delete tests
+2026-04-06|915fdca|fix: deduplicate Codex messages shown twice (#227)
+2026-04-07|e1e6f2f|test: add multi-turn dedup integration test for Codex sessions
+2026-04-07|220d103|Merge pull request #233 from jhlee0409/fix/codex-duplicate-sessions
+2026-04-07|f3d4d33|feat: add portable Windows zip to release artifacts (#232)
+2026-04-07|91321da|feat: add copy path option to project context menu (#224)
+2026-04-07|1d4598b|feat: split activity heatmap into monthly calendar blocks (#231)
+2026-04-07|23fc89f|fix: validate path before clipboard copy, add missing i18n key
+2026-04-07|ba0ebe1|fix: use dynamic exe discovery, stage for flat zip, reuse PACKAGE_VERSION
+2026-04-07|4e60884|fix: address review — date validation, a11y button, memoize total
+2026-04-07|7aae3d1|refactor: simplify portable zip creation, add existence check
+2026-04-07|74cbc9c|refactor: extract menu item class, remove redundant aria-label
+2026-04-07|1846e20|refactor: fix memo stability, extract empty cell, store dayNum on CalendarDay
+2026-04-07|e8daca9|fix: validate exactly one exe candidate for portable zip
+2026-04-07|da658c6|Merge pull request #236 from jhlee0409/feat/windows-portable-build
+2026-04-07|7b3c1ba|Merge pull request #235 from jhlee0409/feat/heatmap-monthly-split
+2026-04-07|682ec2f|Merge pull request #234 from jhlee0409/feat/copy-path
+2026-04-07|da6ab99|fix: render OpenCode step-finish as meaningful step card (#223)
+2026-04-08|97b3e6a|refactor: remove section comments, show cost at zero, flatten reason wrapper
+2026-04-08|23c64cf|fix: address review — emit step card without tokens guard, include cache in visibility, use chars().take(8)
+2026-04-08|3227832|Merge pull request #239 from jhlee0409/fix/opencode-step-rendering
+2026-04-09|ccfb952|fix: failing copies of session ID/resume command/file path (#244)
+2026-04-10|8b86eea|chore: release v1.10.0
+2026-04-11|ad5a01e|fix: WSL scan toggle not working (#247)
+2026-04-11|9d8bd01|feat: auto-refresh sessions and auto-scroll on new messages (#242)
+2026-04-11|427fe0b|feat: add search and horizontal scrollbar to project panel (#248)
+2026-04-12|c90bece|feat: add right-click context menu to session items (#251)
+2026-04-12|c1a4a4c|feat: add SubAgent conversation history viewing (#252)
+2026-04-12|c936d8a|fix(docker): add proxy support for webui-server mode (#243)
+2026-04-13|d338cd7|feat: support custom Claude config directories (#254)
+2026-04-13|9254213|chore: release v1.11.0
+2026-04-13|80fd026|fix: instantly accept custom Claude directories in folder selector (#255)
+2026-04-20|45fa166|feat(cli): add --session <uuid> flag for external session launching (#261)
+2026-04-21|63cb2f4|fix(clippy): replace sort_by + Reverse comparator with sort_by_key (#275)
+2026-04-21|4d69963|refactor(cli): unify argv parser + race guard + docs for --session (#271)
+2026-04-21|0779511|feat(cli): Stage B resolvers + session picker modal (#270) (#272)
+2026-04-21|4367ec5|feat(cli): single-instance + Apple Events for session hint re-invocation (#270) (#274)
+2026-04-22|861733c|fix: render context menus in a portal so they anchor to the cursor (#268)
+2026-04-23|78bbb14|fix(ui): clamp context menus to panel bounds and close on scroll (#278)
+2026-04-24|16ceba4|fix(subagent): resolve infinite loading and rendering issues (#258) (#264)
+2026-04-24|03c4ad6|feat: follow symlinks at depth 1 in scan_projects (#277)
+2026-04-24|ce7f034|fix(project): deduplicate symlinks in scan_projects and add symlink tests (#281)
+2026-05-05|11fdef0|fix(stats): dedupe token usage across split assistant turn rows (#283) (#289)
+2026-05-05|bc795d4|chore: add mattpocock skills setup (#290)
+2026-05-06|e90b196|feat: add Antigravity provider support (#291)
+2026-05-06|6127ca4|feat: add ForgeCode provider support (#295)
+2026-05-06|29a3ad2|fix(cursor): preserve bubble timestamps in search results (#273)
+2026-05-06|6a1f1ee|fix(server): bound graceful shutdown so cchv-server exits on Ctrl+C (#297)
+2026-05-06|9a57bef|fix(session-list): bump fixed row height to fit 2-line wrapped names (#298)
+2026-05-06|7b25b7b|feat(filter): expose Show Sub-agent Messages toggle in header dropdown (#299)
+2026-05-07|50f5b3c|fix(boot): allow other-provider-only setups to launch without ~/.claude (#300)
+2026-05-07|e51bf38|fix(message-meta): fall back to estimated cost when costUSD is absent (#301)
+2026-05-07|a504823|fix(navigator): multi-pass scroll to correct TOC click landing position (#303)
+2026-05-07|6057869|chore: merge develop for v1.12.0 release
+2026-05-07|01eb689|chore: release v1.12.0
+2026-05-07|448d25a|chore: back-merge v1.12.0 release
+2026-05-07|0288f42|fix(tauri): align Rust crate versions with @tauri-apps JS packages
+2026-05-07|ec0d96b|fix(tauri): align Rust crate versions with @tauri-apps JS packages
+2026-05-07|9312fde|docs(readme): add v1.12.0 highlights section across all languages
+2026-05-07|0393384|docs(readme): add v1.12.0 highlights section across all languages
+2026-05-07|fa7be58|docs(changelog): backfill v1.11.0 and v1.12.0 entries
+2026-05-07|8ee48dc|docs(changelog): backfill v1.11.0 and v1.12.0 entries
+2026-05-13|17f04f0|fix(wsl): guard against missing excludedDistros in partial settings (#309)
+2026-05-13|5b229c7|fix(session): surface backend error when session delete fails (#310)
+2026-05-13|d35d50f|fix(webui): register get_session_subagents on Axum router (#311)
+2026-05-13|f56a337|fix(forgecode): four minor follow-ups from #295 (#312)
+2026-05-13|d6d42c1|fix(antigravity): partial stats correctness — 3 of 7 items from #292 (#313)
+2026-05-13|184071c|fix(antigravity): symlink guards on state and rpc-cache reads (partial #293) (#314)
+2026-05-13|3e8bc56|fix(antigravity): include filesystem-only brain sessions + tighten id validation (partial #293) (#315)
+2026-05-13|8614f42|fix(antigravity): refuse to guess root when marker is absent (#293 items 1+2) (#316)
+2026-05-13|f5ac6e9|fix(antigravity): date-filter most_used_tools in per-project stats (#292 item 2) (#317)
+2026-05-13|dd4fe34|fix(antigravity): rpc-cache fallback in load_antigravity_usage_records (#292 item 7) (#318)
+2026-05-13|de20d38|fix(antigravity): canonicalize session_path + symlink-gated usage.jsonl reads (#293 item 7) (#320)
+2026-05-14|0069f0a|chore: ignore local .claude/ slash commands and scheduled-tasks lock
+2026-05-14|1cc9f88|fix(codex): skip auto-injected <environment_context> when picking session summary (#307) (#322)
+2026-05-14|b148ae9|fix(stats): aggregate token_distribution.reasoning in global summary (#292 item 1) (#323)
+2026-05-25|3059183|feat(session): add codex resume support and cd prefix for resume command (#302)
+2026-05-25|998d171|fix: add claude-opus-4-7 pricing to prevent 3x overcharge (#335)
+2026-05-25|b14f608|fix: handle deep project paths in sidebar width and slug parsing (#329)
+2026-05-25|491f7f6|fix(updater): native OS-level relaunch fallback for Tauri v2 macOS bug (#287) (#325)
+2026-05-25|c8dbe8a|feat: distinguish session source by entrypoint (CLI / VS Code / Desktop) (#330)
+2026-05-25|4e26321|fix: add GPT-5.4/5.5 pricing and handle Codex cached input tokens (#336)
+2026-05-25|2a3a601|feat(macos): custom overlay title bar + bump Tauri to latest v2 patches (#337)
+2026-05-25|ae7550f|test(tauri-config): update title/productName assertions for empty-title design (#337)
+2026-05-25|d8c82f3|fix(codex): clippy redundant_closure on cached_input_tokens extraction (#336 follow-up)
+2026-05-25|bae9194|Merge develop for v1.13.0 release
+2026-05-25|41ba66c|chore: release v1.13.0
+2026-05-25|9d86b46|docs: v1.13.0 highlights + trim README version list to latest 3
