@@ -60,12 +60,9 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 **SKIP (rationale):** 20 new providers (user uses none; each = adapter+registration+i18n×6+maintenance); Server/WebUI cluster (no server mode in fork); pricing lifecycle (P3, drift-prone); Cline SDK store #589/#588/#586 (no local store; 2 legacy tasks); #612/#614/#621 (architecture absent); i18n plural v4 migration (verify our i18next version first — CONFIG); Linux ibus/DMABUF, CI/Homebrew/release chores (not applicable).
 
 - ⏭ REMAINING + DISPOSITIONS (each verified against our code, not assumed):
-  - #446 parallel-tasks filter — **COVERED BY DESIGN**: our model expresses the same rows through
-    `showSubagentMessages` + agent-task/progress grouping; upstream's separate toggle exists for
-    providers we do not support. A second toggle would duplicate one control.
-  - #23ea7fbe/#ccf7c19b/#4bc63da2 explorer columns — **SKIP BY DESIGN**: our ProjectTree groups by
-    source (`groupBy: 'source'`) and shows one project per row; upstream's one-row-per-folder merge
-    is a different information architecture, not a missing capability.
+  - #ccf7c19b (temp-directory bucketing) / #4bc63da2 (sessions column) — **SKIP BY DESIGN**: both are
+    parts of upstream's three-column explorer layout; our tree keeps the two-pane model, so they
+    would be a redesign rather than a port.
   - perf wave leftovers (#591/#436/#468/#464/#466/#467) — **MEASURED, NO PORT NEEDED**: #528 offload
     landed; real data (2026-11-07): scan 173 projects / 638 ms, per-project session loads 5–201 ms
     (216 files → 201 ms), message page 15–24 ms, Codex project listing served from the len+mtime
