@@ -1,3 +1,4 @@
+import pricingTable from "@/data/model-pricing.json";
 /**
  * Analytics Calculations
  *
@@ -31,48 +32,39 @@ interface ModelPricing {
   cacheRead: number;
 }
 
-const MODEL_PRICING: Record<string, ModelPricing> = {
-  // Claude 5.x — values audited against platform.claude.com on 2026-10-10
-  // (upstream `src/data/model-pricing.json`). Longer keys are matched first,
-  // so `claude-opus-5-5` never falls through to `claude-opus-5`.
-  'claude-opus-5-5': { input: 4, output: 20, cacheWrite: 5, cacheRead: 0.20 },
-  'claude-sonnet-5-5': { input: 2, output: 10, cacheWrite: 2.5, cacheRead: 0.10 },
-  // Haiku 5.5 bills $0.50/$2.50 per million above 100k prompt tokens; the
-  // base row is what this token-only table can express.
-  'claude-haiku-5-5': { input: 0.1, output: 0.5, cacheWrite: 0.125, cacheRead: 0.01 },
-  'claude-opus-5': { input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.50 },
-  'claude-sonnet-5': { input: 2, output: 10, cacheWrite: 2.5, cacheRead: 0.20 },
-  'claude-fable-5-1': { input: 10, output: 50, cacheWrite: 12.5, cacheRead: 0.25 },
-  'claude-fable-5': { input: 10, output: 50, cacheWrite: 12.5, cacheRead: 1 },
-  'claude-mythos-5-1': { input: 10, output: 50, cacheWrite: 12.5, cacheRead: 0.25 },
-  'claude-mythos-5': { input: 10, output: 50, cacheWrite: 12.5, cacheRead: 1 },
-  // Claude models — newer Opus 4.x (4-5+) use the $5/$25 tier; only the
-  // original Opus 4 keeps $15/$75. Explicit entries prevent `includes()`
-  // match-order from billing 4-6/4-7/4-8 at the deprecated Opus 4 rate (3x).
-  'claude-opus-4-8': { input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.50 },
-  'claude-opus-4-7': { input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.50 },
-  'claude-opus-4-6': { input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.50 },
-  'claude-opus-4-5': { input: 5, output: 25, cacheWrite: 6.25, cacheRead: 0.50 },
-  'claude-opus-4': { input: 15, output: 75, cacheWrite: 18.75, cacheRead: 1.50 },
-  'claude-sonnet-4-6': { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.30 },
-  'claude-sonnet-4-5': { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.30 },
-  'claude-sonnet-4': { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.30 },
-  'claude-3-5-sonnet': { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.30 },
-  'claude-haiku-4-5': { input: 1, output: 5, cacheWrite: 1.25, cacheRead: 0.10 },
-  'claude-3-5-haiku': { input: 1, output: 5, cacheWrite: 1.25, cacheRead: 0.10 },
-  'claude-3-haiku': { input: 0.25, output: 1.25, cacheWrite: 0.30, cacheRead: 0.03 },
-  // OpenAI models (Codex CLI) - specific keys must precede prefix matches
-  'gpt-5.5': { input: 5, output: 30, cacheWrite: 0, cacheRead: 0.50 },
-  'gpt-5.4': { input: 2.5, output: 15, cacheWrite: 0, cacheRead: 0.25 },
-  'gpt-4.1-mini': { input: 0.4, output: 1.6, cacheWrite: 0, cacheRead: 0.04 },
-  'gpt-4.1-nano': { input: 0.1, output: 0.4, cacheWrite: 0, cacheRead: 0.01 },
-  'gpt-4.1': { input: 2, output: 8, cacheWrite: 0, cacheRead: 0.20 },
-  'o4-mini': { input: 1.1, output: 4.4, cacheWrite: 0, cacheRead: 0.11 },
-  'codex-mini': { input: 1.5, output: 6, cacheWrite: 0, cacheRead: 0.15 },
-  // Google models (OpenCode)
-  'gemini-2.5-pro': { input: 1.25, output: 10, cacheWrite: 0, cacheRead: 0 },
-  'gemini-2.5-flash': { input: 0.15, output: 0.60, cacheWrite: 0, cacheRead: 0 },
+/**
+ * Audited pricing data lives in `src/data/model-pricing.json` and is reviewed
+ * by hand (see docs/pricing-sources). The dashboard only needs the four
+ * token-level rates, so the table is flattened here; providers that bill a
+ * cache write as `null` are treated as free.
+ */
+const MODEL_PRICING_SOURCE = pricingTable as {
+  auditedAt: string;
+  models: Record<
+    string,
+    {
+      input: number;
+      output: number;
+      cacheRead?: number | null;
+      cacheWrite?: number | null;
+    }
+  >;
 };
+
+/** Date the pricing table was last verified against provider pages. */
+export const MODEL_PRICING_AUDITED_AT = MODEL_PRICING_SOURCE.auditedAt;
+
+const MODEL_PRICING: Record<string, ModelPricing> = Object.fromEntries(
+  Object.entries(MODEL_PRICING_SOURCE.models).map(([model, entry]) => [
+    model,
+    {
+      input: entry.input,
+      output: entry.output,
+      cacheWrite: entry.cacheWrite ?? 0,
+      cacheRead: entry.cacheRead ?? 0,
+    },
+  ])
+);
 
 const DEFAULT_PRICING: ModelPricing = { input: 3, output: 15, cacheWrite: 3.75, cacheRead: 0.30 };
 
