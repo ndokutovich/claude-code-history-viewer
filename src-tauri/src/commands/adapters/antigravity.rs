@@ -821,9 +821,6 @@ fn is_safe_session_id(id: &str) -> bool {
 // lines and unknown enum values are skipped, never errors.
 // ============================================================================
 
-/// Sentinel workspace for conversations no index can place.
-const UNKNOWN_WORKSPACE: &str = "\0unknown";
-
 /// One conversation discovered in a brain-transcript store.
 struct BrainSession {
     conversation_id: String,
