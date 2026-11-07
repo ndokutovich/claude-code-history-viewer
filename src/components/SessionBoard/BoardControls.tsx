@@ -122,7 +122,7 @@ export const BoardControls = ({
               )
             }
           >
-            <SelectTrigger className="h-7 w-32 text-[10px] bg-muted/20 border-border/30 px-2">
+            <SelectTrigger className="h-7 w-32 text-px10 bg-muted/20 border-border/30 px-2">
               <SelectValue
                 placeholder={t("analytics.tool", {
                   defaultValue: "TOOL",
@@ -132,7 +132,7 @@ export const BoardControls = ({
             <SelectContent>
               <SelectItem
                 value="_ALL_"
-                className="text-[10px] font-extrabold text-foreground uppercase tracking-wide"
+                className="text-px10 font-extrabold text-foreground uppercase tracking-wide"
               >
                 {t("analytics.all", { defaultValue: "ALL" })}
               </SelectItem>
@@ -140,7 +140,7 @@ export const BoardControls = ({
                 <SelectItem
                   key={toolOption}
                   value={toolOption}
-                  className="text-[10px]"
+                  className="text-px10"
                   disabled={
                     availableTools
                       ? !availableTools.includes(toolOption)
@@ -165,7 +165,7 @@ export const BoardControls = ({
                 )
               }
             >
-              <SelectTrigger className="h-7 w-32 text-[10px] bg-muted/20 border-border/30 px-2">
+              <SelectTrigger className="h-7 w-32 text-px10 bg-muted/20 border-border/30 px-2">
                 <SelectValue
                   placeholder={t("analytics.mcp", {
                     defaultValue: "MCP",
@@ -175,7 +175,7 @@ export const BoardControls = ({
               <SelectContent>
                 <SelectItem
                   value="_ALL_"
-                  className="text-[10px] font-extrabold text-foreground uppercase tracking-wide"
+                  className="text-px10 font-extrabold text-foreground uppercase tracking-wide"
                 >
                   {t("analytics.all", { defaultValue: "ALL" })}
                 </SelectItem>
@@ -183,7 +183,7 @@ export const BoardControls = ({
                   <SelectItem
                     key={server}
                     value={server}
-                    className="text-[10px]"
+                    className="text-px10"
                     disabled={
                       availableMcpServers
                         ? !availableMcpServers.includes(server)
@@ -213,7 +213,7 @@ export const BoardControls = ({
                 )
               }
             >
-              <SelectTrigger className="h-7 w-40 text-[10px] bg-muted/20 border-border/30 px-2">
+              <SelectTrigger className="h-7 w-40 text-px10 bg-muted/20 border-border/30 px-2">
                 <SelectValue
                   placeholder={t("analytics.command", {
                     defaultValue: "COMMAND",
@@ -223,7 +223,7 @@ export const BoardControls = ({
               <SelectContent>
                 <SelectItem
                   value="_ALL_"
-                  className="text-[10px] font-extrabold text-foreground uppercase tracking-wide"
+                  className="text-px10 font-extrabold text-foreground uppercase tracking-wide"
                 >
                   {t("analytics.all", { defaultValue: "ALL" })}
                 </SelectItem>
@@ -231,7 +231,7 @@ export const BoardControls = ({
                   <SelectItem
                     key={cmd}
                     value={cmd}
-                    className="text-[10px] font-mono"
+                    className="text-px10 font-mono"
                     disabled={
                       availableShellCommands
                         ? !availableShellCommands.includes(cmd)
@@ -258,7 +258,7 @@ export const BoardControls = ({
               )
             }
           >
-            <SelectTrigger className="h-7 w-40 text-[10px] bg-muted/20 border-border/30 px-2">
+            <SelectTrigger className="h-7 w-40 text-px10 bg-muted/20 border-border/30 px-2">
               <SelectValue
                 placeholder={t("analytics.file", {
                   defaultValue: "FILE",
@@ -268,7 +268,7 @@ export const BoardControls = ({
             <SelectContent>
               <SelectItem
                 value="_ALL_"
-                className="text-[10px] font-extrabold text-foreground uppercase tracking-wide"
+                className="text-px10 font-extrabold text-foreground uppercase tracking-wide"
               >
                 {t("analytics.all", { defaultValue: "ALL" })}
               </SelectItem>
@@ -276,7 +276,7 @@ export const BoardControls = ({
                 <SelectItem
                   key={f}
                   value={f}
-                  className="text-[10px]"
+                  className="text-px10"
                   disabled={
                     availableFiles
                       ? !availableFiles.includes(f)

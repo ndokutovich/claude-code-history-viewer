@@ -17,10 +17,13 @@ use crate::commands::adapters::aider::{
     scan_aider_projects as aider_scan_projects,
 };
 use crate::commands::adapters::antigravity::{
-    get_antigravity_base_path, load_antigravity_messages as antigravity_load_messages,
-    load_antigravity_sessions as antigravity_load_sessions,
+    decode_workspace_tail as antigravity_decode_workspace_tail,
+    load_all_antigravity_sessions as antigravity_load_all_sessions,
+    load_antigravity_messages_auto as antigravity_load_messages,
+    load_antigravity_store_sessions as antigravity_load_store_sessions,
     parse_scheme_path as antigravity_parse_scheme_path,
-    scan_antigravity_projects as antigravity_scan_projects,
+    scan_antigravity_store as antigravity_scan_store,
+    get_antigravity_roots,
 };
 use crate::commands::adapters::cline::{
     cwd_for_task as cline_cwd_for_task, get_all_cline_base_paths,
@@ -198,7 +201,7 @@ pub async fn detect_providers() -> Result<Vec<DetectedProvider>, String> {
 
     // ---- Antigravity -------------------------------------------------------
     {
-        let result: Result<String, String> = match get_antigravity_base_path() {
+        let result: Result<String, String> = match get_antigravity_roots().first() {
             Some(p) => Ok(p.to_string_lossy().to_string()),
             None => {
                 Err("ANTIGRAVITY_FOLDER_NOT_FOUND: No Antigravity installation found".to_string())
@@ -358,9 +361,9 @@ pub async fn scan_all_projects(
 
     // ---- Antigravity -------------------------------------------------------
     if wanted.iter().any(|p| p == "antigravity") {
-        if let Some(root) = get_antigravity_base_path() {
+        for root in get_antigravity_roots() {
             let source_id = format!("antigravity:{}", root.display());
-            match antigravity_scan_projects(&root, &source_id) {
+            match antigravity_scan_store(&root, &source_id) {
                 Ok(projects) => all_projects.extend(projects),
                 Err(e) => {
                     eprintln!("[multi_provider] Antigravity scan failed: {}", e);
@@ -507,9 +510,15 @@ pub async fn load_provider_sessions(
         }
 
         "antigravity" => {
-            // project_path is the `antigravity://<root>` scheme path.
-            let (root, _) = antigravity_parse_scheme_path(&project_path)?;
-            antigravity_load_sessions(&root, &source_id)
+            // project_path is `antigravity://<root>` (mixed bucket) or
+            // `antigravity://<root>|ws:<encoded workspace>`.
+            let (root, tail) = antigravity_parse_scheme_path(&project_path)?;
+            let workspace = if tail.is_empty() {
+                None
+            } else {
+                antigravity_decode_workspace_tail(&tail)
+            };
+            antigravity_load_store_sessions(&root, workspace.as_deref(), &source_id)
         }
 
         other => Err(format!(
@@ -1095,10 +1104,10 @@ pub async fn search_all_providers(
 
     // ---- Antigravity -------------------------------------------------------
     if wanted.iter().any(|p| p == "antigravity") {
-        if let Some(root) = get_antigravity_base_path() {
+        'antigravity_roots: for root in get_antigravity_roots() {
             let source_id = format!("antigravity:{}", root.display());
-            if let Ok(sessions) = antigravity_load_sessions(&root, &source_id) {
-                'antigravity_search: for session in sessions {
+            if let Ok(sessions) = antigravity_load_all_sessions(&root, &source_id) {
+                for session in sessions {
                     // session.id == "antigravity://<root>|<session_id>"
                     let session_id = match antigravity_parse_scheme_path(&session.id) {
                         Ok((_, id)) => id,
@@ -1119,7 +1128,7 @@ pub async fn search_all_providers(
                             .collect();
                         all_results.extend(matching);
                         if all_results.len() >= max_results {
-                            break 'antigravity_search;
+                            break 'antigravity_roots;
                         }
                     }
                 }

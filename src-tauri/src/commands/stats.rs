@@ -269,15 +269,9 @@ fn detect_session_provider(session_path: &str) -> StatsProvider {
         return StatsProvider::Gemini;
     }
 
-    let is_rollout = PathBuf::from(session_path)
-        .file_name()
-        .and_then(|name| name.to_str())
-        .is_some_and(|name| {
-            name.starts_with("rollout-")
-                && std::path::Path::new(name)
-                    .extension()
-                    .is_some_and(|ext| ext.eq_ignore_ascii_case("jsonl"))
-        });
+    let is_rollout = crate::commands::adapters::codex::is_rollout_jsonl(std::path::Path::new(
+        session_path,
+    ));
 
     if is_rollout {
         StatsProvider::Codex

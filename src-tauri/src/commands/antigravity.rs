@@ -11,9 +11,10 @@
 // PATTERN REFERENCE: src-tauri/src/commands/cline.rs
 
 use crate::commands::adapters::antigravity::{
-    get_antigravity_base_path, load_antigravity_messages as adapter_load_messages,
-    load_antigravity_sessions as adapter_load_sessions, parse_scheme_path,
-    scan_antigravity_projects as adapter_scan_projects,
+    decode_workspace_tail, get_antigravity_roots,
+    load_antigravity_messages_auto as adapter_load_messages,
+    load_antigravity_store_sessions as adapter_load_store_sessions,
+    parse_scheme_path, scan_antigravity_store as adapter_scan_store,
 };
 use crate::models::universal::{UniversalMessage, UniversalProject, UniversalSession};
 use std::path::{Component, Path, PathBuf};
@@ -46,10 +47,10 @@ fn harden_antigravity_path(path: &Path) -> Result<PathBuf, String> {
 // PATH DETECTION
 // ============================================================================
 
-/// Return the first available Antigravity root directory.
+/// Return the first available Antigravity root directory (desktop, else CLI).
 #[tauri::command]
 pub async fn get_antigravity_path() -> Result<String, String> {
-    match get_antigravity_base_path() {
+    match get_antigravity_roots().first() {
         Some(path) => Ok(path.to_string_lossy().to_string()),
         None => Err(
             "ANTIGRAVITY_FOLDER_NOT_FOUND: No Antigravity installation found.".to_string(),
@@ -84,6 +85,8 @@ pub async fn validate_antigravity_folder(path: String) -> Result<bool, String> {
 // ============================================================================
 
 /// Scan Antigravity projects for a given root directory.
+///
+/// Kept for compatibility; `scan_antigravity_all` covers every store root.
 #[tauri::command]
 pub async fn scan_antigravity_projects(
     antigravity_path: String,
@@ -96,20 +99,36 @@ pub async fn scan_antigravity_projects(
             antigravity_path
         ));
     }
-    adapter_scan_projects(&root, &source_id)
+    adapter_scan_store(&root, &source_id)
+}
+
+/// Scan every available Antigravity store (desktop + antigravity-cli).
+#[tauri::command]
+pub async fn scan_antigravity_all(source_id: String) -> Result<Vec<UniversalProject>, String> {
+    let mut projects = Vec::new();
+    for root in get_antigravity_roots() {
+        projects.extend(adapter_scan_store(&root, &source_id)?);
+    }
+    Ok(projects)
 }
 
 /// Load sessions for the Antigravity project.
 ///
-/// `project_path` is the `antigravity://<root>` scheme path produced by the scan.
+/// `project_path` is `antigravity://<root>` (mixed bucket) or
+/// `antigravity://<root>|ws:<encoded workspace>`.
 #[tauri::command]
 pub async fn load_antigravity_sessions(
     project_path: String,
     source_id: String,
 ) -> Result<Vec<UniversalSession>, String> {
-    let (root, _) = parse_scheme_path(&project_path)?;
+    let (root, tail) = parse_scheme_path(&project_path)?;
     let root = harden_antigravity_path(&root)?;
-    adapter_load_sessions(&root, &source_id)
+    let workspace = if tail.is_empty() {
+        None
+    } else {
+        decode_workspace_tail(&tail)
+    };
+    adapter_load_store_sessions(&root, workspace.as_deref(), &source_id)
 }
 
 /// Load messages for one Antigravity session with pagination.

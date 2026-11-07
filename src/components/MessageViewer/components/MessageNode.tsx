@@ -28,6 +28,7 @@ import type { MessageNodeProps } from "../types";
 export const MessageNode = React.memo(({
   message,
   depth,
+  hideHeader = false,
   providerName,
   sessionFilePath,
   allMessages,
@@ -127,118 +128,121 @@ export const MessageNode = React.memo(({
           </div>
         )}
 
-        {/* Message header */}
-        <div
-          className={`flex items-center space-x-2 mb-1 text-md text-gray-500 dark:text-gray-400 ${
-            message.type === "user" ? "justify-end" : "justify-start"
-          }`}
-        >
-          {message.type === "user" && (
-            <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
-          )}
-          <span className="font-medium whitespace-nowrap">
-            {message.type === "user"
-              ? t("messageViewer.user")
-              : message.type === "assistant"
-              ? providerName
-              : t("messageViewer.system")}
-          </span>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                className="whitespace-nowrap cursor-default"
-              >
-                {formatTimeShort(message.timestamp)}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" sideOffset={4}>
-              {formatTime(message.timestamp)}
-            </TooltipContent>
-          </Tooltip>
-          {message.isSidechain && (
-            <span className="px-2 py-1 whitespace-nowrap text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 rounded-full">
-              {t("messageViewer.subAgent")}
-            </span>
-          )}
-          {/* Copy Reference Button */}
-          <button
-            onClick={handleCopyReference}
-            className={cn(
-              "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
-              "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            )}
-            title={t("messageReference.referenceTooltip")}
+        {/* Message header — dropped on continued assistant turns */}
+        {!hideHeader && (
+          <div
+            className={`flex items-center space-x-2 mb-1 text-md text-gray-500 dark:text-gray-400 ${
+              message.type === "user" ? "justify-end" : "justify-start"
+            }`}
           >
-            {copiedReference ? (
-              <Check className="w-3.5 h-3.5 text-green-500" />
-            ) : (
-              <Link2 className="w-3.5 h-3.5" />
+            {message.type === "user" && (
+              <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
             )}
-          </button>
-
-          {/* Extract Messages Above Button */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
-                  "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                )}
-                title={t("messageReference.extractAboveTooltip")}
-              >
-                <ArrowUpCircle className="w-3.5 h-3.5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExtractAbove(true)}>
-                {t("messageReference.openInBuilder")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExtractAbove(false)}>
-                {t("messageReference.createDirectly")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Extract Messages Below Button */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
-                  "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                )}
-                title={t("messageReference.extractBelowTooltip")}
-              >
-                <ArrowDownCircle className="w-3.5 h-3.5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExtractBelow(true)}>
-                {t("messageReference.openInBuilder")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExtractBelow(false)}>
-                {t("messageReference.createDirectly")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {/* Hide Block Button (Capture Mode) */}
-          {isCaptureMode && onHideMessage && (
+            <span className="font-medium whitespace-nowrap">
+              {message.type === "user"
+                ? t("messageViewer.user")
+                : message.type === "assistant"
+                ? providerName
+                : t("messageViewer.system")}
+            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="whitespace-nowrap cursor-default"
+                >
+                  {formatTimeShort(message.timestamp)}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" sideOffset={4}>
+                {formatTime(message.timestamp)}
+              </TooltipContent>
+            </Tooltip>
+            {message.isSidechain && (
+              <span className="px-2 py-1 whitespace-nowrap text-xs bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 rounded-full">
+                {t("messageViewer.subAgent")}
+              </span>
+            )}
+            {/* Copy Reference Button */}
             <button
-              onClick={() => onHideMessage(message.uuid)}
+              onClick={handleCopyReference}
               className={cn(
-                "p-1 rounded transition-colors",
-                "text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30"
+                "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
+                "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               )}
-              title={t("renderers:captureMode.hideBlock")}
+              title={t("messageReference.referenceTooltip")}
             >
-              <EyeOff className="w-3.5 h-3.5" />
+              {copiedReference ? (
+                <Check className="w-3.5 h-3.5 text-green-500" />
+              ) : (
+                <Link2 className="w-3.5 h-3.5" />
+              )}
             </button>
-          )}
-          {message.type === "assistant" && (
-            <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
-          )}
-        </div>
+
+            {/* Extract Messages Above Button */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
+                    "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  )}
+                  title={t("messageReference.extractAboveTooltip")}
+                >
+                  <ArrowUpCircle className="w-3.5 h-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExtractAbove(true)}>
+                  {t("messageReference.openInBuilder")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExtractAbove(false)}>
+                  {t("messageReference.createDirectly")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Extract Messages Below Button */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors",
+                    "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  )}
+                  title={t("messageReference.extractBelowTooltip")}
+                >
+                  <ArrowDownCircle className="w-3.5 h-3.5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExtractBelow(true)}>
+                  {t("messageReference.openInBuilder")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExtractBelow(false)}>
+                  {t("messageReference.createDirectly")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {/* Hide Block Button (Capture Mode) */}
+            {isCaptureMode && onHideMessage && (
+              <button
+                onClick={() => onHideMessage(message.uuid)}
+                className={cn(
+                  "p-1 rounded transition-colors",
+                  "text-red-400 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30"
+                )}
+                title={t("renderers:captureMode.hideBlock")}
+              >
+                <EyeOff className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {message.type === "assistant" && (
+              <div className="w-full h-0.5 bg-gray-100 dark:bg-gray-700 rounded-full" />
+            )}
+          </div>
+
+        )}
 
         {/* Message content */}
         <div className="w-full">
@@ -267,12 +271,15 @@ export const MessageNode = React.memo(({
               {/* Claude API Content Array */}
               {message.content &&
                 typeof message.content === "object" &&
-                Array.isArray(message.content) &&
-                (message.type !== "assistant" ||
-                  (message.type === "assistant" &&
-                    !extractedContent)) && (
+                Array.isArray(message.content) && (
                   <div className="mb-2">
-                    <ClaudeContentArrayRenderer content={message.content} />
+                    <ClaudeContentArrayRenderer
+                      content={message.content}
+                      // The bubble above already shows the text block;
+                      // providers that store user turns as content arrays
+                      // would otherwise render it twice (upstream #eaaa8787).
+                      skipText={!!extractedContent}
+                    />
                   </div>
                 )}
 

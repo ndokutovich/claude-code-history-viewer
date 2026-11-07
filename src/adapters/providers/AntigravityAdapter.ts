@@ -1,5 +1,5 @@
 // ============================================================================
-// ANTIGRAVITY ADAPTER (v1.9.x)
+// ANTIGRAVITY ADAPTER (v1.10.5+)
 // ============================================================================
 // Adapter for Antigravity conversation history. Implements IConversationAdapter
 // to enable multi-provider support.
@@ -7,11 +7,12 @@
 // Read-only provider. Routes to Tauri commands defined in
 // src-tauri/src/commands/antigravity.rs.
 //
-// IMPORTANT: Antigravity stores conversation transcripts in protobuf (.pb)
-// format with no public schema. Message BODIES are NOT decoded — the backend
-// surfaces a clear notice plus token-usage metadata parsed from usage.jsonl.
-// Hence supportsThinking/supportsToolCalls reflect only the limited metadata we
-// can recover (browser tool names from logs/.pb byte-scanning).
+// Store layouts (2026-10+ builds, desktop AND antigravity-cli roots):
+//   brain/<uuid>/.system_generated/logs/transcript_full.jsonl — real
+//   conversation steps (text, tool_calls, token counters), fully decoded;
+//   conversation_summaries.db / history.jsonl — title + workspace index.
+// Pre-2026-10 desktop installs fall back to manifest.json + usage.jsonl
+// metadata-only sessions (.pb bodies are encrypted and never parsed).
 //
 // PATTERN REFERENCE: ClineAdapter.ts
 
@@ -54,10 +55,10 @@ export class AntigravityAdapter implements IConversationAdapter {
     version: '1.0.0',
     author: 'Antigravity',
     description:
-      'Antigravity conversation history (sessions + token-usage metadata). Protobuf (.pb) transcript bodies are not decoded.',
+      'Antigravity conversation history (desktop + CLI stores): decoded brain transcripts with tool calls and token usage.',
     capabilities: {
       supportsThinking: false,
-      supportsToolCalls: true, // browser tool names recovered from logs/.pb
+      supportsToolCalls: true, // tool_calls decoded from brain transcripts
       supportsBranching: false,
       supportsStreaming: false,
       supportsImages: false,
@@ -208,14 +209,15 @@ export class AntigravityAdapter implements IConversationAdapter {
   // -------------------------------------------------------------------------
 
   async scanProjects(
-    sourcePath: string,
+    _sourcePath: string,
     sourceId: string
   ): Promise<ScanResult<UniversalProject>> {
     this.ensureInitialized();
 
     try {
-      const projects = await invoke<UniversalProject[]>('scan_antigravity_projects', {
-        antigravityPath: sourcePath,
+      // Scan every store root (desktop ~/.gemini/antigravity AND CLI
+      // ~/.gemini/antigravity-cli); sourcePath is informational only.
+      const projects = await invoke<UniversalProject[]>('scan_antigravity_all', {
         sourceId,
       });
 

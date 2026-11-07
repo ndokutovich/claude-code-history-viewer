@@ -1,6 +1,6 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { REMARK_PLUGINS as SHARED_REMARK, REHYPE_PLUGINS as SHARED_REHYPE } from "../common/markdownPlugins";
 import { Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { CommandRenderer, ImageRenderer } from "../contentRenderer";
@@ -190,7 +190,8 @@ export const MessageContentDisplay: React.FC<MessageContentDisplayProps> = React
         <div className="max-w-xs sm:max-w-md lg:max-w-2xl bg-green-100 dark:bg-green-600/80 text-gray-900 dark:text-white rounded-2xl px-4 py-3 relative group shadow-sm">
           <div className="text-gray-900 dark:text-white text-sm">
             <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={SHARED_REMARK}
+                rehypePlugins={SHARED_REHYPE}
               components={assistantMarkdownComponents}
               children={content}
             />

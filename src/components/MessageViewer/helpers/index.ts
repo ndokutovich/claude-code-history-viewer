@@ -11,3 +11,4 @@ export { groupTaskOperations } from "./taskOperationHelpers";
 export { flattenMessageTree, buildUuidToIndexMap, findGroupLeaderIndex } from "./flattenMessageTree";
 export { estimateMessageHeight, VIRTUALIZER_OVERSCAN, MIN_ROW_HEIGHT } from "./heightEstimation";
 export { hasSystemCommandContent, isEmptyMessage, getParentUuid } from "./messageHelpers";
+export { isTurnStart, findPromptJumpIndex, getPromptJumpKeysLabel } from './promptJump';

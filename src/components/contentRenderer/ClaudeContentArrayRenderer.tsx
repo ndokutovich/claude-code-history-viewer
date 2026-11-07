@@ -8,6 +8,10 @@ import { useTranslation } from "react-i18next";
 
 type Props = {
   content: unknown[];
+  /** Skip the array's text blocks — the message bubble above already
+   * renders them. Providers that store user turns as content arrays would
+   * otherwise show the text twice (upstream #eaaa8787). */
+  skipText?: boolean;
 };
 
 // Type guard for content items
@@ -15,7 +19,7 @@ const isContentItem = (item: unknown): item is Record<string, unknown> => {
   return item !== null && typeof item === "object";
 };
 
-export const ClaudeContentArrayRenderer = React.memo(({ content }: Props) => {
+export const ClaudeContentArrayRenderer = React.memo(({ content, skipText = false }: Props) => {
   const { t } = useTranslation("messages");
   if (!Array.isArray(content) || content.length === 0) {
     return null;
@@ -36,6 +40,9 @@ export const ClaudeContentArrayRenderer = React.memo(({ content }: Props) => {
 
         switch (itemType) {
           case "text":
+            if (skipText) {
+              return null;
+            }
             if (typeof item.text === "string") {
               return (
                 <div

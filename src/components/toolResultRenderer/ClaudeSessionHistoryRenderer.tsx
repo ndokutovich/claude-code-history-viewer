@@ -1,6 +1,6 @@
 import { MessageCircle, User, Bot, Wrench, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { REMARK_PLUGINS as SHARED_REMARK, REHYPE_PLUGINS as SHARED_REHYPE } from "../common/markdownPlugins";
 import { useTranslation } from "react-i18next";
 import { formatTime } from "../../utils/time";
 
@@ -83,7 +83,8 @@ export const ClaudeSessionHistoryRenderer = ({ content }: Props) => {
                 "content" in msg.message ? (
                   typeof msg.message.content === "string" ? (
                     <div className="prose prose-sm max-w-none prose-gray">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      <ReactMarkdown remarkPlugins={SHARED_REMARK}
+                rehypePlugins={SHARED_REHYPE}>
                         {msg.message.content}
                       </ReactMarkdown>
                     </div>
@@ -95,7 +96,8 @@ export const ClaudeSessionHistoryRenderer = ({ content }: Props) => {
                             {item.type === "text" &&
                               typeof item.text === "string" && (
                                 <div className="prose prose-sm max-w-none prose-gray">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  <ReactMarkdown remarkPlugins={SHARED_REMARK}
+                rehypePlugins={SHARED_REHYPE}>
                                     {item.text}
                                   </ReactMarkdown>
                                 </div>

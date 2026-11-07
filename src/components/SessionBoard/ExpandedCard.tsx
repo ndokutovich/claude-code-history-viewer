@@ -142,7 +142,7 @@ export const ExpandedCard = memo(
     const ToolContent = useMemo(() => {
       if (!toolUseBlock) return null;
       return (
-        <pre className="text-[11px] font-mono whitespace-pre-wrap break-words max-w-[440px]">
+        <pre className="text-px11 font-mono whitespace-pre-wrap break-words max-w-[440px]">
           {JSON.stringify(toolUseBlock.input, null, 2)}
         </pre>
       );
@@ -215,7 +215,7 @@ export const ExpandedCard = memo(
               <div className="flex flex-col gap-0.5">
                 <span
                   className={clsx(
-                    "font-bold uppercase text-[11px] tracking-wide",
+                    "font-bold uppercase text-px11 tracking-wide",
                     toolUseBlock
                       ? "text-accent"
                       : role === "user"
@@ -225,7 +225,7 @@ export const ExpandedCard = memo(
                 >
                   {toolUseBlock ? toolUseBlock.name : role}
                 </span>
-                <span className="text-[10px] text-muted-foreground font-mono leading-none">
+                <span className="text-px10 text-muted-foreground font-mono leading-none">
                   {new Date(
                     message.timestamp
                   ).toLocaleTimeString()}
@@ -234,7 +234,7 @@ export const ExpandedCard = memo(
               {editedMdFile && (
                 <div
                   className={clsx(
-                    "flex items-center gap-1.5 ml-3 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-[10px] text-amber-600 font-medium font-mono transition-colors",
+                    "flex items-center gap-1.5 ml-3 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-px10 text-amber-600 font-medium font-mono transition-colors",
                     onFileClick &&
                       "hover:bg-amber-500/20 cursor-pointer"
                   )}
@@ -398,7 +398,7 @@ export const ExpandedCard = memo(
             </div>
           )}
 
-          <div className="p-2 border-t border-border/50 bg-muted/10 rounded-b-lg flex justify-end gap-3 text-[10px] text-muted-foreground shrink-0 font-mono">
+          <div className="p-2 border-t border-border/50 bg-muted/10 rounded-b-lg flex justify-end gap-3 text-px10 text-muted-foreground shrink-0 font-mono">
             {message.type === "assistant" && message.usage && (
               <>
                 <span>

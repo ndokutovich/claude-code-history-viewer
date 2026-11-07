@@ -21,10 +21,35 @@ type Props = {
   toolUse: Record<string, unknown>;
 };
 
+/**
+ * Canonical card name for a tool. Claude Code uses PascalCase; other
+ * providers (Codex, OpenCode, Antigravity, oh-my-pi) emit lowercase or
+ * snake_case variants of the same primitives. Only names whose input shape
+ * matches the target card are aliased (upstream #00a9b362).
+ */
+const TOOL_ALIASES: Record<string, string> = {
+  bash: "Bash",
+  shell: "Bash",
+  read: "Read",
+  read_file: "Read",
+  write: "Write",
+  write_file: "Write",
+  edit: "Edit",
+  grep: "Grep",
+  glob: "Glob",
+  websearch: "WebSearch",
+  web_search: "WebSearch",
+  webfetch: "WebFetch",
+  web_fetch: "WebFetch",
+};
+
+const canonicalToolName = (name: string): string =>
+  TOOL_ALIASES[name.toLowerCase()] ?? name;
+
 export const ToolUseRenderer = ({ toolUse }: Props) => {
   const { t } = useTranslation("components");
   const [openRender, setOpenRender] = useState(false);
-  const toolName = toolUse.name || "Unknown Tool";
+  const toolName = canonicalToolName(String(toolUse.name || "Unknown Tool"));
   const toolId = toolUse.id || "";
   const toolInput = toolUse.input || {};
 

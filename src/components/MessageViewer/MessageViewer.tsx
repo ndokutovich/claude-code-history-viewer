@@ -20,7 +20,7 @@ import { MessageNavigator } from "../MessageNavigator";
 import { SessionBuilderModal } from "../modals/SessionBuilderModal";
 import type { MessageViewerProps } from "./types";
 import { MessageNode, FloatingDateOverlay } from "./components";
-import { useMessageScrolling, useMessageTree } from "./hooks";
+import { usePromptJump, useMessageScrolling, useMessageTree } from "./hooks";
 import { isSameDay } from "../../utils/time";
 
 const DEFAULT_NAVIGATOR_WIDTH = 280;
@@ -272,10 +272,26 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
 
   // Ordered, flattened rows (DFS order + depth) — computed once per change and
   // virtualized. Capture mode applies the hidden filter here.
-  const rows = useMemo(
-    () => flattenRows(isCaptureMode ? hiddenMessageSet : null),
-    [flattenRows, isCaptureMode, hiddenMessageSet]
-  );
+  const rows = useMemo(() => {
+    const flat = flattenRows(isCaptureMode ? hiddenMessageSet : null);
+    // Mark assistant continuations (same model + sidechain, within five
+    // minutes) so their repeated headers collapse (upstream #051fa7a3).
+    return flat.map((row, index) => {
+      const prev = index > 0 ? flat[index - 1] : undefined;
+      const cur = row.message;
+      if (!prev || cur.type !== "assistant" || prev.message.type !== "assistant") {
+        return row;
+      }
+      const sameModel = (cur.model ?? "") === (prev.message.model ?? "");
+      const sameChain = cur.isSidechain === prev.message.isSidechain;
+      const t1 = cur.timestamp ? new Date(cur.timestamp).getTime() : 0;
+      const t0 = prev.message.timestamp ? new Date(prev.message.timestamp).getTime() : 0;
+      const withinWindow = t1 >= t0 && t1 - t0 <= 5 * 60 * 1000;
+      return sameModel && sameChain && withinWindow
+        ? { ...row, hideHeader: true }
+        : row;
+    });
+  }, [flattenRows, isCaptureMode, hiddenMessageSet]);
 
   // UUID → row index map for search / navigator scroll-to-message.
   const uuidToIndexMap = useMemo(() => {
@@ -342,6 +358,13 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     },
     [uuidToIndexMap, virtualizer]
   );
+
+  // Alt+ArrowUp / Alt+ArrowDown jump between turn starts in the loaded rows.
+  usePromptJump({
+    rows,
+    virtualizer,
+    scrollToIndex: (index, align) => virtualizer.scrollToIndex(index, { align }),
+  });
 
   // Navigate to a specific message by UUID (MessageNavigator click)
   const handleNavigateToMessage = useCallback(
@@ -679,6 +702,7 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
                         <MessageNode
                           message={row.message}
                           depth={row.depth}
+                          hideHeader={row.hideHeader}
                           sessionFilePath={selectedSession?.file_path}
                           {...messageNodeProps}
                         />

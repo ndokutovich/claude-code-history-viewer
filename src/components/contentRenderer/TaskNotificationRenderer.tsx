@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { REMARK_PLUGINS as SHARED_REMARK, REHYPE_PLUGINS as SHARED_REHYPE } from "../common/markdownPlugins";
 import { cn } from "@/utils/cn";
 import { layout, getVariantStyles } from "@/components/renderers";
 
@@ -187,7 +187,8 @@ const TaskRow = memo(function TaskRow({
             )}>
               {notification.result ? (
                 <div className={cn(layout.prose, "text-2xs")}>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown remarkPlugins={SHARED_REMARK}
+                rehypePlugins={SHARED_REHYPE}>
                     {notification.result}
                   </ReactMarkdown>
                 </div>
@@ -441,7 +442,8 @@ export const TaskNotificationRenderer = memo(function TaskNotificationRenderer({
               {isDetailsExpanded ? (
                 // Full content
                 <div className={cn(layout.prose, "text-2xs animate-fade-in")}>
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown remarkPlugins={SHARED_REMARK}
+                rehypePlugins={SHARED_REHYPE}>
                     {remainingText}
                   </ReactMarkdown>
                 </div>
@@ -456,7 +458,8 @@ export const TaskNotificationRenderer = memo(function TaskNotificationRenderer({
                     "text-2xs",
                     "line-clamp-3 text-muted-foreground"
                   )}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    <ReactMarkdown remarkPlugins={SHARED_REMARK}
+                rehypePlugins={SHARED_REHYPE}>
                       {getPreviewLines(remainingText, 3)}
                     </ReactMarkdown>
                   </div>

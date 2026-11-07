@@ -66,10 +66,8 @@ pub async fn validate_codex_folder(path: String) -> Result<bool, String> {
                     return Ok(true);
                 }
             } else if path.is_file() {
-                if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-                    if filename.starts_with("rollout-") && filename.ends_with(".jsonl") {
-                        return Ok(true); // Found at least one valid rollout file
-                    }
+                if crate::commands::adapters::codex::is_rollout_jsonl(&path) {
+                    return Ok(true); // Found at least one valid rollout file
                 }
             }
         }
@@ -104,9 +102,6 @@ pub async fn scan_codex_projects(
         ));
     }
 
-    // Group rollout files by session ID
-    let mut session_groups: HashMap<String, Vec<PathBuf>> = HashMap::new();
-
     // Recursively find all rollout files (handles YYYY/MM/DD subdirectories)
     fn find_rollout_files(dir: &Path, files: &mut Vec<PathBuf>) -> std::io::Result<()> {
         if dir.is_dir() {
@@ -118,12 +113,10 @@ pub async fn scan_codex_projects(
                     // Recurse into subdirectories
                     find_rollout_files(&path, files)?;
                 } else if path.is_file() {
-                    let filename = path.file_name()
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("");
-
-                    // Check if it's a rollout file
-                    if filename.starts_with("rollout-") && filename.ends_with(".jsonl") {
+                    // Discoverable rollout: plain or zst, skipping a
+                    // compressed twin whose plain file exists (upstream
+                    // #74bdee28).
+                    if crate::commands::adapters::codex::is_discoverable_rollout(&path) {
                         files.push(path);
                     }
                 }
@@ -138,66 +131,120 @@ pub async fn scan_codex_projects(
 
     println!("📁 Found {} rollout file(s)", rollout_files.len());
 
+    // Projects are WORKING DIRECTORIES, not sessions (upstream model): one
+    // project per cwd, sessions inside are the rollout files recorded in
+    // that directory. A cwd-less rollout falls into the "unknown" bucket.
+    let mut by_cwd: HashMap<Option<String>, Vec<CodexFileMeta>> = HashMap::new();
+
     for file_path in rollout_files {
-        let filename: String = file_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("")
-            .to_string();
-
-        // Parse filename to extract UUID
-        if let Some((_, uuid)) = parse_rollout_filename(&filename) {
-            // Try to get actual session ID from file
-            let session_id: String = match parse_codex_jsonl(&file_path) {
-                Ok(events) => {
-                    if let Some(first_event) = events.first() {
-                        extract_session_id(first_event, &uuid)
-                    } else {
-                        uuid.clone()
-                    }
-                }
-                Err(_) => uuid.clone(), // Fallback to UUID if parse fails
-            };
-
-            session_groups
-                .entry(session_id)
-                .or_insert_with(Vec::new)
-                .push(file_path);
+        if let Some(meta) = codex_file_meta(&file_path) {
+            by_cwd.entry(meta.cwd.clone()).or_default().push(meta);
         }
     }
 
-    // Convert session groups to UniversalProjects
     let mut projects: Vec<UniversalProject> = Vec::new();
 
-    for (session_id, files) in session_groups {
-        // Use first file to extract metadata
-        let first_file: &PathBuf = files.first().ok_or("CODEX_ERROR: Empty file group")?;
+    for (cwd, sessions) in by_cwd {
+        let cwd_str = cwd.clone().unwrap_or_else(|| "unknown".to_string());
+        let display_name = Path::new(&cwd_str)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .filter(|n| !n.is_empty())
+            .unwrap_or_else(|| "Codex".to_string());
 
-        let display_name: String = format!("Codex Session {}", session_id.chars().take(8).collect::<String>());
+        let first_activity_at = sessions
+            .iter()
+            .filter_map(|m| m.first_ts.clone())
+            .min();
+        let last_activity_at = sessions
+            .iter()
+            .filter_map(|m| m.last_ts.clone())
+            .max();
 
         let mut metadata: HashMap<String, serde_json::Value> = HashMap::new();
-        metadata.insert("sessionId".to_string(), serde_json::json!(session_id)); // camelCase!
-        metadata.insert("fileCount".to_string(), serde_json::json!(files.len())); // camelCase!
+        metadata.insert("cwd".to_string(), serde_json::json!(cwd_str)); // camelCase key style matches adapter
+        metadata.insert("sessionCount".to_string(), serde_json::json!(sessions.len()));
 
         projects.push(UniversalProject {
-            id: session_id.clone(),
+            id: codex_project_id_for(cwd.as_deref()),
             source_id: source_id.clone(),
             provider_id: "codex".to_string(),
             name: display_name,
-            path: first_file.to_string_lossy().to_string(),
-            session_count: files.len(),
-            total_messages: 0, // TODO: Count messages across all sessions
-            first_activity_at: None,
-            last_activity_at: None,
+            path: cwd_str,
+            session_count: sessions.len(),
+            total_messages: sessions.iter().map(|m| m.message_count).sum(),
+            first_activity_at,
+            last_activity_at,
             metadata,
         });
     }
 
-    // Sort by session ID (most recent first)
-    projects.sort_by(|a, b| b.id.cmp(&a.id));
+    // Most recently active first
+    projects.sort_by(|a, b| b.last_activity_at.cmp(&a.last_activity_at));
 
     println!("✓ Found {} Codex projects", projects.len());
     Ok(projects)
+}
+
+/// Per-file metadata cache: parsing 576 rollouts (most zst-compressed) on
+/// every project open is too slow, so scan results are cached keyed by
+/// len+mtime. Upstream caches the same way (their #458/#591 perf wave).
+struct CodexFileMeta {
+    session_id: String,
+    cwd: Option<String>,
+    message_count: usize,
+    first_ts: Option<String>,
+    last_ts: Option<String>,
+}
+
+static CODEX_META_CACHE: std::sync::OnceLock<
+    std::sync::Mutex<std::collections::HashMap<PathBuf, (u64, Option<std::time::SystemTime>, CodexFileMeta)>>,
+> = std::sync::OnceLock::new();
+
+fn codex_file_meta(path: &Path) -> Option<CodexFileMeta> {
+    let meta_fs = fs::metadata(path).ok()?;
+    let (len, mtime) = (meta_fs.len(), meta_fs.modified().ok());
+    let cache = CODEX_META_CACHE.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()));
+    if let Ok(guard) = cache.lock() {
+        if let Some((c_len, c_mtime, cached)) = guard.get(path) {
+            if *c_len == len && *c_mtime == mtime {
+                return Some(CodexFileMeta {
+                    session_id: cached.session_id.clone(),
+                    cwd: cached.cwd.clone(),
+                    message_count: cached.message_count,
+                    first_ts: cached.first_ts.clone(),
+                    last_ts: cached.last_ts.clone(),
+                });
+            }
+        }
+    }
+
+    let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+    let (_, uuid) = parse_rollout_filename(&filename)?;
+    let events = parse_codex_jsonl(path).ok()?;
+    let entry = CodexFileMeta {
+        session_id: session_id_from_events(&events, &uuid),
+        cwd: cwd_from_events(&events),
+        message_count: events.len(),
+        first_ts: events.first().and_then(|e| e.timestamp.clone()),
+        last_ts: events.last().and_then(|e| e.timestamp.clone()),
+    };
+    if let Ok(mut guard) = cache.lock() {
+        guard.insert(path.to_path_buf(), (len, mtime, CodexFileMeta {
+            session_id: entry.session_id.clone(),
+            cwd: entry.cwd.clone(),
+            message_count: entry.message_count,
+            first_ts: entry.first_ts.clone(),
+            last_ts: entry.last_ts.clone(),
+        }));
+    }
+    Some(entry)
+}
+
+/// Project scheme id for a cwd: `codex://<cwd>`; cwd-less sessions share
+/// `codex://unknown`.
+fn codex_project_id_for(cwd: Option<&str>) -> String {
+    format!("codex://{}", cwd.unwrap_or("unknown"))
 }
 
 /// Load sessions for a Codex project
@@ -212,10 +259,66 @@ pub async fn load_codex_sessions(
 ) -> Result<Vec<UniversalSession>, String> {
     println!("🔍 Loading Codex sessions for project: {}", project_id);
 
-    // For Codex, the project_path points to a rollout file
-    // We treat each rollout file as a session
+    // Project mode: project_path is a working directory (or the
+    // `codex://unknown` bucket) — return every rollout recorded in it.
+    // Legacy mode: project_path is a rollout FILE (pre-cwd-project UI
+    // state) — that single file is the session.
     let file_path: PathBuf = PathBuf::from(&project_path);
+    let is_file = file_path.is_file();
 
+    if !is_file && project_path != "codex://unknown" {
+        // cwd project (or legacy dead path) — enumerate matching rollouts
+        let cwd_filter: Option<String> = if project_path == "codex://unknown" {
+            None
+        } else {
+            Some(project_path.trim_start_matches("codex://").to_string())
+        };
+
+        let base = std::env::var("CODEX_HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| {
+                let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
+                home.join(".codex").join("sessions")
+            });
+
+        let mut rollout_files: Vec<PathBuf> = Vec::new();
+        fn find_rollout_files(dir: &Path, files: &mut Vec<PathBuf>) -> std::io::Result<()> {
+            if dir.is_dir() {
+                for entry in fs::read_dir(dir)? {
+                    let entry = entry?;
+                    let path = entry.path();
+                    if path.is_dir() {
+                        find_rollout_files(&path, files)?;
+                    } else if crate::commands::adapters::codex::is_discoverable_rollout(&path) {
+                        files.push(path);
+                    }
+                }
+            }
+            Ok(())
+        }
+        find_rollout_files(&base, &mut rollout_files)
+            .map_err(|e| format!("CODEX_READ_ERROR: Failed to scan directory: {}", e))?;
+
+        let mut sessions: Vec<UniversalSession> = Vec::new();
+        for p in &rollout_files {
+            let Some(meta) = codex_file_meta(p) else { continue };
+            let matches = match (&meta.cwd, &cwd_filter) {
+                (Some(c), Some(f)) => c == f,
+                (None, None) => true,
+                _ => false,
+            };
+            if matches {
+                if let Ok(mut s) = build_codex_session(p, &source_id) {
+                    s.project_id = project_id.clone();
+                    sessions.push(s);
+                }
+            }
+        }
+        sessions.sort_by(|a, b| b.last_message_at.cmp(&a.last_message_at));
+        return Ok(sessions);
+    }
+
+    // Legacy single-file mode: project_path is a rollout file.
     if !file_path.exists() {
         return Err(format!(
             "CODEX_FILE_ERROR: Session file not found: {}",
@@ -223,8 +326,15 @@ pub async fn load_codex_sessions(
         ));
     }
 
+    let mut session = build_codex_session(&file_path, &source_id)?;
+    session.project_id = project_id;
+    return Ok(vec![session]);
+}
+
+/// Build one UniversalSession from a rollout file (plain or zst).
+fn build_codex_session(file_path: &Path, source_id: &str) -> Result<UniversalSession, String> {
     // Parse JSONL to get message count and metadata
-    let events: Vec<CodexEvent> = parse_codex_jsonl(&file_path)?;
+    let events: Vec<CodexEvent> = parse_codex_jsonl(file_path)?;
     let message_count: usize = events.len();
 
     // Extract session ID from first event or filename
@@ -237,23 +347,15 @@ pub async fn load_codex_sessions(
     let (timestamp_str, uuid) = parse_rollout_filename(&filename)
         .ok_or("CODEX_PARSE_ERROR: Invalid rollout filename format")?;
 
-    let session_id: String = if let Some(first_event) = events.first() {
-        extract_session_id(first_event, &uuid)
-    } else {
-        uuid.clone()
-    };
+    let session_id: String = session_id_from_events(&events, &uuid);
 
-    // Extract CWD from first event
-    let cwd: Option<String> = events
-        .first()
-        .and_then(|e| e.environment_context.as_ref())
-        .and_then(|ctx| ctx.get("cwd"))
-        .and_then(|v| v.as_str())
-        .map(String::from);
+    // CWD: first session_meta, else last turn_context (fork replays source
+    // contexts first), else the first event's environment_context.
+    let cwd: Option<String> = cwd_from_events(&events);
 
     // Metadata with camelCase keys
     let mut metadata: HashMap<String, serde_json::Value> = HashMap::new();
-    metadata.insert("filePath".to_string(), serde_json::json!(project_path)); // camelCase!
+    metadata.insert("filePath".to_string(), serde_json::json!(file_path.to_string_lossy().to_string())); // camelCase!
     metadata.insert("rolloutFile".to_string(), serde_json::json!(filename)); // camelCase!
 
     if let Some(ref cwd_path) = cwd {
@@ -291,8 +393,8 @@ pub async fn load_codex_sessions(
 
     let session: UniversalSession = UniversalSession {
         id: session_id.clone(),
-        project_id,
-        source_id,
+        project_id: String::new(),
+        source_id: source_id.to_string(),
         provider_id: "codex".to_string(),
         title,
         description: summary,
@@ -308,7 +410,7 @@ pub async fn load_codex_sessions(
         checksum: format!("{:x}", session_id.len()), // Simple checksum placeholder
     };
 
-    Ok(vec![session])
+    Ok(session)
 }
 
 /// Load messages for a Codex session (paginated)
@@ -349,7 +451,8 @@ pub async fn load_codex_messages(
             if event.event_type == "response_item" {
                 if let Some(ref payload) = event.payload {
                     if let Some(msg_type) = payload.get("type").and_then(|t| t.as_str()) {
-                        return msg_type == "message";
+                        // reasoning items render as thinking blocks (upstream #610)
+                        return msg_type == "message" || msg_type == "reasoning";
                     }
                 }
             }
@@ -357,7 +460,9 @@ pub async fn load_codex_messages(
             event.event_type == "event_msg"
         })
         .map(|(idx, event)| {
-            let session_id: String = extract_session_id(event, &uuid);
+            // One id for the whole file: a fork's replayed source events
+            // must not re-tag messages with the source session id.
+            let session_id: String = session_id_from_events(&events, &uuid);
             let mut msg: UniversalMessage = codex_event_to_universal(
                 event,
                 "codex".to_string(), // project_id
@@ -391,5 +496,58 @@ fn determine_role(event: &CodexEvent) -> MessageRole {
         "assistant_message" | "assistant_response" | "assistant" => MessageRole::Assistant,
         "system_message" | "system" => MessageRole::System,
         _ => MessageRole::Assistant,
+    }
+}
+
+#[cfg(test)]
+mod cwd_project_tests {
+    use super::*;
+
+    fn write_rollout(dir: &Path, name: &str, cwd: Option<&str>) -> PathBuf {
+        let n = name.chars().filter(|c| c.is_ascii_digit()).count() % 10;
+        let ts = format!("2026-01-01T00:00:0{n}Z");
+        let mut lines: Vec<String> = Vec::new();
+        if let Some(cwd) = cwd {
+            lines.push(format!(
+                "{{\"type\":\"session_meta\",\"timestamp\":\"{ts}\",\"payload\":{{\"id\":\"sess-{name}\",\"cwd\":\"{cwd}\"}}}}"
+            ));
+        }
+        lines.push(format!(
+            "{{\"type\":\"user_message\",\"timestamp\":\"{ts}\",\"payload\":{{\"content\":\"hi {name}\"}}}}"
+        ));
+        let path = dir.join(name);
+        std::fs::write(&path, lines.join("
+") + "
+").unwrap();
+        path
+    }
+
+    #[tokio::test]
+    async fn scan_groups_projects_by_cwd_not_by_session() {
+        let tmp = tempfile::tempdir().unwrap();
+        let sessions = tmp.path().join("sessions");
+        std::fs::create_dir_all(&sessions).unwrap();
+
+        write_rollout(&sessions, "rollout-2026-01-01T00-00-01-aaaaaaaa-0000-0000-0000-000000000001.jsonl", Some("w:/proj/alpha"));
+        write_rollout(&sessions, "rollout-2026-01-01T00-00-02-aaaaaaaa-0000-0000-0000-000000000002.jsonl", Some("w:/proj/alpha"));
+        write_rollout(&sessions, "rollout-2026-01-01T00-00-03-bbbbbbbb-0000-0000-0000-000000000003.jsonl", Some("w:/proj/beta"));
+        // No cwd -> unknown bucket
+        write_rollout(&sessions, "rollout-2026-01-01T00-00-04-cccccccc-0000-0000-0000-000000000004.jsonl", None);
+
+        let projects = scan_codex_projects(
+            sessions.to_string_lossy().to_string(),
+            "src".to_string(),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(projects.len(), 3, "alpha + beta + unknown: {projects:?}");
+        let alpha = projects.iter().find(|p| p.name == "alpha").unwrap();
+        assert_eq!(alpha.session_count, 2);
+        assert_eq!(alpha.id, "codex://w:/proj/alpha");
+        assert_eq!(alpha.path, "w:/proj/alpha");
+
+        let unknown = projects.iter().find(|p| p.id == "codex://unknown").unwrap();
+        assert_eq!(unknown.session_count, 1);
     }
 }

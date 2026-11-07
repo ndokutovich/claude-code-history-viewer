@@ -13,7 +13,7 @@ const hasStringProperty = (obj: Record<string, unknown>, key: string): boolean =
 
 const MAX_TEXT_LENGTH = 10000;
 
-const extractSearchableText = (message: UIMessage): string => {
+export const extractSearchableText = (message: UIMessage): string => {
   const parts: string[] = [];
 
   try {
@@ -38,8 +38,26 @@ const extractSearchableText = (message: UIMessage): string => {
             if (itemType === "tool_use" && hasStringProperty(item, "name")) {
               parts.push(item.name as string);
             }
+            // Tool arguments: searches must match parameter values (a
+            // filename passed to Read, a command line) — upstream #437.
+            if (itemType === "tool_use" && isRecord(item.input)) {
+              for (const value of Object.values(item.input)) {
+                if (typeof value === "string" && value.trim()) {
+                  parts.push(value.slice(0, MAX_TEXT_LENGTH));
+                }
+              }
+            }
             if (itemType === "tool_result" && hasStringProperty(item, "content")) {
               parts.push(item.content as string);
+            }
+            // Array-form tool_result content: index its text blocks
+            // (upstream #396 semantics for in-session search).
+            if (itemType === "tool_result" && Array.isArray(item.content)) {
+              for (const block of item.content) {
+                if (isRecord(block) && hasStringProperty(block, "text")) {
+                  parts.push((block.text as string).slice(0, MAX_TEXT_LENGTH));
+                }
+              }
             }
             if (itemType === "server_tool_use" && hasStringProperty(item, "name")) {
               parts.push(item.name as string);

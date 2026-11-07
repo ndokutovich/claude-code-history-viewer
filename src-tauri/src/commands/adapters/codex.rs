@@ -41,7 +41,7 @@ pub struct CodexEvent {
 pub fn parse_rollout_filename(filename: &str) -> Option<(String, String)> {
     // Pattern: rollout-YYYY-MM-DDThh-mm-ss-UUID.jsonl
     let re = regex::Regex::new(
-        r"^rollout-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})-([a-f0-9-]+)\.jsonl$"
+        r"^rollout-(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2})-([a-f0-9-]+)\.jsonl(?:\.zst)?$"
     ).ok()?;
 
     let caps = re.captures(filename)?;
@@ -69,6 +69,72 @@ pub fn extract_session_id(event: &CodexEvent, filename_uuid: &str) -> String {
     filename_uuid.to_string()
 }
 
+/// Session id for a rollout: the FIRST `session_meta` payload id wins —
+/// `codex fork` replays the source rollout (including its session_meta) as
+/// history, so a later meta must not re-tag the session (upstream #451).
+/// Meta-less rollouts fall back to the filename UUID (upstream #38b9e583).
+pub fn session_id_from_events(events: &[CodexEvent], filename_uuid: &str) -> String {
+    for event in events {
+        if event.event_type == "session_meta" {
+            if let Some(payload) = event.payload.as_ref() {
+                if let Some(id) = payload.get("id").and_then(Value::as_str) {
+                    if !id.is_empty() {
+                        return id.to_string();
+                    }
+                }
+            }
+        }
+    }
+    match events.first() {
+        Some(first) => extract_session_id(first, filename_uuid),
+        None => filename_uuid.to_string(),
+    }
+}
+
+/// CWD for a rollout: first `session_meta` payload cwd, else the LAST
+/// `turn_context` payload cwd (a fork replays the source's turn contexts
+/// first, so the last one is where the session actually runs), else the
+/// first event's environment_context cwd.
+pub fn cwd_from_events(events: &[CodexEvent]) -> Option<String> {
+    for event in events {
+        if event.event_type == "session_meta" {
+            if let Some(cwd) = event
+                .payload
+                .as_ref()
+                .and_then(|p| p.get("cwd"))
+                .and_then(Value::as_str)
+            {
+                if !cwd.is_empty() {
+                    return Some(cwd.to_string());
+                }
+            }
+        }
+    }
+    let mut turn_cwd = None;
+    for event in events {
+        if event.event_type == "turn_context" {
+            if let Some(cwd) = event
+                .payload
+                .as_ref()
+                .and_then(|p| p.get("cwd"))
+                .and_then(Value::as_str)
+            {
+                if !cwd.is_empty() {
+                    turn_cwd = Some(cwd.to_string());
+                }
+            }
+        }
+    }
+    turn_cwd.or_else(|| {
+        events
+            .first()
+            .and_then(|e| e.environment_context.as_ref())
+            .and_then(|ctx| ctx.get("cwd"))
+            .and_then(Value::as_str)
+            .map(String::from)
+    })
+}
+
 // ============================================================================
 // JSONL STREAMING PARSER (Claude Code pattern from session.rs:38-70)
 // ============================================================================
@@ -80,31 +146,83 @@ pub fn parse_codex_jsonl(file_path: &Path) -> Result<Vec<CodexEvent>, String> {
     let file = File::open(file_path)
         .map_err(|e| format!("CODEX_FILE_ERROR: Failed to open file: {}", e))?;
 
-    // BufReader for memory-efficient streaming (handles 10-50MB files)
-    let reader = BufReader::new(file);
+    // Codex compresses old rollouts to .jsonl.zst; decompress into memory
+    // (upstream #74bdee28). Plain files stay on the streaming reader.
+    let is_compressed = file_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .is_some_and(|name| name.ends_with(".jsonl.zst"));
+
     let mut events: Vec<CodexEvent> = Vec::new();
 
-    // Iterate through lines with enumeration for error reporting
-    for (line_num, line_result) in reader.lines().enumerate() {
+    if is_compressed {
+        let bytes = zstd::decode_all(std::io::BufReader::new(file))
+            .map_err(|e| format!("CODEX_ZST_ERROR: Failed to decompress rollout: {}", e))?;
+        let content = String::from_utf8_lossy(&bytes);
+        parse_event_lines(content.lines().map(|l| Ok(l.to_string())), &mut events)?;
+    } else {
+        let reader = BufReader::new(file);
+        parse_event_lines(reader.lines(), &mut events)?;
+    }
+
+    Ok(events)
+}
+
+/// Line-level JSONL parsing shared by the streaming and decompressed paths.
+fn parse_event_lines<I>(lines: I, events: &mut Vec<CodexEvent>) -> Result<(), String>
+where
+    I: Iterator<Item = std::io::Result<String>>,
+{
+    for (line_num, line_result) in lines.enumerate() {
         let line = line_result
             .map_err(|e| format!("CODEX_READ_ERROR: Line {}: Read error: {}", line_num + 1, e))?;
-
-        // Skip empty lines (Claude Code pattern)
         if line.trim().is_empty() {
             continue;
         }
-
-        // Parse JSON - continue on error (graceful degradation)
         match serde_json::from_str::<CodexEvent>(&line) {
             Ok(event) => events.push(event),
             Err(e) => {
                 eprintln!("⚠️ CODEX_PARSE_ERROR: Line {}: {}", line_num + 1, e);
-                continue; // Don't fail entire file for one bad line
+                continue;
             }
         }
     }
+    Ok(())
+}
 
-    Ok(events)
+/// True for a Codex rollout file, plain (`.jsonl`) or zstd-compressed
+/// (`.jsonl.zst`). Codex generates these names itself, always lowercase.
+#[allow(clippy::case_sensitive_file_extension_comparisons)]
+pub fn is_rollout_jsonl(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| {
+            name.starts_with("rollout-")
+                && (name.ends_with(".jsonl") || name.ends_with(".jsonl.zst"))
+        })
+}
+
+/// Discovery filter for session walkers: every rollout
+/// [`is_rollout_jsonl`] accepts, but a compressed `.jsonl.zst` whose plain
+/// `.jsonl` twin exists is skipped — Codex materializes the plain file for
+/// appends, so the plain one is current and listing both would duplicate
+/// the session.
+pub fn is_discoverable_rollout(path: &Path) -> bool {
+    if !is_rollout_jsonl(path) {
+        return false;
+    }
+    let is_compressed = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.ends_with(".jsonl.zst"));
+    if is_compressed {
+        // "rollout-….jsonl.zst" → "rollout-….jsonl"
+        let plain = path.with_extension("");
+        if plain.exists() {
+            return false;
+        }
+    }
+    true
 }
 
 // ============================================================================
@@ -234,6 +352,29 @@ fn convert_content(event: &CodexEvent) -> Vec<UniversalContent> {
     let mut content_items: Vec<UniversalContent> = Vec::new();
 
     if let Some(ref payload) = event.payload {
+        // Reasoning items: prefer summary[].text; some backends (DeepSeek via
+        // Codex, upstream #597) leave summary empty and store the text as
+        // content[].reasoning_text. Rendered as thinking, not plain text.
+        if payload.get("type").and_then(Value::as_str) == Some("reasoning") {
+            let mut thinking = join_reasoning_texts(payload.get("summary"), |_| true);
+            if thinking.is_empty() {
+                thinking = join_reasoning_texts(payload.get("content"), |v| {
+                    v.get("type").and_then(Value::as_str) == Some("reasoning_text")
+                });
+            }
+            if !thinking.is_empty() {
+                content_items.push(UniversalContent {
+                    content_type: ContentType::Thinking,
+                    data: json!({ "text": thinking }),
+                    encoding: None,
+                    mime_type: Some("text/plain".to_string()),
+                    size: None,
+                    hash: None,
+                });
+                return content_items;
+            }
+        }
+
         // Extract text content from payload.content field
         // Codex format: content: [{"type":"input_text","text":"..."}]
         if let Some(content_array) = payload.get("content").and_then(|c| c.as_array()) {
@@ -271,6 +412,20 @@ fn convert_content(event: &CodexEvent) -> Vec<UniversalContent> {
     }
 
     content_items
+}
+
+/// Joins the `text` of matching entries in a reasoning `summary`/`content` array.
+fn join_reasoning_texts(arr: Option<&Value>, keep: impl Fn(&Value) -> bool) -> String {
+    arr.and_then(Value::as_array)
+        .map(|arr| {
+            arr.iter()
+                .filter(|v| keep(v))
+                .filter_map(|v| v.get("text").and_then(Value::as_str))
+                .collect::<Vec<_>>()
+                .join("
+")
+        })
+        .unwrap_or_default()
 }
 
 /// Extract CWD (current working directory) with priority logic
@@ -430,5 +585,157 @@ mod tests {
         };
 
         assert_eq!(extract_cwd(&event3), None);
+    }
+
+    // ========================================================================
+    // zstd-compressed rollouts (.jsonl.zst) — upstream #74bdee28
+    // ========================================================================
+
+    #[test]
+    fn test_parse_rollout_filename_zst() {
+        let filename =
+            "rollout-2025-01-27T14-30-45-a1b2c3d4-e5f6-7890-abcd-ef1234567890.jsonl.zst";
+        let (timestamp, uuid) =
+            parse_rollout_filename(filename).expect("zst rollout name should parse");
+        assert_eq!(timestamp, "2025-01-27T14-30-45");
+        assert_eq!(uuid, "a1b2c3d4-e5f6-7890-abcd-ef1234567890");
+    }
+
+    #[test]
+    fn test_discovery_skips_compressed_rollout_with_plain_twin() {
+        let dir = tempfile::tempdir().unwrap();
+        let name = "rollout-2025-01-27T14-30-45-a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+        let zst = dir.path().join(format!("{name}.jsonl.zst"));
+        fs::write(&zst, b"x").unwrap();
+        assert!(is_rollout_jsonl(&zst));
+        assert!(is_discoverable_rollout(&zst), "no plain twin yet");
+
+        let plain = dir.path().join(format!("{name}.jsonl"));
+        fs::write(&plain, b"x").unwrap();
+        assert!(
+            !is_discoverable_rollout(&zst),
+            "compressed twin must be skipped when the plain file exists"
+        );
+        assert!(is_discoverable_rollout(&plain));
+    }
+
+    #[test]
+    fn test_parse_codex_jsonl_decompresses_zst() {
+        let dir = tempfile::tempdir().unwrap();
+        let body = concat!(
+            r#"{"type":"session_meta","timestamp":"2025-01-27T14:30:45Z"}"#,
+            "\n",
+            r#"{"type":"user_message","timestamp":"2025-01-27T14:30:46Z"}"#,
+            "\n",
+        );
+        let compressed = zstd::encode_all(body.as_bytes(), 3).expect("zstd encode");
+        let zst = dir
+            .path()
+            .join("rollout-2025-01-27T14-30-45-a1b2c3d4-e5f6-7890-abcd-ef1234567890.jsonl.zst");
+        fs::write(&zst, compressed).unwrap();
+
+        let events = parse_codex_jsonl(&zst).expect("parse compressed rollout");
+        assert_eq!(events.len(), 2);
+        assert_eq!(events[0].event_type, "session_meta");
+        assert_eq!(events[1].event_type, "user_message");
+    }
+    #[test]
+    fn test_session_id_first_meta_wins_over_replayed_source() {
+        let mk = |t: &str, id: Option<&str>| CodexEvent {
+            id: None,
+            timestamp: None,
+            event_type: t.to_string(),
+            payload: id.map(|i| json!({ "id": i, "cwd": "/tmp/x" })),
+            internal: None,
+            environment_context: None,
+            execution_context: None,
+        };
+        let events = vec![
+            mk("session_meta", Some("own-session")),
+            mk("user_message", None),
+            // Replayed source meta from `codex fork` — must NOT win.
+            mk("session_meta", Some("source-session")),
+        ];
+        assert_eq!(session_id_from_events(&events, "file-uuid"), "own-session");
+    }
+
+    #[test]
+    fn test_session_id_meta_less_falls_back_to_filename() {
+        let events = vec![CodexEvent {
+            id: None,
+            timestamp: None,
+            event_type: "user_message".to_string(),
+            payload: None,
+            internal: None,
+            environment_context: None,
+            execution_context: None,
+        }];
+        assert_eq!(session_id_from_events(&events, "file-uuid"), "file-uuid");
+    }
+
+    #[test]
+    fn test_reasoning_content_prefers_summary_then_content_texts() {
+        let mk = |payload: Value| CodexEvent {
+            id: None,
+            timestamp: None,
+            event_type: "response_item".to_string(),
+            payload: Some(payload),
+            internal: None,
+            environment_context: None,
+            execution_context: None,
+        };
+
+        // Summary present -> wins.
+        let ev = mk(json!({
+            "type": "reasoning",
+            "summary": [ { "type": "summary_text", "text": "from summary" } ],
+            "content": [ { "type": "reasoning_text", "text": "from content" } ]
+        }));
+        let content = convert_content(&ev);
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0].content_type, ContentType::Thinking);
+        assert_eq!(content[0].data["text"], "from summary");
+
+        // Empty summary (DeepSeek via Codex, #597) -> content[].reasoning_text.
+        let ev = mk(json!({
+            "type": "reasoning",
+            "summary": [],
+            "content": [
+                { "type": "reasoning_text", "text": "first thought" },
+                { "type": "reasoning_text", "text": "second thought" },
+                { "type": "other", "text": "not reasoning" }
+            ]
+        }));
+        let content = convert_content(&ev);
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0].content_type, ContentType::Thinking);
+        assert_eq!(content[0].data["text"], "first thought
+second thought");
+    }
+
+    #[test]
+    fn test_cwd_last_turn_context_wins_when_no_meta() {
+        let mk = |t: &str, cwd: Option<&str>| CodexEvent {
+            id: None,
+            timestamp: None,
+            event_type: t.to_string(),
+            payload: cwd.map(|c| json!({ "cwd": c })),
+            internal: None,
+            environment_context: None,
+            execution_context: None,
+        };
+        // A fork replays source turn contexts first; the LAST one is real.
+        let events = vec![
+            mk("turn_context", Some("/src/replayed")),
+            mk("turn_context", Some("/real/cwd")),
+        ];
+        assert_eq!(cwd_from_events(&events).as_deref(), Some("/real/cwd"));
+
+        // session_meta cwd beats turn_context.
+        let events = vec![
+            mk("session_meta", Some("/meta/cwd")),
+            mk("turn_context", Some("/turn/cwd")),
+        ];
+        assert_eq!(cwd_from_events(&events).as_deref(), Some("/meta/cwd"));
     }
 }

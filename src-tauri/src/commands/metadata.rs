@@ -24,12 +24,17 @@ use tauri::State;
 /// Tauri-managed application state for metadata caching.
 pub struct MetadataState {
     pub metadata: Mutex<Option<AppMetadata>>,
+    /// Held across read -> merge -> disk write -> cache update so
+    /// concurrent writers cannot overwrite each other's changes with a
+    /// stale snapshot (upstream #623). Sync lock: no await while held.
+    pub write_lock: Mutex<()>,
 }
 
 impl Default for MetadataState {
     fn default() -> Self {
         Self {
             metadata: Mutex::new(None),
+            write_lock: Mutex::new(()),
         }
     }
 }
@@ -165,6 +170,12 @@ pub async fn set_session_custom_name(
     name: Option<String>,
     state: State<'_, MetadataState>,
 ) -> Result<(), String> {
+    // Serialize writers: read -> merge -> persist under one lock so a
+    // concurrent save cannot lose this update (upstream #623).
+    let _write_guard = state
+        .write_lock
+        .lock()
+        .map_err(|e| format!("METADATA_WRITE_ERROR: Failed to acquire write lock: {e}"))?;
     let mut meta = get_cached(&state)?;
     let now = now_rfc3339();
     let entry = meta.sessions.entry(session_id.clone()).or_insert_with(|| SessionMeta {
@@ -189,6 +200,12 @@ pub async fn set_session_starred(
     starred: bool,
     state: State<'_, MetadataState>,
 ) -> Result<(), String> {
+    // Serialize writers: read -> merge -> persist under one lock so a
+    // concurrent save cannot lose this update (upstream #623).
+    let _write_guard = state
+        .write_lock
+        .lock()
+        .map_err(|e| format!("METADATA_WRITE_ERROR: Failed to acquire write lock: {e}"))?;
     let mut meta = get_cached(&state)?;
     let now = now_rfc3339();
     let entry = meta.sessions.entry(session_id.clone()).or_insert_with(|| SessionMeta {
@@ -213,6 +230,12 @@ pub async fn set_session_has_claude_code_name(
     value: bool,
     state: State<'_, MetadataState>,
 ) -> Result<(), String> {
+    // Serialize writers: read -> merge -> persist under one lock so a
+    // concurrent save cannot lose this update (upstream #623).
+    let _write_guard = state
+        .write_lock
+        .lock()
+        .map_err(|e| format!("METADATA_WRITE_ERROR: Failed to acquire write lock: {e}"))?;
     let mut meta = get_cached(&state)?;
     let now = now_rfc3339();
     let entry = meta.sessions.entry(session_id.clone()).or_insert_with(|| SessionMeta {
@@ -237,6 +260,12 @@ pub async fn add_session_tag(
     tag: String,
     state: State<'_, MetadataState>,
 ) -> Result<(), String> {
+    // Serialize writers: read -> merge -> persist under one lock so a
+    // concurrent save cannot lose this update (upstream #623).
+    let _write_guard = state
+        .write_lock
+        .lock()
+        .map_err(|e| format!("METADATA_WRITE_ERROR: Failed to acquire write lock: {e}"))?;
     let mut meta = get_cached(&state)?;
     let now = now_rfc3339();
     let entry = meta.sessions.entry(session_id.clone()).or_insert_with(|| SessionMeta {
@@ -263,6 +292,12 @@ pub async fn remove_session_tag(
     tag: String,
     state: State<'_, MetadataState>,
 ) -> Result<(), String> {
+    // Serialize writers: read -> merge -> persist under one lock so a
+    // concurrent save cannot lose this update (upstream #623).
+    let _write_guard = state
+        .write_lock
+        .lock()
+        .map_err(|e| format!("METADATA_WRITE_ERROR: Failed to acquire write lock: {e}"))?;
     let mut meta = get_cached(&state)?;
     let now = now_rfc3339();
     if let Some(entry) = meta.sessions.get_mut(&session_id) {
@@ -282,6 +317,12 @@ pub async fn set_session_notes(
     notes: Option<String>,
     state: State<'_, MetadataState>,
 ) -> Result<(), String> {
+    // Serialize writers: read -> merge -> persist under one lock so a
+    // concurrent save cannot lose this update (upstream #623).
+    let _write_guard = state
+        .write_lock
+        .lock()
+        .map_err(|e| format!("METADATA_WRITE_ERROR: Failed to acquire write lock: {e}"))?;
     let mut meta = get_cached(&state)?;
     let now = now_rfc3339();
     let entry = meta.sessions.entry(session_id.clone()).or_insert_with(|| SessionMeta {
@@ -320,6 +361,12 @@ pub async fn set_project_hidden(
     hidden: bool,
     state: State<'_, MetadataState>,
 ) -> Result<(), String> {
+    // Serialize writers: read -> merge -> persist under one lock so a
+    // concurrent save cannot lose this update (upstream #623).
+    let _write_guard = state
+        .write_lock
+        .lock()
+        .map_err(|e| format!("METADATA_WRITE_ERROR: Failed to acquire write lock: {e}"))?;
     let mut meta = get_cached(&state)?;
     let now = now_rfc3339();
     let entry = meta.projects.entry(project_path.clone()).or_insert_with(|| ProjectMeta {
@@ -341,6 +388,12 @@ pub async fn set_project_custom_name(
     name: Option<String>,
     state: State<'_, MetadataState>,
 ) -> Result<(), String> {
+    // Serialize writers: read -> merge -> persist under one lock so a
+    // concurrent save cannot lose this update (upstream #623).
+    let _write_guard = state
+        .write_lock
+        .lock()
+        .map_err(|e| format!("METADATA_WRITE_ERROR: Failed to acquire write lock: {e}"))?;
     let mut meta = get_cached(&state)?;
     let now = now_rfc3339();
     let entry = meta.projects.entry(project_path.clone()).or_insert_with(|| ProjectMeta {

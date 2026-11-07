@@ -30,6 +30,7 @@ use uuid;
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)] // superseded by parse_gemini_session (json + jsonl)
 pub struct GeminiSession {
     #[serde(rename = "sessionId")]
     pub session_id: Option<String>,
@@ -124,7 +125,7 @@ fn normalize_path(path: &str) -> String {
     path.replace("\\", "/").to_lowercase()
 }
 
-fn compute_sha256(input: &str) -> String {
+pub fn compute_sha256(input: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(input.as_bytes());
     format!("{:x}", hasher.finalize())
@@ -168,8 +169,11 @@ pub fn gemini_sessions_to_projects(
         let mut project_hash = None;
         if let Some(first_file) = files.first() {
             if let Ok(content) = fs::read_to_string(first_file) {
-                if let Ok(session) = serde_json::from_str::<GeminiSession>(&content) {
-                    project_hash = session.project_hash.clone();
+                if let Some((record, _)) = parse_gemini_session(&content) {
+                    project_hash = record
+                        .get("projectHash")
+                        .and_then(Value::as_str)
+                        .map(str::to_string);
                 }
             }
         }
@@ -204,6 +208,75 @@ pub fn gemini_sessions_to_projects(
     Ok(result)
 }
 
+/// Parse a Gemini session file in either on-disk format and return the
+/// merged session metadata plus the ordered message records.
+///
+/// Gemini CLI migrated from a monolithic `.json` object to an append-only
+/// `.jsonl` log (gemini-cli#23749, upstream #393): the first `.jsonl` line
+/// is session metadata (string `sessionId` + `projectHash`), then one
+/// message per line; `{ "$set": {..} }` lines update metadata and
+/// `{ "$rewindTo": .. }` markers carry no displayable content.
+pub fn parse_gemini_session(data: &str) -> Option<(Value, Vec<Value>)> {
+    // Legacy monolithic object: whole-file parse with a messages/history array.
+    if let Ok(record) = serde_json::from_str::<Value>(data) {
+        let arr = record
+            .get("messages")
+            .and_then(Value::as_array)
+            .or_else(|| record.get("history").and_then(Value::as_array));
+        if let Some(messages) = arr {
+            let messages = messages.clone();
+            return Some((record, messages));
+        }
+    }
+
+    // JSONL log: classify each line as metadata, metadata-update, or message.
+    let mut metadata = serde_json::Map::new();
+    let mut messages: Vec<Value> = Vec::new();
+    let mut saw_record = false;
+
+    for line in data.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let Ok(value) = serde_json::from_str::<Value>(line) else {
+            continue;
+        };
+        let Some(obj) = value.as_object() else {
+            continue;
+        };
+        saw_record = true;
+
+        if let Some(set) = obj.get("$set").and_then(Value::as_object) {
+            for (key, val) in set {
+                metadata.insert(key.clone(), val.clone());
+            }
+            continue;
+        }
+        if obj.contains_key("$rewindTo") {
+            continue;
+        }
+
+        let is_metadata = obj.get("sessionId").and_then(Value::as_str).is_some()
+            && obj.get("projectHash").and_then(Value::as_str).is_some();
+        if is_metadata {
+            for (key, val) in obj {
+                metadata.insert(key.clone(), val.clone());
+            }
+            continue;
+        }
+
+        if obj.get("id").and_then(Value::as_str).is_some() {
+            messages.push(value);
+        }
+    }
+
+    if !saw_record {
+        return None;
+    }
+    Some((Value::Object(metadata), messages))
+}
+
 /// Convert Gemini session file to UniversalSession
 pub fn gemini_file_to_session(
     file_path: &Path,
@@ -215,14 +288,8 @@ pub fn gemini_file_to_session(
     let content = fs::read_to_string(file_path)
         .map_err(|e| format!("Failed to read Gemini session: {}", e))?;
 
-    let session: GeminiSession = serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse Gemini session: {}", e))?;
-
-    // Extract messages array (with fallbacks)
-    let messages = session
-        .messages
-        .or(session.history)
-        .unwrap_or_else(Vec::new);
+    let (session, messages) = parse_gemini_session(&content)
+        .ok_or_else(|| format!("Failed to parse Gemini session: {}", file_path.display()))?;
 
     let message_count = messages.len();
 
@@ -231,21 +298,21 @@ pub fn gemini_file_to_session(
         extract_first_user_text(&messages).unwrap_or_else(|| "Untitled Session".to_string());
 
     // Resolve CWD from projectHash
-    let cwd = session
-        .project_hash
-        .as_ref()
-        .and_then(|hash| resolver.resolve(hash));
+    let project_hash = session
+        .get("projectHash")
+        .and_then(Value::as_str);
+    let cwd = project_hash.and_then(|hash| resolver.resolve(hash));
 
     // Session metadata (use camelCase for frontend compatibility)
     let mut metadata = HashMap::new();
     metadata.insert("filePath".to_string(), json!(file_path.to_string_lossy())); // camelCase!
-    if let Some(ref hash) = session.project_hash {
+    if let Some(hash) = project_hash {
         metadata.insert("projectHash".to_string(), json!(hash)); // camelCase!
     }
     if let Some(ref cwd_path) = cwd {
         metadata.insert("cwd".to_string(), json!(cwd_path));
     }
-    if let Some(ref model) = session.model {
+    if let Some(model) = session.get("model").and_then(Value::as_str) {
         metadata.insert("model".to_string(), json!(model));
     }
 
@@ -260,11 +327,15 @@ pub fn gemini_file_to_session(
 
     // Get timestamps with defaults if missing
     let first_message_at = session
-        .start_time
+        .get("startTime")
+        .and_then(Value::as_str)
+        .map(str::to_string)
         .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
     let last_message_at = session
-        .last_updated
-        .unwrap_or_else(|| first_message_at.clone());
+        .get("lastUpdated")
+        .and_then(Value::as_str)
+        .unwrap_or_else(|| first_message_at.as_str())
+        .to_string();
 
     Ok(UniversalSession {
         id: compute_sha256(&file_path.to_string_lossy()),
@@ -393,7 +464,12 @@ fn find_gemini_sessions(root: &Path) -> Result<Vec<PathBuf>, String> {
                     visit_dirs(&path, sessions)?;
                 } else if let Some(name) = path.file_name() {
                     if let Some(name_str) = name.to_str() {
-                        if name_str.starts_with("session-") && name_str.ends_with(".json") {
+                        // Current Gemini CLI writes append-only `.jsonl`
+                        // logs; older versions wrote monolithic `.json`
+                        // (gemini-cli#23749, upstream #393).
+                        if name_str.starts_with("session-")
+                            && (name_str.ends_with(".json") || name_str.ends_with(".jsonl"))
+                        {
                             sessions.push(path);
                         }
                     }
@@ -1080,5 +1156,37 @@ mod tests {
         assert_eq!(map_gemini_tool_name("execute_command"), "Bash");
         assert_eq!(map_gemini_tool_name("search_files"), "Grep");
         assert_eq!(map_gemini_tool_name("unknown_tool"), "unknown_tool");
+    }
+    #[test]
+    fn test_parse_gemini_session_legacy_json_and_jsonl() {
+        // Legacy monolithic .json
+        let legacy = r#"{"sessionId":"s1","projectHash":"h1","startTime":"2026-01-01T00:00:00Z",
+            "messages":[{"id":"m1","type":"user","content":"hi"}]}"#;
+        let (record, messages) = parse_gemini_session(legacy).expect("legacy parses");
+        assert_eq!(record["sessionId"], "s1");
+        assert_eq!(messages.len(), 1);
+
+        // Append-only .jsonl log with $set and $rewindTo
+        let jsonl = concat!(
+            r#"{"sessionId":"s2","projectHash":"h2","startTime":"2026-02-01T00:00:00Z","lastUpdated":"2026-02-01T00:00:01Z"}"#,
+            "
+",
+            r#"{"$set":{"lastUpdated":"2026-02-01T00:05:00Z"}}"#,
+            "
+",
+            r#"{"$rewindTo":"m1"}"#,
+            "
+",
+            r#"{"id":"m1","type":"user","content":"first"}"#,
+            "
+",
+            r#"{"id":"m2","type":"assistant","content":"second"}"#,
+        );
+        let (record, messages) = parse_gemini_session(jsonl).expect("jsonl parses");
+        assert_eq!(record["sessionId"], "s2");
+        assert_eq!(record["lastUpdated"], "2026-02-01T00:05:00Z", "$set merged");
+        assert_eq!(messages.len(), 2, "rewind marker skipped");
+
+        assert!(parse_gemini_session("not json at all").is_none());
     }
 }

@@ -134,6 +134,7 @@ fn process_session_file(
 
     // Lightweight scan state — no ClaudeMessage allocation
     let mut session_summary: Option<String> = None;
+    let mut ai_title: Option<String> = None;
     let mut git_branch: Option<String> = None;
     let mut git_commit: Option<String> = None;
     let mut actual_session_id: Option<String> = None;
@@ -206,6 +207,19 @@ fn process_session_file(
             if session_summary.is_none() {
                 session_summary =
                     scan_entry.summary.map(|s| filter_preamble_from_title(&s));
+            }
+            continue;
+        }
+
+        // Claude Code's auto-generated title outranks legacy summaries and
+        // the first user message; the record repeats as the title is refined,
+        // so the LAST non-empty value wins (upstream #611).
+        if scan_entry.message_type == "ai-title" {
+            if let Some(t) = scan_entry.ai_title.as_deref() {
+                let t = t.trim();
+                if !t.is_empty() {
+                    ai_title = Some(t.to_string());
+                }
             }
             continue;
         }
@@ -332,12 +346,11 @@ fn process_session_file(
         false
     };
 
-    // --- Summary from first user message (only if no summary message found) ---
-    let final_summary = if session_summary.is_some() {
-        session_summary
-    } else {
-        extract_summary_from_raw_content(first_user_content_raw.as_deref())
-    };
+    // --- Title priority: ai-title > legacy summary > first user message ---
+    // (custom renames still override at the display layer via metadata)
+    let final_summary = ai_title
+        .or(session_summary)
+        .or_else(|| extract_summary_from_raw_content(first_user_content_raw.as_deref()));
 
     // --- Git info fallback from tool outputs ---
     let tool_outputs: Vec<String> = tool_result_raws
@@ -368,7 +381,20 @@ fn process_session_file(
         .and_then(|n| n.to_str())
         .unwrap_or("Unknown")
         .to_string();
-    let project_name = extract_project_name(&raw_project_name);
+    // Prefer the decoded, filesystem-verified project name; the legacy
+    // heuristic stays as fallback (upstream #548/#549).
+    let parent_path = entry
+        .path()
+        .parent()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let decoded = crate::utils::decode_project_path_verified(&parent_path)
+        .unwrap_or_else(|| crate::utils::decode_project_path(&parent_path));
+    let project_name = std::path::Path::new(&decoded)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .filter(|n| !n.is_empty() && n != &raw_project_name)
+        .unwrap_or_else(|| extract_project_name(&raw_project_name));
 
     Some(ClaudeSession {
         session_id,
@@ -448,9 +474,19 @@ pub async fn load_project_sessions(
         .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
         .collect();
 
+    // Hide predecessors whose continuations already cover their history —
+    // they read as duplicate stub sessions in the list (upstream #496/#572).
+    // The predecessor stays visible when it kept its own main-conversation
+    // turns after the branch point (a real fork parent).
+    let superseded =
+        crate::commands::session_chain::superseded_chain_paths(std::path::Path::new(
+            &project_path,
+        ));
+
     // Process files in parallel using rayon
     let mut sessions: Vec<ClaudeSession> = file_entries
         .par_iter()
+        .filter(|entry| !superseded.contains(entry.path()))
         .filter_map(|entry| process_session_file(entry, exclude, noise))
         .collect();
 
@@ -702,71 +738,92 @@ pub async fn load_session_messages_paginated(
 ) -> Result<MessagePage, String> {
     let start_time = std::time::Instant::now();
 
-    let file = fs::File::open(&session_path)
-        .map_err(|e| format!("SESSION_FILE_ERROR: Failed to open session file: {}", e))?;
-
-    let metadata = file
-        .metadata()
-        .map_err(|e| format!("SESSION_READ_ERROR: Failed to read file metadata: {}", e))?;
-
-    // For empty files, return empty page immediately
-    if metadata.len() == 0 {
-        return Ok(MessagePage {
-            messages: Vec::new(),
-            total_count: 0,
-            next_offset: offset,
-            has_more: false,
-        });
-    }
-
-    // Use memory-mapped I/O for zero-copy access
-    let mmap = unsafe {
-        Mmap::map(&file)
-            .map_err(|e| format!("SESSION_READ_ERROR: Failed to memory-map session file: {}", e))?
-    };
-
-    // Use SIMD-accelerated line splitting
-    let line_ranges = find_line_ranges(&mmap);
+    // Cross-file continuation chain: Claude Code may auto-continue a
+    // conversation into a NEW session file whose compact_boundary carries a
+    // logicalParentUuid pointing at the predecessor's last message (upstream
+    // #496). Resolve the chain and read it oldest-first as one conversation.
+    let chain =
+        crate::commands::session_chain::resolve_session_chain(std::path::Path::new(&session_path));
 
     let exclude = exclude_sidechain.unwrap_or(false);
     let noise = include_noise.unwrap_or(false);
 
-    // === PASS 1: Lightweight scan for pagination ===
+    // === PASS 1: Lightweight scan for pagination, across the whole chain ===
     // Only parse 4 fields per line to determine which lines are valid displayable messages.
-    let mut valid_line_indices: Vec<usize> = Vec::with_capacity(line_ranges.len());
+    let mut maps: Vec<Mmap> = Vec::with_capacity(chain.len());
+    let mut ranges_per_file: Vec<Vec<(usize, usize)>> = Vec::with_capacity(chain.len());
+    // (file index, line index) for every valid displayable line, in order.
+    let mut valid_line_indices: Vec<(usize, usize)> = Vec::new();
 
-    for (line_idx, &(start, end)) in line_ranges.iter().enumerate() {
-        let line = std::str::from_utf8(&mmap[start..end]).unwrap_or_default();
-        if line.trim().is_empty() {
+    for (file_no, chain_path) in chain.iter().enumerate() {
+        let file = match fs::File::open(chain_path) {
+            Ok(f) => f,
+            Err(e) => {
+                if file_no == 0 && chain.len() == 1 {
+                    return Err(format!(
+                        "SESSION_FILE_ERROR: Failed to open session file: {}",
+                        e
+                    ));
+                }
+                continue; // a missing chain member degrades to skipping it
+            }
+        };
+        let Ok(metadata) = file.metadata() else {
+            continue;
+        };
+        if metadata.len() == 0 {
             continue;
         }
-
-        match serde_json::from_str::<PaginationScanEntry>(line) {
-            Ok(entry) => {
-                if entry.message_type == "summary" {
-                    continue;
+        let mmap = match unsafe { Mmap::map(&file) } {
+            Ok(m) => m,
+            Err(e) => {
+                if file_no == 0 && chain.len() == 1 {
+                    return Err(format!(
+                        "SESSION_READ_ERROR: Failed to memory-map session file: {}",
+                        e
+                    ));
                 }
-                if !noise && is_noise_message_type(&entry.message_type) {
-                    continue;
-                }
-                if exclude && entry.is_sidechain.unwrap_or(false) {
-                    continue;
-                }
-                if entry.session_id.is_none() && entry.timestamp.is_none() {
-                    continue;
-                }
-                valid_line_indices.push(line_idx);
+                continue;
             }
-            Err(_e) => {
-                #[cfg(debug_assertions)]
-                eprintln!(
-                    "Failed to parse line {} in {}: {}",
-                    line_idx + 1,
-                    session_path,
-                    _e
-                );
+        };
+        let line_ranges = find_line_ranges(&mmap);
+
+        for (line_idx, &(start, end)) in line_ranges.iter().enumerate() {
+            let line = std::str::from_utf8(&mmap[start..end]).unwrap_or_default();
+            if line.trim().is_empty() {
+                continue;
+            }
+
+            match serde_json::from_str::<PaginationScanEntry>(line) {
+                Ok(entry) => {
+                    if entry.message_type == "summary" {
+                        continue;
+                    }
+                    if !noise && is_noise_message_type(&entry.message_type) {
+                        continue;
+                    }
+                    if exclude && entry.is_sidechain.unwrap_or(false) {
+                        continue;
+                    }
+                    if entry.session_id.is_none() && entry.timestamp.is_none() {
+                        continue;
+                    }
+                    valid_line_indices.push((file_no, line_idx));
+                }
+                Err(_e) => {
+                    #[cfg(debug_assertions)]
+                    eprintln!(
+                        "Failed to parse line {} in {}: {}",
+                        line_idx + 1,
+                        chain_path.display(),
+                        _e
+                    );
+                }
             }
         }
+
+        ranges_per_file.push(line_ranges);
+        maps.push(mmap);
     }
 
     let total_count = valid_line_indices.len();
@@ -852,8 +909,9 @@ pub async fn load_session_messages_paginated(
     let page_indices = &valid_line_indices[start_idx..end_idx];
     let mut messages: Vec<UniversalMessage> = Vec::with_capacity(page_indices.len());
 
-    for (i, &line_idx) in page_indices.iter().enumerate() {
-        let (start, end) = line_ranges[line_idx];
+    for (i, &(file_no, line_idx)) in page_indices.iter().enumerate() {
+        let (start, end) = ranges_per_file[file_no][line_idx];
+        let mmap = &maps[file_no];
         let line = std::str::from_utf8(&mmap[start..end]).unwrap_or_default();
 
         match serde_json::from_str::<RawLogEntry>(line) {
@@ -1456,6 +1514,49 @@ mod tests {
                 "expected `{ty}` to be classified as noise",
             );
         }
+    }
+
+    // ── Feature: auto-generated ai-title becomes the session title ────────
+    fn process_fixture(dir: &std::path::Path, lines: &[&str]) -> Option<ClaudeSession> {
+        use std::io::Write as _;
+        let file = dir.join("sess.jsonl");
+        let mut f = std::fs::File::create(&file).unwrap();
+        for line in lines {
+            writeln!(f, "{}", line).unwrap();
+        }
+        drop(f);
+        let entry = walkdir::WalkDir::new(&file).into_iter().next().unwrap().unwrap();
+        process_session_file(&entry, false, false)
+    }
+
+    #[test]
+    fn test_ai_title_last_wins_and_outranks_summary() {
+        let dir = tempfile::tempdir().unwrap();
+        let session = process_fixture(
+            dir.path(),
+            &[
+                r#"{"type":"user","sessionId":"s1","timestamp":"2026-01-01T00:00:00Z","message":{"role":"user","content":"first user msg"}}"#,
+                r#"{"type":"summary","summary":"legacy summary"}"#,
+                r#"{"type":"ai-title","aiTitle":"first title"}"#,
+                r#"{"type":"ai-title","aiTitle":"refined title"}"#,
+            ],
+        )
+        .expect("session parses");
+        assert_eq!(session.summary.as_deref(), Some("refined title"));
+    }
+
+    #[test]
+    fn test_summary_fallback_when_no_ai_title() {
+        let dir = tempfile::tempdir().unwrap();
+        let session = process_fixture(
+            dir.path(),
+            &[
+                r#"{"type":"user","sessionId":"s1","timestamp":"2026-01-01T00:00:00Z","message":{"role":"user","content":"first user msg"}}"#,
+                r#"{"type":"summary","summary":"legacy summary"}"#,
+            ],
+        )
+        .expect("session parses");
+        assert_eq!(session.summary.as_deref(), Some("legacy summary"));
     }
 
     #[test]
