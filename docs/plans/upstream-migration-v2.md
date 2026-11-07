@@ -34,6 +34,9 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 
 - ✅ codex cwd-projects (2026-11-07 follow-up, user-verified symptom "574 projects") — commit: projects group by cwd (upstream model), unknown bucket, len+mtime metadata cache so project opens do not re-decompress 576 zst files; 257 tests green.
 - ✅ 2026-11-07 dogfood fixes (v1.10.6) — detection: per-provider validate (kills 9x9 storm), 15s timeout, idempotent registry init, single-flight initializeSources + regression test; codex project listing now cache-driven (no re-decompression of hundreds of zst per open).
+- ✅ Recent Edits hardening (2026-11-07) — our fork ALREADY has the backend (`commands/edits.rs`: collect + paginate + restore, June port). Ported upstream #606 (replace_all replay, 3 tests) and the #525/#640 restore guard (refuse symlink / non-regular targets, 3 tests).
+- ✅ #463 resume-in-terminal — ALREADY PRESENT: `commands/resume.rs::resume_session` spawns a terminal; wired via ExportControls.
+- ⏭ Recent Edits remaining: the dock/sidebar PANEL UI + recentEditsPanelSlice + restore preview (backend list/restore already exist).
 **QUEUED — next session, fresh context (P2 features, port-notes ready):**
 - Recent Edits panel (#515+#514+follow-ups): backend edits reader + recentEditsPanelSlice + dock UI + i18n×6 + restore guard. Port WHOLE subsystem; the 20+ review-fix commits are integral.
 - resume-in-terminal (#463+#595) + multi-select mass delete (#456): interdependent UI; needs getResumeCommand per-provider map first.

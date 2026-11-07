@@ -573,6 +573,28 @@ pub async fn restore_file(file_path: String, content: String) -> Result<(), Stri
         }
     }
 
+    // Refuse to write over anything that is not a regular file: a directory,
+    // a FIFO, or a symlink planted where a session file used to be must never
+    // receive a restore payload (upstream #525/#640 restore guard).
+    match fs::symlink_metadata(path) {
+        Ok(metadata) => {
+            let file_type = metadata.file_type();
+            if file_type.is_symlink() {
+                return Err(
+                    "Invalid restore target: path is a symlink, refusing to follow it".to_string(),
+                );
+            }
+            if !file_type.is_file() {
+                return Err(
+                    "Invalid restore target: path is not a regular file".to_string(),
+                );
+            }
+        }
+        Err(_) => {
+            // Missing file: restore recreates it, which is supported.
+        }
+    }
+
     // Create parent directories if they don't exist
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("Failed to create directories: {e}"))?;
@@ -602,6 +624,45 @@ mod tests {
         let mut file = File::create(&file_path).unwrap();
         file.write_all(content.as_bytes()).unwrap();
         file_path
+    }
+
+    #[tokio::test]
+    async fn restore_rejects_a_directory_target() {
+        let tmp = tempfile::tempdir().unwrap();
+        let target = tmp.path().join("a-directory");
+        std::fs::create_dir_all(&target).unwrap();
+
+        let err = restore_file(target.to_string_lossy().to_string(), "x".to_string())
+            .await
+            .expect_err("writing over a directory must be refused");
+        assert!(err.contains("not a regular file"), "got: {err}");
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn restore_rejects_a_symlink_target() {
+        let tmp = tempfile::tempdir().unwrap();
+        let real = tmp.path().join("real.txt");
+        std::fs::write(&real, "original").unwrap();
+        let link = tmp.path().join("link.txt");
+        std::os::unix::fs::symlink(&real, &link).unwrap();
+
+        let err = restore_file(link.to_string_lossy().to_string(), "overwritten".to_string())
+            .await
+            .expect_err("writing through a symlink must be refused");
+        assert!(err.contains("symlink"), "got: {err}");
+        assert_eq!(std::fs::read_to_string(&real).unwrap(), "original");
+    }
+
+    #[tokio::test]
+    async fn restore_still_creates_a_missing_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let target = tmp.path().join("nested").join("new.txt");
+
+        restore_file(target.to_string_lossy().to_string(), "fresh".to_string())
+            .await
+            .expect("missing files are recreated");
+        assert_eq!(std::fs::read_to_string(&target).unwrap(), "fresh");
     }
 
     // Test restore_file security validations
