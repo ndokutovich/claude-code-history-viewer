@@ -16,6 +16,21 @@ lazy_static! {
     static ref FILENAME_REGEX: Regex = Regex::new(r"^[A-Za-z0-9_-]+$").unwrap();
 }
 
+/// Write every line followed by its own newline, including the last one.
+///
+/// Claude Code appends each entry with a trailing newline and no leading one,
+/// so an unterminated last line would get the next entry glued onto it and
+/// both records become unparseable (upstream #607).
+fn write_terminated_lines<W: std::io::Write>(
+    writer: &mut W,
+    lines: &[String],
+) -> std::io::Result<()> {
+    for line in lines {
+        writeln!(writer, "{line}")?;
+    }
+    Ok(())
+}
+
 /// Result structure for rename operations
 #[derive(Debug, Serialize, Deserialize)]
 pub struct NativeRenameResult {
@@ -141,13 +156,8 @@ pub async fn rename_session_native(
         let mut temp_file = File::create(&temp_path)
             .map_err(|e| RenameError::IoError(e.to_string()).to_string())?;
 
-        for (i, line) in lines.iter().enumerate() {
-            if i > 0 {
-                writeln!(temp_file).map_err(|e| RenameError::IoError(e.to_string()).to_string())?;
-            }
-            write!(temp_file, "{line}")
-                .map_err(|e| RenameError::IoError(e.to_string()).to_string())?;
-        }
+        write_terminated_lines(&mut temp_file, &lines)
+            .map_err(|e| RenameError::IoError(e.to_string()).to_string())?;
     }
 
     // 13. Atomic rename (Windows-safe via fs_utils helper)
@@ -702,5 +712,37 @@ mod tests {
     fn test_title_with_closing_bracket_rejected() {
         let title_with_bracket = "Test ] Title";
         assert!(title_with_bracket.contains(']'));
+    }
+}
+
+#[cfg(test)]
+mod trailing_newline_tests {
+    use super::*;
+
+    #[test]
+    fn every_rewritten_line_is_newline_terminated() {
+        let mut out: Vec<u8> = Vec::new();
+        write_terminated_lines(
+            &mut out,
+            &["{\"a\":1}".to_string(), "{\"b\":2}".to_string()],
+        )
+        .unwrap();
+
+        let text = String::from_utf8(out).unwrap();
+        assert!(
+            text.as_bytes().last() == Some(&10u8),
+            "last line must be terminated: {text:?}"
+        );
+        assert_eq!(text.lines().count(), 2);
+        for line in text.lines() {
+            serde_json::from_str::<serde_json::Value>(line).expect("each line parses");
+        }
+    }
+
+    #[test]
+    fn empty_input_writes_nothing() {
+        let mut out: Vec<u8> = Vec::new();
+        write_terminated_lines(&mut out, &[]).unwrap();
+        assert!(out.is_empty());
     }
 }
