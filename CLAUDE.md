@@ -491,6 +491,19 @@ Assistant messages contain additional metadata within the `message` object:
 - Metadata is provider-agnostic and keyed by session ID
 - The store exposes a `metadataSlice` for reading and writing metadata from React components
 
+### Upstream Sync (v1.10.5+, tail v1.13.0 → v1.32.2)
+
+The fork tracks upstream by **feature, not by commit**: the histories diverged, so cherry-picks rarely apply. Triage ledger and port notes live in `docs/plans/upstream-migration-v2.md`; raw tail in `docs/plans/upstream-tail-v13-v32.txt`. Verify with `cargo test --lib -- --ignored --nocapture` (live tests read the developer's real stores).
+
+Subsystems ported from upstream and their invariants:
+
+- **Antigravity** (`commands/adapters/antigravity.rs`) — sessions live in `brain/<uuid>/.system_generated/logs/transcript_full.jsonl`, for both `~/.gemini/antigravity` and `~/.gemini/antigravity-cli`. `conversation_summaries.db` (SQLite) supplies titles/workspaces; `history.jsonl` is the CLI fallback index. `conversations/*.pb|*.db` are encrypted and never parsed. Projects group by workspace (case-insensitive: `w:/` == `W:/`).
+- **Codex** (`commands/codex.rs`) — rollouts may be `.jsonl.zst`; a compressed twin is skipped when the plain file exists. Projects are **working directories** (`codex://<cwd>`), sessions are rollouts inside them. First `session_meta` wins (forks replay the source's meta); cwd falls back to the LAST `turn_context`. Per-file metadata is cached by len+mtime so listing a project never re-decompresses archives.
+- **Claude chain merge** (`commands/session_chain.rs`) — a `compact_boundary` whose `logicalParentUuid` is absent from its own file means the conversation continues from another file; the loader reads the whole chain oldest-first and the session list hides predecessors fully covered by their continuations.
+- **Gemini** — sessions may be append-only `.jsonl` (first line = metadata, `$set` updates, `$rewindTo` markers) or legacy monolithic `.json`.
+
+**Provider detection** (`src/store/useSourceStore.ts`) must stay O(1) adapter validates per provider: validate with the provider's own adapter (`adapterRegistry.tryGet(id)`), never `detectProvider` across all adapters for every path — that once cost 9×9 Tauri calls inside one timeout and silently dropped Claude Code on fresh installs.
+
 ### Store Architecture (14 slices)
 The Zustand store is split into 14 focused slices: `navigation`, `filter`, `search`, `analytics`, `settings`, `captureMode`, `metadata`, `provider`, `board`, `globalStats`, `message`, `metadataSlice`, `navigator`, `project`, and `watcher`. This replaces the earlier monolithic `useAppStore.ts` structure.
 
