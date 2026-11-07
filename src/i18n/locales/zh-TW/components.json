@@ -700,6 +700,7 @@
     "extractFailed": "擷取訊息失敗"
   },
   "messageView": {
+    "contentParallelTasks": "平行任務",
     "formatted": "格式化",
     "raw": "原始資料",
     "filters": "篩選",
@@ -727,6 +728,9 @@
     "toggleNavigator": "切換訊息導航器"
   },
   "messageViewer": {
+    "minimap": {
+      "toggle": "切換工作階段小地圖"
+    },
     "user": "使用者",
     "claude": "Claude",
     "system": "系統",

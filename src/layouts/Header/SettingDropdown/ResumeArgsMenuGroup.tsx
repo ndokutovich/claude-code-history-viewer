@@ -21,7 +21,7 @@ export const ResumeArgsMenuGroup = () => {
   return (
     <>
       <DropdownMenuLabel>
-        {t("common.settings.resumeArgs.title", {
+        {t("settings.resumeArgs.title", {
           defaultValue: "Resume CLI arguments",
         })}
       </DropdownMenuLabel>
@@ -33,16 +33,16 @@ export const ResumeArgsMenuGroup = () => {
           placeholder="--dangerously-skip-permissions"
           spellCheck={false}
           className="w-full rounded border border-border bg-background px-2 py-1 text-xs font-mono"
-          aria-label={t("common.settings.resumeArgs.title", {
+          aria-label={t("settings.resumeArgs.title", {
             defaultValue: "Resume CLI arguments",
           })}
         />
         <p className="text-[11px] text-muted-foreground">
           {droppedSomething
-            ? t("common.settings.resumeArgs.invalid", {
+            ? t("settings.resumeArgs.invalid", {
                 defaultValue: "Only flags like --fast or --model=sonnet are kept",
               })
-            : t("common.settings.resumeArgs.hint", {
+            : t("settings.resumeArgs.hint", {
                 defaultValue: "Appended to the resume command",
               })}
         </p>

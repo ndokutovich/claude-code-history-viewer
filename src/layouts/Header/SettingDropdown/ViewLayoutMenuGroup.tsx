@@ -21,7 +21,7 @@ export const ViewLayoutMenuGroup = () => {
   return (
     <>
       <DropdownMenuLabel>
-        {t("common.settings.layout.title", { defaultValue: "Layout" })}
+        {t("settings.layout.title", { defaultValue: "Layout" })}
       </DropdownMenuLabel>
       <DropdownMenuCheckboxItem
         checked={showSessionsColumn}
@@ -29,7 +29,7 @@ export const ViewLayoutMenuGroup = () => {
           setViewPreferences({ showSessionsColumn: checked === true })
         }
       >
-        {t("common.settings.layout.sessionsColumn", {
+        {t("settings.layout.sessionsColumn", {
           defaultValue: "Show sessions column",
         })}
       </DropdownMenuCheckboxItem>

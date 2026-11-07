@@ -78,7 +78,5 @@
   "navigator.role.summary": "Summary",
   "navigator.noMessages": "No messages in this session",
   "navigator.close": "Close navigator",
-  "navigator.messageCount": "{{count}} messages",
-  "messageViewer.minimap.toggle": "Toggle session minimap",
-  "messageView.contentParallelTasks": "Parallel tasks"
+  "navigator.messageCount": "{{count}} messages"
 }

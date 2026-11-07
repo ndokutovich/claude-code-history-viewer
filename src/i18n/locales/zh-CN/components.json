@@ -700,6 +700,7 @@
     "extractFailed": "提取消息失败"
   },
   "messageView": {
+    "contentParallelTasks": "并行任务",
     "formatted": "格式化",
     "raw": "原始数据",
     "filters": "筛选",
@@ -727,6 +728,9 @@
     "toggleNavigator": "切换消息导航器"
   },
   "messageViewer": {
+    "minimap": {
+      "toggle": "切换会话小地图"
+    },
     "user": "用户",
     "claude": "Claude",
     "system": "系统",

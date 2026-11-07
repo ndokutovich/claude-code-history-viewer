@@ -84,7 +84,9 @@ export const SessionItem: React.FC<SessionItemProps> = ({
   onHover,
   formatTimeAgo,
 }) => {
-  const { t } = useTranslation();
+  // The menu strings live in `components`; `common` stays first for the keys
+  // that already resolve there.
+  const { t } = useTranslation(["common", "components"]);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);

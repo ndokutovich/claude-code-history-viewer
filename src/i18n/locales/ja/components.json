@@ -562,6 +562,7 @@
     "extractFailed": "メッセージの抽出に失敗しました"
   },
   "messageView": {
+    "contentParallelTasks": "並列タスク",
     "formatted": "フォーマット済み",
     "raw": "生データ",
     "filters": "フィルタ",
@@ -589,6 +590,9 @@
     "toggleNavigator": "メッセージナビゲーターの切り替え"
   },
   "messageViewer": {
+    "minimap": {
+      "toggle": "セッションミニマップの切り替え"
+    },
     "user": "ユーザー",
     "claude": "Claude",
     "system": "システム",

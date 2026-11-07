@@ -682,6 +682,7 @@
     "extractFailed": "Failed to extract messages"
   },
   "messageView": {
+    "contentParallelTasks": "Parallel tasks",
     "formatted": "Formatted",
     "raw": "Raw",
     "filters": "Filters",
@@ -709,6 +710,9 @@
     "toggleNavigator": "Toggle message navigator"
   },
   "messageViewer": {
+    "minimap": {
+      "toggle": "Toggle session minimap"
+    },
     "user": "User",
     "claude": "Claude",
     "system": "System",

@@ -684,6 +684,7 @@
     "extractFailed": "Не удалось извлечь сообщения"
   },
   "messageView": {
+    "contentParallelTasks": "Параллельные задачи",
     "formatted": "Форматированный",
     "raw": "Необработанный",
     "filters": "Фильтры",
@@ -711,6 +712,9 @@
     "toggleNavigator": "Переключить навигатор сообщений"
   },
   "messageViewer": {
+    "minimap": {
+      "toggle": "Переключить мини-карту сессии"
+    },
     "user": "Пользователь",
     "claude": "Claude",
     "system": "Система",

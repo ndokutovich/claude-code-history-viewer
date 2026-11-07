@@ -702,6 +702,7 @@
     "extractFailed": "메시지 추출 실패"
   },
   "messageView": {
+    "contentParallelTasks": "병렬 작업",
     "formatted": "서식 있음",
     "raw": "원시 데이터",
     "filters": "필터",
@@ -729,6 +730,9 @@
     "toggleNavigator": "메시지 네비게이터 토글"
   },
   "messageViewer": {
+    "minimap": {
+      "toggle": "세션 미니맵 전환"
+    },
     "user": "사용자",
     "claude": "Claude",
     "system": "시스템",
