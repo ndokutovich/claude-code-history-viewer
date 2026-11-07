@@ -43,17 +43,19 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 - ✅ #456 multi-select + mass delete (2026-11-07) — select mode in tree and flat list, two-step confirm, per-file outcome, 7 tests.
 - ✅ #411 archive backup (2026-11-07) — `backup_claude_projects` zips the projects tree with strict destination guards, save dialog entry in the project-list menu, 5 backend tests.
 - ✅ #634 session minimap (2026-11-07) — opt-in strip, viewport box, click/drag jump; geometry helpers with 11 tests; toggle persisted in view preferences.
+- ✅ #595 resume extra CLI args (2026-11-07) — settings field, sanitising on both sides, 5 backend + 7 frontend tests.
+- ✅ #473 diff view in Recent Edits (2026-11-07) — EnhancedDiffViewer against the recorded original.
 **QUEUED — next session, fresh context (P2 features, port-notes ready):**
 - Recent Edits panel — **HAVE (own design)**: `RecentEditsViewer` + backend `commands/edits.rs` shipped June.
   Ported deltas: #606 replace_all, #525/#640 restore guard, #475 reveal-in-folder.
   Remaining deltas (optional): #473 full diff view, dock/sidebar presentation (#515), restore preview.
-- workflow rendering #99b2ec7d; parallel-tasks filter #446; explorer columns (#23ea7fbe/#ccf7c19b/#4bc63da2); headless --export #413.
+- workflow rendering #99b2ec7d — PREREQUISITE: we have no subagent-file discovery at all (our sidechain rows live in the same JSONL); upstream reads `{uuid}/subagents/**`. Porting this means building that discovery layer first. parallel-tasks filter #446; explorer columns (#23ea7fbe/#ccf7c19b/#4bc63da2); headless --export #413.
 - perf COMPARE (#458/#381/#591/#528/#436/#468): diff against our June cache; port deltas only.
 - #568 preserve branched conversations (chain merge covered the display half; verify fork-parent visibility).
 
 **SKIP (rationale):** 20 new providers (user uses none; each = adapter+registration+i18n×6+maintenance); Server/WebUI cluster (no server mode in fork); pricing lifecycle (P3, drift-prone); Cline SDK store #589/#588/#586 (no local store; 2 legacy tasks); #612/#614/#621 (architecture absent); i18n plural v4 migration (verify our i18next version first — CONFIG); Linux ibus/DMABUF, CI/Homebrew/release chores (not applicable).
 
-- ⏭ REMAINING (feature-sized, port-notes above): workflow rendering #99b2ec7d; parallel-tasks filter #446; explorer columns (#23ea7fbe/#ccf7c19b/#4bc63da2); headless --export #413; resume extra CLI args #595; Recent Edits optional deltas (#473 diff view, #515 dock); perf COMPARE wave.
+- ⏭ REMAINING (feature-sized, port-notes above): workflow rendering #99b2ec7d; parallel-tasks filter #446; explorer columns (#23ea7fbe/#ccf7c19b/#4bc63da2); headless --export #413; Recent Edits dock presentation (#515); perf COMPARE wave.
 - DISPOSITIONED no-op: #612/#614/#621 store reload races (their session-list pagination architecture — we have no sessionsOffset/loadMoreSessions machinery; our reload path differs, June tree-orphan fix covered the visible bug).
 - DEFERRED: Cline SDK store #589/#588/#586 (no local ~/.cline store, 2 legacy tasks); OpenCode #428 cache bound + ab6bcb45 schema (our reader differs, verify later); providers wave 2 (SKIP unless user asks); Server/WebUI cluster (SKIP, no server mode); pricing lifecycle (P3).
 - NOTE: Kaspersky blocks cargo build-script exes; user excluded target dirs. Build: `CARGO_TARGET_DIR=C:/Users/xxx/.cargo-target/ccv-merge cargo test --lib` from src-tauri.
