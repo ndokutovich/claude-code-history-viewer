@@ -782,7 +782,11 @@
     "searchPlaceholder": "Поиск проектов и сеансов...",
     "clearSearch": "Очистить поиск",
     "filterSettings": "Настройки фильтра",
-    "searchLoadFailed": "Не удалось загрузить некоторые проекты"
+    "searchLoadFailed": "Не удалось загрузить некоторые проекты",
+    "backupAll": "Резервная копия всех проектов…",
+    "backingUp": "Создаю копию…",
+    "backupSuccess": "Скопировано файлов: {{count}}",
+    "backupFailed": "Не удалось создать копию"
   },
   "projectTree": {
     "sources": {

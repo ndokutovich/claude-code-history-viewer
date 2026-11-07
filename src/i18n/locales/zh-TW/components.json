@@ -798,7 +798,11 @@
     "searchPlaceholder": "搜尋專案和會話...",
     "clearSearch": "清除搜尋",
     "filterSettings": "篩選設定",
-    "searchLoadFailed": "部分專案載入失敗"
+    "searchLoadFailed": "部分專案載入失敗",
+    "backupAll": "備份所有專案…",
+    "backingUp": "正在備份…",
+    "backupSuccess": "已備份 {{count}} 個檔案",
+    "backupFailed": "備份失敗"
   },
   "projectTree": {
     "sources": {

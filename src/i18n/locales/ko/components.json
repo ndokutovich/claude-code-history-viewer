@@ -800,7 +800,11 @@
     "searchPlaceholder": "프로젝트 및 세션 검색...",
     "clearSearch": "검색 지우기",
     "filterSettings": "필터 설정",
-    "searchLoadFailed": "일부 프로젝트 로드 실패"
+    "searchLoadFailed": "일부 프로젝트 로드 실패",
+    "backupAll": "모든 프로젝트 백업…",
+    "backingUp": "백업 중…",
+    "backupSuccess": "{{count}}개 파일을 백업했습니다",
+    "backupFailed": "백업 실패"
   },
   "projectTree": {
     "sources": {

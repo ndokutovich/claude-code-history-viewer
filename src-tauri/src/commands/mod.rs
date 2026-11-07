@@ -1,3 +1,4 @@
+pub mod backup;
 pub mod adapters; // v2.0.0 - Universal provider adapters
 pub mod claude_settings; // Settings CRUD and MCP server management
 pub mod codex; // v1.8.0 - Codex CLI support

@@ -1,4 +1,6 @@
-import { Settings2, SortAsc, SortDesc, Group, Ungroup, Eye, EyeOff, ChevronsDown, ChevronsUp, MessageCircle, RefreshCw, Search, X, Loader2 } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
+import { save } from "@tauri-apps/plugin-dialog";
+import { Archive, Settings2, SortAsc, SortDesc, Group, Ungroup, Eye, EyeOff, ChevronsDown, ChevronsUp, MessageCircle, RefreshCw, Search, X, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../store/useAppStore";
 import { Button } from "./ui/button";
@@ -85,6 +87,43 @@ export const ProjectListControls: React.FC<ProjectListControlsProps> = ({ isLoad
       });
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  // One-click backup of every Claude project (upstream #411).
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const handleBackupAllProjects = async () => {
+    if (isBackingUp) return;
+    setIsBackingUp(true);
+    try {
+      const claudePath = await invoke<string>("get_claude_folder_path");
+      const destination = await save({
+        defaultPath: "claude-projects-backup.zip",
+        filters: [{ name: "Zip archive", extensions: ["zip"] }],
+      });
+      if (!destination) return; // user cancelled
+
+      const summary = await invoke<{
+        archivePath: string;
+        fileCount: number;
+        totalBytes: number;
+      }>("backup_claude_projects", { claudePath, destination });
+
+      const megabytes = (summary.totalBytes / (1024 * 1024)).toFixed(1);
+      toast.success(
+        t("projectListControls.backupSuccess", {
+          count: summary.fileCount,
+          defaultValue: "Backed up {{count}} file(s)",
+        }),
+        { description: `${summary.archivePath} · ${megabytes} MB` }
+      );
+    } catch (error) {
+      toast.error(
+        t("projectListControls.backupFailed", "Backup failed"),
+        { description: error instanceof Error ? error.message : String(error) }
+      );
+    } finally {
+      setIsBackingUp(false);
     }
   };
 
@@ -187,6 +226,18 @@ export const ProjectListControls: React.FC<ProjectListControlsProps> = ({ isLoad
             >
               {t("projectListControls.sortBy.date")}
               {projectListPreferences.sortBy === "date" && " ✓"}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              disabled={isBackingUp}
+              onClick={() => {
+                void handleBackupAllProjects();
+              }}
+            >
+              <Archive className="w-3.5 h-3.5 mr-2" />
+              {isBackingUp
+                ? t("projectListControls.backingUp", "Backing up…")
+                : t("projectListControls.backupAll", "Back up all projects…")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

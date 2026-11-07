@@ -779,7 +779,11 @@
     "searchPlaceholder": "Search projects & sessions...",
     "clearSearch": "Clear search",
     "filterSettings": "Filter Settings",
-    "searchLoadFailed": "Failed to load some projects"
+    "searchLoadFailed": "Failed to load some projects",
+    "backupAll": "Back up all projects…",
+    "backingUp": "Backing up…",
+    "backupSuccess": "Backed up {{count}} file(s)",
+    "backupFailed": "Backup failed"
   },
   "projectTree": {
     "sources": {

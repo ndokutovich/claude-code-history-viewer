@@ -666,7 +666,11 @@
     "searchPlaceholder": "プロジェクトとセッションを検索...",
     "clearSearch": "検索をクリア",
     "filterSettings": "フィルター設定",
-    "searchLoadFailed": "一部のプロジェクトの読み込みに失敗しました"
+    "searchLoadFailed": "一部のプロジェクトの読み込みに失敗しました",
+    "backupAll": "すべてのプロジェクトをバックアップ…",
+    "backingUp": "バックアップ中…",
+    "backupSuccess": "{{count}} 件のファイルをバックアップしました",
+    "backupFailed": "バックアップに失敗しました"
   },
   "projectTree": {
     "sources": {

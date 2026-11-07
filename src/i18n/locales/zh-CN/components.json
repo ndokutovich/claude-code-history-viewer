@@ -798,7 +798,11 @@
     "searchPlaceholder": "搜索项目和会话...",
     "clearSearch": "清除搜索",
     "filterSettings": "过滤器设置",
-    "searchLoadFailed": "部分项目加载失败"
+    "searchLoadFailed": "部分项目加载失败",
+    "backupAll": "备份所有项目…",
+    "backingUp": "正在备份…",
+    "backupSuccess": "已备份 {{count}} 个文件",
+    "backupFailed": "备份失败"
   },
   "projectTree": {
     "sources": {

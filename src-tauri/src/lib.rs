@@ -4,6 +4,7 @@ mod models;
 mod utils;
 
 use crate::cli::{get_startup_session_hint, parse_session_hint, StartupSessionHint};
+use crate::commands::backup::backup_claude_projects;
 use crate::commands::adapters::gemini::GeminiHashResolver;
 use crate::commands::{
     aider::*, antigravity::*, claude_settings::*, codex::*, cursor::*, edits::*, feedback::*, files::*,
@@ -62,6 +63,7 @@ pub fn run() {
             // CLI session launch (--session <uuid>)
             get_startup_session_hint,
             resolve_session_by_id,
+            backup_claude_projects,
             get_claude_folder_path,
             validate_claude_folder,
             scan_projects,
