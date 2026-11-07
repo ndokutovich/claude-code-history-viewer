@@ -736,6 +736,29 @@ pub async fn load_session_messages_paginated(
     exclude_sidechain: Option<bool>,
     include_noise: Option<bool>,
 ) -> Result<MessagePage, String> {
+    // Memory-mapping and parsing a multi-hundred-megabyte transcript is pure
+    // blocking I/O; run it on the blocking pool so the async runtime keeps
+    // serving other commands (upstream #528).
+    tauri::async_runtime::spawn_blocking(move || {
+        load_session_messages_blocking(
+            session_path,
+            offset,
+            limit,
+            exclude_sidechain,
+            include_noise,
+        )
+    })
+    .await
+    .map_err(|e| format!("TASK_JOIN_ERROR: {e}"))?
+}
+
+fn load_session_messages_blocking(
+    session_path: String,
+    offset: usize,
+    limit: usize,
+    exclude_sidechain: Option<bool>,
+    include_noise: Option<bool>,
+) -> Result<MessagePage, String> {
     let start_time = std::time::Instant::now();
 
     // Cross-file continuation chain: Claude Code may auto-continue a

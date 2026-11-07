@@ -119,8 +119,18 @@ pub async fn validate_claude_folder(path: String) -> Result<bool, String> {
 
 #[tauri::command]
 pub async fn scan_projects(claude_path: String) -> Result<Vec<ClaudeProject>, String> {
+    // The scan walks every project directory and reads session files
+    // synchronously; running it on the blocking pool keeps the async runtime
+    // free while a large history is enumerated (upstream #528).
+    tauri::async_runtime::spawn_blocking(move || scan_projects_blocking(&claude_path))
+        .await
+        .map_err(|e| format!("TASK_JOIN_ERROR: {e}"))?
+}
+
+/// The scan itself, separated so the command body stays a one-liner.
+fn scan_projects_blocking(claude_path: &str) -> Result<Vec<ClaudeProject>, String> {
     let start_time = std::time::Instant::now();
-    let projects_path = PathBuf::from(&claude_path).join("projects");
+    let projects_path = PathBuf::from(claude_path).join("projects");
 
     if !projects_path.exists() {
         return Ok(vec![]);

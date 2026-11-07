@@ -509,6 +509,20 @@ pub async fn get_recent_edits(
     offset: Option<usize>,
     limit: Option<usize>,
 ) -> Result<PaginatedRecentEdits, String> {
+    // Rewriting history for a large project is pure file I/O; keep it off the
+    // async runtime (upstream #528).
+    tauri::async_runtime::spawn_blocking(move || {
+        get_recent_edits_blocking(project_path, offset, limit)
+    })
+    .await
+    .map_err(|e| format!("TASK_JOIN_ERROR: {e}"))?
+}
+
+fn get_recent_edits_blocking(
+    project_path: String,
+    offset: Option<usize>,
+    limit: Option<usize>,
+) -> Result<PaginatedRecentEdits, String> {
     let offset = offset.unwrap_or(0);
     let limit = limit.unwrap_or(20);
 
