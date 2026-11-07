@@ -24,6 +24,9 @@ export interface MessageViewerProps {
 export interface MessageNodeProps {
   message: UIMessage;
   depth: number;
+  /** Continuation of the previous assistant turn: drop the repeated
+   * role/time header (upstream #051fa7a3). */
+  hideHeader?: boolean;
   providerName: string;
   sessionFilePath?: string;
   allMessages: UIMessage[];
@@ -53,6 +56,11 @@ export interface MessageRowDescriptor {
   depth: number;
   /** Stable React/virtualizer key (mirrors the legacy renderMessageTree keys). */
   key: string;
+  /** Continuation of the previous assistant turn (same model, same
+   * sidechain, within five minutes): the repeated role/time header is
+   * dropped so a turn with many tool calls holds one header (upstream
+   * #051fa7a3). */
+  hideHeader?: boolean;
 }
 
 export interface SummaryMessageProps {
