@@ -7,7 +7,7 @@ import React, {
   useState,
 } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Loader2, MessageCircle, ChevronDown, ListTree, Search, X, ChevronUp } from "lucide-react";
+import { Loader2, MessageCircle, ChevronDown, ListTree, Search, X, ChevronUp, Map as MinimapIcon} from "lucide-react";
 import { useSearchState } from "../../hooks/useSearchState";
 import { useTranslation } from "react-i18next";
 import type { UISession, MessageBuilder } from "../../types";
@@ -20,6 +20,7 @@ import { MessageNavigator } from "../MessageNavigator";
 import { SessionBuilderModal } from "../modals/SessionBuilderModal";
 import type { MessageViewerProps } from "./types";
 import { MessageNode, FloatingDateOverlay } from "./components";
+import { SessionMinimap } from "./components/SessionMinimap";
 import { usePromptJump, useMessageScrolling, useMessageTree } from "./hooks";
 import { isSameDay } from "../../utils/time";
 
@@ -63,6 +64,8 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
     isCaptureMode,
     hiddenMessageIds,
     hideMessage,
+    viewPreferences,
+    setViewPreferences,
   } = useAppStore();
 
   const { searchQuery, isSearchPending, handleSearchInput, handleClearSearch } = useSearchState({
@@ -246,6 +249,17 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
   // Scroll container ref is owned here so both the virtualizer and the
   // scrolling hook can share the same scroll element.
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Minimap needs the element itself (not just the ref) to subscribe to scroll.
+  const [minimapScrollEl, setMinimapScrollEl] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setMinimapScrollEl(scrollContainerRef.current);
+  }, [selectedSession?.session_id]);
+
+  const minimapEnabled = viewPreferences.showMinimap === true;
+  const toggleMinimap = useCallback(() => {
+    setViewPreferences({ showMinimap: !minimapEnabled });
+  }, [minimapEnabled, setViewPreferences]);
   // The virtual list is not the first child of the scroll element (a load-more
   // button + DEV debug box render above it), so the virtualizer needs to know
   // that offset via scrollMargin.
@@ -456,6 +470,23 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           <Search className="w-4 h-4" />
         </button>
 
+        {/* Session minimap toggle (upstream #634) */}
+        <button
+          onClick={toggleMinimap}
+          className={cn(
+            "absolute top-2 right-[4.5rem] z-40 p-1.5 rounded-lg transition-colors",
+            "bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground",
+            "border border-border/50 shadow-sm",
+            minimapEnabled && "bg-accent/10 text-accent"
+          )}
+          aria-pressed={minimapEnabled}
+          title={t("messageViewer.minimap.toggle", {
+            defaultValue: "Toggle session minimap",
+          })}
+        >
+          <MinimapIcon className="w-4 h-4" />
+        </button>
+
         {/* Navigator toggle button */}
         <button
           onClick={() => {
@@ -562,6 +593,14 @@ export const MessageViewer: React.FC<MessageViewerProps> = ({
           scrollContainerRef={scrollContainerRef}
           revision={messages.length}
         />
+
+        {minimapEnabled && (
+          <SessionMinimap
+            messages={rows.map((row) => row.message)}
+            scrollElement={minimapScrollEl}
+            className="absolute right-1 top-6 bottom-2 z-20"
+          />
+        )}
 
         <div
           ref={scrollContainerRef}

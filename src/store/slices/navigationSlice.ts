@@ -23,6 +23,8 @@ export interface ViewPreferences {
   preserveViewOnProjectSwitch: boolean;
   /** Whether to preserve view when switching sessions (default: true) */
   preserveViewOnSessionSwitch: boolean;
+  /** Opt-in session minimap beside the message list (default: false) */
+  showMinimap?: boolean;
 }
 
 // ============================================================================

@@ -78,5 +78,6 @@
   "navigator.role.summary": "摘要",
   "navigator.noMessages": "此会话没有消息",
   "navigator.close": "关闭导航器",
-  "navigator.messageCount": "{{count}} 条消息"
+  "navigator.messageCount": "{{count}} 条消息",
+  "messageViewer.minimap.toggle": "切换会话小地图"
 }

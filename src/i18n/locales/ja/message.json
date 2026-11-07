@@ -78,5 +78,6 @@
   "navigator.role.summary": "要約",
   "navigator.noMessages": "このセッションにメッセージはありません",
   "navigator.close": "ナビゲーターを閉じる",
-  "navigator.messageCount": "{{count}}件のメッセージ"
+  "navigator.messageCount": "{{count}}件のメッセージ",
+  "messageViewer.minimap.toggle": "セッションミニマップの切り替え"
 }
