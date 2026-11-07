@@ -49,6 +49,7 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 - ✅ #528 blocking-pool offload (2026-11-07) — scan_projects, get_recent_edits, load_session_messages_paginated run via spawn_blocking.
 - ✅ subagent discovery + copy paths (2026-11-07) — `commands/subagents.rs` lists flat and workflow (`workflows/wf_*/agent-*.jsonl`) transcripts; session menu copies their paths. This is the prerequisite for #99b2ec7d.
 - ✅ #99b2ec7d workflow/sub-agent rendering (2026-11-07) — discovery + guarded loader + inline reader dialog; workflow agents grouped by wf_ name.
+- ✅ Pricing data (2026-11-07) — audited Claude 5.x rates (opus-5-5 $4/$20, sonnet-5-5 with the $0.10 cache read, haiku-5-5, opus-5/sonnet-5, fable/mythos) ported from upstream model-pricing.json; 5 tests. Our cost stats no longer fall back to generic rates for current models.
 **QUEUED — next session, fresh context (P2 features, port-notes ready):**
 - Recent Edits panel — **HAVE (own design)**: `RecentEditsViewer` + backend `commands/edits.rs` shipped June.
   Ported deltas: #606 replace_all, #525/#640 restore guard, #475 reveal-in-folder.
@@ -57,7 +58,7 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 - perf COMPARE (#458/#381/#591/#528/#436/#468): diff against our June cache; port deltas only.
 - #568 preserve branched conversations (chain merge covered the display half; verify fork-parent visibility).
 
-**SKIP (rationale):** 20 new providers (user uses none; each = adapter+registration+i18n×6+maintenance); Server/WebUI cluster (no server mode in fork); pricing lifecycle (P3, drift-prone); Cline SDK store #589/#588/#586 (no local store; 2 legacy tasks); #612/#614/#621 (architecture absent); i18n plural v4 migration (verify our i18next version first — CONFIG); Linux ibus/DMABUF, CI/Homebrew/release chores (not applicable).
+**SKIP (rationale):** 20 new providers (user uses none; each = adapter+registration+i18n×6+maintenance); Server/WebUI cluster (no server mode in fork); Cline SDK store #589/#588/#586 (no local store; 2 legacy tasks); #612/#614/#621 (architecture absent); i18n plural v4 migration (verify our i18next version first — CONFIG); Linux ibus/DMABUF, CI/Homebrew/release chores (not applicable).
 
 - ⏭ REMAINING + DISPOSITIONS (each verified against our code, not assumed):
   - #ccf7c19b (temp-directory bucketing) / #4bc63da2 (sessions column) — **SKIP BY DESIGN**: both are
