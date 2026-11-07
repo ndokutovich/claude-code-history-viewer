@@ -18,17 +18,17 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 </tr>
 <tr>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.2_x64-setup.exe">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.5_x64-setup.exe">
 <img src="https://img.shields.io/badge/Download-.exe-blue?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.2_universal.dmg">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.5_universal.dmg">
 <img src="https://img.shields.io/badge/Download-.dmg-black?style=for-the-badge&logo=apple&logoColor=white" alt="macOS Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.2_amd64.AppImage">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.5_amd64.AppImage">
 <img src="https://img.shields.io/badge/Download-.AppImage-orange?style=for-the-badge&logo=linux&logoColor=white" alt="Linux Download"/>
 </a>
 </td>
@@ -69,6 +69,21 @@ Per-project token usage breakdown and session-level analysis
 ### Demo
 
 <img width="720" alt="Demo" src="https://github.com/user-attachments/assets/d3ea389e-a912-433e-b6e2-2e895eaa346d" />
+
+## What's New in v1.10.5
+
+Upstream sync + provider data expansion:
+
+- **Antigravity support** — desktop and CLI (`antigravity-cli`) stores, with full conversation transcripts, tool calls and token usage, session titles, and sessions grouped by workspace directory.
+- **Codex CLI** — compressed (`.jsonl.zst`) session archives are now browsable; sessions are grouped into projects by their working directory; model reasoning steps are shown as thinking blocks; forked/continued sessions resolve their identity and project correctly.
+- **Gemini CLI** — the new append-only `.jsonl` session format is supported alongside the legacy one.
+- **OpenCode** — sessions stored in the global project are grouped into per-directory projects.
+- **Claude Code** — conversations continued across session files open as one conversation; auto-generated session titles appear in the session list.
+- **Viewer** — LaTeX math renders via KaTeX; `Alt+↑`/`Alt+↓` jump between prompts; continued assistant turns render without repeated headers; all fixed-size UI text follows the font-size setting.
+- **Search** — in-session search now matches tool arguments and tool-result content.
+- **Windows** — project names decode from their encoded folder names; auto-refresh works with extended-length paths.
+
+---
 
 ## What's New in v1.10.2
 
