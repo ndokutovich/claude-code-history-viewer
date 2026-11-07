@@ -1211,5 +1211,9 @@
     "loadingMessages": "Loading messages…",
     "pickOne": "Pick an agent to read its transcript",
     "noMessages": "No displayable messages"
+  },
+  "sessionColumn": {
+    "title": "Sessions",
+    "empty": "No sessions in this project"
   }
 }

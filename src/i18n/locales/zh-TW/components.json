@@ -1230,5 +1230,9 @@
     "loadingMessages": "正在載入訊息…",
     "pickOne": "選擇一個代理以檢視其紀錄",
     "noMessages": "沒有可顯示的訊息"
+  },
+  "sessionColumn": {
+    "title": "工作階段",
+    "empty": "此專案沒有工作階段"
   }
 }

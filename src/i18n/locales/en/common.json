@@ -330,6 +330,10 @@
       "title": "Resume CLI arguments",
       "hint": "Appended to the resume command",
       "invalid": "Only flags like --fast or --model=sonnet are kept"
+    },
+    "layout": {
+      "title": "Layout",
+      "sessionsColumn": "Show sessions column"
     }
   },
   "settingsManager": "Settings Manager",

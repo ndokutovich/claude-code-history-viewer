@@ -330,6 +330,10 @@
       "title": "恢復工作階段 CLI 參數",
       "hint": "會附加到恢復命令後",
       "invalid": "僅保留 --fast 或 --model=sonnet 之類的旗標"
+    },
+    "layout": {
+      "title": "版面",
+      "sessionsColumn": "顯示工作階段欄"
     }
   },
   "settingsManager": "設定管理員",

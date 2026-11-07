@@ -1230,5 +1230,9 @@
     "loadingMessages": "正在加载消息…",
     "pickOne": "选择一个代理以查看其记录",
     "noMessages": "没有可显示的消息"
+  },
+  "sessionColumn": {
+    "title": "会话",
+    "empty": "此项目没有会话"
   }
 }

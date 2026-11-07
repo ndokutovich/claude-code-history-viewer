@@ -330,6 +330,10 @@
       "title": "再開時の CLI 引数",
       "hint": "再開コマンドに追加されます",
       "invalid": "--fast や --model=sonnet のようなフラグのみ保持されます"
+    },
+    "layout": {
+      "title": "レイアウト",
+      "sessionsColumn": "セッション列を表示"
     }
   },
   "settingsManager": "設定マネージャー",

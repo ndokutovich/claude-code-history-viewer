@@ -25,6 +25,8 @@ export interface ViewPreferences {
   preserveViewOnSessionSwitch: boolean;
   /** Opt-in session minimap beside the message list (default: false) */
   showMinimap?: boolean;
+  /** Opt-in middle column listing the selected project's sessions */
+  showSessionsColumn?: boolean;
 }
 
 // ============================================================================

@@ -330,6 +330,10 @@
       "title": "세션 재개 CLI 인수",
       "hint": "재개 명령에 추가됩니다",
       "invalid": "--fast 또는 --model=sonnet 같은 플래그만 유지됩니다"
+    },
+    "layout": {
+      "title": "레이아웃",
+      "sessionsColumn": "세션 열 표시"
     }
   },
   "settingsManager": "설정 관리자",

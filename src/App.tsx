@@ -7,6 +7,7 @@ import { preloadSessionFromHint, type SessionHint } from "./lib/preloadSession";
 import type { ResolvedSessionMatch } from "./store/slices/sessionPickerSlice";
 import { ProjectTree } from "./components/ProjectTree";
 import { MessageViewer } from "./components/MessageViewer";
+import { SessionColumn } from "./components/SessionColumn";
 import { RawMessageView } from "./components/RawMessageView";
 import { CommandHistoryView } from "./components/CommandHistoryView";
 import { MessageViewControls } from "./components/MessageViewControls";
@@ -112,6 +113,11 @@ function App() {
       highContrast: s.highContrast,
       isCaptureMode: s.isCaptureMode,
     }))
+  );
+
+  // Optional middle column with the selected project's sessions (#4bc63da2)
+  const showSessionsColumn = useAppStore(
+    (s) => s.viewPreferences.showSessionsColumn === true
   );
 
   // Apply font scale and high contrast accessibility settings to the document root
@@ -590,6 +596,20 @@ function App() {
             defaultWidth={336}
             onWidthChange={setSidebarWidth}
           />
+
+          {/* Optional sessions column (upstream #4bc63da2) */}
+          {showSessionsColumn && selectedProject && (
+            <div style={{ width: 260 }} className="shrink-0 overflow-hidden">
+              <SessionColumn
+                project={selectedProject}
+                sessions={sessions}
+                selectedSession={selectedSession}
+                onSessionSelect={(session) => {
+                  void handleSessionSelect(session);
+                }}
+              />
+            </div>
+          )}
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col relative overflow-hidden">

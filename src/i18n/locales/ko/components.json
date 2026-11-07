@@ -1232,5 +1232,9 @@
     "loadingMessages": "메시지를 불러오는 중…",
     "pickOne": "에이전트를 선택해 기록을 확인하세요",
     "noMessages": "표시할 메시지가 없습니다"
+  },
+  "sessionColumn": {
+    "title": "세션",
+    "empty": "이 프로젝트에는 세션이 없습니다"
   }
 }
