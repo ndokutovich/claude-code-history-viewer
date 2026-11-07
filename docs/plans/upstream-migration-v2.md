@@ -46,11 +46,13 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 - ✅ #595 resume extra CLI args (2026-11-07) — settings field, sanitising on both sides, 5 backend + 7 frontend tests.
 - ✅ #473 diff view in Recent Edits (2026-11-07) — EnhancedDiffViewer against the recorded original.
 - ✅ #413 headless `--export` (2026-11-07) — CLI export to JSON/Markdown with page-streamed loading; 7 tests + real-session smoke.
+- ✅ #528 blocking-pool offload (2026-11-07) — scan_projects, get_recent_edits, load_session_messages_paginated run via spawn_blocking.
+- ✅ subagent discovery + copy paths (2026-11-07) — `commands/subagents.rs` lists flat and workflow (`workflows/wf_*/agent-*.jsonl`) transcripts; session menu copies their paths. This is the prerequisite for #99b2ec7d.
 **QUEUED — next session, fresh context (P2 features, port-notes ready):**
 - Recent Edits panel — **HAVE (own design)**: `RecentEditsViewer` + backend `commands/edits.rs` shipped June.
   Ported deltas: #606 replace_all, #525/#640 restore guard, #475 reveal-in-folder.
   Remaining deltas (optional): #473 full diff view, dock/sidebar presentation (#515), restore preview.
-- workflow rendering #99b2ec7d — PREREQUISITE: we have no subagent-file discovery at all (our sidechain rows live in the same JSONL); upstream reads `{uuid}/subagents/**`. Porting this means building that discovery layer first. parallel-tasks filter #446; explorer columns (#23ea7fbe/#ccf7c19b/#4bc63da2); headless --export #413.
+- workflow rendering #99b2ec7d — discovery landed (subagents.rs); what remains is rendering workflow agents inline in the viewer. parallel-tasks filter #446; explorer columns (#23ea7fbe/#ccf7c19b/#4bc63da2); headless --export #413.
 - perf COMPARE (#458/#381/#591/#528/#436/#468): diff against our June cache; port deltas only.
 - #568 preserve branched conversations (chain merge covered the display half; verify fork-parent visibility).
 
