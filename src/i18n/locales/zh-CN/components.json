@@ -866,7 +866,11 @@
     "clearSelection": "清除选择",
     "cancelSelection": "取消",
     "deleteSuccess": "已删除 {{count}} 个会话",
-    "deletePartial": "有 {{count}} 个会话无法删除"
+    "deletePartial": "有 {{count}} 个会话无法删除",
+    "copySubagentPaths": "复制子代理记录路径",
+    "noSubagentTranscripts": "没有子代理记录",
+    "subagentPathsCopied": "已复制 {{count}} 个路径",
+    "subagentLookupFailed": "无法读取子代理记录"
   },
   "sessionBoard": {
     "gitCommits": "Git 提交",

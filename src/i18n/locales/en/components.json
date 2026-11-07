@@ -847,7 +847,11 @@
     "clearSelection": "Clear selection",
     "cancelSelection": "Cancel",
     "deleteSuccess": "{{count}} session(s) deleted",
-    "deletePartial": "{{count}} session(s) could not be deleted"
+    "deletePartial": "{{count}} session(s) could not be deleted",
+    "copySubagentPaths": "Copy sub-agent transcript paths",
+    "noSubagentTranscripts": "No sub-agent transcripts",
+    "subagentPathsCopied": "{{count}} sub-agent transcript path(s) copied",
+    "subagentLookupFailed": "Could not read sub-agent transcripts"
   },
   "sessionBoard": {
     "gitCommits": "Git Commits",

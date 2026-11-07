@@ -21,6 +21,7 @@ import {
   Tag,
   Trash2,
 } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { ClaudeSession } from "../types";
@@ -271,6 +272,33 @@ export const SessionItem: React.FC<SessionItemProps> = ({
     },
     [handleCopyToClipboard, projectCwd, providerId, session.actual_session_id, resumeExtraArgs, t]
   );
+
+  // Sub-agent transcripts (upstream #99b2ec7d groundwork): Claude Code keeps
+  // them beside the session file; copy their paths so the user can open them.
+  const handleCopySubagentPaths = useCallback(async () => {
+    try {
+      const transcripts = await invoke<Array<{ path: string; workflow?: string }>>(
+        "list_subagent_transcripts",
+        { sessionPath: session.file_path }
+      );
+      if (transcripts.length === 0) {
+        toast.info(t("session.noSubagentTranscripts", "No sub-agent transcripts"));
+        return;
+      }
+      await navigator.clipboard.writeText(transcripts.map((entry: { path: string }) => entry.path).join(String.fromCharCode(10)));
+      toast.success(
+        t("session.subagentPathsCopied", {
+          count: transcripts.length,
+          defaultValue: "{{count}} sub-agent transcript path(s) copied",
+        })
+      );
+    } catch (error) {
+      toast.error(
+        t("session.subagentLookupFailed", "Could not read sub-agent transcripts"),
+        { description: error instanceof Error ? error.message : String(error) }
+      );
+    }
+  }, [session.file_path, t]);
 
   const handleCopyFilePath = useCallback(
     (e: React.MouseEvent) =>
@@ -586,6 +614,10 @@ export const SessionItem: React.FC<SessionItemProps> = ({
                   </DropdownMenuItem>
                   {providerId === "claude" && (
                     <>
+                      <DropdownMenuItem onClick={() => void handleCopySubagentPaths()}>
+                        <Copy className="w-3 h-3 mr-2" />
+                        {t("session.copySubagentPaths", "Copy sub-agent transcript paths")}
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={handleDeleteSession}

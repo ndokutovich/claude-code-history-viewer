@@ -747,7 +747,11 @@
     "clearSelection": "選択解除",
     "cancelSelection": "キャンセル",
     "deleteSuccess": "{{count}} 件のセッションを削除しました",
-    "deletePartial": "{{count}} 件のセッションを削除できませんでした"
+    "deletePartial": "{{count}} 件のセッションを削除できませんでした",
+    "copySubagentPaths": "サブエージェント記録のパスをコピー",
+    "noSubagentTranscripts": "サブエージェント記録がありません",
+    "subagentPathsCopied": "{{count}} 件のパスをコピーしました",
+    "subagentLookupFailed": "サブエージェント記録を読み取れませんでした"
   },
   "sessionBoard": {
     "gitCommits": "Gitコミット",

@@ -850,7 +850,11 @@
     "clearSelection": "Снять выбор",
     "cancelSelection": "Отмена",
     "deleteSuccess": "Удалено сессий: {{count}}",
-    "deletePartial": "Не удалось удалить сессий: {{count}}"
+    "deletePartial": "Не удалось удалить сессий: {{count}}",
+    "copySubagentPaths": "Скопировать пути транскриптов субагентов",
+    "noSubagentTranscripts": "Транскриптов субагентов нет",
+    "subagentPathsCopied": "Скопировано путей: {{count}}",
+    "subagentLookupFailed": "Не удалось прочитать транскрипты субагентов"
   },
   "sessionBoard": {
     "gitCommits": "Git коммиты",

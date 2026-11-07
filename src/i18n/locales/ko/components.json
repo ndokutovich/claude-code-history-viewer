@@ -868,7 +868,11 @@
     "clearSelection": "선택 해제",
     "cancelSelection": "취소",
     "deleteSuccess": "{{count}}개 세션을 삭제했습니다",
-    "deletePartial": "{{count}}개 세션을 삭제하지 못했습니다"
+    "deletePartial": "{{count}}개 세션을 삭제하지 못했습니다",
+    "copySubagentPaths": "서브 에이전트 기록 경로 복사",
+    "noSubagentTranscripts": "서브 에이전트 기록이 없습니다",
+    "subagentPathsCopied": "{{count}}개 경로를 복사했습니다",
+    "subagentLookupFailed": "서브 에이전트 기록을 읽지 못했습니다"
   },
   "sessionBoard": {
     "gitCommits": "Git 커밋",

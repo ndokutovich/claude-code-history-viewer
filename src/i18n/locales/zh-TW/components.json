@@ -866,7 +866,11 @@
     "clearSelection": "清除選擇",
     "cancelSelection": "取消",
     "deleteSuccess": "已刪除 {{count}} 個工作階段",
-    "deletePartial": "有 {{count}} 個工作階段無法刪除"
+    "deletePartial": "有 {{count}} 個工作階段無法刪除",
+    "copySubagentPaths": "複製子代理紀錄路徑",
+    "noSubagentTranscripts": "沒有子代理紀錄",
+    "subagentPathsCopied": "已複製 {{count}} 個路徑",
+    "subagentLookupFailed": "無法讀取子代理紀錄"
   },
   "sessionBoard": {
     "gitCommits": "Git 提交",
