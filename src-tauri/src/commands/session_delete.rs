@@ -8,6 +8,25 @@ use tauri::command;
 /// For a session at `<dir>/<uuid>.jsonl`, also trashes `<dir>/<uuid>/` if it
 /// exists. Validates that the target is an absolute, plain `.jsonl` file (not a
 /// symlink) with a well-formed session ID before moving anything.
+/// Removes a file or directory: system trash first, permanent deletion as
+/// fallback. `trash::delete` fails on Windows with the Recycle Bin disabled,
+/// on network drives, or when the file is locked — permanently delete rather
+/// than surfacing an opaque failure (upstream #410, issue #256).
+fn remove_path(path: &std::path::Path) -> Result<(), String> {
+    if let Err(trash_err) = trash::delete(path) {
+        if path.is_dir() {
+            std::fs::remove_dir_all(path).map_err(|e| {
+                format!("Trash failed: {trash_err}; permanent delete also failed: {e}")
+            })?;
+        } else {
+            std::fs::remove_file(path).map_err(|e| {
+                format!("Trash failed: {trash_err}; permanent delete also failed: {e}")
+            })?;
+        }
+    }
+    Ok(())
+}
+
 #[command]
 pub async fn delete_session(file_path: String) -> Result<(), String> {
     let path = Path::new(&file_path);
@@ -44,14 +63,14 @@ pub async fn delete_session(file_path: String) -> Result<(), String> {
     }
 
     // Trash the .jsonl first (authoritative artifact), then the associated folder.
-    trash::delete(path).map_err(|e| format!("Failed to move session file to trash: {e}"))?;
+    remove_path(path)?;
 
     // Best-effort trash of the associated folder — don't fail if it can't be
     // trashed since the primary .jsonl file is already gone.
     let associated_dir = path.with_extension("");
     if let Ok(dir_meta) = fs::symlink_metadata(&associated_dir) {
         if !dir_meta.file_type().is_symlink() && dir_meta.is_dir() {
-            let _ = trash::delete(&associated_dir);
+            let _ = remove_path(&associated_dir);
         }
     }
 
