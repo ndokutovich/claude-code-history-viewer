@@ -66,9 +66,11 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
   - #23ea7fbe/#ccf7c19b/#4bc63da2 explorer columns — **SKIP BY DESIGN**: our ProjectTree groups by
     source (`groupBy: 'source'`) and shows one project per row; upstream's one-row-per-folder merge
     is a different information architecture, not a missing capability.
-  - perf wave leftovers (#591/#436/#468/#464/#466/#467) — **MEASURE FIRST**: #528 offload landed;
-    our scan is 173 projects / 622 ms and session loads 40–330 ms on real data, so the remaining
-    upstream wins need a profile showing a stall before we port caches we may not need.
+  - perf wave leftovers (#591/#436/#468/#464/#466/#467) — **MEASURED, NO PORT NEEDED**: #528 offload
+    landed; real data (2026-11-07): scan 173 projects / 638 ms, per-project session loads 5–201 ms
+    (216 files → 201 ms), message page 15–24 ms, Codex project listing served from the len+mtime
+    cache without decompression. No stall to chase; upstream's extra caches would add state for no
+    measured win. Re-measure before revisiting.
   - #623/#611/#616/#437/#396/#606/#607/#602/#613/#475/#473/#411/#413/#456/#595/#634/#528 — **DONE** (see above).
   - #612/#614/#621 — dispositioned no-op (architecture absent).
 
