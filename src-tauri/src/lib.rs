@@ -1,4 +1,5 @@
 mod cli;
+mod headless_export;
 mod commands;
 mod models;
 mod utils;
@@ -18,6 +19,28 @@ use std::sync::Mutex;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     use tauri::{Emitter, Manager};
+
+    // Headless export runs before any window/plugin is created: it is a CLI
+    // tool, not the app (upstream #413). Any malformed flag prints and exits
+    // non-zero instead of silently opening the GUI.
+    let argv: Vec<String> = std::env::args().collect();
+    if let Some(request) = headless_export::parse_export_request(&argv) {
+        match request {
+            Ok(parsed) => {
+                if let Err(message) =
+                    tauri::async_runtime::block_on(headless_export::run_export(parsed))
+                {
+                    eprintln!("{message}");
+                    std::process::exit(1);
+                }
+                return;
+            }
+            Err(message) => {
+                eprintln!("{message}");
+                std::process::exit(2);
+            }
+        }
+    }
 
     // Parse CLI args once for a session preload hint (e.g. `--session <uuid>`).
     // A missing or unrecognized value yields None and the GUI runs as usual.

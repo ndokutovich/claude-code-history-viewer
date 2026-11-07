@@ -139,7 +139,7 @@ pub fn session_id_matches(candidate: &str, query: &str) -> bool {
 
 /// Heuristic absolute-path detection for Unix and Windows.
 /// Unix: starts with `/`. Windows: drive-letter (`C:\`/`C:/`) or UNC (`\\`).
-fn looks_like_abs_path(value: &str) -> bool {
+pub fn looks_like_abs_path(value: &str) -> bool {
     if value.starts_with('/') || value.starts_with("\\\\") {
         return true;
     }
