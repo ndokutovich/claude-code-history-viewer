@@ -810,7 +810,8 @@
     "sources": {
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
-    }
+    },
+    "temporaryGroup": "임시 위치"
   },
   "providerMetadata": {
     "relevantFiles": "관련 파일 ({{count}}개)",

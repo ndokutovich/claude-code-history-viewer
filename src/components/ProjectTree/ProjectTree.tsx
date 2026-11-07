@@ -13,6 +13,7 @@ import type { UIProject, UISession } from "../../types";
 import { cn } from "../../utils/cn";
 import { getLocale } from "../../utils/time";
 import { getSessionTitle } from "../../utils/sessionUtils";
+import { isProjectTemporary } from "../../utils/temporaryPaths";
 import { openFolder } from "../../utils/fileActions";
 import { invoke } from "@tauri-apps/api/core";
 import { Trash2, CheckSquare, XSquare } from "lucide-react";
@@ -297,8 +298,13 @@ export const ProjectTree: React.FC<ProjectTreeProps> = ({
     }
 
     const groups: Record<string, UIProject[]> = {};
+    const temporaryGroup = t("projectTree.temporaryGroup", "Temporary locations");
     filteredAndSortedProjects.forEach((project) => {
-      const groupName = project.providerName || "Unknown";
+      // Sessions started in an OS scratch directory get one bucket of their
+      // own instead of burying real projects (upstream #ccf7c19b).
+      const groupName = isProjectTemporary(project)
+        ? temporaryGroup
+        : project.providerName || "Unknown";
       if (!groups[groupName]) {
         groups[groupName] = [];
       }

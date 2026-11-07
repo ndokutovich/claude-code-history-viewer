@@ -808,7 +808,8 @@
     "sources": {
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
-    }
+    },
+    "temporaryGroup": "临时位置"
   },
   "providerMetadata": {
     "relevantFiles": "相关文件（{{count}}个）",

@@ -676,7 +676,8 @@
     "sources": {
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
-    }
+    },
+    "temporaryGroup": "一時的な場所"
   },
   "providerMetadata": {
     "relevantFiles": "関連ファイル（{{count}}個）",

@@ -789,7 +789,8 @@
     "sources": {
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
-    }
+    },
+    "temporaryGroup": "Temporary locations"
   },
   "providerMetadata": {
     "relevantFiles": "Relevant Files ({{count}})",

@@ -792,7 +792,8 @@
     "sources": {
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
-    }
+    },
+    "temporaryGroup": "Временные каталоги"
   },
   "providerMetadata": {
     "relevantFiles": "Связанные файлы ({{count}})",
