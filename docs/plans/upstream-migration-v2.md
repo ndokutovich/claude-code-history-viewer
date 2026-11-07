@@ -37,6 +37,7 @@ Method legend (unchanged from v1 plan): **PORT** re-implement final state in our
 - ✅ Recent Edits hardening (2026-11-07) — our fork ALREADY has the backend (`commands/edits.rs`: collect + paginate + restore, June port). Ported upstream #606 (replace_all replay, 3 tests) and the #525/#640 restore guard (refuse symlink / non-regular targets, 3 tests).
 - ✅ #463 resume-in-terminal — ALREADY PRESENT: `commands/resume.rs::resume_session` spawns a terminal; wired via ExportControls.
 - ⏭ Recent Edits remaining: the dock/sidebar PANEL UI + recentEditsPanelSlice + restore preview (backend list/restore already exist).
+- ✅ #607 rename trailing newline (2026-11-07) — rewritten JSONL is newline-terminated so Claude Code's next append cannot glue onto our last line; helper + unit tests.
 **QUEUED — next session, fresh context (P2 features, port-notes ready):**
 - Recent Edits panel (#515+#514+follow-ups): backend edits reader + recentEditsPanelSlice + dock UI + i18n×6 + restore guard. Port WHOLE subsystem; the 20+ review-fix commits are integral.
 - resume-in-terminal (#463+#595) + multi-select mass delete (#456): interdependent UI; needs getResumeCommand per-provider map first.
