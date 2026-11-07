@@ -18,9 +18,11 @@ import {
   ChevronRight,
   Loader2,
   RotateCcw,
+  FolderOpen,
 } from "lucide-react";
 import { Highlight, themes } from "prism-react-renderer";
 import { cn } from "@/utils/cn";
+import { openFolder } from "@/utils/fileActions";
 import type { FileEditItemProps, RestoreStatus } from "./types";
 import { getLanguageFromPath, formatTimestamp, getRelativeTime } from "./utils";
 import {
@@ -199,6 +201,22 @@ export const FileEditItem: React.FC<FileEditItemProps> = ({ edit, isDarkMode }) 
             title={t("copyContent")}
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+          </button>
+
+          {/* Reveal in folder (upstream #475) */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              void openFolder(edit.file_path, { t: tCommon });
+            }}
+            className={cn(
+              "p-2 rounded-lg transition-all duration-200",
+              "hover:bg-muted text-muted-foreground hover:text-foreground"
+            )}
+            aria-label={t("revealInFolder")}
+            title={t("revealInFolder")}
+          >
+            <FolderOpen className="w-4 h-4" />
           </button>
 
           {/* Restore button */}

@@ -20,5 +20,6 @@
   "cancel": "取消",
   "confirmRestore": "恢复",
   "remaining": "剩余",
-  "editsCount": "{{count}} 次编辑"
+  "editsCount": "{{count}} 次编辑",
+  "revealInFolder": "在文件夹中显示"
 }

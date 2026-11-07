@@ -20,5 +20,6 @@
   "cancel": "取消",
   "confirmRestore": "恢復",
   "remaining": "剩餘",
-  "editsCount": "{{count}} 次編輯"
+  "editsCount": "{{count}} 次編輯",
+  "revealInFolder": "在資料夾中顯示"
 }

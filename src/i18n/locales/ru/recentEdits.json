@@ -20,5 +20,6 @@
   "cancel": "Отмена",
   "confirmRestore": "Восстановить",
   "remaining": "осталось",
-  "editsCount": "{{count}} правок"
+  "editsCount": "{{count}} правок",
+  "revealInFolder": "Показать в папке"
 }

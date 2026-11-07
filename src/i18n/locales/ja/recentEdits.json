@@ -20,5 +20,6 @@
   "cancel": "キャンセル",
   "confirmRestore": "復元",
   "remaining": "残り",
-  "editsCount": "{{count}}回の編集"
+  "editsCount": "{{count}}回の編集",
+  "revealInFolder": "フォルダで表示"
 }

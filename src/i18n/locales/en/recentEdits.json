@@ -20,5 +20,6 @@
   "cancel": "Cancel",
   "confirmRestore": "Restore",
   "remaining": "remaining",
-  "editsCount": "{{count}} edits"
+  "editsCount": "{{count}} edits",
+  "revealInFolder": "Reveal in Folder"
 }

@@ -20,5 +20,6 @@
   "cancel": "취소",
   "confirmRestore": "복원",
   "remaining": "남음",
-  "editsCount": "{{count}}회 편집"
+  "editsCount": "{{count}}회 편집",
+  "revealInFolder": "폴더에서 보기"
 }
