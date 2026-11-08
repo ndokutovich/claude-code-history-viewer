@@ -18,17 +18,17 @@ A cross-platform desktop app to browse and search your Claude Code, Cursor IDE, 
 </tr>
 <tr>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.8_x64-setup.exe">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.9_x64-setup.exe">
 <img src="https://img.shields.io/badge/Download-.exe-blue?style=for-the-badge&logo=windows&logoColor=white" alt="Windows Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.8_universal.dmg">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.9_universal.dmg">
 <img src="https://img.shields.io/badge/Download-.dmg-black?style=for-the-badge&logo=apple&logoColor=white" alt="macOS Download"/>
 </a>
 </td>
 <td align="center">
-<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.8_amd64.AppImage">
+<a href="https://github.com/ndokutovich/claude-code-history-viewer/releases/latest/download/AI.Code.History.Viewer_1.10.9_amd64.AppImage">
 <img src="https://img.shields.io/badge/Download-.AppImage-orange?style=for-the-badge&logo=linux&logoColor=white" alt="Linux Download"/>
 </a>
 </td>
