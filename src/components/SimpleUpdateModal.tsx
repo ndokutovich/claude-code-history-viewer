@@ -149,6 +149,19 @@ export function SimpleUpdateModal({ updater, isVisible, onClose }: SimpleUpdateM
 
         <DialogFooter>
           <div className="flex flex-wrap gap-2 w-full">
+            {updater.state.manualUpdateAvailable ? (
+              // The native updater could not produce an Update object, so an
+              // install button would fail silently; send the user to the release.
+              <a
+                href={release.html_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600"
+              >
+                <ExternalLink className="w-4 h-4" />
+                {t('update.viewOnGitHub')}
+              </a>
+            ) : (
             <button
               onClick={handleDownload}
               disabled={updater.state.isDownloading || updater.state.isInstalling}
@@ -168,6 +181,7 @@ export function SimpleUpdateModal({ updater, isVisible, onClose }: SimpleUpdateM
                 </>
               )}
             </button>
+            )}
 
             <div className="flex gap-2 w-full">
               <button

@@ -1001,6 +1001,8 @@
   "sessionBuilder.validation.selectProject": "Выберите проект",
   "sessionBuilder.validation.selectSource": "Выберите источник",
   "settings": {
+    "checkFailed": "Проверка обновлений не удалась: {{error}}",
+    "downloadManually": "Скачать {{version}} с GitHub",
     "title": "Настройки",
     "changeFolder": "Изменить папку Claude",
     "checkUpdate": "Проверить обновления",

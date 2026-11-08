@@ -5,6 +5,7 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import { getVersion } from "@tauri-apps/api/app";
 import { getCachedUpdateResult, setCachedUpdateResult } from "../utils/updateCache";
 import { UPDATE_CHECK_TIMEOUT_MS, withTimeout } from "../utils/updateTimeout";
+import { isNewerVersion } from "../utils/versionCompare";
 
 export interface GitHubRelease {
   tag_name: string;
@@ -28,6 +29,8 @@ export interface UpdateState {
   updateInfo: Update | null;
   releaseInfo: GitHubRelease | null;
   currentVersion: string;
+  /** A newer release exists but only a manual download is possible. */
+  manualUpdateAvailable: boolean;
 }
 
 export interface UseGitHubUpdaterReturn {
@@ -48,6 +51,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
     updateInfo: null,
     releaseInfo: null,
     currentVersion: "",
+    manualUpdateAvailable: false,
   });
 
   // Get current version
@@ -107,6 +111,7 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
             isChecking: false,
             hasUpdate: cached.hasUpdate,
             updateInfo: null, // Don't cache Tauri update object
+            manualUpdateAvailable: false,
             releaseInfo: cached.releaseInfo,
           }));
           return;
@@ -130,15 +135,36 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
         console.log('Release info:', releaseInfo);
       }
 
-      // Check for updates with Tauri updater. `check()` has no timeout of its
-      // own; without the race a stalled endpoint keeps the spinner forever.
-      const update = await withTimeout(
-        check({ timeout: UPDATE_CHECK_TIMEOUT_MS }),
-        UPDATE_CHECK_TIMEOUT_MS,
-        "Update check timed out"
-      );
+      // The native updater is the only path that can install, but it is also
+      // the one that hangs on a filtering proxy. Its failure must not hide a
+      // release we already know about: fall back to the release feed.
+      const nativeStarted = Date.now();
+      let update: Awaited<ReturnType<typeof check>> = null;
+      let nativeFailure: string | null = null;
+      try {
+        update = await withTimeout(
+          check({ timeout: UPDATE_CHECK_TIMEOUT_MS }),
+          UPDATE_CHECK_TIMEOUT_MS,
+          "Update check timed out"
+        );
+      } catch (nativeError) {
+        nativeFailure =
+          nativeError instanceof Error ? nativeError.message : String(nativeError);
+        console.warn(
+          `Native update check failed after ${Date.now() - nativeStarted}ms: ${nativeFailure}`
+        );
+      }
 
-      const hasUpdate = !!update;
+      const feedHasUpdate = isNewerVersion(releaseInfo.tag_name, state.currentVersion);
+      const hasUpdate = update ? true : feedHasUpdate;
+      const manualUpdateAvailable = hasUpdate && !update;
+
+      if (manualUpdateAvailable) {
+        console.warn(
+          `Release ${releaseInfo.tag_name} is newer than ${state.currentVersion}; ` +
+            "offering a manual download because the native updater did not return an update."
+        );
+      }
 
       // Cache the result (only when current version is available)
       if (state.currentVersion) {
@@ -149,8 +175,10 @@ export function useGitHubUpdater(): UseGitHubUpdaterReturn {
         ...prev,
         isChecking: false,
         hasUpdate,
+        manualUpdateAvailable,
         updateInfo: update || null,
         releaseInfo,
+        error: nativeFailure && !hasUpdate ? nativeFailure : null,
       }));
     } catch (error) {
       console.error("Update check failed:", error);

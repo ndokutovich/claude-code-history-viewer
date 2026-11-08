@@ -28,6 +28,10 @@ export const UpdateSettingsContainer = () => {
       onClose={() => setIsOpen(false)}
       onManualCheck={handleManualCheck}
       isCheckingForUpdates={smartUpdater.state.isChecking}
+      checkError={smartUpdater.state.error}
+      manualUpdateAvailable={smartUpdater.state.manualUpdateAvailable}
+      manualUpdateVersion={smartUpdater.state.releaseInfo?.tag_name ?? null}
+      manualUpdateUrl={smartUpdater.state.releaseInfo?.html_url ?? null}
     />
   );
 };

@@ -998,6 +998,8 @@
   "sessionBuilder.validation.selectProject": "Select Project",
   "sessionBuilder.validation.selectSource": "Select Source",
   "settings": {
+    "checkFailed": "Update check failed: {{error}}",
+    "downloadManually": "Download {{version}} from GitHub",
     "title": "Settings",
     "changeFolder": "Change Claude Folder",
     "checkUpdate": "Check for Updates",

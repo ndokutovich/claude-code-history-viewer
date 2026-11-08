@@ -1019,6 +1019,8 @@
   "sessionBuilder.validation.selectProject": "프로젝트 선택",
   "sessionBuilder.validation.selectSource": "소스 선택",
   "settings": {
+    "checkFailed": "업데이트 확인 실패: {{error}}",
+    "downloadManually": "GitHub에서 {{version}} 다운로드",
     "title": "설정",
     "changeFolder": "Claude 폴더 변경",
     "checkUpdate": "업데이트 확인",

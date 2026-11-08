@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { RefreshCw, Trash2, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { getUpdateSettings, setUpdateSettings } from '@/utils/updateSettings';
 import { clearUpdateCache } from '@/utils/updateCache';
 import type { UpdateSettings } from '@/types/updateSettings';
@@ -18,9 +19,24 @@ interface SimpleUpdateSettingsProps {
   onClose: () => void;
   onManualCheck?: () => void;
   isCheckingForUpdates?: boolean;
+  /** Why the last check ended without an answer, if it did. */
+  checkError?: string | null;
+  /** A newer release exists, but only the release page can deliver it. */
+  manualUpdateAvailable?: boolean;
+  manualUpdateVersion?: string | null;
+  manualUpdateUrl?: string | null;
 }
 
-export function SimpleUpdateSettings({ isOpen, onClose, onManualCheck, isCheckingForUpdates = false }: SimpleUpdateSettingsProps) {
+export function SimpleUpdateSettings({
+  isOpen,
+  onClose,
+  onManualCheck,
+  isCheckingForUpdates = false,
+  checkError = null,
+  manualUpdateAvailable = false,
+  manualUpdateVersion = null,
+  manualUpdateUrl = null,
+}: SimpleUpdateSettingsProps) {
   const { t } = useTranslation(['components', 'common']);
   const [settings, setLocalSettings] = useState<UpdateSettings>(getUpdateSettings());
   const [hasChanges, setHasChanges] = useState(false);
@@ -160,6 +176,24 @@ export function SimpleUpdateSettings({ isOpen, onClose, onManualCheck, isCheckin
                 </>
               )}
             </button>
+            {manualUpdateAvailable && manualUpdateUrl && (
+              <button
+                onClick={() => {
+                  void openUrl(manualUpdateUrl);
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                <RefreshCw className="w-4 h-4" />
+                {t('components:settings.downloadManually', {
+                  version: manualUpdateVersion ?? '',
+                })}
+              </button>
+            )}
+            {checkError && !manualUpdateAvailable && (
+              <p role="alert" className="text-xs text-red-600 dark:text-red-400 break-words">
+                {t('components:settings.checkFailed', { error: checkError })}
+              </p>
+            )}
             <button
               onClick={handleClearCache}
               className="w-full flex items-center justify-center gap-2 px-4 py-2 border dark:border-gray-600 dark:text-gray-300 rounded hover:bg-gray-50 dark:hover:bg-gray-700"

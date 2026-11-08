@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { UPDATE_CHECK_TIMEOUT_MS } from '@/utils/updateTimeout';
 
 const { mockCheck, mockRelaunch, mockGetVersion, mockFetch } = vi.hoisted(() => ({
@@ -26,7 +26,14 @@ describe('useGitHubUpdater check timeout', () => {
     mockGetVersion.mockResolvedValue('1.10.7');
     mockFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ tag_name: 'v1.10.8', name: 'v1.10.8', body: '', published_at: '', html_url: '', assets: [] }),
+      json: async () => ({
+        tag_name: 'v1.10.7',
+        name: 'v1.10.7',
+        body: '',
+        published_at: '',
+        html_url: 'https://github.com/ndokutovich/claude-code-history-viewer/releases/tag/v1.10.7',
+        assets: [],
+      }),
     });
   });
 
@@ -67,5 +74,77 @@ describe('useGitHubUpdater check timeout', () => {
 
     expect(result.current.state.isChecking).toBe(false);
     expect(result.current.state.error).toBeNull();
+    expect(result.current.state.hasUpdate).toBe(false);
+  });
+
+  it('offers the release when the native updater fails but the feed is newer', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        tag_name: 'v1.10.10',
+        name: 'v1.10.10',
+        body: '',
+        published_at: '',
+        html_url: 'https://github.com/ndokutovich/claude-code-history-viewer/releases/tag/v1.10.10',
+        assets: [],
+      }),
+    });
+    mockCheck.mockRejectedValue(new Error('Update check timed out'));
+
+    const { result } = renderHook(() => useGitHubUpdater());
+    await waitFor(() => expect(result.current.state.currentVersion).toBe('1.10.7'));
+
+    await act(async () => {
+      await result.current.checkForUpdates(true);
+    });
+
+    expect(result.current.state.isChecking).toBe(false);
+    expect(result.current.state.hasUpdate).toBe(true);
+    expect(result.current.state.manualUpdateAvailable).toBe(true);
+    expect(result.current.state.error).toBeNull();
+    expect(result.current.state.releaseInfo?.tag_name).toBe('v1.10.10');
+  });
+
+  it('treats a newer feed as an update when the native updater says none', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        tag_name: 'v1.10.10',
+        name: 'v1.10.10',
+        body: '',
+        published_at: '',
+        html_url: 'https://example.test/release',
+        assets: [],
+      }),
+    });
+    mockCheck.mockResolvedValue(null);
+
+    const { result } = renderHook(() => useGitHubUpdater());
+    await waitFor(() => expect(result.current.state.currentVersion).toBe('1.10.7'));
+
+    await act(async () => {
+      await result.current.checkForUpdates(true);
+    });
+
+    expect(result.current.state.hasUpdate).toBe(true);
+    expect(result.current.state.manualUpdateAvailable).toBe(true);
+  });
+
+  it('compares versions numerically, so 1.10.10 beats 1.10.9', async () => {
+    mockGetVersion.mockResolvedValue('1.10.9');
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ tag_name: 'v1.10.10', name: '', body: '', published_at: '', html_url: 'https://example.test', assets: [] }),
+    });
+    mockCheck.mockResolvedValue(null);
+
+    const { result } = renderHook(() => useGitHubUpdater());
+    await waitFor(() => expect(result.current.state.currentVersion).toBe('1.10.9'));
+
+    await act(async () => {
+      await result.current.checkForUpdates(true);
+    });
+
+    expect(result.current.state.hasUpdate).toBe(true);
   });
 });

@@ -787,6 +787,8 @@
     "badgeDocs": "DOCS"
   },
   "settings": {
+    "checkFailed": "アップデートの確認に失敗しました: {{error}}",
+    "downloadManually": "GitHub から {{version}} をダウンロード",
     "title": "設定",
     "changeFolder": "Claudeフォルダを変更",
     "checkUpdate": "アップデートを確認",

@@ -35,6 +35,7 @@ function createUpdater(
       isDownloading: false,
       isInstalling: false,
       downloadProgress: 0,
+      manualUpdateAvailable: false,
       error: null,
       updateInfo: null,
       releaseInfo: {

@@ -1017,6 +1017,8 @@
   "sessionBuilder.validation.selectProject": "選擇專案",
   "sessionBuilder.validation.selectSource": "選擇資料來源",
   "settings": {
+    "checkFailed": "檢查更新失敗：{{error}}",
+    "downloadManually": "從 GitHub 下載 {{version}}",
     "title": "設定",
     "changeFolder": "變更Claude資料夾",
     "checkUpdate": "檢查更新",
