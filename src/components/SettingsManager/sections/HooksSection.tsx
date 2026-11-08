@@ -33,6 +33,11 @@ import {
 } from "@/components/ui/select";
 import { ChevronDown, ChevronRight, Zap, Plus, Trash2, X } from "lucide-react";
 import { cn } from "@/utils/cn";
+import {
+  appendHookCommand,
+  readHookCommands,
+  removeHookCommand,
+} from "@/utils/claudeHooks";
 import type { ClaudeCodeSettings, HookCommand } from "@/types";
 
 // ============================================================================
@@ -203,9 +208,10 @@ export const HooksSection: React.FC<HooksSectionProps> = React.memo(({
   const [newArgs, setNewArgs] = useState("");
 
   const hooks = settings.hooks ?? {};
-  const hookEntries = Object.entries(hooks).filter(
-    ([, commands]) => commands && commands.length > 0
-  );
+  // Claude stores matcher groups, not bare commands; read both shapes.
+  const hookEntries = Object.entries(hooks)
+    .map(([name, entries]) => ({ name, commands: readHookCommands(entries) }))
+    .filter(({ commands }) => commands.length > 0);
   const hookCount = hookEntries.length;
 
   // Handle add hook
@@ -213,15 +219,16 @@ export const HooksSection: React.FC<HooksSectionProps> = React.memo(({
     if (!newCommand.trim()) return;
 
     const trimmedArgs = newArgs.trim();
-    const newHookCommand: HookCommand = {
-      command: newCommand.trim(),
-      args: trimmedArgs ? trimmedArgs.split(/\s+/) : undefined,
-    };
+    const commandLine = [newCommand.trim(), trimmedArgs].filter(Boolean).join(" ");
 
-    const currentHooks = hooks[newHookType] ?? [];
     const updatedHooks = {
       ...hooks,
-      [newHookType]: [...currentHooks, newHookCommand],
+      // Stored entries are matcher groups; the HookCommand[] type is the lie
+      // that caused the empty rows, so the cast sits at this boundary.
+      [newHookType]: appendHookCommand(
+        hooks[newHookType],
+        commandLine
+      ) as unknown as HookCommand[],
     };
 
     onChange({ hooks: updatedHooks });
@@ -242,8 +249,7 @@ export const HooksSection: React.FC<HooksSectionProps> = React.memo(({
 
   // Handle remove single command from hook
   const handleRemoveCommand = (hookName: string, commandIndex: number) => {
-    const currentCommands = hooks[hookName] ?? [];
-    const updatedCommands = currentCommands.filter((_, i) => i !== commandIndex);
+    const updatedCommands = removeHookCommand(hooks[hookName], commandIndex);
 
     if (updatedCommands.length === 0) {
       handleDeleteHook(hookName);
@@ -251,7 +257,7 @@ export const HooksSection: React.FC<HooksSectionProps> = React.memo(({
       onChange({
         hooks: {
           ...hooks,
-          [hookName]: updatedCommands,
+          [hookName]: updatedCommands as unknown as HookCommand[],
         },
       });
     }
@@ -319,11 +325,11 @@ export const HooksSection: React.FC<HooksSectionProps> = React.memo(({
               </div>
             ) : (
               <div className="space-y-2">
-                {hookEntries.map(([name, commands]) => (
+                {hookEntries.map(({ name, commands }) => (
                   <HookCard
                     key={name}
                     hookName={name}
-                    commands={commands || []}
+                    commands={commands}
                     onDelete={() => handleDeleteHook(name)}
                     onRemoveCommand={(idx) => handleRemoveCommand(name, idx)}
                     readOnly={readOnly}
