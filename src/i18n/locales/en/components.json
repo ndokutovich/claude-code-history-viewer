@@ -742,6 +742,12 @@
     }
   },
   "project": {
+    "explorer": "Project Explorer",
+    "a11y": {
+      "expandedState": "expanded",
+      "collapsedState": "collapsed",
+      "selectedState": "selected"
+    },
     "title": "Project:",
     "notFound": "Project not found",
     "selectToView": "Select a project to view analytics",
@@ -791,6 +797,7 @@
     "backupFailed": "Backup failed"
   },
   "projectTree": {
+    "ariaLabel": "Project explorer",
     "sources": {
       "claudeCode": "Claude Code",
       "cursor": "Cursor"

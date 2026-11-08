@@ -761,6 +761,12 @@
     }
   },
   "project": {
+    "explorer": "專案總管",
+    "a11y": {
+      "expandedState": "已展開",
+      "collapsedState": "已摺疊",
+      "selectedState": "已選取"
+    },
     "title": "專案：",
     "notFound": "未找到專案",
     "selectToView": "選擇專案以查看分析",
@@ -810,6 +816,7 @@
     "backupFailed": "備份失敗"
   },
   "projectTree": {
+    "ariaLabel": "專案總管",
     "sources": {
       "claudeCode": "Claude Code",
       "cursor": "Cursor"

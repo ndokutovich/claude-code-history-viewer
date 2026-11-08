@@ -85,6 +85,11 @@ const COMPONENT_KEYS = [
   "subagents.title",
   "subagents.noMessages",
   "projectTree.temporaryGroup",
+  "projectTree.ariaLabel",
+  "project.explorer",
+  "project.a11y.expandedState",
+  "project.a11y.collapsedState",
+  "project.a11y.selectedState",
   "projectListControls.backupAll",
 ];
 

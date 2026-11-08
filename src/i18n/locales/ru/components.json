@@ -745,6 +745,12 @@
     }
   },
   "project": {
+    "explorer": "Проводник проектов",
+    "a11y": {
+      "expandedState": "развёрнуто",
+      "collapsedState": "свёрнуто",
+      "selectedState": "выбрано"
+    },
     "title": "Проект:",
     "notFound": "Проект не найден",
     "selectToView": "Выберите проект для просмотра аналитики",
@@ -794,6 +800,7 @@
     "backupFailed": "Не удалось создать копию"
   },
   "projectTree": {
+    "ariaLabel": "Проводник проектов",
     "sources": {
       "claudeCode": "Claude Code",
       "cursor": "Cursor"

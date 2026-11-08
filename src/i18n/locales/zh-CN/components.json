@@ -761,6 +761,12 @@
     }
   },
   "project": {
+    "explorer": "项目资源管理器",
+    "a11y": {
+      "expandedState": "已展开",
+      "collapsedState": "已折叠",
+      "selectedState": "已选中"
+    },
     "title": "项目：",
     "notFound": "未找到项目",
     "selectToView": "选择项目以查看分析",
@@ -810,6 +816,7 @@
     "backupFailed": "备份失败"
   },
   "projectTree": {
+    "ariaLabel": "项目资源管理器",
     "sources": {
       "claudeCode": "Claude Code",
       "cursor": "Cursor"

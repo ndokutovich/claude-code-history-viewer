@@ -629,6 +629,12 @@
     "percentage": "{{percent}}%"
   },
   "project": {
+    "explorer": "プロジェクトエクスプローラー",
+    "a11y": {
+      "expandedState": "展開済み",
+      "collapsedState": "折りたたみ済み",
+      "selectedState": "選択済み"
+    },
     "title": "プロジェクト：",
     "notFound": "プロジェクトが見つかりません",
     "selectToView": "分析を表示するにはプロジェクトを選択してください",
@@ -678,6 +684,7 @@
     "backupFailed": "バックアップに失敗しました"
   },
   "projectTree": {
+    "ariaLabel": "プロジェクトエクスプローラー",
     "sources": {
       "claudeCode": "Claude Code",
       "cursor": "Cursor"
